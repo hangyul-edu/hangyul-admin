@@ -51,6 +51,16 @@ export function RequireScope({
   return <>{children}</>;
 }
 
+// The router uses basename "/admin", but on hosts without a /admin →
+// /admin.html rewrite the page is reached AS /admin.html (directly, or via
+// the member app's redirect carrying the original deep link in ?path=).
+// Normalize the address bar to /admin/... before the router mounts.
+if (window.location.pathname.startsWith("/admin.html")) {
+  const params = new URLSearchParams(window.location.search);
+  const deepLink = params.get("path") ?? "";
+  window.history.replaceState(null, "", `/admin${deepLink}` || "/admin");
+}
+
 const router = createBrowserRouter(
   createRoutesFromElements(
     <>
