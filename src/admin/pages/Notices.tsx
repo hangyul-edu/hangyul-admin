@@ -107,11 +107,11 @@ export function NoticesPage() {
         const ko = pick(n, "ko") ?? n.translations[0];
         return (
           <div>
-            <div className="ad-cell-main">
+            <div className="hgadm-cell-main">
               {n.pinned && "📌 "}
               {ko?.title ?? "(제목 없음)"}
             </div>
-            <div className="ad-cell-sub">
+            <div className="hgadm-cell-sub">
               번역: {n.translations.map((t) => t.locale).join(", ")}
             </div>
           </div>
@@ -127,7 +127,7 @@ export function NoticesPage() {
             {n.published ? "게시 중" : "초안"}
           </Badge>
           {n.published_at && (
-            <div className="ad-cell-sub">{formatDateTime(n.published_at)}</div>
+            <div className="hgadm-cell-sub">{formatDateTime(n.published_at)}</div>
           )}
         </div>
       ),
@@ -138,7 +138,7 @@ export function NoticesPage() {
       header: "",
       render: (n) =>
         canWrite ? (
-          <div className="ad-row" onClick={(e) => e.stopPropagation()}>
+          <div className="hgadm-row" onClick={(e) => e.stopPropagation()}>
             <Switch
               checked={n.published}
               onChange={() => togglePublish.mutate(n)}
@@ -178,16 +178,16 @@ export function NoticesPage() {
 
   return (
     <div>
-      <div className="ad-page-head">
+      <div className="hgadm-page-head">
         <div>
           <h1>공지 관리</h1>
-          <div className="ad-page-head__desc">
+          <div className="hgadm-page-head__desc">
             앱 공지사항입니다. 한국어/영어 번역을 각각 작성할 수 있으며, 초안은
             사용자에게 노출되지 않습니다.
           </div>
         </div>
         {canWrite && (
-          <div className="ad-page-head__actions">
+          <div className="hgadm-page-head__actions">
             <Button
               variant="primary"
               onClick={() => {
@@ -201,7 +201,7 @@ export function NoticesPage() {
         )}
       </div>
 
-      <div className="ad-card">
+      <div className="hgadm-card">
         {query.isPending ? (
           <LoadingState />
         ) : query.isError ? (
@@ -239,7 +239,7 @@ export function NoticesPage() {
       >
         {draft && (
           <div>
-            <div className="ad-grid-2">
+            <div className="hgadm-grid-2">
               <div>
                 <Field label="제목 (한국어)" required>
                   <Input
@@ -273,8 +273,8 @@ export function NoticesPage() {
                 </Field>
               </div>
             </div>
-            <div className="ad-row ad-row--wrap" style={{ gap: 22 }}>
-              <label className="ad-checkbox">
+            <div className="hgadm-row hgadm-row--wrap" style={{ gap: 22 }}>
+              <label className="hgadm-checkbox">
                 <input
                   type="checkbox"
                   checked={draft.pinned}
@@ -282,7 +282,7 @@ export function NoticesPage() {
                 />
                 상단 고정
               </label>
-              <label className="ad-checkbox">
+              <label className="hgadm-checkbox">
                 <input
                   type="checkbox"
                   checked={draft.published}

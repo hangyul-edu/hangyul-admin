@@ -26,24 +26,24 @@ export function PaymentsPage() {
   const tab = params.get("tab") === "invoices" ? "invoices" : "payments";
   return (
     <div>
-      <div className="ad-page-head">
+      <div className="hgadm-page-head">
         <div>
           <h1>결제·인보이스</h1>
-          <div className="ad-page-head__desc">
+          <div className="hgadm-page-head__desc">
             결제 시도와 인보이스 전체 내역입니다. 결제 수단 정보는 항상 마스킹된
             형태로만 저장·표시됩니다.
           </div>
         </div>
       </div>
-      <div className="ad-tabs">
+      <div className="hgadm-tabs">
         <button
-          className={`ad-tab ${tab === "payments" ? "active" : ""}`}
+          className={`hgadm-tab ${tab === "payments" ? "active" : ""}`}
           onClick={() => setParams({ tab: "payments" }, { replace: true })}
         >
           결제
         </button>
         <button
-          className={`ad-tab ${tab === "invoices" ? "active" : ""}`}
+          className={`hgadm-tab ${tab === "invoices" ? "active" : ""}`}
           onClick={() => setParams({ tab: "invoices" }, { replace: true })}
         >
           인보이스
@@ -92,8 +92,8 @@ function PaymentsTab() {
       header: "결제",
       render: (p) => (
         <div>
-          <div className="ad-cell-main">{p.user_email ?? "(탈퇴한 사용자)"}</div>
-          <div className="ad-cell-sub ad-cell-mono">{p.payment_id}</div>
+          <div className="hgadm-cell-main">{p.user_email ?? "(탈퇴한 사용자)"}</div>
+          <div className="hgadm-cell-sub hgadm-cell-mono">{p.payment_id}</div>
         </div>
       ),
     },
@@ -103,9 +103,9 @@ function PaymentsTab() {
       numeric: true,
       render: (p) => (
         <div>
-          <div className="ad-cell-main">{formatMoney(p.amount_cents, p.currency)}</div>
+          <div className="hgadm-cell-main">{formatMoney(p.amount_cents, p.currency)}</div>
           {p.refunded_amount_cents > 0 && (
-            <div className="ad-cell-sub">
+            <div className="hgadm-cell-sub">
               환불 {formatMoney(p.refunded_amount_cents, p.currency)}
             </div>
           )}
@@ -119,7 +119,7 @@ function PaymentsTab() {
       render: (p) => (
         <div>
           <Badge tone={statusTone(p.status)}>{p.status}</Badge>
-          {p.failure_class && <div className="ad-cell-sub">{p.failure_class}</div>}
+          {p.failure_class && <div className="hgadm-cell-sub">{p.failure_class}</div>}
         </div>
       ),
     },
@@ -127,8 +127,8 @@ function PaymentsTab() {
   ];
 
   return (
-    <div className="ad-card">
-      <div className="ad-toolbar">
+    <div className="hgadm-card">
+      <div className="hgadm-toolbar">
         <SearchBox
           value={q}
           placeholder="이메일·결제 ID·사용자 ID 검색"
@@ -150,7 +150,7 @@ function PaymentsTab() {
           <option value="failed">실패</option>
           <option value="refunded">환불</option>
         </Select>
-        <span className="ad-toolbar__spacer" />
+        <span className="hgadm-toolbar__spacer" />
         <Button onClick={() => void exportCsv()}>CSV 내보내기</Button>
       </div>
       {query.isPending ? (
@@ -202,8 +202,8 @@ function InvoicesTab() {
       header: "인보이스",
       render: (inv) => (
         <div>
-          <div className="ad-cell-main">{inv.user_email ?? "(탈퇴한 사용자)"}</div>
-          <div className="ad-cell-sub ad-cell-mono">{inv.invoice_id}</div>
+          <div className="hgadm-cell-main">{inv.user_email ?? "(탈퇴한 사용자)"}</div>
+          <div className="hgadm-cell-sub hgadm-cell-mono">{inv.invoice_id}</div>
         </div>
       ),
     },
@@ -214,9 +214,9 @@ function InvoicesTab() {
       numeric: true,
       render: (inv) => (
         <div>
-          <div className="ad-cell-main">{formatMoney(inv.total_cents, inv.currency)}</div>
+          <div className="hgadm-cell-main">{formatMoney(inv.total_cents, inv.currency)}</div>
           {inv.discount_cents > 0 && (
-            <div className="ad-cell-sub">
+            <div className="hgadm-cell-sub">
               할인 {formatMoney(inv.discount_cents, inv.currency)}
               {inv.coupon_code ? ` (${inv.coupon_code})` : ""}
             </div>
@@ -234,8 +234,8 @@ function InvoicesTab() {
   ];
 
   return (
-    <div className="ad-card">
-      <div className="ad-toolbar">
+    <div className="hgadm-card">
+      <div className="hgadm-toolbar">
         <SearchBox
           value={q}
           placeholder="이메일·인보이스 ID 검색"

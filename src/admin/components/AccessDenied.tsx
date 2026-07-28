@@ -39,13 +39,13 @@ export function AccessDenied() {
   }
 
   return (
-    <div className="ad-login">
-      <div className="ad-login__card" role="alert">
-        <div className="ad-login__mark" aria-hidden>
+    <div className="hgadm-login">
+      <div className="hgadm-login__card" role="alert">
+        <div className="hgadm-login__mark" aria-hidden>
           🔒
         </div>
-        <h1 className="ad-login__title">관리자 권한이 없습니다</h1>
-        <p className="ad-login__sub">
+        <h1 className="hgadm-login__title">관리자 권한이 없습니다</h1>
+        <p className="hgadm-login__sub">
           {who.data
             ? `현재 ${who.data.email} 계정으로 로그인되어 있지만, 이 계정에는 관리자 권한이 없습니다.`
             : "현재 로그인된 계정에는 관리자 권한이 없습니다."}

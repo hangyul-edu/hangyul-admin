@@ -118,12 +118,12 @@ export function AiContentPage() {
       render: (g) => (
         <div style={{ maxWidth: 420 }}>
           <div
-            className="ad-cell-main"
+            className="hgadm-cell-main"
             style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
           >
             {g.preview}
           </div>
-          <div className="ad-cell-sub ad-cell-mono">{g.content_id}</div>
+          <div className="hgadm-cell-sub hgadm-cell-mono">{g.content_id}</div>
         </div>
       ),
     },
@@ -134,7 +134,7 @@ export function AiContentPage() {
         <div>
           <Badge tone="info">{KIND_LABEL[g.content_kind] ?? g.content_kind}</Badge>
           {g.topik_question_type && (
-            <div className="ad-cell-sub">{g.topik_question_type}</div>
+            <div className="hgadm-cell-sub">{g.topik_question_type}</div>
           )}
         </div>
       ),
@@ -143,7 +143,7 @@ export function AiContentPage() {
     {
       key: "model",
       header: "모델",
-      render: (g) => <span className="ad-cell-mono">{g.model}</span>,
+      render: (g) => <span className="hgadm-cell-mono">{g.model}</span>,
     },
     {
       key: "status",
@@ -155,18 +155,18 @@ export function AiContentPage() {
 
   return (
     <div>
-      <div className="ad-page-head">
+      <div className="hgadm-page-head">
         <div>
           <h1>AI 생성 콘텐츠 검수</h1>
-          <div className="ad-page-head__desc">
+          <div className="hgadm-page-head__desc">
             AI가 생성한 문장·문제 라이브러리입니다. 원본 페이로드와 생성 파라미터를
             확인하고 승인/반려하거나, 품질이 낮은 항목을 재사용 풀에서 제거하세요.
           </div>
         </div>
       </div>
 
-      <div className="ad-card">
-        <div className="ad-toolbar">
+      <div className="hgadm-card">
+        <div className="hgadm-toolbar">
           <Select
             value={reviewStatus}
             onChange={(e) => patchParams({ review_status: e.target.value, page: null })}
@@ -273,7 +273,7 @@ export function AiContentPage() {
           <ErrorState message={errorMessage(detail.error)} />
         ) : detail.data ? (
           <div style={{ fontSize: 13.5 }}>
-            <div className="ad-row ad-row--wrap" style={{ marginBottom: 12 }}>
+            <div className="hgadm-row hgadm-row--wrap" style={{ marginBottom: 12 }}>
               <Badge tone={statusTone(detail.data.review_status)}>
                 {detail.data.review_status}
               </Badge>
@@ -281,7 +281,7 @@ export function AiContentPage() {
                 {KIND_LABEL[detail.data.content_kind] ?? detail.data.content_kind}
               </Badge>
               <Badge tone="neutral">레벨 {detail.data.level}</Badge>
-              <span className="ad-cell-mono ad-muted">{detail.data.model}</span>
+              <span className="hgadm-cell-mono hgadm-muted">{detail.data.model}</span>
             </div>
             <Dl
               items={[
@@ -300,9 +300,9 @@ export function AiContentPage() {
                 ["검수 메모", detail.data.review_note],
               ]}
             />
-            <hr className="ad-divider" />
-            <div className="ad-field__label">생성된 페이로드</div>
-            <pre className="ad-json">{JSON.stringify(detail.data.payload, null, 2)}</pre>
+            <hr className="hgadm-divider" />
+            <div className="hgadm-field__label">생성된 페이로드</div>
+            <pre className="hgadm-json">{JSON.stringify(detail.data.payload, null, 2)}</pre>
             {canWrite && (
               <Field label="검수 메모" hint="승인/반려와 함께 저장됩니다.">
                 <Textarea

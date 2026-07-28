@@ -52,15 +52,15 @@ export function LoginPage() {
   }
 
   return (
-    <div className="ad-login">
-      <form className="ad-login__card" onSubmit={onSubmit}>
-        <div className="ad-login__mark" aria-hidden>
+    <div className="hgadm-login">
+      <form className="hgadm-login__card" onSubmit={onSubmit}>
+        <div className="hgadm-login__mark" aria-hidden>
           한
         </div>
-        <h1 className="ad-login__title">한귤 관리자</h1>
-        <p className="ad-login__sub">관리자 계정으로 로그인하세요</p>
+        <h1 className="hgadm-login__title">한귤 관리자</h1>
+        <p className="hgadm-login__sub">관리자 계정으로 로그인하세요</p>
         {notice && (
-          <p className="ad-login__notice" role="status">
+          <p className="hgadm-login__notice" role="status">
             {notice}
           </p>
         )}

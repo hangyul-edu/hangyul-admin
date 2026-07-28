@@ -29,24 +29,24 @@ export function CouponsPage() {
   const tab = params.get("tab") === "coupons" ? "coupons" : "batches";
   return (
     <div>
-      <div className="ad-page-head">
+      <div className="hgadm-page-head">
         <div>
           <h1>쿠폰 관리</h1>
-          <div className="ad-page-head__desc">
+          <div className="hgadm-page-head__desc">
             B2B/프로모션 쿠폰 배치를 생성·회수하고 개별 코드를 조회합니다. 회수는 미사용
             쿠폰만 무효화하며, 이미 활성화된 이용권은 유지됩니다.
           </div>
         </div>
       </div>
-      <div className="ad-tabs">
+      <div className="hgadm-tabs">
         <button
-          className={`ad-tab ${tab === "batches" ? "active" : ""}`}
+          className={`hgadm-tab ${tab === "batches" ? "active" : ""}`}
           onClick={() => setParams({ tab: "batches" }, { replace: true })}
         >
           배치
         </button>
         <button
-          className={`ad-tab ${tab === "coupons" ? "active" : ""}`}
+          className={`hgadm-tab ${tab === "coupons" ? "active" : ""}`}
           onClick={() => setParams({ tab: "coupons" }, { replace: true })}
         >
           쿠폰 검색
@@ -111,8 +111,8 @@ function BatchesTab() {
       header: "배치",
       render: (b) => (
         <div>
-          <div className="ad-cell-main">{b.name}</div>
-          <div className="ad-cell-sub ad-cell-mono">{b.batch_id}</div>
+          <div className="hgadm-cell-main">{b.name}</div>
+          <div className="hgadm-cell-sub hgadm-cell-mono">{b.batch_id}</div>
         </div>
       ),
     },
@@ -150,12 +150,12 @@ function BatchesTab() {
   ];
 
   return (
-    <div className="ad-card">
-      <div className="ad-toolbar">
-        <span className="ad-muted" style={{ fontSize: 13 }}>
+    <div className="hgadm-card">
+      <div className="hgadm-toolbar">
+        <span className="hgadm-muted" style={{ fontSize: 13 }}>
           쿠폰 배치 목록
         </span>
-        <span className="ad-toolbar__spacer" />
+        <span className="hgadm-toolbar__spacer" />
         {canWrite && (
           <Button variant="primary" onClick={() => setCreateOpen(true)}>
             + 배치 생성
@@ -206,7 +206,7 @@ function BatchesTab() {
         <Field label="캠페인 이름" required hint="예: 대학 제휴 2026-2학기">
           <Input value={name} onChange={(e) => setName(e.target.value)} maxLength={120} />
         </Field>
-        <div className="ad-form-grid">
+        <div className="hgadm-form-grid">
           <Field label="이용 기간 (일)" required>
             <Input
               type="number"
@@ -251,8 +251,8 @@ function BatchesTab() {
               코드 <strong>{created.generated.toLocaleString()}개</strong>가
               생성되었습니다. 샘플:
             </p>
-            <pre className="ad-json">{created.sample.join("\n")}</pre>
-            <p className="ad-muted" style={{ fontSize: 12.5 }}>
+            <pre className="hgadm-json">{created.sample.join("\n")}</pre>
+            <p className="hgadm-muted" style={{ fontSize: 12.5 }}>
               전체 코드는 '쿠폰 검색' 탭에서 배치로 필터해 확인하거나 내보낼 수 있습니다.
             </p>
           </div>
@@ -315,7 +315,7 @@ function CouponSearchTab() {
     {
       key: "code",
       header: "코드",
-      render: (c) => <span className="ad-cell-mono">{c.code}</span>,
+      render: (c) => <span className="hgadm-cell-mono">{c.code}</span>,
     },
     {
       key: "batch",
@@ -334,8 +334,8 @@ function CouponSearchTab() {
       render: (c) =>
         c.redeemed_by_user_id ? (
           <div>
-            <div className="ad-cell-mono">{c.redeemed_by_user_id}</div>
-            <div className="ad-cell-sub">{formatDateTime(c.redeemed_at)}</div>
+            <div className="hgadm-cell-mono">{c.redeemed_by_user_id}</div>
+            <div className="hgadm-cell-sub">{formatDateTime(c.redeemed_at)}</div>
           </div>
         ) : (
           "—"
@@ -361,8 +361,8 @@ function CouponSearchTab() {
   ];
 
   return (
-    <div className="ad-card">
-      <div className="ad-toolbar">
+    <div className="hgadm-card">
+      <div className="hgadm-toolbar">
         <SearchBox
           value={code}
           placeholder="코드 앞자리 검색 (예: ABCD)"

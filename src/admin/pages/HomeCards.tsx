@@ -133,16 +133,16 @@ export function BannersPage() {
 
   return (
     <div>
-      <div className="ad-page-head">
+      <div className="hgadm-page-head">
         <div>
           <h1>배너 관리</h1>
-          <div className="ad-page-head__desc">
+          <div className="hgadm-page-head__desc">
             강의 홈 상단 캐러셀 배너입니다. 순서는 위/아래 버튼으로 조정하고, 노출
             기간을 지정하면 그 기간에만 표시됩니다.
           </div>
         </div>
         {canWrite && (
-          <div className="ad-page-head__actions">
+          <div className="hgadm-page-head__actions">
             <Button
               variant="primary"
               onClick={() => {
@@ -161,11 +161,11 @@ export function BannersPage() {
       ) : query.isError ? (
         <ErrorState message={errorMessage(query.error)} onRetry={() => void query.refetch()} />
       ) : query.data.items.length === 0 ? (
-        <div className="ad-card">
-          <div className="ad-state">
-            <div className="ad-state__icon">🖼️</div>
-            <div className="ad-state__title">등록된 배너가 없습니다</div>
-            <div className="ad-state__desc">
+        <div className="hgadm-card">
+          <div className="hgadm-state">
+            <div className="hgadm-state__icon">🖼️</div>
+            <div className="hgadm-state__title">등록된 배너가 없습니다</div>
+            <div className="hgadm-state__desc">
               배너를 추가하면 앱의 강의 홈 상단에 노출됩니다.
             </div>
           </div>
@@ -175,37 +175,37 @@ export function BannersPage() {
           {query.data.items.map((banner, index) => (
             <div
               key={banner.banner_id}
-              className="ad-card"
+              className="hgadm-card"
               style={{ display: "flex", gap: 16, padding: 14, alignItems: "center" }}
             >
               <img
                 src={banner.image_url}
                 alt={banner.alt_text}
-                className="ad-thumb"
+                className="hgadm-thumb"
                 style={{ width: 160, height: 80 }}
               />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="ad-row ad-row--wrap">
+                <div className="hgadm-row hgadm-row--wrap">
                   <Badge tone={banner.is_active ? "success" : "neutral"} dot>
                     {banner.is_active ? "노출 중" : "비활성"}
                   </Badge>
                   {banner.action_url && (
-                    <span className="ad-cell-mono" style={{ fontSize: 12 }}>
+                    <span className="hgadm-cell-mono" style={{ fontSize: 12 }}>
                       → {banner.action_url}
                     </span>
                   )}
                 </div>
-                <div className="ad-cell-sub" style={{ marginTop: 4 }}>
+                <div className="hgadm-cell-sub" style={{ marginTop: 4 }}>
                   {banner.alt_text || "(대체 텍스트 없음)"}
                 </div>
-                <div className="ad-cell-sub">
+                <div className="hgadm-cell-sub">
                   {banner.starts_at || banner.ends_at
                     ? `${formatDateTime(banner.starts_at)} ~ ${formatDateTime(banner.ends_at)}`
                     : "상시 노출"}
                 </div>
               </div>
               {canWrite && (
-                <div className="ad-row">
+                <div className="hgadm-row">
                   <Button
                     size="sm"
                     variant="ghost"
@@ -288,12 +288,12 @@ export function BannersPage() {
                   <img
                     src={draft.image_url}
                     alt="배너 미리보기"
-                    className="ad-thumb ad-thumb--lg"
+                    className="hgadm-thumb hgadm-thumb--lg"
                     style={{ marginBottom: 8 }}
                   />
                 ) : null}
                 <div
-                  className="ad-dropzone"
+                  className="hgadm-dropzone"
                   onClick={() => fileRef.current?.click()}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={(e) => {
@@ -331,7 +331,7 @@ export function BannersPage() {
                 onChange={(e) => setDraft({ ...draft, action_url: e.target.value })}
               />
             </Field>
-            <div className="ad-form-grid">
+            <div className="hgadm-form-grid">
               <Field label="노출 시작" hint="비우면 즉시">
                 <Input
                   type="datetime-local"
@@ -348,7 +348,7 @@ export function BannersPage() {
               </Field>
             </div>
             <Field label="활성화">
-              <div className="ad-row">
+              <div className="hgadm-row">
                 <Switch
                   checked={draft.is_active}
                   onChange={(next) => setDraft({ ...draft, is_active: next })}

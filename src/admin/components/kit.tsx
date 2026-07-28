@@ -25,10 +25,10 @@ export function Button({
   return (
     <button
       className={[
-        "ad-btn",
-        `ad-btn--${variant}`,
-        size !== "md" ? `ad-btn--${size}` : "",
-        block ? "ad-btn--block" : "",
+        "hgadm-btn",
+        `hgadm-btn--${variant}`,
+        size !== "md" ? `hgadm-btn--${size}` : "",
+        block ? "hgadm-btn--block" : "",
         className,
       ]
         .filter(Boolean)
@@ -36,7 +36,7 @@ export function Button({
       disabled={disabled || loading}
       {...rest}
     >
-      {loading && <span className="ad-btn__spinner" aria-hidden />}
+      {loading && <span className="hgadm-btn__spinner" aria-hidden />}
       {children}
     </button>
   );
@@ -56,8 +56,8 @@ export function Badge({
   children: ReactNode;
 }) {
   return (
-    <span className={`ad-badge ad-badge--${tone}`}>
-      {dot && <span className="ad-badge__dot" aria-hidden />}
+    <span className={`hgadm-badge hgadm-badge--${tone}`}>
+      {dot && <span className="hgadm-badge__dot" aria-hidden />}
       {children}
     </span>
   );
@@ -116,31 +116,31 @@ export function Field({
   children: ReactNode;
 }) {
   return (
-    <label className="ad-field">
-      <span className="ad-field__label">
+    <label className="hgadm-field">
+      <span className="hgadm-field__label">
         {label}
         {required && <span className="req">*</span>}
       </span>
       {children}
       {error ? (
-        <span className="ad-field__error">{error}</span>
+        <span className="hgadm-field__error">{error}</span>
       ) : hint ? (
-        <span className="ad-field__hint">{hint}</span>
+        <span className="hgadm-field__hint">{hint}</span>
       ) : null}
     </label>
   );
 }
 
 export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...props} className={`ad-input ${props.className ?? ""}`} />;
+  return <input {...props} className={`hgadm-input ${props.className ?? ""}`} />;
 }
 
 export function Select(props: SelectHTMLAttributes<HTMLSelectElement>) {
-  return <select {...props} className={`ad-select ${props.className ?? ""}`} />;
+  return <select {...props} className={`hgadm-select ${props.className ?? ""}`} />;
 }
 
 export function Textarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea {...props} className={`ad-textarea ${props.className ?? ""}`} />;
+  return <textarea {...props} className={`hgadm-textarea ${props.className ?? ""}`} />;
 }
 
 export function Switch({
@@ -155,7 +155,7 @@ export function Switch({
   label?: string;
 }) {
   return (
-    <span className="ad-switch" title={label}>
+    <span className="hgadm-switch" title={label}>
       <input
         type="checkbox"
         checked={checked}
@@ -163,7 +163,7 @@ export function Switch({
         aria-label={label}
         onChange={(e) => onChange(e.target.checked)}
       />
-      <span className="ad-switch__track" aria-hidden />
+      <span className="hgadm-switch__track" aria-hidden />
     </span>
   );
 }
@@ -171,14 +171,14 @@ export function Switch({
 /* ---------- States ---------- */
 
 export function Spinner() {
-  return <span className="ad-spinner" role="status" aria-label="로딩 중" />;
+  return <span className="hgadm-spinner" role="status" aria-label="로딩 중" />;
 }
 
 export function LoadingState({ label = "불러오는 중…" }: { label?: string }) {
   return (
-    <div className="ad-state">
+    <div className="hgadm-state">
       <Spinner />
-      <div className="ad-state__desc">{label}</div>
+      <div className="hgadm-state__desc">{label}</div>
     </div>
   );
 }
@@ -195,12 +195,12 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="ad-state">
-      <div className="ad-state__icon" aria-hidden>
+    <div className="hgadm-state">
+      <div className="hgadm-state__icon" aria-hidden>
         {icon}
       </div>
-      <div className="ad-state__title">{title}</div>
-      {desc && <div className="ad-state__desc">{desc}</div>}
+      <div className="hgadm-state__title">{title}</div>
+      {desc && <div className="hgadm-state__desc">{desc}</div>}
       {action}
     </div>
   );
@@ -214,12 +214,12 @@ export function ErrorState({
   onRetry?: () => void;
 }) {
   return (
-    <div className="ad-state">
-      <div className="ad-state__icon" aria-hidden>
+    <div className="hgadm-state">
+      <div className="hgadm-state__icon" aria-hidden>
         ⚠️
       </div>
-      <div className="ad-state__title">문제가 발생했어요</div>
-      <div className="ad-state__desc">{message}</div>
+      <div className="hgadm-state__title">문제가 발생했어요</div>
+      <div className="hgadm-state__desc">{message}</div>
       {onRetry && (
         <Button variant="secondary" size="sm" onClick={onRetry}>
           다시 시도
@@ -262,25 +262,25 @@ export function Modal({
   if (!open) return null;
   return (
     <div
-      className="ad-modal-overlay"
+      className="hgadm-modal-overlay"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
-        className={`ad-modal ${size ? `ad-modal--${size}` : ""}`}
+        className={`hgadm-modal ${size ? `hgadm-modal--${size}` : ""}`}
         role="dialog"
         aria-modal="true"
         aria-label={title}
       >
-        <div className="ad-modal__head">
-          <div className="ad-modal__title">{title}</div>
-          <button className="ad-modal__close" onClick={onClose} aria-label="닫기">
+        <div className="hgadm-modal__head">
+          <div className="hgadm-modal__title">{title}</div>
+          <button className="hgadm-modal__close" onClick={onClose} aria-label="닫기">
             ✕
           </button>
         </div>
-        <div className="ad-modal__body">{children}</div>
-        {footer && <div className="ad-modal__foot">{footer}</div>}
+        <div className="hgadm-modal__body">{children}</div>
+        {footer && <div className="hgadm-modal__foot">{footer}</div>}
       </div>
     </div>
   );
@@ -363,8 +363,8 @@ export function DataTable<T>({
   empty?: ReactNode;
 }) {
   return (
-    <div className="ad-table-wrap">
-      <table className="ad-table">
+    <div className="hgadm-table-wrap">
+      <table className="hgadm-table">
         <thead>
           <tr>
             {columns.map((col) => {
@@ -404,7 +404,7 @@ export function DataTable<T>({
           {rows.length === 0 ? (
             <tr>
               <td colSpan={columns.length}>
-                <div className="ad-table__empty">
+                <div className="hgadm-table__empty">
                   {empty ?? "표시할 항목이 없습니다."}
                 </div>
               </td>
@@ -447,11 +447,11 @@ export function Pagination({
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const to = Math.min(total, page * pageSize);
   return (
-    <div className="ad-pagination">
+    <div className="hgadm-pagination">
       <span>
         {total.toLocaleString()}건 중 {from.toLocaleString()}–{to.toLocaleString()}
       </span>
-      <div className="ad-pagination__pages">
+      <div className="hgadm-pagination__pages">
         <Button size="sm" variant="ghost" disabled={page <= 1} onClick={() => onPageChange(1)}>
           «
         </Button>
@@ -502,8 +502,8 @@ export function SearchBox({
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => setDraft(value), [value]);
   return (
-    <span className="ad-search">
-      <span className="ad-search__icon" aria-hidden>
+    <span className="hgadm-search">
+      <span className="hgadm-search__icon" aria-hidden>
         🔍
       </span>
       <input
@@ -540,11 +540,11 @@ export function Stat({
   subTone?: "up" | "down";
 }) {
   return (
-    <div className="ad-stat">
-      <div className="ad-stat__label">{label}</div>
-      <div className="ad-stat__value">{value}</div>
+    <div className="hgadm-stat">
+      <div className="hgadm-stat__label">{label}</div>
+      <div className="hgadm-stat__value">{value}</div>
       {sub && (
-        <div className={`ad-stat__sub ${subTone ? `ad-stat__sub--${subTone}` : ""}`}>
+        <div className={`hgadm-stat__sub ${subTone ? `hgadm-stat__sub--${subTone}` : ""}`}>
           {sub}
         </div>
       )}
@@ -556,7 +556,7 @@ export function Stat({
 
 export function Dl({ items }: { items: [ReactNode, ReactNode][] }) {
   return (
-    <dl className="ad-dl">
+    <dl className="hgadm-dl">
       {items.map(([label, value], i) => (
         <FragmentRow key={i} label={label} value={value} />
       ))}

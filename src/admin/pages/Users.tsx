@@ -106,15 +106,15 @@ export function UsersPage() {
       sortKey: "email",
       render: (u) => (
         <div>
-          <div className="ad-cell-main">{u.nickname ?? "(닉네임 없음)"}</div>
-          <div className="ad-cell-sub">{u.email}</div>
+          <div className="hgadm-cell-main">{u.nickname ?? "(닉네임 없음)"}</div>
+          <div className="hgadm-cell-sub">{u.email}</div>
         </div>
       ),
     },
     {
       key: "phone",
       header: "전화번호",
-      render: (u) => <span className="ad-cell-mono">{u.phone_masked ?? "—"}</span>,
+      render: (u) => <span className="hgadm-cell-mono">{u.phone_masked ?? "—"}</span>,
     },
     {
       key: "role",
@@ -139,10 +139,10 @@ export function UsersPage() {
             <Badge tone={statusTone(u.subscription_status)}>
               {u.subscription_status}
             </Badge>
-            <div className="ad-cell-sub">{u.plan_id}</div>
+            <div className="hgadm-cell-sub">{u.plan_id}</div>
           </div>
         ) : (
-          <span className="ad-muted">없음</span>
+          <span className="hgadm-muted">없음</span>
         ),
     },
     {
@@ -155,15 +155,15 @@ export function UsersPage() {
 
   return (
     <div>
-      <div className="ad-page-head">
+      <div className="hgadm-page-head">
         <div>
           <h1>사용자 관리</h1>
-          <div className="ad-page-head__desc">
+          <div className="hgadm-page-head__desc">
             검색·필터로 계정을 찾고, 상세 화면에서 역할·상태를 관리합니다. 전화번호 등
             민감 정보는 마스킹되어 표시됩니다.
           </div>
         </div>
-        <div className="ad-page-head__actions">
+        <div className="hgadm-page-head__actions">
           <Button onClick={() => void exportCsv()}>CSV 내보내기</Button>
           {can("users:write") && (
             <Button
@@ -177,8 +177,8 @@ export function UsersPage() {
         </div>
       </div>
 
-      <div className="ad-card">
-        <div className="ad-toolbar">
+      <div className="hgadm-card">
+        <div className="hgadm-toolbar">
           <SearchBox
             value={q}
             placeholder="이메일·닉네임·이름·ID·전화번호 검색"
@@ -265,13 +265,13 @@ export function UsersPage() {
               비밀번호는 <strong>지금 한 번만</strong> 표시됩니다. 안전한 채널로
               전달하고 이 창을 닫으세요.
             </p>
-            <dl className="ad-dl" style={{ marginTop: 10 }}>
+            <dl className="hgadm-dl" style={{ marginTop: 10 }}>
               <dt>이메일</dt>
-              <dd className="ad-cell-mono">{testerInfo.email}</dd>
+              <dd className="hgadm-cell-mono">{testerInfo.email}</dd>
               <dt>닉네임</dt>
               <dd>{testerInfo.nickname}</dd>
               <dt>비밀번호</dt>
-              <dd className="ad-cell-mono">{testerInfo.password}</dd>
+              <dd className="hgadm-cell-mono">{testerInfo.password}</dd>
             </dl>
           </div>
         )}

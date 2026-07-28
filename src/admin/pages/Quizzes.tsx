@@ -210,12 +210,12 @@ export function QuizzesPage() {
       render: (quiz) => (
         <div style={{ maxWidth: 420 }}>
           <div
-            className="ad-cell-main"
+            className="hgadm-cell-main"
             style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
           >
             {quiz.prompt}
           </div>
-          <div className="ad-cell-sub ad-cell-mono">{quiz.quiz_id}</div>
+          <div className="hgadm-cell-sub hgadm-cell-mono">{quiz.quiz_id}</div>
         </div>
       ),
     },
@@ -232,7 +232,7 @@ export function QuizzesPage() {
           <div>
             <Badge tone="info">{quiz.topik_section}</Badge>
             {quiz.topik_question_type && (
-              <div className="ad-cell-sub">{quiz.topik_question_type}</div>
+              <div className="hgadm-cell-sub">{quiz.topik_question_type}</div>
             )}
           </div>
         ) : (
@@ -253,7 +253,7 @@ export function QuizzesPage() {
       key: "actions",
       header: "",
       render: (quiz) => (
-        <div className="ad-row" onClick={(e) => e.stopPropagation()}>
+        <div className="hgadm-row" onClick={(e) => e.stopPropagation()}>
           <Button size="sm" variant="ghost" onClick={() => setViewing(quiz)}>
             보기
           </Button>
@@ -280,16 +280,16 @@ export function QuizzesPage() {
 
   return (
     <div>
-      <div className="ad-page-head">
+      <div className="hgadm-page-head">
         <div>
           <h1>문제 관리</h1>
-          <div className="ad-page-head__desc">
+          <div className="hgadm-page-head__desc">
             일일 퀴즈·TOPIK 문제 카탈로그입니다. 저장 시 형식별 도메인 검증(정답 필수,
             빈칸 구성 등)이 수행되어 잘못된 문제가 등록될 수 없습니다.
           </div>
         </div>
         {canWrite && (
-          <div className="ad-page-head__actions">
+          <div className="hgadm-page-head__actions">
             <Button
               variant="primary"
               onClick={() => {
@@ -303,8 +303,8 @@ export function QuizzesPage() {
         )}
       </div>
 
-      <div className="ad-card">
-        <div className="ad-toolbar">
+      <div className="hgadm-card">
+        <div className="hgadm-toolbar">
           <Select
             value={format}
             onChange={(e) => patchParams({ answer_format: e.target.value, page: null })}
@@ -374,7 +374,7 @@ export function QuizzesPage() {
       >
         {viewing && (
           <div style={{ fontSize: 14 }}>
-            <div className="ad-row ad-row--wrap" style={{ marginBottom: 10 }}>
+            <div className="hgadm-row hgadm-row--wrap" style={{ marginBottom: 10 }}>
               <Badge tone="info">{FORMAT_LABEL[viewing.answer_format]}</Badge>
               {viewing.topik_section && <Badge tone="brand">{viewing.topik_section}</Badge>}
               <Badge tone="neutral">레벨 {viewing.level}</Badge>
@@ -383,7 +383,7 @@ export function QuizzesPage() {
             <p style={{ fontWeight: 700, whiteSpace: "pre-wrap" }}>{viewing.prompt}</p>
             {viewing.content_html && (
               <div
-                className="ad-json"
+                className="hgadm-json"
                 style={{ fontFamily: "inherit" }}
                 dangerouslySetInnerHTML={{ __html: viewing.content_html }}
               />
@@ -411,8 +411,8 @@ export function QuizzesPage() {
             )}
             {viewing.explanation && (
               <>
-                <hr className="ad-divider" />
-                <div className="ad-field__label">해설</div>
+                <hr className="hgadm-divider" />
+                <div className="hgadm-field__label">해설</div>
                 <p style={{ whiteSpace: "pre-wrap" }}>{viewing.explanation}</p>
               </>
             )}
@@ -444,7 +444,7 @@ export function QuizzesPage() {
       >
         {draft && (
           <div>
-            <div className="ad-form-grid">
+            <div className="hgadm-form-grid">
               <Field label="답안 형식" required>
                 <Select
                   value={draft.answer_format}
@@ -541,11 +541,11 @@ export function QuizzesPage() {
 
             {draft.answer_format === "single_choice" && (
               <div>
-                <div className="ad-field__label" style={{ marginBottom: 6 }}>
+                <div className="hgadm-field__label" style={{ marginBottom: 6 }}>
                   선택지 (정답 라디오 선택)
                 </div>
                 {draft.choices.map((choice, i) => (
-                  <div className="ad-row" key={i} style={{ marginBottom: 8 }}>
+                  <div className="hgadm-row" key={i} style={{ marginBottom: 8 }}>
                     <input
                       type="radio"
                       name="correct"
@@ -569,11 +569,11 @@ export function QuizzesPage() {
 
             {draft.answer_format === "short_answer" && (
               <div>
-                <div className="ad-field__label" style={{ marginBottom: 6 }}>
+                <div className="hgadm-field__label" style={{ marginBottom: 6 }}>
                   빈칸 (라벨 + 정답 · 정답을 비우면 기준 채점)
                 </div>
                 {draft.blanks.map((blank, i) => (
-                  <div className="ad-row" key={i} style={{ marginBottom: 8 }}>
+                  <div className="hgadm-row" key={i} style={{ marginBottom: 8 }}>
                     <Input
                       style={{ width: 90 }}
                       placeholder="라벨 (ㄱ)"
@@ -620,7 +620,7 @@ export function QuizzesPage() {
 
             {(draft.answer_format === "free_response" ||
               draft.scoring_criteria.trim() !== "") && (
-              <div className="ad-form-grid" style={{ marginTop: 10 }}>
+              <div className="hgadm-form-grid" style={{ marginTop: 10 }}>
                 <Field label="최대 글자 수" required={draft.answer_format === "free_response"}>
                   <Input
                     type="number"
@@ -653,7 +653,7 @@ export function QuizzesPage() {
               </div>
             )}
 
-            <div className="ad-form-grid" style={{ marginTop: 10 }}>
+            <div className="hgadm-form-grid" style={{ marginTop: 10 }}>
               <Field label="힌트">
                 <Input
                   value={draft.hint}

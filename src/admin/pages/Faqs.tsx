@@ -117,8 +117,8 @@ export function FaqsPage() {
       header: "질문",
       render: (f) => (
         <div>
-          <div className="ad-cell-main">{f.question}</div>
-          <div className="ad-cell-sub" style={{ maxWidth: 480, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <div className="hgadm-cell-main">{f.question}</div>
+          <div className="hgadm-cell-sub" style={{ maxWidth: 480, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {f.answer}
           </div>
         </div>
@@ -139,7 +139,7 @@ export function FaqsPage() {
       header: "",
       render: (f) =>
         canWrite ? (
-          <div className="ad-row" onClick={(e) => e.stopPropagation()}>
+          <div className="hgadm-row" onClick={(e) => e.stopPropagation()}>
             <Switch
               checked={f.published}
               onChange={() => togglePublish.mutate(f)}
@@ -170,15 +170,15 @@ export function FaqsPage() {
 
   return (
     <div>
-      <div className="ad-page-head">
+      <div className="hgadm-page-head">
         <div>
           <h1>FAQ 관리</h1>
-          <div className="ad-page-head__desc">
+          <div className="hgadm-page-head__desc">
             자주 묻는 질문을 카테고리별로 관리합니다. 초안은 앱에 노출되지 않습니다.
           </div>
         </div>
         {canWrite && (
-          <div className="ad-page-head__actions">
+          <div className="hgadm-page-head__actions">
             <Button
               variant="primary"
               onClick={() => {
@@ -192,8 +192,8 @@ export function FaqsPage() {
         )}
       </div>
 
-      <div className="ad-card">
-        <div className="ad-toolbar">
+      <div className="hgadm-card">
+        <div className="hgadm-toolbar">
           <Select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
@@ -206,7 +206,7 @@ export function FaqsPage() {
               </option>
             ))}
           </Select>
-          <span className="ad-muted" style={{ fontSize: 13 }}>
+          <span className="hgadm-muted" style={{ fontSize: 13 }}>
             {rows.length}개 표시 중
           </span>
         </div>
@@ -249,7 +249,7 @@ export function FaqsPage() {
       >
         {draft && (
           <div>
-            <div className="ad-form-grid">
+            <div className="hgadm-form-grid">
               <Field label="카테고리" required>
                 <Select
                   value={draft.category}
@@ -284,7 +284,7 @@ export function FaqsPage() {
                 onChange={(e) => setDraft({ ...draft, answer: e.target.value })}
               />
             </Field>
-            <label className="ad-checkbox">
+            <label className="hgadm-checkbox">
               <input
                 type="checkbox"
                 checked={draft.published}

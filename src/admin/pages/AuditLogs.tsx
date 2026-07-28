@@ -59,8 +59,8 @@ export function AuditLogsPage() {
       header: "수행자",
       render: (e) => (
         <div>
-          <div className="ad-cell-main">{e.actor_email ?? e.actor_id ?? "—"}</div>
-          <div className="ad-cell-sub">
+          <div className="hgadm-cell-main">{e.actor_email ?? e.actor_id ?? "—"}</div>
+          <div className="hgadm-cell-sub">
             <Badge tone={e.actor_type === "admin" ? "brand" : "neutral"}>
               {e.actor_type}
             </Badge>
@@ -71,7 +71,7 @@ export function AuditLogsPage() {
     {
       key: "action",
       header: "행위",
-      render: (e) => <span className="ad-cell-mono">{e.action}</span>,
+      render: (e) => <span className="hgadm-cell-mono">{e.action}</span>,
     },
     {
       key: "object",
@@ -79,31 +79,31 @@ export function AuditLogsPage() {
       render: (e) => (
         <div>
           <div>{e.object_type}</div>
-          <div className="ad-cell-sub ad-cell-mono">{e.object_id}</div>
+          <div className="hgadm-cell-sub hgadm-cell-mono">{e.object_id}</div>
         </div>
       ),
     },
     {
       key: "ip",
       header: "IP",
-      render: (e) => <span className="ad-cell-mono">{e.ip_address ?? "—"}</span>,
+      render: (e) => <span className="hgadm-cell-mono">{e.ip_address ?? "—"}</span>,
     },
   ];
 
   return (
     <div>
-      <div className="ad-page-head">
+      <div className="hgadm-page-head">
         <div>
           <h1>감사 로그</h1>
-          <div className="ad-page-head__desc">
+          <div className="hgadm-page-head__desc">
             누가, 언제, 무엇을 변경했는지의 전체 기록입니다. 행을 클릭하면 요청 본문
             (민감 필드 마스킹)과 변경 전후 상태를 볼 수 있습니다.
           </div>
         </div>
       </div>
 
-      <div className="ad-card">
-        <div className="ad-toolbar">
+      <div className="hgadm-card">
+        <div className="hgadm-toolbar">
           <SearchBox
             value={action}
             placeholder="행위 검색 (예: PATCH /admin/users)"
@@ -168,7 +168,7 @@ export function AuditLogsPage() {
       >
         {detail && (
           <div style={{ fontSize: 13.5 }}>
-            <dl className="ad-dl">
+            <dl className="hgadm-dl">
               <dt>시각</dt>
               <dd>{formatDateTime(detail.occurred_at)}</dd>
               <dt>수행자</dt>
@@ -176,30 +176,30 @@ export function AuditLogsPage() {
                 {detail.actor_email ?? detail.actor_id ?? "—"} ({detail.actor_type})
               </dd>
               <dt>행위</dt>
-              <dd className="ad-cell-mono">{detail.action}</dd>
+              <dd className="hgadm-cell-mono">{detail.action}</dd>
               <dt>대상</dt>
-              <dd className="ad-cell-mono">
+              <dd className="hgadm-cell-mono">
                 {detail.object_type} / {detail.object_id}
               </dd>
               <dt>대상 사용자</dt>
-              <dd className="ad-cell-mono">{detail.user_id ?? "—"}</dd>
+              <dd className="hgadm-cell-mono">{detail.user_id ?? "—"}</dd>
               <dt>요청 ID</dt>
-              <dd className="ad-cell-mono">{detail.request_id ?? "—"}</dd>
+              <dd className="hgadm-cell-mono">{detail.request_id ?? "—"}</dd>
               <dt>IP / UA</dt>
-              <dd className="ad-cell-mono">{detail.ip_address ?? "—"}</dd>
+              <dd className="hgadm-cell-mono">{detail.ip_address ?? "—"}</dd>
             </dl>
             {detail.before && (
               <>
-                <hr className="ad-divider" />
-                <div className="ad-field__label">변경 전</div>
-                <pre className="ad-json">{JSON.stringify(detail.before, null, 2)}</pre>
+                <hr className="hgadm-divider" />
+                <div className="hgadm-field__label">변경 전</div>
+                <pre className="hgadm-json">{JSON.stringify(detail.before, null, 2)}</pre>
               </>
             )}
             {detail.after && (
               <>
-                <hr className="ad-divider" />
-                <div className="ad-field__label">변경 후 / 요청 본문</div>
-                <pre className="ad-json">{JSON.stringify(detail.after, null, 2)}</pre>
+                <hr className="hgadm-divider" />
+                <div className="hgadm-field__label">변경 후 / 요청 본문</div>
+                <pre className="hgadm-json">{JSON.stringify(detail.after, null, 2)}</pre>
               </>
             )}
           </div>

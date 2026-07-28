@@ -119,6 +119,6 @@ describe("helpers", () => {
 
   it("renders badges with the tone class", () => {
     render(<Badge tone="danger">정지</Badge>);
-    expect(screen.getByText("정지").className).toContain("ad-badge--danger");
+    expect(screen.getByText("정지").className).toContain("hgadm-badge--danger");
   });
 });

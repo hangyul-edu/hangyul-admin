@@ -119,9 +119,9 @@ export function CoursesPage() {
       width: 90,
       render: (c) =>
         c.cover_image_url ? (
-          <img src={c.cover_image_url} alt="" className="ad-thumb" />
+          <img src={c.cover_image_url} alt="" className="hgadm-thumb" />
         ) : (
-          <span className="ad-muted">—</span>
+          <span className="hgadm-muted">—</span>
         ),
     },
     {
@@ -129,8 +129,8 @@ export function CoursesPage() {
       header: "코스",
       render: (c) => (
         <div>
-          <div className="ad-cell-main">{c.title}</div>
-          <div className="ad-cell-sub ad-cell-mono">{c.course_id}</div>
+          <div className="hgadm-cell-main">{c.title}</div>
+          <div className="hgadm-cell-sub hgadm-cell-mono">{c.course_id}</div>
         </div>
       ),
     },
@@ -156,7 +156,7 @@ export function CoursesPage() {
       header: "",
       render: (c) =>
         canWrite ? (
-          <div className="ad-row" onClick={(e) => e.stopPropagation()}>
+          <div className="hgadm-row" onClick={(e) => e.stopPropagation()}>
             <Button
               size="sm"
               onClick={() => {
@@ -183,16 +183,16 @@ export function CoursesPage() {
 
   return (
     <div>
-      <div className="ad-page-head">
+      <div className="hgadm-page-head">
         <div>
           <h1>코스 관리</h1>
-          <div className="ad-page-head__desc">
+          <div className="hgadm-page-head__desc">
             트랙별 코스(강의 묶음)를 관리합니다. 강의가 남아 있는 코스는 삭제할 수
             없습니다.
           </div>
         </div>
         {canWrite && (
-          <div className="ad-page-head__actions">
+          <div className="hgadm-page-head__actions">
             <Button
               variant="primary"
               onClick={() => {
@@ -206,8 +206,8 @@ export function CoursesPage() {
         )}
       </div>
 
-      <div className="ad-card">
-        <div className="ad-toolbar">
+      <div className="hgadm-card">
+        <div className="hgadm-toolbar">
           <Select value={track} onChange={(e) => setTrack(e.target.value)} style={{ width: 150 }}>
             <option value="">트랙: 전체</option>
             {TRACKS.map(([value, label]) => (
@@ -254,7 +254,7 @@ export function CoursesPage() {
       >
         {draft && (
           <div>
-            <div className="ad-form-grid">
+            <div className="hgadm-form-grid">
               <Field label="트랙" required hint={editingId ? "트랙은 변경할 수 없습니다." : undefined}>
                 <Select
                   value={draft.track_id}
@@ -306,11 +306,11 @@ export function CoursesPage() {
                   <img
                     src={draft.cover_image_url}
                     alt="커버 미리보기"
-                    className="ad-thumb"
+                    className="hgadm-thumb"
                     style={{ width: 140, height: 84, marginBottom: 8 }}
                   />
                 )}
-                <div className="ad-dropzone" onClick={() => fileRef.current?.click()}>
+                <div className="hgadm-dropzone" onClick={() => fileRef.current?.click()}>
                   {uploading ? "업로드 중…" : "클릭해서 이미지 업로드"}
                   <input
                     ref={fileRef}

@@ -98,18 +98,18 @@ export function AdminLayout() {
     "대시보드";
 
   return (
-    <div className="ad-frame">
-      <aside className="ad-sidebar">
-        <div className="ad-sidebar__brand">
-          <span className="ad-sidebar__brand-mark" aria-hidden>
+    <div className="hgadm-frame">
+      <aside className="hgadm-sidebar">
+        <div className="hgadm-sidebar__brand">
+          <span className="hgadm-sidebar__brand-mark" aria-hidden>
             한
           </span>
           <span>
             한귤 관리자
-            <span className="ad-sidebar__brand-sub">Hangyul Admin</span>
+            <span className="hgadm-sidebar__brand-sub">Hangyul Admin</span>
           </span>
         </div>
-        <nav className="ad-nav" aria-label="관리자 메뉴">
+        <nav className="hgadm-nav" aria-label="관리자 메뉴">
           {NAV.map((group) => {
             const visible = group.items.filter((item) =>
               item.scopes.some((scope) => can(scope)),
@@ -117,20 +117,20 @@ export function AdminLayout() {
             if (visible.length === 0) return null;
             return (
               <div key={group.label}>
-                <div className="ad-nav__group">{group.label}</div>
+                <div className="hgadm-nav__group">{group.label}</div>
                 {visible.map((item) => (
                   <NavLink
                     key={item.to}
                     to={item.to}
                     end={item.to === "/"}
                     className={({ isActive }) =>
-                      `ad-nav__link ${isActive ? "active" : ""}`
+                      `hgadm-nav__link ${isActive ? "active" : ""}`
                     }
                   >
-                    <span className="ad-nav__icon" aria-hidden>
+                    <span className="hgadm-nav__icon" aria-hidden>
                       {item.icon}
                     </span>
-                    <span className="ad-nav__label">{item.label}</span>
+                    <span className="hgadm-nav__label">{item.label}</span>
                   </NavLink>
                 ))}
               </div>
@@ -138,15 +138,15 @@ export function AdminLayout() {
           })}
         </nav>
       </aside>
-      <div className="ad-main">
-        <header className="ad-topbar">
-          <div className="ad-topbar__title">{title}</div>
-          <div className="ad-topbar__right">
-            <div className="ad-topbar__who">
-              <div className="ad-topbar__who-name">
+      <div className="hgadm-main">
+        <header className="hgadm-topbar">
+          <div className="hgadm-topbar__title">{title}</div>
+          <div className="hgadm-topbar__right">
+            <div className="hgadm-topbar__who">
+              <div className="hgadm-topbar__who-name">
                 {me?.nickname || me?.name || me?.email}
               </div>
-              <div className="ad-topbar__who-role">
+              <div className="hgadm-topbar__who-role">
                 {TIER_LABELS[me?.admin_role ?? ""] ?? me?.admin_role}
               </div>
             </div>
@@ -155,7 +155,7 @@ export function AdminLayout() {
             </Button>
           </div>
         </header>
-        <main className="ad-content">
+        <main className="hgadm-content">
           <Outlet />
         </main>
       </div>

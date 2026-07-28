@@ -135,8 +135,8 @@ export function PlansPage() {
       header: "요금제",
       render: (p) => (
         <div>
-          <div className="ad-cell-main">{p.name}</div>
-          <div className="ad-cell-sub ad-cell-mono">{p.plan_id}</div>
+          <div className="hgadm-cell-main">{p.name}</div>
+          <div className="hgadm-cell-sub hgadm-cell-mono">{p.plan_id}</div>
         </div>
       ),
     },
@@ -146,12 +146,12 @@ export function PlansPage() {
       numeric: true,
       render: (p) => (
         <div>
-          <div className="ad-cell-main">
+          <div className="hgadm-cell-main">
             {formatMoney(p.promo_price_cents ?? p.price_cents, p.currency)}
-            <span className="ad-muted"> / {p.interval === "year" ? "년" : "월"}</span>
+            <span className="hgadm-muted"> / {p.interval === "year" ? "년" : "월"}</span>
           </div>
           {p.promo_price_cents !== null && (
-            <div className="ad-cell-sub" style={{ textDecoration: "line-through" }}>
+            <div className="hgadm-cell-sub" style={{ textDecoration: "line-through" }}>
               {formatMoney(p.price_cents, p.currency)}
             </div>
           )}
@@ -183,7 +183,7 @@ export function PlansPage() {
       header: "",
       render: (p) =>
         canWrite ? (
-          <div className="ad-row" onClick={(e) => e.stopPropagation()}>
+          <div className="hgadm-row" onClick={(e) => e.stopPropagation()}>
             <Button size="sm" onClick={() => edit(p)}>
               수정
             </Button>
@@ -199,16 +199,16 @@ export function PlansPage() {
 
   return (
     <div>
-      <div className="ad-page-head">
+      <div className="hgadm-page-head">
         <div>
           <h1>요금제 관리</h1>
-          <div className="ad-page-head__desc">
+          <div className="hgadm-page-head__desc">
             구독 카탈로그를 관리합니다. 보관된 요금제는 신규 구매에서 숨겨지지만 기존
             구독자는 유지됩니다. 통화·주기는 생성 후 변경할 수 없습니다.
           </div>
         </div>
         {canWrite && (
-          <div className="ad-page-head__actions">
+          <div className="hgadm-page-head__actions">
             <Button
               variant="primary"
               onClick={() => {
@@ -222,7 +222,7 @@ export function PlansPage() {
         )}
       </div>
 
-      <div className="ad-card">
+      <div className="hgadm-card">
         {query.isPending ? (
           <LoadingState />
         ) : query.isError ? (
@@ -262,7 +262,7 @@ export function PlansPage() {
         }
       >
         {draft && (
-          <div className="ad-form-grid">
+          <div className="hgadm-form-grid">
             {!editingId && (
               <Field label="요금제 ID" required hint="영문/숫자/언더스코어, 3자 이상. 생성 후 변경 불가.">
                 <Input
@@ -344,7 +344,7 @@ export function PlansPage() {
               />
             </Field>
             <Field label="공개 여부">
-              <div className="ad-row">
+              <div className="hgadm-row">
                 <Switch
                   checked={draft.is_public}
                   onChange={(next) => setDraft({ ...draft, is_public: next })}

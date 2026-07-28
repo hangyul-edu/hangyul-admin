@@ -55,12 +55,12 @@ export function DashboardPage() {
   return (
     <div>
       {data.alerts.length > 0 && (
-        <div className="ad-section" style={{ display: "grid", gap: 8 }}>
+        <div className="hgadm-section" style={{ display: "grid", gap: 8 }}>
           {data.alerts.map((alert) => (
             <Link
               key={alert.code}
               to={ALERT_ROUTES[alert.code] ?? "/"}
-              className="ad-card"
+              className="hgadm-card"
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -93,7 +93,7 @@ export function DashboardPage() {
         </div>
       )}
 
-      <div className="ad-stats">
+      <div className="hgadm-stats">
         <Stat
           label="전체 사용자"
           value={data.users.total.toLocaleString()}
@@ -127,14 +127,14 @@ export function DashboardPage() {
         />
       </div>
 
-      <div className="ad-card ad-section">
-        <div className="ad-card__head">
-          <div className="ad-card__title">최근 30일 추이</div>
-          <div className="ad-row">
+      <div className="hgadm-card hgadm-section">
+        <div className="hgadm-card__head">
+          <div className="hgadm-card__title">최근 30일 추이</div>
+          <div className="hgadm-row">
             {METRICS.map((m) => (
               <button
                 key={m.key}
-                className={`ad-tab ${metric === m.key ? "active" : ""}`}
+                className={`hgadm-tab ${metric === m.key ? "active" : ""}`}
                 onClick={() => setMetric(m.key)}
               >
                 {m.label}
@@ -142,7 +142,7 @@ export function DashboardPage() {
             ))}
           </div>
         </div>
-        <div className="ad-card__body">
+        <div className="hgadm-card__body">
           {series.isPending ? (
             <LoadingState />
           ) : series.isError ? (
@@ -156,47 +156,47 @@ export function DashboardPage() {
         </div>
       </div>
 
-      <div className="ad-grid-3">
+      <div className="hgadm-grid-3">
         <RecentCard title="최근 가입">
           {data.recent_signups.map((u) => (
-            <Link key={u.user_id} to={`/users/${u.user_id}`} className="ad-recent-row">
+            <Link key={u.user_id} to={`/users/${u.user_id}`} className="hgadm-recent-row">
               <div>
-                <div className="ad-cell-main">{u.nickname ?? u.email}</div>
-                <div className="ad-cell-sub">{u.email}</div>
+                <div className="hgadm-cell-main">{u.nickname ?? u.email}</div>
+                <div className="hgadm-cell-sub">{u.email}</div>
               </div>
-              <div className="ad-cell-sub">{formatDateTime(u.created_at)}</div>
+              <div className="hgadm-cell-sub">{formatDateTime(u.created_at)}</div>
             </Link>
           ))}
           {data.recent_signups.length === 0 && (
-            <div className="ad-muted" style={{ padding: 12 }}>아직 가입자가 없습니다.</div>
+            <div className="hgadm-muted" style={{ padding: 12 }}>아직 가입자가 없습니다.</div>
           )}
         </RecentCard>
         <RecentCard title="최근 결제">
           {data.recent_payments.map((p) => (
-            <div key={p.payment_id} className="ad-recent-row">
+            <div key={p.payment_id} className="hgadm-recent-row">
               <div>
-                <div className="ad-cell-main">{formatMoney(p.amount_cents, p.currency)}</div>
-                <div className="ad-cell-sub">{formatDateTime(p.created_at)}</div>
+                <div className="hgadm-cell-main">{formatMoney(p.amount_cents, p.currency)}</div>
+                <div className="hgadm-cell-sub">{formatDateTime(p.created_at)}</div>
               </div>
               <Badge tone={statusTone(p.status)}>{p.status}</Badge>
             </div>
           ))}
           {data.recent_payments.length === 0 && (
-            <div className="ad-muted" style={{ padding: 12 }}>결제 내역이 없습니다.</div>
+            <div className="hgadm-muted" style={{ padding: 12 }}>결제 내역이 없습니다.</div>
           )}
         </RecentCard>
         <RecentCard title="최근 관리자 활동">
           {data.recent_admin_actions.map((a) => (
-            <div key={a.id} className="ad-recent-row">
+            <div key={a.id} className="hgadm-recent-row">
               <div>
-                <div className="ad-cell-main">{a.actor_email ?? a.actor_id ?? "system"}</div>
-                <div className="ad-cell-sub ad-cell-mono">{a.action}</div>
+                <div className="hgadm-cell-main">{a.actor_email ?? a.actor_id ?? "system"}</div>
+                <div className="hgadm-cell-sub hgadm-cell-mono">{a.action}</div>
               </div>
-              <div className="ad-cell-sub">{formatDateTime(a.occurred_at)}</div>
+              <div className="hgadm-cell-sub">{formatDateTime(a.occurred_at)}</div>
             </div>
           ))}
           {data.recent_admin_actions.length === 0 && (
-            <div className="ad-muted" style={{ padding: 12 }}>기록이 없습니다.</div>
+            <div className="hgadm-muted" style={{ padding: 12 }}>기록이 없습니다.</div>
           )}
         </RecentCard>
       </div>
@@ -206,9 +206,9 @@ export function DashboardPage() {
 
 function RecentCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="ad-card">
-      <div className="ad-card__head">
-        <div className="ad-card__title">{title}</div>
+    <div className="hgadm-card">
+      <div className="hgadm-card__head">
+        <div className="hgadm-card__title">{title}</div>
       </div>
       <div style={{ padding: "6px 8px 10px" }}>{children}</div>
     </div>

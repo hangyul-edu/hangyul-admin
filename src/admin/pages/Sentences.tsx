@@ -131,8 +131,8 @@ export function SentencesPage() {
       header: "문장",
       render: (s) => (
         <div>
-          <div className="ad-cell-main">{s.korean}</div>
-          <div className="ad-cell-sub">{s.translation}</div>
+          <div className="hgadm-cell-main">{s.korean}</div>
+          <div className="hgadm-cell-sub">{s.translation}</div>
         </div>
       ),
     },
@@ -161,7 +161,7 @@ export function SentencesPage() {
       header: "",
       render: (s) =>
         canWrite ? (
-          <div className="ad-row" onClick={(e) => e.stopPropagation()}>
+          <div className="hgadm-row" onClick={(e) => e.stopPropagation()}>
             <Button
               size="sm"
               onClick={() => {
@@ -188,16 +188,16 @@ export function SentencesPage() {
 
   return (
     <div>
-      <div className="ad-page-head">
+      <div className="hgadm-page-head">
         <div>
           <h1>문장 관리</h1>
-          <div className="ad-page-head__desc">
+          <div className="hgadm-page-head__desc">
             학습 문장 카탈로그입니다. 오디오는 TTS가 자동 생성하므로 별도 업로드가
             필요 없습니다. 삭제 시 사용자 학습 이력도 함께 삭제됩니다.
           </div>
         </div>
         {canWrite && (
-          <div className="ad-page-head__actions">
+          <div className="hgadm-page-head__actions">
             <Button
               variant="primary"
               onClick={() => {
@@ -211,8 +211,8 @@ export function SentencesPage() {
         )}
       </div>
 
-      <div className="ad-card">
-        <div className="ad-toolbar">
+      <div className="hgadm-card">
+        <div className="hgadm-toolbar">
           <SearchBox
             value={q}
             placeholder="한국어·번역 검색"
@@ -317,7 +317,7 @@ export function SentencesPage() {
                 onChange={(e) => setDraft({ ...draft, romanization: e.target.value })}
               />
             </Field>
-            <div className="ad-form-grid">
+            <div className="hgadm-form-grid">
               <Field label="토픽">
                 <Input
                   value={draft.topic}

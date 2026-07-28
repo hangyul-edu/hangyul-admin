@@ -16,7 +16,7 @@ import { SubscriptionsPage } from "./pages/Subscriptions";
 import { PaymentsPage } from "./pages/Payments";
 // NOTE: the banner-management page lives in HomeCards.tsx — in dev mode every
 // source file is a browser-visible URL, and a path containing "banner" gets
-// blocked by common ad-blocker lists, which kills the whole module graph.
+// blocked by common adblocker lists, which kills the whole module graph.
 import { BannersPage } from "./pages/HomeCards";
 import { NoticesPage } from "./pages/Notices";
 import { FaqsPage } from "./pages/Faqs";

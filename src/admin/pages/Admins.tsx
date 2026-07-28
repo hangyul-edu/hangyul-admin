@@ -88,13 +88,13 @@ export function AdminsPage() {
       header: "계정",
       render: (a) => (
         <div>
-          <div className="ad-cell-main">
+          <div className="hgadm-cell-main">
             {a.nickname ?? a.name}
             {a.user_id === me?.user_id && (
-              <span className="ad-muted"> (나)</span>
+              <span className="hgadm-muted"> (나)</span>
             )}
           </div>
-          <div className="ad-cell-sub">{a.email}</div>
+          <div className="hgadm-cell-sub">{a.email}</div>
         </div>
       ),
     },
@@ -118,11 +118,11 @@ export function AdminsPage() {
       header: "",
       render: (a) =>
         a.user_id === me?.user_id ? (
-          <span className="ad-muted" style={{ fontSize: 12 }}>
+          <span className="hgadm-muted" style={{ fontSize: 12 }}>
             본인 계정은 변경 불가
           </span>
         ) : (
-          <div className="ad-row" onClick={(e) => e.stopPropagation()}>
+          <div className="hgadm-row" onClick={(e) => e.stopPropagation()}>
             <Button
               size="sm"
               onClick={() => {
@@ -142,22 +142,22 @@ export function AdminsPage() {
 
   return (
     <div>
-      <div className="ad-page-head">
+      <div className="hgadm-page-head">
         <div>
           <h1>관리자 계정</h1>
-          <div className="ad-page-head__desc">
+          <div className="hgadm-page-head__desc">
             관리자 권한 부여는 이 화면에서만 가능하며 모든 변경이 감사 로그에 기록됩니다.
             마지막 최고 관리자는 강등·회수할 수 없습니다.
           </div>
         </div>
-        <div className="ad-page-head__actions">
+        <div className="hgadm-page-head__actions">
           <Button variant="primary" onClick={() => setGrantOpen(true)}>
             + 관리자 추가
           </Button>
         </div>
       </div>
 
-      <div className="ad-card">
+      <div className="hgadm-card">
         {query.isPending ? (
           <LoadingState />
         ) : query.isError ? (

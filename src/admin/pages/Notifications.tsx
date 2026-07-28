@@ -91,21 +91,21 @@ export function NotificationsPage() {
 
   return (
     <div>
-      <div className="ad-page-head">
+      <div className="hgadm-page-head">
         <div>
           <h1>알림 발송</h1>
-          <div className="ad-page-head__desc">
+          <div className="hgadm-page-head__desc">
             대량 발송은 되돌릴 수 없습니다. 발송 전 내용과 대상을 반드시 확인하세요.
             모든 발송은 감사 로그에 기록됩니다.
           </div>
         </div>
       </div>
 
-      <div className="ad-tabs">
+      <div className="hgadm-tabs">
         {KINDS.map((k) => (
           <button
             key={k.key}
-            className={`ad-tab ${kind === k.key ? "active" : ""}`}
+            className={`hgadm-tab ${kind === k.key ? "active" : ""}`}
             onClick={() => setKind(k.key)}
           >
             {k.title}
@@ -113,13 +113,13 @@ export function NotificationsPage() {
         ))}
       </div>
 
-      <div className="ad-grid-2">
-        <div className="ad-card">
-          <div className="ad-card__head">
-            <div className="ad-card__title">{meta.title}</div>
+      <div className="hgadm-grid-2">
+        <div className="hgadm-card">
+          <div className="hgadm-card__head">
+            <div className="hgadm-card__title">{meta.title}</div>
           </div>
-          <div className="ad-card__body">
-            <p className="ad-muted" style={{ fontSize: 13, marginTop: 0 }}>
+          <div className="hgadm-card__body">
+            <p className="hgadm-muted" style={{ fontSize: 13, marginTop: 0 }}>
               {meta.desc}
             </p>
             <Field label="제목" required hint="최대 200자">
@@ -181,11 +181,11 @@ export function NotificationsPage() {
           </div>
         </div>
 
-        <div className="ad-card">
-          <div className="ad-card__head">
-            <div className="ad-card__title">미리보기</div>
+        <div className="hgadm-card">
+          <div className="hgadm-card__head">
+            <div className="hgadm-card__title">미리보기</div>
           </div>
-          <div className="ad-card__body">
+          <div className="hgadm-card__body">
             <div
               style={{
                 background: "var(--surface-2)",
@@ -220,13 +220,13 @@ export function NotificationsPage() {
                   {body || "본문 내용이 여기에 표시됩니다."}
                 </div>
                 {deepLink && (
-                  <div className="ad-cell-sub ad-cell-mono" style={{ marginTop: 4 }}>
+                  <div className="hgadm-cell-sub hgadm-cell-mono" style={{ marginTop: 4 }}>
                     → {deepLink}
                   </div>
                 )}
               </div>
             </div>
-            <p className="ad-muted" style={{ fontSize: 12.5 }}>
+            <p className="hgadm-muted" style={{ fontSize: 12.5 }}>
               실제 표시 형태는 기기·OS 설정에 따라 다를 수 있습니다.
             </p>
           </div>
@@ -239,7 +239,7 @@ export function NotificationsPage() {
         message={
           <div>
             <p style={{ marginTop: 0 }}>{meta.confirm}</p>
-            <div className="ad-json" style={{ maxHeight: 140 }}>
+            <div className="hgadm-json" style={{ maxHeight: 140 }}>
               <strong>{title}</strong>
               {body ? `\n${body}` : ""}
             </div>

@@ -71,25 +71,25 @@ export function UserDetailPage() {
 
   return (
     <div>
-      <div className="ad-page-head">
+      <div className="hgadm-page-head">
         <div>
-          <div className="ad-row" style={{ marginBottom: 4 }}>
-            <Link to="/users" className="ad-muted" style={{ fontSize: 13 }}>
+          <div className="hgadm-row" style={{ marginBottom: 4 }}>
+            <Link to="/users" className="hgadm-muted" style={{ fontSize: 13 }}>
               ← 사용자 목록
             </Link>
           </div>
-          <h1 className="ad-row">
+          <h1 className="hgadm-row">
             {user.nickname ?? user.name}
             <Badge tone={statusTone(user.status)} dot>
               {user.status}
             </Badge>
             <Badge tone={isAdminAccount ? "brand" : "neutral"}>{user.role}</Badge>
           </h1>
-          <div className="ad-page-head__desc">
-            {user.email} · <span className="ad-cell-mono">{user.user_id}</span>
+          <div className="hgadm-page-head__desc">
+            {user.email} · <span className="hgadm-cell-mono">{user.user_id}</span>
           </div>
         </div>
-        <div className="ad-page-head__actions">
+        <div className="hgadm-page-head__actions">
           {canWrite && !isAdminAccount && !isSelf && user.status !== "deactivated" && (
             <>
               <Button
@@ -156,14 +156,14 @@ export function UserDetailPage() {
             </>
           )}
           {isAdminAccount && (
-            <Link to="/admins" className="ad-btn ad-btn--secondary">
+            <Link to="/admins" className="hgadm-btn hgadm-btn--secondary">
               관리자 계정 관리에서 변경
             </Link>
           )}
         </div>
       </div>
 
-      <div className="ad-tabs">
+      <div className="hgadm-tabs">
         {(
           [
             ["overview", "개요"],
@@ -174,7 +174,7 @@ export function UserDetailPage() {
         ).map(([key, label]) => (
           <button
             key={key}
-            className={`ad-tab ${tab === key ? "active" : ""}`}
+            className={`hgadm-tab ${tab === key ? "active" : ""}`}
             onClick={() => setTab(key)}
           >
             {label}
@@ -183,12 +183,12 @@ export function UserDetailPage() {
       </div>
 
       {tab === "overview" && (
-        <div className="ad-grid-2">
-          <div className="ad-card">
-            <div className="ad-card__head">
-              <div className="ad-card__title">계정 정보</div>
+        <div className="hgadm-grid-2">
+          <div className="hgadm-card">
+            <div className="hgadm-card__head">
+              <div className="hgadm-card__title">계정 정보</div>
             </div>
-            <div className="ad-card__body">
+            <div className="hgadm-card__body">
               <Dl
                 items={[
                   ["이름", user.name],
@@ -216,11 +216,11 @@ export function UserDetailPage() {
               />
             </div>
           </div>
-          <div className="ad-card">
-            <div className="ad-card__head">
-              <div className="ad-card__title">온보딩 응답</div>
+          <div className="hgadm-card">
+            <div className="hgadm-card__head">
+              <div className="hgadm-card__title">온보딩 응답</div>
             </div>
-            <div className="ad-card__body">
+            <div className="hgadm-card__body">
               {user.onboarding ? (
                 <Dl
                   items={[
@@ -234,7 +234,7 @@ export function UserDetailPage() {
                   ]}
                 />
               ) : (
-                <span className="ad-muted">온보딩을 완료하지 않았습니다.</span>
+                <span className="hgadm-muted">온보딩을 완료하지 않았습니다.</span>
               )}
             </div>
           </div>
@@ -243,16 +243,16 @@ export function UserDetailPage() {
 
       {tab === "billing" && (
         <div>
-          <div className="ad-card ad-section">
-            <div className="ad-card__head">
-              <div className="ad-card__title">현재 구독</div>
+          <div className="hgadm-card hgadm-section">
+            <div className="hgadm-card__head">
+              <div className="hgadm-card__title">현재 구독</div>
               {user.subscription && (
                 <Badge tone={statusTone(user.subscription.status)}>
                   {user.subscription.status}
                 </Badge>
               )}
             </div>
-            <div className="ad-card__body">
+            <div className="hgadm-card__body">
               {user.subscription ? (
                 <Dl
                   items={[
@@ -278,16 +278,16 @@ export function UserDetailPage() {
                   ]}
                 />
               ) : (
-                <span className="ad-muted">활성 구독이 없습니다.</span>
+                <span className="hgadm-muted">활성 구독이 없습니다.</span>
               )}
             </div>
           </div>
-          <div className="ad-card">
-            <div className="ad-card__head">
-              <div className="ad-card__title">최근 인보이스</div>
+          <div className="hgadm-card">
+            <div className="hgadm-card__head">
+              <div className="hgadm-card__title">최근 인보이스</div>
             </div>
-            <div className="ad-table-wrap">
-              <table className="ad-table">
+            <div className="hgadm-table-wrap">
+              <table className="hgadm-table">
                 <thead>
                   <tr>
                     <th>인보이스</th>
@@ -301,13 +301,13 @@ export function UserDetailPage() {
                   {user.recent_invoices.length === 0 && (
                     <tr>
                       <td colSpan={5}>
-                        <div className="ad-table__empty">인보이스가 없습니다.</div>
+                        <div className="hgadm-table__empty">인보이스가 없습니다.</div>
                       </td>
                     </tr>
                   )}
                   {user.recent_invoices.map((inv) => (
                     <tr key={inv.invoice_id}>
-                      <td className="ad-cell-mono">{inv.invoice_id}</td>
+                      <td className="hgadm-cell-mono">{inv.invoice_id}</td>
                       <td>{inv.plan_name}</td>
                       <td className="num">{formatMoney(inv.total_cents, inv.currency)}</td>
                       <td>
@@ -324,12 +324,12 @@ export function UserDetailPage() {
       )}
 
       {tab === "learning" && (
-        <div className="ad-grid-2">
-          <div className="ad-card">
-            <div className="ad-card__head">
-              <div className="ad-card__title">학습 현황</div>
+        <div className="hgadm-grid-2">
+          <div className="hgadm-card">
+            <div className="hgadm-card__head">
+              <div className="hgadm-card__title">학습 현황</div>
             </div>
-            <div className="ad-card__body">
+            <div className="hgadm-card__body">
               <Dl
                 items={[
                   [
@@ -345,12 +345,12 @@ export function UserDetailPage() {
                   ],
                 ]}
               />
-              <hr className="ad-divider" />
+              <hr className="hgadm-divider" />
               {user.learning.tracks.length === 0 ? (
-                <span className="ad-muted">트랙 진행 정보가 없습니다.</span>
+                <span className="hgadm-muted">트랙 진행 정보가 없습니다.</span>
               ) : (
                 user.learning.tracks.map((t) => (
-                  <div key={t.track_id} className="ad-row" style={{ marginBottom: 8 }}>
+                  <div key={t.track_id} className="hgadm-row" style={{ marginBottom: 8 }}>
                     <Badge tone="brand">
                       {t.track_id === "track_topik" ? "TOPIK" : "회화"}
                     </Badge>
@@ -363,11 +363,11 @@ export function UserDetailPage() {
               )}
             </div>
           </div>
-          <div className="ad-card">
-            <div className="ad-card__head">
-              <div className="ad-card__title">포인트·리그</div>
+          <div className="hgadm-card">
+            <div className="hgadm-card__head">
+              <div className="hgadm-card__title">포인트·리그</div>
             </div>
-            <div className="ad-card__body">
+            <div className="hgadm-card__body">
               <Dl
                 items={[
                   ["보유 포인트", user.gamification.points_balance.toLocaleString()],
@@ -390,13 +390,13 @@ export function UserDetailPage() {
       )}
 
       {tab === "misc" && (
-        <div className="ad-grid-2">
-          <div className="ad-card">
-            <div className="ad-card__head">
-              <div className="ad-card__title">쿠폰 그랜트</div>
+        <div className="hgadm-grid-2">
+          <div className="hgadm-card">
+            <div className="hgadm-card__head">
+              <div className="hgadm-card__title">쿠폰 그랜트</div>
             </div>
-            <div className="ad-table-wrap">
-              <table className="ad-table">
+            <div className="hgadm-table-wrap">
+              <table className="hgadm-table">
                 <thead>
                   <tr>
                     <th>쿠폰</th>
@@ -409,13 +409,13 @@ export function UserDetailPage() {
                   {user.coupons.length === 0 && (
                     <tr>
                       <td colSpan={4}>
-                        <div className="ad-table__empty">쿠폰 사용 이력이 없습니다.</div>
+                        <div className="hgadm-table__empty">쿠폰 사용 이력이 없습니다.</div>
                       </td>
                     </tr>
                   )}
                   {user.coupons.map((c) => (
                     <tr key={c.grant_id}>
-                      <td className="ad-cell-mono">{c.coupon_id}</td>
+                      <td className="hgadm-cell-mono">{c.coupon_id}</td>
                       <td>{c.duration_days}일</td>
                       <td>
                         <Badge tone={statusTone(c.status)}>{c.status}</Badge>
@@ -427,13 +427,13 @@ export function UserDetailPage() {
               </table>
             </div>
           </div>
-          <div className="ad-card">
-            <div className="ad-card__head">
-              <div className="ad-card__title">등록 기기</div>
+          <div className="hgadm-card">
+            <div className="hgadm-card__head">
+              <div className="hgadm-card__title">등록 기기</div>
               <Badge tone="neutral">미읽음 알림 {user.notifications_unread}</Badge>
             </div>
-            <div className="ad-table-wrap">
-              <table className="ad-table">
+            <div className="hgadm-table-wrap">
+              <table className="hgadm-table">
                 <thead>
                   <tr>
                     <th>플랫폼</th>
@@ -446,7 +446,7 @@ export function UserDetailPage() {
                   {user.devices.length === 0 && (
                     <tr>
                       <td colSpan={4}>
-                        <div className="ad-table__empty">등록된 기기가 없습니다.</div>
+                        <div className="hgadm-table__empty">등록된 기기가 없습니다.</div>
                       </td>
                     </tr>
                   )}
@@ -506,7 +506,7 @@ export function UserDetailPage() {
       </Modal>
 
       {actionsBlocked && canWrite && (isSelf || user.status === "deactivated") && (
-        <p className="ad-muted" style={{ marginTop: 16, fontSize: 12.5 }}>
+        <p className="hgadm-muted" style={{ marginTop: 16, fontSize: 12.5 }}>
           {isSelf
             ? "본인 계정의 역할·상태는 이 화면에서 변경할 수 없습니다."
             : "사용자가 직접 탈퇴한 계정은 관리자가 되살릴 수 없습니다."}

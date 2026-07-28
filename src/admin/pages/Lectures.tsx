@@ -157,11 +157,11 @@ export function LecturesPage() {
       key: "title",
       header: "강의",
       render: (l) => (
-        <div className="ad-row">
-          {l.thumbnail_url && <img src={l.thumbnail_url} alt="" className="ad-thumb" />}
+        <div className="hgadm-row">
+          {l.thumbnail_url && <img src={l.thumbnail_url} alt="" className="hgadm-thumb" />}
           <div>
-            <div className="ad-cell-main">{l.title}</div>
-            <div className="ad-cell-sub ad-cell-mono">{l.lecture_id}</div>
+            <div className="hgadm-cell-main">{l.title}</div>
+            <div className="hgadm-cell-sub hgadm-cell-mono">{l.lecture_id}</div>
           </div>
         </div>
       ),
@@ -172,7 +172,7 @@ export function LecturesPage() {
       render: (l) => (
         <div>
           <Badge tone="brand">{TRACK_LABEL[l.track_id] ?? l.track_id}</Badge>
-          <div className="ad-cell-sub">순서 {l.sequence}</div>
+          <div className="hgadm-cell-sub">순서 {l.sequence}</div>
         </div>
       ),
     },
@@ -195,7 +195,7 @@ export function LecturesPage() {
       header: "영상",
       render: (l) =>
         l.kind !== "video" ? (
-          <span className="ad-muted">해당 없음</span>
+          <span className="hgadm-muted">해당 없음</span>
         ) : l.video_status ? (
           <Badge tone={statusTone(l.video_status)}>{l.video_status}</Badge>
         ) : (
@@ -212,7 +212,7 @@ export function LecturesPage() {
       header: "",
       render: (l) =>
         canWrite ? (
-          <div className="ad-row" onClick={(e) => e.stopPropagation()}>
+          <div className="hgadm-row" onClick={(e) => e.stopPropagation()}>
             {l.kind === "video" && (
               <Button size="sm" onClick={() => setVideoLecture(l)}>
                 영상 관리
@@ -250,16 +250,16 @@ export function LecturesPage() {
 
   return (
     <div>
-      <div className="ad-page-head">
+      <div className="hgadm-page-head">
         <div>
           <h1>강의·영상 관리</h1>
-          <div className="ad-page-head__desc">
+          <div className="hgadm-page-head__desc">
             강의 메타데이터(제목·레벨·코스·공개 범위)와 호스팅 영상 업로드를 관리합니다.
             영상은 업로드 후 인코딩이 끝나면 자동으로 재생 가능(ready) 상태가 됩니다.
           </div>
         </div>
         {canWrite && (
-          <div className="ad-page-head__actions">
+          <div className="hgadm-page-head__actions">
             <Button
               variant="primary"
               onClick={() => {
@@ -273,8 +273,8 @@ export function LecturesPage() {
         )}
       </div>
 
-      <div className="ad-card">
-        <div className="ad-toolbar">
+      <div className="hgadm-card">
+        <div className="hgadm-toolbar">
           <SearchBox
             value={q}
             placeholder="제목·강의 ID 검색"
@@ -358,7 +358,7 @@ export function LecturesPage() {
         }
       >
         {draft && (
-          <div className="ad-form-grid">
+          <div className="hgadm-form-grid">
             <Field label="트랙" required hint={editingId ? "트랙은 변경할 수 없습니다." : undefined}>
               <Select
                 value={draft.track_id}
@@ -489,10 +489,10 @@ function ThumbnailField({
   const fileRef = useRef<HTMLInputElement>(null);
   return (
     <Field label="썸네일" hint="JPEG/PNG/WebP, 최대 5MB">
-      <div className="ad-row">
-        {value && <img src={value} alt="썸네일" className="ad-thumb" />}
+      <div className="hgadm-row">
+        {value && <img src={value} alt="썸네일" className="hgadm-thumb" />}
         <div
-          className="ad-dropzone"
+          className="hgadm-dropzone"
           style={{ flex: 1, padding: "14px 12px" }}
           onClick={() => fileRef.current?.click()}
         >
@@ -589,7 +589,7 @@ function VideoManagerModal({
   return (
     <Modal open title={`영상 관리 — ${lecture.title}`} size="xl" onClose={onClose}>
       <div
-        className="ad-dropzone"
+        className="hgadm-dropzone"
         onClick={() => fileRef.current?.click()}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
@@ -620,12 +620,12 @@ function VideoManagerModal({
       ) : query.isError ? (
         <ErrorState message={errorMessage(query.error)} onRetry={() => void query.refetch()} />
       ) : query.data.items.length === 0 ? (
-        <div className="ad-state" style={{ padding: 24 }}>
-          <div className="ad-state__desc">아직 업로드된 영상이 없습니다.</div>
+        <div className="hgadm-state" style={{ padding: 24 }}>
+          <div className="hgadm-state__desc">아직 업로드된 영상이 없습니다.</div>
         </div>
       ) : (
-        <div className="ad-table-wrap">
-          <table className="ad-table">
+        <div className="hgadm-table-wrap">
+          <table className="hgadm-table">
             <thead>
               <tr>
                 <th>파일</th>
@@ -639,18 +639,18 @@ function VideoManagerModal({
               {query.data.items.map((v) => (
                 <tr key={v.video_id}>
                   <td>
-                    <div className="ad-cell-main">
+                    <div className="hgadm-cell-main">
                       {v.original_file_name ?? v.video_id}
                       {v.is_primary && <Badge tone="brand"> 대표</Badge>}
                     </div>
-                    <div className="ad-cell-sub">
+                    <div className="hgadm-cell-sub">
                       {v.provider} · {(v.file_size_bytes / 1024 / 1024).toFixed(1)}MB
                     </div>
                   </td>
                   <td>
                     <Badge tone={statusTone(v.upload_status)}>{v.upload_status}</Badge>
                     {v.failure_reason && (
-                      <div className="ad-cell-sub" style={{ color: "var(--danger)" }}>
+                      <div className="hgadm-cell-sub" style={{ color: "var(--danger)" }}>
                         {v.failure_reason}
                       </div>
                     )}
@@ -658,7 +658,7 @@ function VideoManagerModal({
                   <td>{v.duration_seconds ? formatDuration(v.duration_seconds) : "—"}</td>
                   <td>{formatDateTime(v.uploaded_at)}</td>
                   <td>
-                    <div className="ad-row">
+                    <div className="hgadm-row">
                       {["processing", "pending", "uploading"].includes(v.upload_status) && (
                         <Button
                           size="sm"

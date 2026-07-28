@@ -52,8 +52,8 @@ export function SubscriptionsPage() {
       header: "가입자",
       render: (s) => (
         <div>
-          <div className="ad-cell-main">{s.user_email ?? "(탈퇴한 사용자)"}</div>
-          <div className="ad-cell-sub ad-cell-mono">{s.subscription_id}</div>
+          <div className="hgadm-cell-main">{s.user_email ?? "(탈퇴한 사용자)"}</div>
+          <div className="hgadm-cell-sub hgadm-cell-mono">{s.subscription_id}</div>
         </div>
       ),
     },
@@ -65,7 +65,7 @@ export function SubscriptionsPage() {
         <div>
           <Badge tone={statusTone(s.status)}>{s.status}</Badge>
           {s.cancel_at_period_end && (
-            <div className="ad-cell-sub">기간 종료 시 해지</div>
+            <div className="hgadm-cell-sub">기간 종료 시 해지</div>
           )}
         </div>
       ),
@@ -86,17 +86,17 @@ export function SubscriptionsPage() {
 
   return (
     <div>
-      <div className="ad-page-head">
+      <div className="hgadm-page-head">
         <div>
           <h1>구독 현황</h1>
-          <div className="ad-page-head__desc">
+          <div className="hgadm-page-head__desc">
             전체 구독 상태를 조회합니다. 가입자를 클릭하면 사용자 상세로 이동합니다.
             구독 변경(해지·환불)은 사용자 요청 기반 플로우와 결제사 콘솔에서 처리합니다.
           </div>
         </div>
       </div>
-      <div className="ad-card">
-        <div className="ad-toolbar">
+      <div className="hgadm-card">
+        <div className="hgadm-toolbar">
           <SearchBox
             value={q}
             placeholder="이메일·구독 ID·사용자 ID 검색"
