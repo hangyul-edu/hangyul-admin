@@ -530,8 +530,6 @@ export interface AdminNotice {
 type Query = Record<string, string | number | boolean | undefined | null>;
 
 export const adminApi = {
-  me: () => http.get<AdminMe>("/admin/me"),
-
   // Dashboard
   metricsOverview: () => http.get<MetricsOverview>("/admin/metrics/overview"),
   metricsTimeseries: (metric: string, days: number) =>
@@ -692,8 +690,6 @@ export const adminApi = {
   listSentences: (params: Query) =>
     http.get<Page<AdminSentence>>("/admin/sentences", params),
   sentenceTopics: () => http.get<{ topics: string[] }>("/admin/sentences/topics"),
-  getSentence: (sentenceId: string) =>
-    http.get<AdminSentence>(`/admin/sentences/${sentenceId}`),
   createSentence: (body: Partial<AdminSentence> & { korean: string; translation: string }) =>
     http.post<AdminSentence>("/admin/sentences", body),
   updateSentence: (sentenceId: string, body: Partial<AdminSentence>) =>
@@ -707,7 +703,6 @@ export const adminApi = {
       "/admin/quizzes",
       params,
     ),
-  getQuiz: (quizId: string) => http.get<AdminQuiz>(`/admin/quizzes/${quizId}`),
   createQuiz: (body: Record<string, unknown>) =>
     http.post<AdminQuiz>("/admin/quizzes", body),
   replaceQuiz: (quizId: string, body: Record<string, unknown>) =>
