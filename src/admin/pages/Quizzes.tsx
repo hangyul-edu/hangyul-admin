@@ -1,0 +1,686 @@
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
+import { adminApi } from "../api";
+import type { AdminQuiz } from "../api";
+import { errorMessage } from "../../lib/http";
+import { useToast } from "../../hooks/toast";
+import { useAdminAuth } from "../auth";
+import {
+  Badge,
+  Button,
+  ConfirmDialog,
+  DataTable,
+  ErrorState,
+  Field,
+  Input,
+  LoadingState,
+  Modal,
+  Pagination,
+  Select,
+  Textarea,
+} from "../components/kit";
+import type { Column } from "../components/kit";
+
+const FORMATS = [
+  ["single_choice", "객관식"],
+  ["short_answer", "빈칸 채우기"],
+  ["free_response", "서술형"],
+] as const;
+const FORMAT_LABEL = Object.fromEntries(FORMATS);
+const SECTIONS = [
+  ["listening", "듣기"],
+  ["reading", "읽기"],
+  ["writing", "쓰기"],
+] as const;
+
+interface QuizDraft {
+  answer_format: string;
+  material_kind: string;
+  topik_section: string;
+  topik_question_type: string;
+  prompt: string;
+  prompt_translation: string;
+  content_html: string;
+  level: string;
+  choices: { key: string; text: string }[];
+  correct_choice: string;
+  blanks: { label: string; answer: string }[];
+  hint: string;
+  explanation: string;
+  audio_duration_ms: string;
+  answer_max_length: string;
+  scoring_criteria: string;
+  max_score: string;
+}
+
+const EMPTY: QuizDraft = {
+  answer_format: "single_choice",
+  material_kind: "text",
+  topik_section: "",
+  topik_question_type: "",
+  prompt: "",
+  prompt_translation: "",
+  content_html: "",
+  level: "1",
+  choices: [
+    { key: "1", text: "" },
+    { key: "2", text: "" },
+    { key: "3", text: "" },
+    { key: "4", text: "" },
+  ],
+  correct_choice: "1",
+  blanks: [{ label: "", answer: "" }],
+  hint: "",
+  explanation: "",
+  audio_duration_ms: "0",
+  answer_max_length: "",
+  scoring_criteria: "",
+  max_score: "",
+};
+
+function draftFromQuiz(quiz: AdminQuiz): QuizDraft {
+  return {
+    answer_format: quiz.answer_format,
+    material_kind: quiz.material_kind,
+    topik_section: quiz.topik_section ?? "",
+    topik_question_type: quiz.topik_question_type ?? "",
+    prompt: quiz.prompt,
+    prompt_translation: quiz.prompt_translation ?? "",
+    content_html: quiz.content_html ?? "",
+    level: String(quiz.level),
+    choices: quiz.choices.length
+      ? quiz.choices.map((c) => ({ key: c.key, text: c.text }))
+      : EMPTY.choices,
+    correct_choice: quiz.correct_choice ?? "1",
+    blanks: quiz.blanks.length
+      ? quiz.blanks.map((b) => ({ label: b.label, answer: b.answer ?? "" }))
+      : EMPTY.blanks,
+    hint: quiz.hint ?? "",
+    explanation: quiz.explanation ?? "",
+    audio_duration_ms: String(quiz.audio_duration_ms),
+    answer_max_length: quiz.answer_max_length === null ? "" : String(quiz.answer_max_length),
+    scoring_criteria: quiz.scoring_criteria.join("\n"),
+    max_score: quiz.max_score === null ? "" : String(quiz.max_score),
+  };
+}
+
+function draftToBody(d: QuizDraft): Record<string, unknown> {
+  const isChoice = d.answer_format === "single_choice";
+  const isShort = d.answer_format === "short_answer";
+  const criteria = d.scoring_criteria
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return {
+    answer_format: d.answer_format,
+    material_kind: d.material_kind,
+    topik_section: d.topik_section || null,
+    topik_question_type: d.topik_question_type || null,
+    prompt: d.prompt,
+    prompt_translation: d.prompt_translation || null,
+    content_html: d.content_html || null,
+    level: Number(d.level),
+    choices: isChoice ? d.choices.filter((c) => c.text.trim()) : null,
+    correct_choice: isChoice ? d.correct_choice : null,
+    blanks: isShort
+      ? d.blanks
+          .filter((b) => b.label.trim() || b.answer.trim())
+          .map((b) => ({ label: b.label, answer: b.answer || null }))
+      : null,
+    hint: d.hint || null,
+    explanation: d.explanation || null,
+    audio_duration_ms: Number(d.audio_duration_ms) || 0,
+    answer_max_length: d.answer_max_length === "" ? null : Number(d.answer_max_length),
+    scoring_criteria: criteria.length ? criteria : null,
+    max_score: d.max_score === "" ? null : Number(d.max_score),
+  };
+}
+
+export function QuizzesPage() {
+  const qc = useQueryClient();
+  const toast = useToast();
+  const { can } = useAdminAuth();
+  const canWrite = can("content:write");
+  const [params, setParams] = useSearchParams();
+  const [draft, setDraft] = useState<QuizDraft | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [viewing, setViewing] = useState<AdminQuiz | null>(null);
+  const [deleting, setDeleting] = useState<AdminQuiz | null>(null);
+
+  const format = params.get("answer_format") ?? "";
+  const section = params.get("topik_section") ?? "";
+  const level = params.get("level") ?? "";
+  const page = Number(params.get("page") ?? "1");
+  const pageSize = 25;
+
+  function patchParams(patch: Record<string, string | null>) {
+    const next = new URLSearchParams(params);
+    for (const [k, v] of Object.entries(patch)) {
+      if (v === null || v === "") next.delete(k);
+      else next.set(k, v);
+    }
+    setParams(next, { replace: true });
+  }
+
+  const query = useQuery({
+    queryKey: ["admin", "quizzes", { format, section, level, page }],
+    queryFn: () =>
+      adminApi.listQuizzes({
+        answer_format: format || undefined,
+        topik_section: section || undefined,
+        level: level || undefined,
+        limit: pageSize,
+        offset: (page - 1) * pageSize,
+      }),
+  });
+
+  function refresh() {
+    void qc.invalidateQueries({ queryKey: ["admin", "quizzes"] });
+  }
+
+  const save = useMutation({
+    mutationFn: (d: QuizDraft) =>
+      editingId
+        ? adminApi.replaceQuiz(editingId, draftToBody(d))
+        : adminApi.createQuiz(draftToBody(d)),
+    onSuccess: () => {
+      toast.success("문제를 저장했어요.");
+      setDraft(null);
+      setEditingId(null);
+      refresh();
+    },
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+
+  const remove = useMutation({
+    mutationFn: (quiz: AdminQuiz) => adminApi.deleteQuiz(quiz.quiz_id),
+    onSuccess: () => {
+      toast.success("문제를 삭제했어요.");
+      setDeleting(null);
+      refresh();
+    },
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+
+  const columns: Column<AdminQuiz>[] = [
+    {
+      key: "prompt",
+      header: "문제",
+      render: (quiz) => (
+        <div style={{ maxWidth: 420 }}>
+          <div
+            className="ad-cell-main"
+            style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+          >
+            {quiz.prompt}
+          </div>
+          <div className="ad-cell-sub ad-cell-mono">{quiz.quiz_id}</div>
+        </div>
+      ),
+    },
+    {
+      key: "format",
+      header: "형식",
+      render: (quiz) => FORMAT_LABEL[quiz.answer_format] ?? quiz.answer_format,
+    },
+    {
+      key: "section",
+      header: "TOPIK",
+      render: (quiz) =>
+        quiz.topik_section ? (
+          <div>
+            <Badge tone="info">{quiz.topik_section}</Badge>
+            {quiz.topik_question_type && (
+              <div className="ad-cell-sub">{quiz.topik_question_type}</div>
+            )}
+          </div>
+        ) : (
+          "—"
+        ),
+    },
+    { key: "level", header: "레벨", numeric: true, render: (quiz) => quiz.level },
+    {
+      key: "source",
+      header: "출처",
+      render: (quiz) => (
+        <Badge tone={quiz.is_ai_generated ? "warning" : "neutral"}>
+          {quiz.is_ai_generated ? "AI 생성" : "수동"}
+        </Badge>
+      ),
+    },
+    {
+      key: "actions",
+      header: "",
+      render: (quiz) => (
+        <div className="ad-row" onClick={(e) => e.stopPropagation()}>
+          <Button size="sm" variant="ghost" onClick={() => setViewing(quiz)}>
+            보기
+          </Button>
+          {canWrite && (
+            <>
+              <Button
+                size="sm"
+                onClick={() => {
+                  setEditingId(quiz.quiz_id);
+                  setDraft(draftFromQuiz(quiz));
+                }}
+              >
+                수정
+              </Button>
+              <Button size="sm" variant="danger-soft" onClick={() => setDeleting(quiz)}>
+                삭제
+              </Button>
+            </>
+          )}
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <div>
+      <div className="ad-page-head">
+        <div>
+          <h1>문제 관리</h1>
+          <div className="ad-page-head__desc">
+            일일 퀴즈·TOPIK 문제 카탈로그입니다. 저장 시 형식별 도메인 검증(정답 필수,
+            빈칸 구성 등)이 수행되어 잘못된 문제가 등록될 수 없습니다.
+          </div>
+        </div>
+        {canWrite && (
+          <div className="ad-page-head__actions">
+            <Button
+              variant="primary"
+              onClick={() => {
+                setEditingId(null);
+                setDraft({ ...EMPTY, choices: EMPTY.choices.map((c) => ({ ...c })), blanks: EMPTY.blanks.map((b) => ({ ...b })) });
+              }}
+            >
+              + 문제 추가
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <div className="ad-card">
+        <div className="ad-toolbar">
+          <Select
+            value={format}
+            onChange={(e) => patchParams({ answer_format: e.target.value, page: null })}
+            style={{ width: 150 }}
+          >
+            <option value="">형식: 전체</option>
+            {FORMATS.map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </Select>
+          <Select
+            value={section}
+            onChange={(e) => patchParams({ topik_section: e.target.value, page: null })}
+            style={{ width: 140 }}
+          >
+            <option value="">섹션: 전체</option>
+            {SECTIONS.map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </Select>
+          <Select
+            value={level}
+            onChange={(e) => patchParams({ level: e.target.value, page: null })}
+            style={{ width: 120 }}
+          >
+            <option value="">레벨: 전체</option>
+            {Array.from({ length: 10 }, (_, i) => i + 1).map((l) => (
+              <option key={l} value={l}>
+                레벨 {l}
+              </option>
+            ))}
+          </Select>
+        </div>
+        {query.isPending ? (
+          <LoadingState />
+        ) : query.isError ? (
+          <ErrorState message={errorMessage(query.error)} onRetry={() => void query.refetch()} />
+        ) : (
+          <>
+            <DataTable
+              columns={columns}
+              rows={query.data.items}
+              rowKey={(quiz) => quiz.quiz_id}
+              onRowClick={setViewing}
+              empty="조건에 맞는 문제가 없습니다."
+            />
+            <Pagination
+              page={page}
+              pageSize={pageSize}
+              total={query.data.total}
+              onPageChange={(next) => patchParams({ page: String(next) })}
+            />
+          </>
+        )}
+      </div>
+
+      {/* Detail viewer */}
+      <Modal
+        open={viewing !== null}
+        title="문제 상세"
+        size="lg"
+        onClose={() => setViewing(null)}
+      >
+        {viewing && (
+          <div style={{ fontSize: 14 }}>
+            <div className="ad-row ad-row--wrap" style={{ marginBottom: 10 }}>
+              <Badge tone="info">{FORMAT_LABEL[viewing.answer_format]}</Badge>
+              {viewing.topik_section && <Badge tone="brand">{viewing.topik_section}</Badge>}
+              <Badge tone="neutral">레벨 {viewing.level}</Badge>
+              {viewing.is_ai_generated && <Badge tone="warning">AI 생성</Badge>}
+            </div>
+            <p style={{ fontWeight: 700, whiteSpace: "pre-wrap" }}>{viewing.prompt}</p>
+            {viewing.content_html && (
+              <div
+                className="ad-json"
+                style={{ fontFamily: "inherit" }}
+                dangerouslySetInnerHTML={{ __html: viewing.content_html }}
+              />
+            )}
+            {viewing.choices.length > 0 && (
+              <ol style={{ paddingLeft: 20, lineHeight: 1.8 }}>
+                {viewing.choices.map((c) => (
+                  <li key={c.key}>
+                    {c.text}
+                    {viewing.correct_choice === c.key && (
+                      <strong style={{ color: "var(--success)" }}> ✓ 정답</strong>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            )}
+            {viewing.blanks.length > 0 && (
+              <ul style={{ paddingLeft: 20, lineHeight: 1.8 }}>
+                {viewing.blanks.map((b, i) => (
+                  <li key={i}>
+                    {b.label || "빈칸"}: <strong>{b.answer ?? "(기준 채점)"}</strong>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {viewing.explanation && (
+              <>
+                <hr className="ad-divider" />
+                <div className="ad-field__label">해설</div>
+                <p style={{ whiteSpace: "pre-wrap" }}>{viewing.explanation}</p>
+              </>
+            )}
+          </div>
+        )}
+      </Modal>
+
+      {/* Editor */}
+      <Modal
+        open={draft !== null}
+        title={editingId ? `문제 수정 — ${editingId}` : "문제 추가"}
+        size="xl"
+        onClose={() => setDraft(null)}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setDraft(null)}>
+              취소
+            </Button>
+            <Button
+              variant="primary"
+              loading={save.isPending}
+              disabled={!draft?.prompt.trim()}
+              onClick={() => draft && save.mutate(draft)}
+            >
+              저장
+            </Button>
+          </>
+        }
+      >
+        {draft && (
+          <div>
+            <div className="ad-form-grid">
+              <Field label="답안 형식" required>
+                <Select
+                  value={draft.answer_format}
+                  onChange={(e) => setDraft({ ...draft, answer_format: e.target.value })}
+                >
+                  {FORMATS.map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <Field label="자료 유형" required>
+                <Select
+                  value={draft.material_kind}
+                  onChange={(e) => setDraft({ ...draft, material_kind: e.target.value })}
+                >
+                  <option value="text">텍스트</option>
+                  <option value="table">표 (HTML)</option>
+                  <option value="audio">듣기</option>
+                </Select>
+              </Field>
+              <Field label="TOPIK 섹션">
+                <Select
+                  value={draft.topik_section}
+                  onChange={(e) => setDraft({ ...draft, topik_section: e.target.value })}
+                >
+                  <option value="">해당 없음</option>
+                  {SECTIONS.map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <Field label="TOPIK 문제 유형" hint="예: reading_03">
+                <Input
+                  value={draft.topik_question_type}
+                  onChange={(e) =>
+                    setDraft({ ...draft, topik_question_type: e.target.value })
+                  }
+                />
+              </Field>
+              <Field label="레벨" required>
+                <Input
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={draft.level}
+                  onChange={(e) => setDraft({ ...draft, level: e.target.value })}
+                />
+              </Field>
+              {draft.material_kind === "audio" && (
+                <Field label="오디오 길이 (ms)" required>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={draft.audio_duration_ms}
+                    onChange={(e) =>
+                      setDraft({ ...draft, audio_duration_ms: e.target.value })
+                    }
+                  />
+                </Field>
+              )}
+            </div>
+            <Field label="문제 지문" required>
+              <Textarea
+                rows={3}
+                value={draft.prompt}
+                onChange={(e) => setDraft({ ...draft, prompt: e.target.value })}
+              />
+            </Field>
+            <Field label="지문 번역 (영어)">
+              <Textarea
+                rows={2}
+                value={draft.prompt_translation}
+                onChange={(e) =>
+                  setDraft({ ...draft, prompt_translation: e.target.value })
+                }
+              />
+            </Field>
+            {(draft.material_kind === "text" || draft.material_kind === "table") && (
+              <Field
+                label="본문 HTML"
+                hint="AI 생성 원칙과 동일하게 이미지 대신 텍스트/표 HTML을 사용합니다."
+              >
+                <Textarea
+                  rows={4}
+                  value={draft.content_html}
+                  onChange={(e) => setDraft({ ...draft, content_html: e.target.value })}
+                />
+              </Field>
+            )}
+
+            {draft.answer_format === "single_choice" && (
+              <div>
+                <div className="ad-field__label" style={{ marginBottom: 6 }}>
+                  선택지 (정답 라디오 선택)
+                </div>
+                {draft.choices.map((choice, i) => (
+                  <div className="ad-row" key={i} style={{ marginBottom: 8 }}>
+                    <input
+                      type="radio"
+                      name="correct"
+                      checked={draft.correct_choice === choice.key}
+                      onChange={() => setDraft({ ...draft, correct_choice: choice.key })}
+                      aria-label={`정답: 선택지 ${choice.key}`}
+                    />
+                    <span style={{ width: 20, fontWeight: 700 }}>{choice.key}</span>
+                    <Input
+                      value={choice.text}
+                      onChange={(e) => {
+                        const choices = [...draft.choices];
+                        choices[i] = { ...choice, text: e.target.value };
+                        setDraft({ ...draft, choices });
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {draft.answer_format === "short_answer" && (
+              <div>
+                <div className="ad-field__label" style={{ marginBottom: 6 }}>
+                  빈칸 (라벨 + 정답 · 정답을 비우면 기준 채점)
+                </div>
+                {draft.blanks.map((blank, i) => (
+                  <div className="ad-row" key={i} style={{ marginBottom: 8 }}>
+                    <Input
+                      style={{ width: 90 }}
+                      placeholder="라벨 (ㄱ)"
+                      value={blank.label}
+                      onChange={(e) => {
+                        const blanks = [...draft.blanks];
+                        blanks[i] = { ...blank, label: e.target.value };
+                        setDraft({ ...draft, blanks });
+                      }}
+                    />
+                    <Input
+                      placeholder="정답"
+                      value={blank.answer}
+                      onChange={(e) => {
+                        const blanks = [...draft.blanks];
+                        blanks[i] = { ...blank, answer: e.target.value };
+                        setDraft({ ...draft, blanks });
+                      }}
+                    />
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() =>
+                        setDraft({
+                          ...draft,
+                          blanks: draft.blanks.filter((_, j) => j !== i),
+                        })
+                      }
+                    >
+                      ✕
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  size="sm"
+                  onClick={() =>
+                    setDraft({ ...draft, blanks: [...draft.blanks, { label: "", answer: "" }] })
+                  }
+                >
+                  + 빈칸 추가
+                </Button>
+              </div>
+            )}
+
+            {(draft.answer_format === "free_response" ||
+              draft.scoring_criteria.trim() !== "") && (
+              <div className="ad-form-grid" style={{ marginTop: 10 }}>
+                <Field label="최대 글자 수" required={draft.answer_format === "free_response"}>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={draft.answer_max_length}
+                    onChange={(e) =>
+                      setDraft({ ...draft, answer_max_length: e.target.value })
+                    }
+                  />
+                </Field>
+                <Field label="만점">
+                  <Input
+                    type="number"
+                    min={1}
+                    value={draft.max_score}
+                    onChange={(e) => setDraft({ ...draft, max_score: e.target.value })}
+                  />
+                </Field>
+                <div className="span-2">
+                  <Field label="채점 기준" hint="한 줄에 하나씩">
+                    <Textarea
+                      rows={3}
+                      value={draft.scoring_criteria}
+                      onChange={(e) =>
+                        setDraft({ ...draft, scoring_criteria: e.target.value })
+                      }
+                    />
+                  </Field>
+                </div>
+              </div>
+            )}
+
+            <div className="ad-form-grid" style={{ marginTop: 10 }}>
+              <Field label="힌트">
+                <Input
+                  value={draft.hint}
+                  onChange={(e) => setDraft({ ...draft, hint: e.target.value })}
+                />
+              </Field>
+              <Field label="해설">
+                <Input
+                  value={draft.explanation}
+                  onChange={(e) => setDraft({ ...draft, explanation: e.target.value })}
+                />
+              </Field>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <ConfirmDialog
+        open={deleting !== null}
+        title="문제 삭제"
+        message="문제를 영구 삭제할까요? 사용자 풀이 이력·북마크도 함께 삭제됩니다."
+        danger
+        confirmLabel="삭제"
+        loading={remove.isPending}
+        onConfirm={() => deleting && remove.mutate(deleting)}
+        onCancel={() => setDeleting(null)}
+      />
+    </div>
+  );
+}

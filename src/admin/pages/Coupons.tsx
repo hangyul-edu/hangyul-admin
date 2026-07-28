@@ -1,0 +1,435 @@
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
+import { adminApi } from "../api";
+import type { CouponBatch, CouponRow } from "../api";
+import { errorMessage } from "../../lib/http";
+import { useToast } from "../../hooks/toast";
+import { useAdminAuth } from "../auth";
+import {
+  Badge,
+  Button,
+  ConfirmDialog,
+  DataTable,
+  ErrorState,
+  Field,
+  Input,
+  LoadingState,
+  Modal,
+  Pagination,
+  SearchBox,
+  Select,
+  formatDateTime,
+  statusTone,
+} from "../components/kit";
+import type { Column } from "../components/kit";
+
+export function CouponsPage() {
+  const [params, setParams] = useSearchParams();
+  const tab = params.get("tab") === "coupons" ? "coupons" : "batches";
+  return (
+    <div>
+      <div className="ad-page-head">
+        <div>
+          <h1>쿠폰 관리</h1>
+          <div className="ad-page-head__desc">
+            B2B/프로모션 쿠폰 배치를 생성·회수하고 개별 코드를 조회합니다. 회수는 미사용
+            쿠폰만 무효화하며, 이미 활성화된 이용권은 유지됩니다.
+          </div>
+        </div>
+      </div>
+      <div className="ad-tabs">
+        <button
+          className={`ad-tab ${tab === "batches" ? "active" : ""}`}
+          onClick={() => setParams({ tab: "batches" }, { replace: true })}
+        >
+          배치
+        </button>
+        <button
+          className={`ad-tab ${tab === "coupons" ? "active" : ""}`}
+          onClick={() => setParams({ tab: "coupons" }, { replace: true })}
+        >
+          쿠폰 검색
+        </button>
+      </div>
+      {tab === "batches" ? <BatchesTab /> : <CouponSearchTab />}
+    </div>
+  );
+}
+
+function BatchesTab() {
+  const qc = useQueryClient();
+  const toast = useToast();
+  const { can } = useAdminAuth();
+  const canWrite = can("commerce:write");
+  const [page, setPage] = useState(1);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [durationDays, setDurationDays] = useState("30");
+  const [quantity, setQuantity] = useState("100");
+  const [validUntil, setValidUntil] = useState("");
+  const [created, setCreated] = useState<{ generated: number; sample: string[] } | null>(null);
+  const [revoking, setRevoking] = useState<CouponBatch | null>(null);
+  const pageSize = 25;
+
+  const query = useQuery({
+    queryKey: ["admin", "coupon-batches", page],
+    queryFn: () =>
+      adminApi.listCouponBatches({ limit: pageSize, offset: (page - 1) * pageSize }),
+  });
+
+  const generate = useMutation({
+    mutationFn: () =>
+      adminApi.generateCouponBatch({
+        name,
+        duration_days: Number(durationDays),
+        quantity: Number(quantity),
+        valid_until: validUntil ? new Date(validUntil).toISOString() : null,
+      }),
+    onSuccess: (result) => {
+      setCreateOpen(false);
+      setCreated({ generated: result.generated, sample: result.sample_codes });
+      setName("");
+      void qc.invalidateQueries({ queryKey: ["admin", "coupon-batches"] });
+    },
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+
+  const revoke = useMutation({
+    mutationFn: (batch: CouponBatch) => adminApi.revokeCouponBatch(batch.batch_id),
+    onSuccess: () => {
+      toast.success("배치를 회수했어요.");
+      setRevoking(null);
+      void qc.invalidateQueries({ queryKey: ["admin", "coupon-batches"] });
+    },
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+
+  const columns: Column<CouponBatch>[] = [
+    {
+      key: "name",
+      header: "배치",
+      render: (b) => (
+        <div>
+          <div className="ad-cell-main">{b.name}</div>
+          <div className="ad-cell-sub ad-cell-mono">{b.batch_id}</div>
+        </div>
+      ),
+    },
+    { key: "duration", header: "이용 기간", render: (b) => `${b.duration_days}일` },
+    {
+      key: "quantity",
+      header: "수량",
+      numeric: true,
+      render: (b) => b.quantity.toLocaleString(),
+    },
+    {
+      key: "valid",
+      header: "유효기한",
+      render: (b) => (b.valid_until ? formatDateTime(b.valid_until) : "무기한"),
+    },
+    {
+      key: "status",
+      header: "상태",
+      render: (b) => <Badge tone={statusTone(b.status)}>{b.status}</Badge>,
+    },
+    { key: "created", header: "생성일", render: (b) => formatDateTime(b.created_at) },
+    {
+      key: "actions",
+      header: "",
+      render: (b) =>
+        canWrite && b.status === "active" ? (
+          <Button size="sm" variant="danger-soft" onClick={(e) => {
+            e.stopPropagation();
+            setRevoking(b);
+          }}>
+            회수
+          </Button>
+        ) : null,
+    },
+  ];
+
+  return (
+    <div className="ad-card">
+      <div className="ad-toolbar">
+        <span className="ad-muted" style={{ fontSize: 13 }}>
+          쿠폰 배치 목록
+        </span>
+        <span className="ad-toolbar__spacer" />
+        {canWrite && (
+          <Button variant="primary" onClick={() => setCreateOpen(true)}>
+            + 배치 생성
+          </Button>
+        )}
+      </div>
+      {query.isPending ? (
+        <LoadingState />
+      ) : query.isError ? (
+        <ErrorState message={errorMessage(query.error)} onRetry={() => void query.refetch()} />
+      ) : (
+        <>
+          <DataTable
+            columns={columns}
+            rows={query.data.items}
+            rowKey={(b) => b.batch_id}
+            empty="쿠폰 배치가 없습니다."
+          />
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={query.data.total}
+            onPageChange={setPage}
+          />
+        </>
+      )}
+
+      <Modal
+        open={createOpen}
+        title="쿠폰 배치 생성"
+        onClose={() => setCreateOpen(false)}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setCreateOpen(false)}>
+              취소
+            </Button>
+            <Button
+              variant="primary"
+              loading={generate.isPending}
+              disabled={!name || Number(quantity) < 1 || Number(durationDays) < 1}
+              onClick={() => generate.mutate()}
+            >
+              생성
+            </Button>
+          </>
+        }
+      >
+        <Field label="캠페인 이름" required hint="예: 대학 제휴 2026-2학기">
+          <Input value={name} onChange={(e) => setName(e.target.value)} maxLength={120} />
+        </Field>
+        <div className="ad-form-grid">
+          <Field label="이용 기간 (일)" required>
+            <Input
+              type="number"
+              min={1}
+              max={3650}
+              value={durationDays}
+              onChange={(e) => setDurationDays(e.target.value)}
+            />
+          </Field>
+          <Field label="수량" required hint="최대 10,000">
+            <Input
+              type="number"
+              min={1}
+              max={10000}
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+            />
+          </Field>
+        </div>
+        <Field label="사용 기한" hint="비우면 무기한">
+          <Input
+            type="datetime-local"
+            value={validUntil}
+            onChange={(e) => setValidUntil(e.target.value)}
+          />
+        </Field>
+      </Modal>
+
+      <Modal
+        open={created !== null}
+        title="배치가 생성되었습니다"
+        onClose={() => setCreated(null)}
+        footer={
+          <Button variant="primary" onClick={() => setCreated(null)}>
+            확인
+          </Button>
+        }
+      >
+        {created && (
+          <div style={{ fontSize: 14, lineHeight: 1.7 }}>
+            <p>
+              코드 <strong>{created.generated.toLocaleString()}개</strong>가
+              생성되었습니다. 샘플:
+            </p>
+            <pre className="ad-json">{created.sample.join("\n")}</pre>
+            <p className="ad-muted" style={{ fontSize: 12.5 }}>
+              전체 코드는 '쿠폰 검색' 탭에서 배치로 필터해 확인하거나 내보낼 수 있습니다.
+            </p>
+          </div>
+        )}
+      </Modal>
+
+      <ConfirmDialog
+        open={revoking !== null}
+        title="배치 회수"
+        message={`'${revoking?.name ?? ""}' 배치의 미사용 쿠폰을 모두 무효화할까요? 이미 사용된 이용권은 유지됩니다.`}
+        danger
+        confirmLabel="회수"
+        loading={revoke.isPending}
+        onConfirm={() => revoking && revoke.mutate(revoking)}
+        onCancel={() => setRevoking(null)}
+      />
+    </div>
+  );
+}
+
+function CouponSearchTab() {
+  const qc = useQueryClient();
+  const toast = useToast();
+  const { can } = useAdminAuth();
+  const [code, setCode] = useState("");
+  const [status, setStatus] = useState("");
+  const [batchId, setBatchId] = useState("");
+  const [page, setPage] = useState(1);
+  const [revoking, setRevoking] = useState<CouponRow | null>(null);
+  const pageSize = 25;
+
+  const batches = useQuery({
+    queryKey: ["admin", "coupon-batches", "all"],
+    queryFn: () => adminApi.listCouponBatches({ limit: 200, offset: 0 }),
+  });
+
+  const query = useQuery({
+    queryKey: ["admin", "coupons", { code, status, batchId, page }],
+    queryFn: () =>
+      adminApi.searchCoupons({
+        code_starts_with: code || undefined,
+        status: status || undefined,
+        batch_id: batchId || undefined,
+        limit: pageSize,
+        offset: (page - 1) * pageSize,
+      }),
+  });
+
+  const revoke = useMutation({
+    mutationFn: (coupon: CouponRow) => adminApi.revokeCoupon(coupon.coupon_id),
+    onSuccess: () => {
+      toast.success("쿠폰을 무효화했어요.");
+      setRevoking(null);
+      void qc.invalidateQueries({ queryKey: ["admin", "coupons"] });
+    },
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+
+  const columns: Column<CouponRow>[] = [
+    {
+      key: "code",
+      header: "코드",
+      render: (c) => <span className="ad-cell-mono">{c.code}</span>,
+    },
+    {
+      key: "batch",
+      header: "배치",
+      render: (c) => c.batch_name ?? c.batch_id,
+    },
+    { key: "duration", header: "기간", render: (c) => `${c.duration_days}일` },
+    {
+      key: "status",
+      header: "상태",
+      render: (c) => <Badge tone={statusTone(c.status)}>{c.status}</Badge>,
+    },
+    {
+      key: "redeemed",
+      header: "사용",
+      render: (c) =>
+        c.redeemed_by_user_id ? (
+          <div>
+            <div className="ad-cell-mono">{c.redeemed_by_user_id}</div>
+            <div className="ad-cell-sub">{formatDateTime(c.redeemed_at)}</div>
+          </div>
+        ) : (
+          "—"
+        ),
+    },
+    {
+      key: "actions",
+      header: "",
+      render: (c) =>
+        can("commerce:write") && c.status === "unused" ? (
+          <Button
+            size="sm"
+            variant="danger-soft"
+            onClick={(e) => {
+              e.stopPropagation();
+              setRevoking(c);
+            }}
+          >
+            무효화
+          </Button>
+        ) : null,
+    },
+  ];
+
+  return (
+    <div className="ad-card">
+      <div className="ad-toolbar">
+        <SearchBox
+          value={code}
+          placeholder="코드 앞자리 검색 (예: ABCD)"
+          onSearch={(next) => {
+            setCode(next);
+            setPage(1);
+          }}
+        />
+        <Select
+          value={status}
+          onChange={(e) => {
+            setStatus(e.target.value);
+            setPage(1);
+          }}
+          style={{ width: 140 }}
+        >
+          <option value="">상태: 전체</option>
+          <option value="unused">미사용</option>
+          <option value="redeemed">사용됨</option>
+          <option value="revoked">무효화</option>
+        </Select>
+        <Select
+          value={batchId}
+          onChange={(e) => {
+            setBatchId(e.target.value);
+            setPage(1);
+          }}
+          style={{ minWidth: 200 }}
+        >
+          <option value="">배치: 전체</option>
+          {batches.data?.items.map((b) => (
+            <option key={b.batch_id} value={b.batch_id}>
+              {b.name}
+            </option>
+          ))}
+        </Select>
+      </div>
+      {query.isPending ? (
+        <LoadingState />
+      ) : query.isError ? (
+        <ErrorState message={errorMessage(query.error)} onRetry={() => void query.refetch()} />
+      ) : (
+        <>
+          <DataTable
+            columns={columns}
+            rows={query.data.items}
+            rowKey={(c) => c.coupon_id}
+            empty="조건에 맞는 쿠폰이 없습니다."
+          />
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={query.data.total}
+            onPageChange={setPage}
+          />
+        </>
+      )}
+      <ConfirmDialog
+        open={revoking !== null}
+        title="쿠폰 무효화"
+        message={`코드 ${revoking?.code ?? ""}를 무효화할까요? 되돌릴 수 없습니다.`}
+        danger
+        confirmLabel="무효화"
+        loading={revoke.isPending}
+        onConfirm={() => revoking && revoke.mutate(revoking)}
+        onCancel={() => setRevoking(null)}
+      />
+    </div>
+  );
+}

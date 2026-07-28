@@ -1,0 +1,164 @@
+import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { useAdminAuth } from "../auth";
+import { Button } from "./kit";
+
+interface NavItem {
+  to: string;
+  icon: string;
+  label: string;
+  /** Any of these scopes shows the item. */
+  scopes: string[];
+}
+
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+const NAV: NavGroup[] = [
+  {
+    label: "개요",
+    items: [{ to: "/", icon: "📊", label: "대시보드", scopes: ["users:read"] }],
+  },
+  {
+    label: "사용자",
+    items: [
+      { to: "/users", icon: "👥", label: "사용자 관리", scopes: ["users:read"] },
+    ],
+  },
+  {
+    label: "콘텐츠",
+    items: [
+      { to: "/courses", icon: "📚", label: "코스", scopes: ["content:read"] },
+      { to: "/lectures", icon: "🎬", label: "강의·영상", scopes: ["content:read"] },
+      { to: "/sentences", icon: "✍️", label: "문장", scopes: ["content:read"] },
+      { to: "/quizzes", icon: "❓", label: "문제(TOPIK)", scopes: ["content:read"] },
+      { to: "/ai-content", icon: "🤖", label: "AI 생성 검수", scopes: ["content:read"] },
+    ],
+  },
+  {
+    label: "커머스",
+    items: [
+      { to: "/plans", icon: "💳", label: "요금제", scopes: ["commerce:read"] },
+      { to: "/coupons", icon: "🎟️", label: "쿠폰", scopes: ["commerce:read"] },
+      { to: "/subscriptions", icon: "🔁", label: "구독", scopes: ["commerce:read"] },
+      { to: "/payments", icon: "💰", label: "결제·인보이스", scopes: ["commerce:read"] },
+    ],
+  },
+  {
+    label: "운영",
+    items: [
+      { to: "/banners", icon: "🖼️", label: "배너", scopes: ["ops:read"] },
+      { to: "/notices", icon: "📢", label: "공지", scopes: ["ops:read"] },
+      { to: "/faqs", icon: "💬", label: "FAQ", scopes: ["ops:read"] },
+      { to: "/notifications", icon: "🔔", label: "알림 발송", scopes: ["ops:write"] },
+    ],
+  },
+  {
+    label: "시스템",
+    items: [
+      { to: "/audit-logs", icon: "🧾", label: "감사 로그", scopes: ["audit:read"] },
+      { to: "/admins", icon: "🛡️", label: "관리자 계정", scopes: ["admins:manage"] },
+    ],
+  },
+];
+
+const TIER_LABELS: Record<string, string> = {
+  super_admin: "최고 관리자",
+  operator: "운영자",
+  content_manager: "콘텐츠 관리자",
+  support_agent: "고객지원",
+  viewer: "뷰어",
+};
+
+const TITLES: [string, string][] = [
+  ["/users", "사용자 관리"],
+  ["/courses", "코스 관리"],
+  ["/lectures", "강의·영상 관리"],
+  ["/sentences", "문장 관리"],
+  ["/quizzes", "문제 관리"],
+  ["/ai-content", "AI 생성 콘텐츠 검수"],
+  ["/plans", "요금제 관리"],
+  ["/coupons", "쿠폰 관리"],
+  ["/subscriptions", "구독 현황"],
+  ["/payments", "결제·인보이스"],
+  ["/banners", "배너 관리"],
+  ["/notices", "공지 관리"],
+  ["/faqs", "FAQ 관리"],
+  ["/notifications", "알림 발송"],
+  ["/audit-logs", "감사 로그"],
+  ["/admins", "관리자 계정"],
+];
+
+export function AdminLayout() {
+  const { me, can, logout } = useAdminAuth();
+  const location = useLocation();
+  const title =
+    TITLES.find(([prefix]) => location.pathname.startsWith(prefix))?.[1] ??
+    "대시보드";
+
+  return (
+    <div className="ad-frame">
+      <aside className="ad-sidebar">
+        <div className="ad-sidebar__brand">
+          <span className="ad-sidebar__brand-mark" aria-hidden>
+            한
+          </span>
+          <span>
+            한글 관리자
+            <span className="ad-sidebar__brand-sub">Hangyul Admin</span>
+          </span>
+        </div>
+        <nav className="ad-nav" aria-label="관리자 메뉴">
+          {NAV.map((group) => {
+            const visible = group.items.filter((item) =>
+              item.scopes.some((scope) => can(scope)),
+            );
+            if (visible.length === 0) return null;
+            return (
+              <div key={group.label}>
+                <div className="ad-nav__group">{group.label}</div>
+                {visible.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.to === "/"}
+                    className={({ isActive }) =>
+                      `ad-nav__link ${isActive ? "active" : ""}`
+                    }
+                  >
+                    <span className="ad-nav__icon" aria-hidden>
+                      {item.icon}
+                    </span>
+                    <span className="ad-nav__label">{item.label}</span>
+                  </NavLink>
+                ))}
+              </div>
+            );
+          })}
+        </nav>
+      </aside>
+      <div className="ad-main">
+        <header className="ad-topbar">
+          <div className="ad-topbar__title">{title}</div>
+          <div className="ad-topbar__right">
+            <div className="ad-topbar__who">
+              <div className="ad-topbar__who-name">
+                {me?.nickname || me?.name || me?.email}
+              </div>
+              <div className="ad-topbar__who-role">
+                {TIER_LABELS[me?.admin_role ?? ""] ?? me?.admin_role}
+              </div>
+            </div>
+            <Button size="sm" variant="ghost" onClick={() => void logout()}>
+              로그아웃
+            </Button>
+          </div>
+        </header>
+        <main className="ad-content">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
+}

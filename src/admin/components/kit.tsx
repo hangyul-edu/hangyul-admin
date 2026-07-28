@@ -1,0 +1,620 @@
+// Admin design-system primitives. Every visual atom the portal uses is
+// defined here against the classes in src/admin/styles/admin.css.
+import { useEffect, useRef, useState } from "react";
+import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
+
+/* ---------- Button ---------- */
+
+interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: "primary" | "secondary" | "danger" | "danger-soft" | "ghost";
+  size?: "sm" | "md" | "lg";
+  block?: boolean;
+  loading?: boolean;
+}
+
+export function Button({
+  variant = "secondary",
+  size = "md",
+  block,
+  loading,
+  disabled,
+  children,
+  className = "",
+  ...rest
+}: ButtonProps) {
+  return (
+    <button
+      className={[
+        "ad-btn",
+        `ad-btn--${variant}`,
+        size !== "md" ? `ad-btn--${size}` : "",
+        block ? "ad-btn--block" : "",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      disabled={disabled || loading}
+      {...rest}
+    >
+      {loading && <span className="ad-btn__spinner" aria-hidden />}
+      {children}
+    </button>
+  );
+}
+
+/* ---------- Badge ---------- */
+
+export type BadgeTone = "neutral" | "success" | "warning" | "danger" | "info" | "brand";
+
+export function Badge({
+  tone = "neutral",
+  dot,
+  children,
+}: {
+  tone?: BadgeTone;
+  dot?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <span className={`ad-badge ad-badge--${tone}`}>
+      {dot && <span className="ad-badge__dot" aria-hidden />}
+      {children}
+    </span>
+  );
+}
+
+/** Canonical tone mapping for the platform's status strings. */
+export function statusTone(status: string | null | undefined): BadgeTone {
+  switch (status) {
+    case "active":
+    case "ready":
+    case "succeeded":
+    case "paid":
+    case "approved":
+    case "trial":
+      return "success";
+    case "pending":
+    case "processing":
+    case "uploading":
+    case "open":
+    case "queued":
+    case "grace_period":
+    case "payment_pending":
+      return "warning";
+    case "failed":
+    case "suspended":
+    case "revoked":
+    case "rejected":
+    case "unpaid":
+    case "payment_failed":
+    case "deactivated":
+    case "expired":
+      return "danger";
+    case "cancelled":
+    case "void":
+    case "archived":
+    case "deleted":
+      return "neutral";
+    default:
+      return "neutral";
+  }
+}
+
+/* ---------- Form fields ---------- */
+
+export function Field({
+  label,
+  required,
+  hint,
+  error,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  hint?: string;
+  error?: string | null;
+  children: ReactNode;
+}) {
+  return (
+    <label className="ad-field">
+      <span className="ad-field__label">
+        {label}
+        {required && <span className="req">*</span>}
+      </span>
+      {children}
+      {error ? (
+        <span className="ad-field__error">{error}</span>
+      ) : hint ? (
+        <span className="ad-field__hint">{hint}</span>
+      ) : null}
+    </label>
+  );
+}
+
+export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
+  return <input {...props} className={`ad-input ${props.className ?? ""}`} />;
+}
+
+export function Select(props: SelectHTMLAttributes<HTMLSelectElement>) {
+  return <select {...props} className={`ad-select ${props.className ?? ""}`} />;
+}
+
+export function Textarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return <textarea {...props} className={`ad-textarea ${props.className ?? ""}`} />;
+}
+
+export function Switch({
+  checked,
+  onChange,
+  disabled,
+  label,
+}: {
+  checked: boolean;
+  onChange: (next: boolean) => void;
+  disabled?: boolean;
+  label?: string;
+}) {
+  return (
+    <span className="ad-switch" title={label}>
+      <input
+        type="checkbox"
+        checked={checked}
+        disabled={disabled}
+        aria-label={label}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+      <span className="ad-switch__track" aria-hidden />
+    </span>
+  );
+}
+
+/* ---------- States ---------- */
+
+export function Spinner() {
+  return <span className="ad-spinner" role="status" aria-label="로딩 중" />;
+}
+
+export function LoadingState({ label = "불러오는 중…" }: { label?: string }) {
+  return (
+    <div className="ad-state">
+      <Spinner />
+      <div className="ad-state__desc">{label}</div>
+    </div>
+  );
+}
+
+export function EmptyState({
+  icon = "🗂️",
+  title,
+  desc,
+  action,
+}: {
+  icon?: string;
+  title: string;
+  desc?: string;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="ad-state">
+      <div className="ad-state__icon" aria-hidden>
+        {icon}
+      </div>
+      <div className="ad-state__title">{title}</div>
+      {desc && <div className="ad-state__desc">{desc}</div>}
+      {action}
+    </div>
+  );
+}
+
+export function ErrorState({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry?: () => void;
+}) {
+  return (
+    <div className="ad-state">
+      <div className="ad-state__icon" aria-hidden>
+        ⚠️
+      </div>
+      <div className="ad-state__title">문제가 발생했어요</div>
+      <div className="ad-state__desc">{message}</div>
+      {onRetry && (
+        <Button variant="secondary" size="sm" onClick={onRetry}>
+          다시 시도
+        </Button>
+      )}
+    </div>
+  );
+}
+
+/* ---------- Modal & confirm ---------- */
+
+export function Modal({
+  open,
+  title,
+  onClose,
+  size,
+  children,
+  footer,
+}: {
+  open: boolean;
+  title: string;
+  onClose: () => void;
+  size?: "md" | "lg" | "xl";
+  children: ReactNode;
+  footer?: ReactNode;
+}) {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [open, onClose]);
+
+  if (!open) return null;
+  return (
+    <div
+      className="ad-modal-overlay"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        className={`ad-modal ${size ? `ad-modal--${size}` : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+      >
+        <div className="ad-modal__head">
+          <div className="ad-modal__title">{title}</div>
+          <button className="ad-modal__close" onClick={onClose} aria-label="닫기">
+            ✕
+          </button>
+        </div>
+        <div className="ad-modal__body">{children}</div>
+        {footer && <div className="ad-modal__foot">{footer}</div>}
+      </div>
+    </div>
+  );
+}
+
+export function ConfirmDialog({
+  open,
+  title,
+  message,
+  confirmLabel = "확인",
+  danger,
+  loading,
+  onConfirm,
+  onCancel,
+}: {
+  open: boolean;
+  title: string;
+  message: ReactNode;
+  confirmLabel?: string;
+  danger?: boolean;
+  loading?: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <Modal
+      open={open}
+      title={title}
+      onClose={loading ? () => {} : onCancel}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onCancel} disabled={loading}>
+            취소
+          </Button>
+          <Button
+            variant={danger ? "danger" : "primary"}
+            onClick={onConfirm}
+            loading={loading}
+          >
+            {confirmLabel}
+          </Button>
+        </>
+      }
+    >
+      <div style={{ fontSize: 14, lineHeight: 1.6 }}>{message}</div>
+    </Modal>
+  );
+}
+
+/* ---------- Data table ---------- */
+
+export interface Column<T> {
+  key: string;
+  header: string;
+  render: (row: T) => ReactNode;
+  /** Right-align numeric columns. */
+  numeric?: boolean;
+  /** Set to enable click-to-sort with this backend sort key. */
+  sortKey?: string;
+  width?: string | number;
+}
+
+export function DataTable<T>({
+  columns,
+  rows,
+  rowKey,
+  onRowClick,
+  sort,
+  order,
+  onSortChange,
+  empty,
+}: {
+  columns: Column<T>[];
+  rows: T[];
+  rowKey: (row: T) => string;
+  onRowClick?: (row: T) => void;
+  sort?: string;
+  order?: "asc" | "desc";
+  onSortChange?: (sort: string, order: "asc" | "desc") => void;
+  empty?: ReactNode;
+}) {
+  return (
+    <div className="ad-table-wrap">
+      <table className="ad-table">
+        <thead>
+          <tr>
+            {columns.map((col) => {
+              const sortable = Boolean(col.sortKey && onSortChange);
+              const isActive = sortable && sort === col.sortKey;
+              return (
+                <th
+                  key={col.key}
+                  style={col.width ? { width: col.width } : undefined}
+                  className={[
+                    col.numeric ? "num" : "",
+                    sortable ? "sortable" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  aria-sort={
+                    isActive ? (order === "asc" ? "ascending" : "descending") : undefined
+                  }
+                  onClick={
+                    sortable
+                      ? () =>
+                          onSortChange!(
+                            col.sortKey!,
+                            isActive && order === "desc" ? "asc" : "desc",
+                          )
+                      : undefined
+                  }
+                >
+                  {col.header}
+                  {isActive ? (order === "asc" ? " ▲" : " ▼") : ""}
+                </th>
+              );
+            })}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 ? (
+            <tr>
+              <td colSpan={columns.length}>
+                <div className="ad-table__empty">
+                  {empty ?? "표시할 항목이 없습니다."}
+                </div>
+              </td>
+            </tr>
+          ) : (
+            rows.map((row) => (
+              <tr
+                key={rowKey(row)}
+                className={onRowClick ? "clickable" : undefined}
+                onClick={onRowClick ? () => onRowClick(row) : undefined}
+              >
+                {columns.map((col) => (
+                  <td key={col.key} className={col.numeric ? "num" : undefined}>
+                    {col.render(row)}
+                  </td>
+                ))}
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/* ---------- Pagination ---------- */
+
+export function Pagination({
+  page,
+  pageSize,
+  total,
+  onPageChange,
+}: {
+  page: number;
+  pageSize: number;
+  total: number;
+  onPageChange: (page: number) => void;
+}) {
+  const pages = Math.max(1, Math.ceil(total / pageSize));
+  const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const to = Math.min(total, page * pageSize);
+  return (
+    <div className="ad-pagination">
+      <span>
+        {total.toLocaleString()}건 중 {from.toLocaleString()}–{to.toLocaleString()}
+      </span>
+      <div className="ad-pagination__pages">
+        <Button size="sm" variant="ghost" disabled={page <= 1} onClick={() => onPageChange(1)}>
+          «
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={page <= 1}
+          onClick={() => onPageChange(page - 1)}
+        >
+          이전
+        </Button>
+        <span style={{ padding: "5px 8px", fontWeight: 700 }}>
+          {page} / {pages}
+        </span>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={page >= pages}
+          onClick={() => onPageChange(page + 1)}
+        >
+          다음
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={page >= pages}
+          onClick={() => onPageChange(pages)}
+        >
+          »
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Search box (debounced) ---------- */
+
+export function SearchBox({
+  value,
+  onSearch,
+  placeholder = "검색…",
+}: {
+  value: string;
+  onSearch: (q: string) => void;
+  placeholder?: string;
+}) {
+  const [draft, setDraft] = useState(value);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => setDraft(value), [value]);
+  return (
+    <span className="ad-search">
+      <span className="ad-search__icon" aria-hidden>
+        🔍
+      </span>
+      <input
+        value={draft}
+        placeholder={placeholder}
+        onChange={(e) => {
+          const next = e.target.value;
+          setDraft(next);
+          if (timer.current) clearTimeout(timer.current);
+          timer.current = setTimeout(() => onSearch(next), 350);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            if (timer.current) clearTimeout(timer.current);
+            onSearch(draft);
+          }
+        }}
+      />
+    </span>
+  );
+}
+
+/* ---------- Stat tile ---------- */
+
+export function Stat({
+  label,
+  value,
+  sub,
+  subTone,
+}: {
+  label: ReactNode;
+  value: ReactNode;
+  sub?: ReactNode;
+  subTone?: "up" | "down";
+}) {
+  return (
+    <div className="ad-stat">
+      <div className="ad-stat__label">{label}</div>
+      <div className="ad-stat__value">{value}</div>
+      {sub && (
+        <div className={`ad-stat__sub ${subTone ? `ad-stat__sub--${subTone}` : ""}`}>
+          {sub}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---------- Description list ---------- */
+
+export function Dl({ items }: { items: [ReactNode, ReactNode][] }) {
+  return (
+    <dl className="ad-dl">
+      {items.map(([label, value], i) => (
+        <FragmentRow key={i} label={label} value={value} />
+      ))}
+    </dl>
+  );
+}
+
+function FragmentRow({ label, value }: { label: ReactNode; value: ReactNode }) {
+  return (
+    <>
+      <dt>{label}</dt>
+      <dd>{value ?? "—"}</dd>
+    </>
+  );
+}
+
+/* ---------- Formatting helpers ---------- */
+
+export function formatDateTime(value: string | null | undefined): string {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleString("ko-KR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+export function formatDate(value: string | null | undefined): string {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleDateString("ko-KR");
+}
+
+/** cents(minor units) → localized currency string. KRW has no minor unit. */
+export function formatMoney(cents: number, currency: string): string {
+  const zeroDecimal = ["KRW", "JPY"].includes(currency.toUpperCase());
+  const amount = zeroDecimal ? cents : cents / 100;
+  try {
+    return new Intl.NumberFormat("ko-KR", {
+      style: "currency",
+      currency,
+      maximumFractionDigits: zeroDecimal ? 0 : 2,
+    }).format(amount);
+  } catch {
+    return `${amount.toLocaleString()} ${currency}`;
+  }
+}
+
+export function formatDuration(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  if (h) return `${h}시간 ${m}분`;
+  if (m) return `${m}분 ${s}초`;
+  return `${s}초`;
+}
