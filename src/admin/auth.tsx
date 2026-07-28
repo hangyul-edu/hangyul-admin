@@ -10,13 +10,20 @@ import {
 import type { AdminStoredSession } from "./lib/storage";
 import type { AdminMe, TokenPair } from "./api";
 
-type Status = "booting" | "signed-out" | "signed-in";
+/**
+ * "denied" = the stored session authenticates fine but the account has no
+ * admin role (GET /admin/me → 403). The session is kept so the user can
+ * perform a full logout (incl. server-side revocation) from the
+ * access-denied screen — they must never be stranded without a way out.
+ */
+type Status = "booting" | "signed-out" | "denied" | "signed-in";
 
 interface AdminAuthCtx {
   status: Status;
   me: AdminMe | null;
   /** Email/password login; verifies the account holds an admin scope set. */
   login: (email: string, password: string) => Promise<void>;
+  /** Revokes the server session and wipes every client trace, then lands on /login. */
   logout: () => Promise<void>;
   can: (scope: string) => boolean;
 }
@@ -58,6 +65,13 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   function hardSignOut() {
     sessionRef.current = null;
     clearAdminSession();
+    // Belt-and-braces: the admin app itself only uses its localStorage key,
+    // but a full logout must leave no client-side auth trace behind.
+    try {
+      sessionStorage.clear();
+    } catch {
+      /* storage may be unavailable (privacy mode) */
+    }
     setMe(null);
     setStatus("signed-out");
     qc.clear();
@@ -110,8 +124,15 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
           setMe(profile);
           setStatus("signed-in");
         }
-      } catch {
-        if (!cancelled) hardSignOut();
+      } catch (e) {
+        if (cancelled) return;
+        if (e instanceof ApiError && e.status === 403) {
+          // Authenticated but not an admin — keep the session and show the
+          // access-denied screen so the user can log out from there.
+          setStatus("denied");
+        } else {
+          hardSignOut();
+        }
       }
     })();
     return () => {

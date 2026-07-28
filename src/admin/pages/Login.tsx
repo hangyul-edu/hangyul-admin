@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { errorMessage } from "../../lib/http";
 import { useAdminAuth } from "../auth";
+import { AccessDenied } from "../components/AccessDenied";
 import { Button, Field, Input, LoadingState } from "../components/kit";
 
 export function LoginPage() {
@@ -14,6 +15,10 @@ export function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
 
   if (status === "booting") return <LoadingState label="세션 확인 중…" />;
+  // A stored session without admin rights must surface the access-denied
+  // screen (with its logout escape hatch) here too — never a login form the
+  // stored session would immediately bypass, and never a blank page.
+  if (status === "denied") return <AccessDenied />;
   if (status === "signed-in") return <Navigate to="/" replace />;
 
   async function onSubmit(e: FormEvent) {

@@ -1,6 +1,7 @@
 import { Navigate, Route, createBrowserRouter, createRoutesFromElements, RouterProvider } from "react-router-dom";
 import type { ReactNode } from "react";
 import { useAdminAuth } from "./auth";
+import { AccessDenied } from "./components/AccessDenied";
 import { AdminLayout } from "./components/Layout";
 import { LoadingState, EmptyState } from "./components/kit";
 import { LoginPage } from "./pages/Login";
@@ -26,6 +27,7 @@ import { AiContentPage } from "./pages/AiContent";
 function RequireAdmin({ children }: { children: ReactNode }) {
   const { status } = useAdminAuth();
   if (status === "booting") return <LoadingState label="관리자 세션 확인 중…" />;
+  if (status === "denied") return <AccessDenied />;
   if (status === "signed-out") return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
