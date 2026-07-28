@@ -40,7 +40,7 @@ export function LoginPage() {
         <div className="ad-login__mark" aria-hidden>
           한
         </div>
-        <h1 className="ad-login__title">한글 관리자</h1>
+        <h1 className="ad-login__title">한귤 관리자</h1>
         <p className="ad-login__sub">관리자 계정으로 로그인하세요</p>
         <Field label="이메일" required>
           <Input

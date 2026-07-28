@@ -105,7 +105,7 @@ export function AdminLayout() {
             한
           </span>
           <span>
-            한글 관리자
+            한귤 관리자
             <span className="ad-sidebar__brand-sub">Hangyul Admin</span>
           </span>
         </div>
