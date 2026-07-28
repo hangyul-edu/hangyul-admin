@@ -15,6 +15,41 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Boot watchdog: if the app has not rendered within 6 seconds (module
+      // blocked by a browser extension, network failure, script error before
+      // React mounts…), show actionable guidance instead of a blank page.
+      (function () {
+        var blocked = [];
+        window.addEventListener(
+          "error",
+          function (event) {
+            var el = event.target;
+            if (el && el.tagName === "SCRIPT" && el.src) blocked.push(el.src);
+          },
+          true
+        );
+        setTimeout(function () {
+          var root = document.getElementById("root");
+          if (root && root.childElementCount > 0) return; // app is up
+          root.innerHTML =
+            '<div style="max-width:520px;margin:80px auto;padding:32px;font-family:sans-serif;line-height:1.7">' +
+            "<h1 style=\"font-size:20px\">관리자 페이지를 불러오지 못했어요</h1>" +
+            "<p>스크립트가 차단되었거나 로드에 실패했습니다. 다음을 확인해 주세요.</p>" +
+            "<ul>" +
+            "<li>광고 차단 확장 프로그램(uBlock, AdGuard 등)을 이 사이트에서 <b>끄고</b> 새로고침</li>" +
+            "<li>주소창이 <b>http://</b> 로 시작하는지 확인 (https 자동 전환 시 개발 서버에 연결되지 않습니다)</li>" +
+            "<li>개발자 도구(F12) → Console/Network 탭에서 빨간 오류 확인</li>" +
+            "</ul>" +
+            (blocked.length
+              ? "<p style=\"color:#b91c1c;font-size:13px\">로드 실패: " +
+                blocked.join("<br>") +
+                "</p>"
+              : "") +
+            "</div>";
+        }, 6000);
+      })();
+    </script>
     <script type="module" src="/src/admin/main.tsx"></script>
   </body>
 </html>
