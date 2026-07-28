@@ -62,6 +62,12 @@ export function AccessDenied() {
           로그아웃하고 관리자 로그인으로 이동
         </Button>
         <p style={{ textAlign: "center", marginTop: 14, marginBottom: 0 }}>
+          {/* The login route also clears incompatible sessions on arrival,
+              so this path works even if the logout call cannot reach the
+              server. Full-page navigation keeps it dependency-free. */}
+          <a href="/admin/login" style={{ fontSize: 13, marginRight: 14 }}>
+            관리자 로그인 화면으로
+          </a>
           <a href="/" style={{ fontSize: 13 }}>
             멤버 앱으로 돌아가기
           </a>

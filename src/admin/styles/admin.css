@@ -995,6 +995,15 @@ a.ad-recent-row:hover {
   font-size: 13px;
   margin-bottom: 24px;
 }
+.ad-login__notice {
+  background: var(--info-bg);
+  color: var(--info);
+  font-size: 12.5px;
+  border-radius: 10px;
+  padding: 9px 12px;
+  margin: -10px 0 16px;
+  text-align: center;
+}
 
 /* ---------- Animations ---------- */
 @keyframes ad-spin {

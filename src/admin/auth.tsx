@@ -110,7 +110,9 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     hardSignOut();
   }
 
-  // Cold-start: restore the session and re-verify admin access.
+  // Cold-start: restore the session and re-verify admin access. The check
+  // is time-boxed — a hung request must degrade to the login form, never
+  // leave the user on a permanent "checking session" spinner.
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -119,7 +121,12 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         return;
       }
       try {
-        const profile = await http.get<AdminMe>("/admin/me");
+        const profile = await Promise.race([
+          http.get<AdminMe>("/admin/me"),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error("session check timed out")), 10_000),
+          ),
+        ]);
         if (!cancelled) {
           setMe(profile);
           setStatus("signed-in");
@@ -128,9 +135,12 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
         if (e instanceof ApiError && e.status === 403) {
           // Authenticated but not an admin — keep the session and show the
-          // access-denied screen so the user can log out from there.
+          // access-denied screen so the user can log out from there. (The
+          // /login route instead clears such a session and shows the form.)
           setStatus("denied");
         } else {
+          // Expired/invalid tokens, timeouts, network failures: drop the
+          // session so the login form always appears.
           hardSignOut();
         }
       }

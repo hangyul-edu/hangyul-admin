@@ -1,24 +1,36 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { errorMessage } from "../../lib/http";
 import { useAdminAuth } from "../auth";
-import { AccessDenied } from "../components/AccessDenied";
 import { Button, Field, Input, LoadingState } from "../components/kit";
 
 export function LoginPage() {
-  const { status, login } = useAdminAuth();
+  const { status, login, logout } = useAdminAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const clearingRef = useRef(false);
 
-  if (status === "booting") return <LoadingState label="세션 확인 중…" />;
-  // A stored session without admin rights must surface the access-denied
-  // screen (with its logout escape hatch) here too — never a login form the
-  // stored session would immediately bypass, and never a blank page.
-  if (status === "denied") return <AccessDenied />;
+  // The login route ALWAYS ends at the email/password form. A stored
+  // session that authenticates but lacks the admin role is incompatible
+  // here — discard it (server-side revocation + storage wipe) instead of
+  // showing an interstitial that hides the form.
+  useEffect(() => {
+    if (status !== "denied" || clearingRef.current) return;
+    clearingRef.current = true;
+    void logout().then(() => {
+      setNotice(
+        "관리자 권한이 없는 기존 세션을 정리했어요. 관리자 계정으로 로그인해 주세요.",
+      );
+    });
+  }, [status, logout]);
+
+  if (status === "booting" || status === "denied")
+    return <LoadingState label="세션 확인 중…" />;
   if (status === "signed-in") return <Navigate to="/" replace />;
 
   async function onSubmit(e: FormEvent) {
@@ -47,6 +59,11 @@ export function LoginPage() {
         </div>
         <h1 className="ad-login__title">한귤 관리자</h1>
         <p className="ad-login__sub">관리자 계정으로 로그인하세요</p>
+        {notice && (
+          <p className="ad-login__notice" role="status">
+            {notice}
+          </p>
+        )}
         <Field label="이메일" required>
           <Input
             type="email"
