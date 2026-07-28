@@ -384,7 +384,6 @@ export interface AdminLecture {
   lecture_id: string;
   track_id: string;
   course_id: string | null;
-  level: number;
   title: string;
   kind: string;
   duration_seconds: number;

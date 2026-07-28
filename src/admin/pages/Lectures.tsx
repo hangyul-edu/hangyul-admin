@@ -39,7 +39,6 @@ const KINDS = [
 interface LectureDraft {
   track_id: string;
   course_id: string;
-  level: string;
   title: string;
   kind: string;
   duration_seconds: string;
@@ -52,7 +51,6 @@ interface LectureDraft {
 const EMPTY: LectureDraft = {
   track_id: "track_conversation",
   course_id: "",
-  level: "1",
   title: "",
   kind: "video",
   duration_seconds: "0",
@@ -114,7 +112,6 @@ export function LecturesPage() {
   const save = useMutation({
     mutationFn: (d: LectureDraft) => {
       const base = {
-        level: Number(d.level),
         title: d.title,
         duration_seconds: Number(d.duration_seconds),
         access: d.access,
@@ -175,7 +172,7 @@ export function LecturesPage() {
       render: (l) => (
         <div>
           <Badge tone="brand">{TRACK_LABEL[l.track_id] ?? l.track_id}</Badge>
-          <div className="ad-cell-sub">레벨 {l.level} · 순서 {l.sequence}</div>
+          <div className="ad-cell-sub">순서 {l.sequence}</div>
         </div>
       ),
     },
@@ -228,7 +225,6 @@ export function LecturesPage() {
                 setDraft({
                   track_id: l.track_id,
                   course_id: l.course_id ?? "",
-                  level: String(l.level),
                   title: l.title,
                   kind: l.kind,
                   duration_seconds: String(l.duration_seconds),
@@ -410,15 +406,6 @@ export function LecturesPage() {
                   </option>
                 ))}
               </Select>
-            </Field>
-            <Field label="레벨" required hint="회화 1–10 · TOPIK 1–6">
-              <Input
-                type="number"
-                min={1}
-                max={draft.track_id === "track_topik" ? 6 : 10}
-                value={draft.level}
-                onChange={(e) => setDraft({ ...draft, level: e.target.value })}
-              />
             </Field>
             <Field label="정렬 순서">
               <Input
