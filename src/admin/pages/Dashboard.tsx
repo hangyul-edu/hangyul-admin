@@ -54,6 +54,14 @@ export function DashboardPage() {
 
   return (
     <div>
+      <div className="hgadm-page-head">
+        <div>
+          <h1>대시보드</h1>
+          <div className="hgadm-page-head__desc">
+            주요 지표와 최근 활동을 한눈에 확인합니다.
+          </div>
+        </div>
+      </div>
       {data.alerts.length > 0 && (
         <div className="hgadm-section" style={{ display: "grid", gap: 8 }}>
           {data.alerts.map((alert) => (

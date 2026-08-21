@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { NavLink, Outlet } from "react-router-dom";
 import {
   Bell,
   BookOpen,
@@ -95,33 +95,10 @@ const TIER_LABELS: Record<string, string> = {
   viewer: "뷰어",
 };
 
-const TITLES: [string, string][] = [
-  ["/users", "사용자 관리"],
-  ["/courses", "코스 관리"],
-  ["/lectures", "강의·영상 관리"],
-  ["/sentences", "문장 관리"],
-  ["/quizzes", "문제 관리"],
-  ["/ai-content", "AI 생성 콘텐츠 검수"],
-  ["/plans", "요금제 관리"],
-  ["/coupons", "쿠폰 관리"],
-  ["/subscriptions", "구독 현황"],
-  ["/payments", "결제·인보이스"],
-  ["/banners", "배너 관리"],
-  ["/notices", "공지 관리"],
-  ["/faqs", "FAQ 관리"],
-  ["/notifications", "알림 발송"],
-  ["/audit-logs", "감사 로그"],
-  ["/admins", "관리자 계정"],
-];
-
 export function AdminLayout() {
   const { me, can, logout } = useAdminAuth();
-  const location = useLocation();
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
-  const title =
-    TITLES.find(([prefix]) => location.pathname.startsWith(prefix))?.[1] ??
-    "대시보드";
 
   return (
     <div className="hgadm-frame">
@@ -169,7 +146,6 @@ export function AdminLayout() {
       </aside>
       <div className="hgadm-main">
         <header className="hgadm-topbar">
-          <div className="hgadm-topbar__title">{title}</div>
           <div className="hgadm-topbar__right">
             <div className="hgadm-topbar__user">
               <span className="hgadm-avatar" aria-hidden>

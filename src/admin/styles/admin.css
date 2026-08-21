@@ -273,16 +273,11 @@ body {
   top: 0;
   z-index: 30;
 }
-.hgadm-topbar__title {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 16px;
-  color: var(--ink);
-}
 .hgadm-topbar__right {
   display: flex;
   align-items: center;
   gap: 12px;
+  margin-left: auto;
 }
 .hgadm-topbar__user {
   display: flex;
