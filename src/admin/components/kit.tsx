@@ -3,7 +3,7 @@
 import { Children, isValidElement, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { ButtonHTMLAttributes, CSSProperties, InputHTMLAttributes, KeyboardEvent as ReactKeyboardEvent, ReactNode, TextareaHTMLAttributes } from "react";
-import { AlertTriangle, Check, ChevronDown, Inbox, Search as SearchIcon, X } from "lucide-react";
+import { AlertTriangle, Check, ChevronDown, HelpCircle, Inbox, Search as SearchIcon, X } from "lucide-react";
 
 /* ---------- Button ---------- */
 
@@ -478,13 +478,16 @@ export function Modal({
   size,
   children,
   footer,
+  hideHeader,
 }: {
   open: boolean;
   title: string;
   onClose: () => void;
-  size?: "md" | "lg" | "xl";
+  size?: "sm" | "md" | "lg" | "xl";
   children: ReactNode;
   footer?: ReactNode;
+  /** Suppress the default title/close header (caller renders its own). */
+  hideHeader?: boolean;
 }) {
   useEffect(() => {
     if (!open) return;
@@ -513,12 +516,14 @@ export function Modal({
         aria-modal="true"
         aria-label={title}
       >
-        <div className="hgadm-modal__head">
-          <div className="hgadm-modal__title">{title}</div>
-          <button className="hgadm-modal__close" onClick={onClose} aria-label="닫기">
-            <X size={18} strokeWidth={2} />
-          </button>
-        </div>
+        {!hideHeader && (
+          <div className="hgadm-modal__head">
+            <div className="hgadm-modal__title">{title}</div>
+            <button className="hgadm-modal__close" onClick={onClose} aria-label="닫기">
+              <X size={18} strokeWidth={2} />
+            </button>
+          </div>
+        )}
         <div className="hgadm-modal__body">{children}</div>
         {footer && <div className="hgadm-modal__foot">{footer}</div>}
       </div>
@@ -550,22 +555,35 @@ export function ConfirmDialog({
       open={open}
       title={title}
       onClose={loading ? () => {} : onCancel}
+      size="sm"
+      hideHeader
       footer={
         <>
-          <Button variant="ghost" onClick={onCancel} disabled={loading}>
+          <Button variant="ghost" onClick={onCancel} disabled={loading} block>
             취소
           </Button>
           <Button
             variant={danger ? "danger" : "primary"}
             onClick={onConfirm}
             loading={loading}
+            block
           >
             {confirmLabel}
           </Button>
         </>
       }
     >
-      <div style={{ fontSize: 14, lineHeight: 1.6 }}>{message}</div>
+      <div className="hgadm-confirm">
+        <div className={`hgadm-confirm__icon ${danger ? "hgadm-confirm__icon--danger" : ""}`} aria-hidden>
+          {danger ? (
+            <AlertTriangle size={24} strokeWidth={2} />
+          ) : (
+            <HelpCircle size={24} strokeWidth={2} />
+          )}
+        </div>
+        <div className="hgadm-confirm__title">{title}</div>
+        <div className="hgadm-confirm__text">{message}</div>
+      </div>
     </Modal>
   );
 }
