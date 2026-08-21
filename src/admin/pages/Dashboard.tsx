@@ -219,7 +219,8 @@ function RecentCard({ title, children }: { title: string; children: React.ReactN
  * Single-series 30-day bar chart (inline SVG).
  * Mark spec: thin bars, 4px rounded data-end anchored to the baseline via a
  * squared-off bottom, 2px gaps, recessive grid, ink-token text, per-bar hover
- * tooltip. Bar color #ea580c validated ≥3:1 against the white surface.
+ * tooltip. Bar color #2563eb (brand blue) validated ≥3:1 against the white
+ * surface (~5.2:1).
  */
 function TimeseriesChart({
   points,
@@ -310,7 +311,7 @@ function TimeseriesChart({
               {p.value > 0 && (
                 <path
                   d={roundedTopBar(x, y, barW, h, Math.min(4, barW / 2, h))}
-                  fill="#ea580c"
+                  fill="#2563eb"
                   opacity={hover === null || isHover ? 1 : 0.45}
                   pointerEvents="none"
                 />

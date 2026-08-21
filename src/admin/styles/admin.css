@@ -7,10 +7,73 @@
    ============================================================ */
 
 :root {
-  --ad-sidebar-w: 248px;
+  --ad-sidebar-w: 256px;
   --ad-topbar-h: 60px;
-  --ad-content-max: 1280px;
-  --focus-ring: 0 0 0 3px rgba(249, 115, 22, 0.25);
+  --ad-content-max: 1320px;
+
+  /* ---- Admin palette: premium blue + cool neutral (NO orange) ----
+     The admin is a separate entry (admin.html) that loads theme.css then this
+     file; redefining the brand scale here re-themes ONLY the admin, never the
+     member app. Every warm/orange brand token from theme.css is remapped to
+     blue so existing var(--brand-*) usages become blue automatically. */
+  --brand-50: #eff6ff;
+  --brand-100: #dbeafe;
+  --brand-200: #bfdbfe;
+  --brand-300: #93c5fd;
+  --brand-400: #60a5fa;
+  --brand-500: #2563eb; /* primary */
+  --brand-600: #1d4ed8;
+  --brand-700: #1e40af;
+  --brand-800: #1e3a8a;
+  --brand-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 55%, #1d4ed8 100%);
+  --brand-gradient-soft: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  --auth-orange: #2563eb;
+  --tier-orange: #2563eb;
+  --shadow-brand: 0 10px 24px rgba(37, 99, 235, 0.18);
+  --focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.28);
+
+  /* Cool neutral surfaces + ink (Slate) — override theme.css's warm scale */
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --surface-3: #f1f5f9;
+  --ink: #0f172a;
+  --ink-2: #334155;
+  --ink-3: #64748b;
+  --ink-muted: #64748b;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --line-strong: #cbd5e1;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  /* Neutral (non-orange) shadows + a blue/slate caution instead of amber */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-lg: 0 14px 40px rgba(15, 23, 42, 0.12);
+  --warning: #2563eb;
+  --warning-bg: #eff6ff;
+
+  /* Semantic (use going forward; no amber/orange) */
+  --ad-primary: #2563eb;
+  --ad-primary-hover: #1d4ed8;
+  --ad-primary-soft: #eff6ff;
+  --ad-success: #16a34a;
+  --ad-success-soft: #dcfce7;
+  --ad-danger: #dc2626;
+  --ad-danger-soft: #fee2e2;
+  --ad-info: #2563eb;
+  --ad-info-soft: #eff6ff;
+  --ad-pending: #7c3aed; /* violet */
+  --ad-pending-soft: #ede9fe;
+  --ad-neutral: #64748b;
+  --ad-neutral-soft: #f1f5f9;
+
+  /* Spacing / radius / shadow scale */
+  --ad-radius-sm: 8px;
+  --ad-radius: 12px;
+  --ad-radius-lg: 16px;
+  --ad-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --ad-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --ad-shadow-md: 0 8px 24px rgba(15, 23, 42, 0.1);
 }
 
 html {
@@ -47,8 +110,9 @@ body {
 .hgadm-sidebar {
   width: var(--ad-sidebar-w);
   flex-shrink: 0;
-  background: #241a12;
-  color: #f3ece3;
+  background: var(--surface);
+  color: var(--ink-2);
+  border-right: 1px solid var(--line);
   display: flex;
   flex-direction: column;
   position: sticky;
@@ -60,11 +124,11 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 18px 20px 14px;
+  padding: 20px 20px 16px;
   font-family: var(--font-display);
-  font-weight: 900;
-  font-size: 18px;
-  color: #fff;
+  font-weight: 800;
+  font-size: 17px;
+  color: var(--ink);
 }
 .hgadm-sidebar__brand-mark {
   width: 32px;
@@ -74,15 +138,14 @@ body {
   display: grid;
   place-items: center;
   color: #fff;
-  font-size: 16px;
   box-shadow: var(--shadow-brand);
 }
 .hgadm-sidebar__brand-sub {
   display: block;
   font-family: var(--font-body);
   font-size: 11px;
-  font-weight: 500;
-  color: #b8a898;
+  font-weight: 600;
+  color: var(--ink-muted);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -93,39 +156,45 @@ body {
   gap: 2px;
 }
 .hgadm-nav__group {
-  margin: 14px 8px 4px;
+  margin: 16px 10px 4px;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #8d7c6b;
+  color: var(--ink-muted);
 }
 .hgadm-nav__link {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
+  gap: 11px;
+  padding: 9px 11px;
   border-radius: 10px;
-  color: #d9cec2;
-  font-size: 13.5px;
+  color: var(--ink-2);
+  font-size: 14px;
   font-weight: 500;
   text-decoration: none;
   transition: background 0.12s, color 0.12s;
 }
 .hgadm-nav__link:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: #fff;
+  background: var(--ad-neutral-soft);
+  color: var(--ink);
 }
 .hgadm-nav__link.active {
-  background: rgba(249, 115, 22, 0.18);
-  color: #fdba74;
+  background: var(--ad-primary-soft);
+  color: var(--ad-primary);
   font-weight: 700;
 }
 .hgadm-nav__icon {
-  width: 18px;
-  text-align: center;
-  font-size: 15px;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
   flex-shrink: 0;
+  color: currentColor;
+}
+.hgadm-nav__icon svg {
+  width: 18px;
+  height: 18px;
 }
 
 /* ---------- Topbar ---------- */
@@ -961,7 +1030,7 @@ a.hgadm-recent-row:hover {
   min-height: 100vh;
   display: grid;
   place-items: center;
-  background: linear-gradient(160deg, #fff7ed 0%, #f2e9de 100%);
+  background: linear-gradient(160deg, #eff6ff 0%, #e2e8f0 100%);
   padding: 24px;
 }
 .hgadm-login__card {

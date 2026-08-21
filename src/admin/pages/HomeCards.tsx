@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ChevronDown, ChevronUp, ImageIcon } from "lucide-react";
 import { adminApi } from "../api";
 import type { AdminBanner } from "../api";
 import { errorMessage } from "../../lib/http";
@@ -163,7 +164,9 @@ export function BannersPage() {
       ) : query.data.items.length === 0 ? (
         <div className="hgadm-card">
           <div className="hgadm-state">
-            <div className="hgadm-state__icon">🖼️</div>
+            <div className="hgadm-state__icon" aria-hidden>
+              <ImageIcon size={28} strokeWidth={1.75} />
+            </div>
             <div className="hgadm-state__title">등록된 배너가 없습니다</div>
             <div className="hgadm-state__desc">
               배너를 추가하면 앱의 강의 홈 상단에 노출됩니다.
@@ -213,7 +216,7 @@ export function BannersPage() {
                     onClick={() => move.mutate({ id: banner.banner_id, dir: -1 })}
                     aria-label="위로"
                   >
-                    ↑
+                    <ChevronUp size={16} strokeWidth={2} />
                   </Button>
                   <Button
                     size="sm"
@@ -222,7 +225,7 @@ export function BannersPage() {
                     onClick={() => move.mutate({ id: banner.banner_id, dir: 1 })}
                     aria-label="아래로"
                   >
-                    ↓
+                    <ChevronDown size={16} strokeWidth={2} />
                   </Button>
                   <Switch
                     checked={banner.is_active}

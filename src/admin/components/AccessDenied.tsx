@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { ShieldAlert } from "lucide-react";
 import { http } from "../../lib/http";
 import { useAdminAuth } from "../auth";
 import { Button } from "./kit";
@@ -42,7 +43,7 @@ export function AccessDenied() {
     <div className="hgadm-login">
       <div className="hgadm-login__card" role="alert">
         <div className="hgadm-login__mark" aria-hidden>
-          🔒
+          <ShieldAlert size={30} strokeWidth={1.75} />
         </div>
         <h1 className="hgadm-login__title">관리자 권한이 없습니다</h1>
         <p className="hgadm-login__sub">

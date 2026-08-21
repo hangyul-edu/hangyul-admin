@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { CheckCircle2 } from "lucide-react";
 import { adminApi } from "../api";
 import { errorMessage } from "../../lib/http";
 import { useToast } from "../../hooks/toast";
@@ -174,8 +175,12 @@ export function NotificationsPage() {
               발송하기
             </Button>
             {lastResult && (
-              <p style={{ color: "var(--success)", fontSize: 13.5, marginTop: 12 }}>
-                ✓ {lastResult}
+              <p
+                className="hgadm-row"
+                style={{ color: "var(--success)", fontSize: 13.5, marginTop: 12, gap: 6 }}
+              >
+                <CheckCircle2 size={16} strokeWidth={2} style={{ flexShrink: 0 }} />
+                {lastResult}
               </p>
             )}
           </div>

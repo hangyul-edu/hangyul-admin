@@ -212,7 +212,7 @@ export function AiContentPage() {
               onRowClick={(g) => setDetailId(g.content_id)}
               empty={
                 reviewStatus === "pending"
-                  ? "검수 대기 중인 항목이 없습니다. 🎉"
+                  ? "검수 대기 중인 항목이 없습니다."
                   : "조건에 맞는 항목이 없습니다."
               }
             />

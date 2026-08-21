@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
+import { Check, X } from "lucide-react";
 import { adminApi } from "../api";
 import type { AdminQuiz } from "../api";
 import { errorMessage } from "../../lib/http";
@@ -394,7 +395,13 @@ export function QuizzesPage() {
                   <li key={c.key}>
                     {c.text}
                     {viewing.correct_choice === c.key && (
-                      <strong style={{ color: "var(--success)" }}> ✓ 정답</strong>
+                      <strong
+                        className="hgadm-row"
+                        style={{ color: "var(--success)", display: "inline-flex", gap: 4, marginLeft: 6, verticalAlign: "middle" }}
+                      >
+                        <Check size={15} strokeWidth={2.5} />
+                        정답
+                      </strong>
                     )}
                   </li>
                 ))}
@@ -602,8 +609,9 @@ export function QuizzesPage() {
                           blanks: draft.blanks.filter((_, j) => j !== i),
                         })
                       }
+                      aria-label="삭제"
                     >
-                      ✕
+                      <X size={16} strokeWidth={2} />
                     </Button>
                   </div>
                 ))}

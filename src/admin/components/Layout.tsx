@@ -1,10 +1,30 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
+import {
+  Bell,
+  BookOpen,
+  Bot,
+  Clapperboard,
+  CreditCard,
+  HelpCircle,
+  Image as ImageIcon,
+  LayoutDashboard,
+  Megaphone,
+  MessagesSquare,
+  PenLine,
+  Receipt,
+  Repeat,
+  ScrollText,
+  ShieldCheck,
+  Ticket,
+  Users as UsersIcon,
+  type LucideIcon,
+} from "lucide-react";
 import { useAdminAuth } from "../auth";
 import { Button } from "./kit";
 
 interface NavItem {
   to: string;
-  icon: string;
+  icon: LucideIcon;
   label: string;
   /** Any of these scopes shows the item. */
   scopes: string[];
@@ -18,47 +38,49 @@ interface NavGroup {
 const NAV: NavGroup[] = [
   {
     label: "개요",
-    items: [{ to: "/", icon: "📊", label: "대시보드", scopes: ["users:read"] }],
+    items: [
+      { to: "/", icon: LayoutDashboard, label: "대시보드", scopes: ["users:read"] },
+    ],
   },
   {
     label: "사용자",
     items: [
-      { to: "/users", icon: "👥", label: "사용자 관리", scopes: ["users:read"] },
+      { to: "/users", icon: UsersIcon, label: "사용자 관리", scopes: ["users:read"] },
     ],
   },
   {
     label: "콘텐츠",
     items: [
-      { to: "/courses", icon: "📚", label: "코스", scopes: ["content:read"] },
-      { to: "/lectures", icon: "🎬", label: "강의·영상", scopes: ["content:read"] },
-      { to: "/sentences", icon: "✍️", label: "문장", scopes: ["content:read"] },
-      { to: "/quizzes", icon: "❓", label: "문제(TOPIK)", scopes: ["content:read"] },
-      { to: "/ai-content", icon: "🤖", label: "AI 생성 검수", scopes: ["content:read"] },
+      { to: "/courses", icon: BookOpen, label: "코스", scopes: ["content:read"] },
+      { to: "/lectures", icon: Clapperboard, label: "강의·영상", scopes: ["content:read"] },
+      { to: "/sentences", icon: PenLine, label: "문장", scopes: ["content:read"] },
+      { to: "/quizzes", icon: HelpCircle, label: "문제(TOPIK)", scopes: ["content:read"] },
+      { to: "/ai-content", icon: Bot, label: "AI 생성 검수", scopes: ["content:read"] },
     ],
   },
   {
     label: "커머스",
     items: [
-      { to: "/plans", icon: "💳", label: "요금제", scopes: ["commerce:read"] },
-      { to: "/coupons", icon: "🎟️", label: "쿠폰", scopes: ["commerce:read"] },
-      { to: "/subscriptions", icon: "🔁", label: "구독", scopes: ["commerce:read"] },
-      { to: "/payments", icon: "💰", label: "결제·인보이스", scopes: ["commerce:read"] },
+      { to: "/plans", icon: CreditCard, label: "요금제", scopes: ["commerce:read"] },
+      { to: "/coupons", icon: Ticket, label: "쿠폰", scopes: ["commerce:read"] },
+      { to: "/subscriptions", icon: Repeat, label: "구독", scopes: ["commerce:read"] },
+      { to: "/payments", icon: Receipt, label: "결제·인보이스", scopes: ["commerce:read"] },
     ],
   },
   {
     label: "운영",
     items: [
-      { to: "/banners", icon: "🖼️", label: "배너", scopes: ["ops:read"] },
-      { to: "/notices", icon: "📢", label: "공지", scopes: ["ops:read"] },
-      { to: "/faqs", icon: "💬", label: "FAQ", scopes: ["ops:read"] },
-      { to: "/notifications", icon: "🔔", label: "알림 발송", scopes: ["ops:write"] },
+      { to: "/banners", icon: ImageIcon, label: "배너", scopes: ["ops:read"] },
+      { to: "/notices", icon: Megaphone, label: "공지", scopes: ["ops:read"] },
+      { to: "/faqs", icon: MessagesSquare, label: "FAQ", scopes: ["ops:read"] },
+      { to: "/notifications", icon: Bell, label: "알림 발송", scopes: ["ops:write"] },
     ],
   },
   {
     label: "시스템",
     items: [
-      { to: "/audit-logs", icon: "🧾", label: "감사 로그", scopes: ["audit:read"] },
-      { to: "/admins", icon: "🛡️", label: "관리자 계정", scopes: ["admins:manage"] },
+      { to: "/audit-logs", icon: ScrollText, label: "감사 로그", scopes: ["audit:read"] },
+      { to: "/admins", icon: ShieldCheck, label: "관리자 계정", scopes: ["admins:manage"] },
     ],
   },
 ];
@@ -118,21 +140,24 @@ export function AdminLayout() {
             return (
               <div key={group.label}>
                 <div className="hgadm-nav__group">{group.label}</div>
-                {visible.map((item) => (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    end={item.to === "/"}
-                    className={({ isActive }) =>
-                      `hgadm-nav__link ${isActive ? "active" : ""}`
-                    }
-                  >
-                    <span className="hgadm-nav__icon" aria-hidden>
-                      {item.icon}
-                    </span>
-                    <span className="hgadm-nav__label">{item.label}</span>
-                  </NavLink>
-                ))}
+                {visible.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      end={item.to === "/"}
+                      className={({ isActive }) =>
+                        `hgadm-nav__link ${isActive ? "active" : ""}`
+                      }
+                    >
+                      <span className="hgadm-nav__icon" aria-hidden>
+                        <Icon size={18} strokeWidth={1.75} />
+                      </span>
+                      <span className="hgadm-nav__label">{item.label}</span>
+                    </NavLink>
+                  );
+                })}
               </div>
             );
           })}

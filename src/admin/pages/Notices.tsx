@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Pin } from "lucide-react";
 import { adminApi } from "../api";
 import type { AdminNotice, NoticeTranslation } from "../api";
 import { errorMessage } from "../../lib/http";
@@ -107,8 +108,15 @@ export function NoticesPage() {
         const ko = pick(n, "ko") ?? n.translations[0];
         return (
           <div>
-            <div className="hgadm-cell-main">
-              {n.pinned && "📌 "}
+            <div className="hgadm-cell-main hgadm-row" style={{ gap: 6 }}>
+              {n.pinned && (
+                <Pin
+                  size={14}
+                  strokeWidth={2}
+                  aria-label="고정됨"
+                  style={{ color: "var(--ad-primary)", flexShrink: 0 }}
+                />
+              )}
               {ko?.title ?? "(제목 없음)"}
             </div>
             <div className="hgadm-cell-sub">

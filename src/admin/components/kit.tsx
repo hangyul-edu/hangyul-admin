@@ -2,6 +2,7 @@
 // defined here against the classes in src/admin/styles/admin.css.
 import { useEffect, useRef, useState } from "react";
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
+import { AlertTriangle, Inbox, Search as SearchIcon, X } from "lucide-react";
 
 /* ---------- Button ---------- */
 
@@ -184,12 +185,12 @@ export function LoadingState({ label = "불러오는 중…" }: { label?: string
 }
 
 export function EmptyState({
-  icon = "🗂️",
+  icon,
   title,
   desc,
   action,
 }: {
-  icon?: string;
+  icon?: ReactNode;
   title: string;
   desc?: string;
   action?: ReactNode;
@@ -197,7 +198,7 @@ export function EmptyState({
   return (
     <div className="hgadm-state">
       <div className="hgadm-state__icon" aria-hidden>
-        {icon}
+        {icon ?? <Inbox size={28} strokeWidth={1.75} />}
       </div>
       <div className="hgadm-state__title">{title}</div>
       {desc && <div className="hgadm-state__desc">{desc}</div>}
@@ -216,7 +217,7 @@ export function ErrorState({
   return (
     <div className="hgadm-state">
       <div className="hgadm-state__icon" aria-hidden>
-        ⚠️
+        <AlertTriangle size={28} strokeWidth={1.75} />
       </div>
       <div className="hgadm-state__title">문제가 발생했어요</div>
       <div className="hgadm-state__desc">{message}</div>
@@ -276,7 +277,7 @@ export function Modal({
         <div className="hgadm-modal__head">
           <div className="hgadm-modal__title">{title}</div>
           <button className="hgadm-modal__close" onClick={onClose} aria-label="닫기">
-            ✕
+            <X size={18} strokeWidth={2} />
           </button>
         </div>
         <div className="hgadm-modal__body">{children}</div>
@@ -504,7 +505,7 @@ export function SearchBox({
   return (
     <span className="hgadm-search">
       <span className="hgadm-search__icon" aria-hidden>
-        🔍
+        <SearchIcon size={16} strokeWidth={1.75} />
       </span>
       <input
         value={draft}

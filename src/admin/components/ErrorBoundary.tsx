@@ -1,5 +1,6 @@
 import { Component } from "react";
 import type { ErrorInfo, ReactNode } from "react";
+import { AlertTriangle } from "lucide-react";
 import { clearAdminSession } from "../lib/storage";
 
 interface State {
@@ -39,7 +40,7 @@ export class AdminErrorBoundary extends Component<{ children: ReactNode }, State
       <div className="hgadm-login">
         <div className="hgadm-login__card" role="alert">
           <div className="hgadm-login__mark" aria-hidden>
-            ⚠️
+            <AlertTriangle size={30} strokeWidth={1.75} />
           </div>
           <h1 className="hgadm-login__title">화면을 표시하지 못했어요</h1>
           <p className="hgadm-login__sub">

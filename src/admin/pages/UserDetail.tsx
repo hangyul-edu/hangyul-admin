@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import { adminApi } from "../api";
 import { errorMessage } from "../../lib/http";
 import { useToast } from "../../hooks/toast";
@@ -74,8 +75,13 @@ export function UserDetailPage() {
       <div className="hgadm-page-head">
         <div>
           <div className="hgadm-row" style={{ marginBottom: 4 }}>
-            <Link to="/users" className="hgadm-muted" style={{ fontSize: 13 }}>
-              ← 사용자 목록
+            <Link
+              to="/users"
+              className="hgadm-muted hgadm-row"
+              style={{ fontSize: 13, gap: 4 }}
+            >
+              <ArrowLeft size={14} strokeWidth={2} />
+              사용자 목록
             </Link>
           </div>
           <h1 className="hgadm-row">

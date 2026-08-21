@@ -1,5 +1,6 @@
 import { Navigate, Route, createBrowserRouter, createRoutesFromElements, RouterProvider } from "react-router-dom";
 import type { ReactNode } from "react";
+import { Compass, Lock } from "lucide-react";
 import { useAdminAuth } from "./auth";
 import { AccessDenied } from "./components/AccessDenied";
 import { AdminLayout } from "./components/Layout";
@@ -47,7 +48,7 @@ export function RequireScope({
   if (!can(scope)) {
     return (
       <EmptyState
-        icon="🔒"
+        icon={<Lock size={28} strokeWidth={1.75} />}
         title="접근 권한이 없습니다"
         desc={`이 화면을 보려면 '${scope}' 권한이 필요합니다. 필요한 경우 최고 관리자에게 요청하세요.`}
       />
@@ -95,7 +96,7 @@ const router = createBrowserRouter(
         <Route path="/notifications" element={<RequireScope scope="ops:write"><NotificationsPage /></RequireScope>} />
         <Route path="/audit-logs" element={<RequireScope scope="audit:read"><AuditLogsPage /></RequireScope>} />
         <Route path="/admins" element={<RequireScope scope="admins:manage"><AdminsPage /></RequireScope>} />
-        <Route path="*" element={<EmptyState icon="🧭" title="페이지를 찾을 수 없습니다" />} />
+        <Route path="*" element={<EmptyState icon={<Compass size={28} strokeWidth={1.75} />} title="페이지를 찾을 수 없습니다" />} />
       </Route>
     </>,
   ),
