@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import {
   Bell,
@@ -21,7 +22,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useAdminAuth } from "../auth";
-import { Button } from "./kit";
+import { Button, ConfirmDialog } from "./kit";
 
 interface NavItem {
   to: string;
@@ -116,6 +117,8 @@ const TITLES: [string, string][] = [
 export function AdminLayout() {
   const { me, can, logout } = useAdminAuth();
   const location = useLocation();
+  const [confirmLogout, setConfirmLogout] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const title =
     TITLES.find(([prefix]) => location.pathname.startsWith(prefix))?.[1] ??
     "대시보드";
@@ -181,12 +184,27 @@ export function AdminLayout() {
                 </div>
               </div>
             </div>
-            <Button size="sm" variant="ghost" onClick={() => void logout()}>
+            <Button size="sm" variant="ghost" onClick={() => setConfirmLogout(true)}>
               <LogOut size={15} strokeWidth={2} />
               로그아웃
             </Button>
           </div>
         </header>
+        <ConfirmDialog
+          open={confirmLogout}
+          title="로그아웃"
+          message="관리자 세션에서 로그아웃할까요? 다시 사용하려면 재로그인이 필요합니다."
+          confirmLabel="로그아웃"
+          loading={loggingOut}
+          onConfirm={() => {
+            setLoggingOut(true);
+            void logout().finally(() => {
+              setLoggingOut(false);
+              setConfirmLogout(false);
+            });
+          }}
+          onCancel={() => setConfirmLogout(false)}
+        />
         <main className="hgadm-content">
           <Outlet />
         </main>
