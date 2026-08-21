@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { UserPlus } from "lucide-react";
 import { adminApi, downloadCsv } from "../api";
 import type { AdminUserSummary } from "../api";
 import { errorMessage } from "../../lib/http";
@@ -257,6 +258,7 @@ export function UsersPage() {
         title="테스터 계정 생성"
         message="구독 없이 프리미엄 기능 전체에 접근할 수 있는 테스터 계정을 새로 만듭니다. 생성 후 비밀번호는 한 번만 표시됩니다. 계속할까요?"
         confirmLabel="생성"
+        icon={<UserPlus size={24} strokeWidth={2} />}
         loading={createTester.isPending}
         onConfirm={() => createTester.mutate()}
         onCancel={() => setConfirmTester(false)}

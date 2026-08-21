@@ -3,7 +3,7 @@
 import { Children, isValidElement, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { ButtonHTMLAttributes, CSSProperties, InputHTMLAttributes, KeyboardEvent as ReactKeyboardEvent, ReactNode, TextareaHTMLAttributes } from "react";
-import { AlertTriangle, Check, ChevronDown, HelpCircle, Inbox, Search as SearchIcon, X } from "lucide-react";
+import { AlertCircle, AlertTriangle, Check, ChevronDown, Inbox, Search as SearchIcon, X } from "lucide-react";
 
 /* ---------- Button ---------- */
 
@@ -537,6 +537,7 @@ export function ConfirmDialog({
   message,
   confirmLabel = "확인",
   danger,
+  icon,
   loading,
   onConfirm,
   onCancel,
@@ -546,6 +547,8 @@ export function ConfirmDialog({
   message: ReactNode;
   confirmLabel?: string;
   danger?: boolean;
+  /** Contextual glyph shown in the badge; defaults to a heads-up icon. */
+  icon?: ReactNode;
   loading?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
@@ -575,11 +578,7 @@ export function ConfirmDialog({
     >
       <div className="hgadm-confirm">
         <div className={`hgadm-confirm__icon ${danger ? "hgadm-confirm__icon--danger" : ""}`} aria-hidden>
-          {danger ? (
-            <AlertTriangle size={24} strokeWidth={2} />
-          ) : (
-            <HelpCircle size={24} strokeWidth={2} />
-          )}
+          {icon ?? (danger ? <AlertTriangle size={24} strokeWidth={2} /> : <AlertCircle size={24} strokeWidth={2} />)}
         </div>
         <div className="hgadm-confirm__title">{title}</div>
         <div className="hgadm-confirm__text">{message}</div>
