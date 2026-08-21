@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { adminApi } from "../api";
 import type { AdminLecture, AdminLectureVideo } from "../api";
+import { tusUploadToUrl } from "../lib/videoUpload";
 import { errorMessage } from "../../lib/http";
 import { useToast } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
@@ -533,6 +534,7 @@ function VideoManagerModal({
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [deleting, setDeleting] = useState<AdminLectureVideo | null>(null);
 
   const query = useQuery({
@@ -550,18 +552,28 @@ function VideoManagerModal({
     void qc.invalidateQueries({ queryKey: ["admin", "lecture-videos", lecture.lecture_id] });
   }
 
-  async function upload(file: File | undefined, replace: boolean) {
+  async function upload(file: File | undefined) {
     if (!file) return;
     setUploading(true);
+    setProgress(0);
     try {
-      if (replace) await adminApi.replaceLectureVideo(lecture.lecture_id, file);
-      else await adminApi.uploadLectureVideo(lecture.lecture_id, file);
-      toast.success("업로드를 시작했어요. 인코딩이 끝나면 자동으로 준비 완료됩니다.");
+      // Direct resumable upload: the backend provisions a one-time session, then
+      // the browser streams the bytes straight to Cloudflare via tus (never
+      // through our API). The new video is promoted to primary only once it is
+      // fully processed, so a replace never interrupts the current video.
+      const session = await adminApi.createVideoUploadSession(lecture.lecture_id, {
+        filename: file.name,
+        file_size_bytes: file.size,
+        content_type: file.type || "video/mp4",
+      });
+      await tusUploadToUrl(session.upload_url, file, setProgress).promise;
+      toast.success("업로드 완료. 인코딩이 끝나면 자동으로 준비됩니다.");
       refresh();
     } catch (e) {
       toast.error(errorMessage(e));
     } finally {
       setUploading(false);
+      setProgress(0);
       if (fileRef.current) fileRef.current.value = "";
     }
   }
@@ -594,12 +606,12 @@ function VideoManagerModal({
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           e.preventDefault();
-          void upload(e.dataTransfer.files?.[0], Boolean(hasPrimary));
+          void upload(e.dataTransfer.files?.[0]);
         }}
         style={{ marginBottom: 14 }}
       >
         {uploading ? (
-          <span>업로드 중… 파일 크기에 따라 시간이 걸릴 수 있습니다.</span>
+          <span>Cloudflare로 직접 업로드 중… {progress}%</span>
         ) : (
           <span>
             {hasPrimary
@@ -611,7 +623,7 @@ function VideoManagerModal({
           ref={fileRef}
           type="file"
           accept="video/mp4,video/quicktime,video/webm"
-          onChange={(e) => void upload(e.target.files?.[0], Boolean(hasPrimary))}
+          onChange={(e) => void upload(e.target.files?.[0])}
         />
       </div>
 

@@ -415,6 +415,15 @@ export interface AdminLectureVideo {
   deleted_at: string | null;
 }
 
+export interface UploadSession {
+  video_id: string;
+  provider: string;
+  provider_video_id: string;
+  upload_url: string;
+  upload_protocol: string;
+  expires_at: string;
+}
+
 export interface AdminSentence {
   sentence_id: string;
   korean: string;
@@ -672,6 +681,16 @@ export const adminApi = {
       form,
     );
   },
+  // Provision a direct (browser → Cloudflare) resumable upload session. The
+  // backend returns a one-time upload URL; our Cloudflare token never leaves it.
+  createVideoUploadSession: (
+    lectureId: string,
+    body: { filename: string; file_size_bytes: number; content_type: string },
+  ) =>
+    http.post<UploadSession>(
+      `/admin/lectures/${lectureId}/video/upload-session`,
+      body,
+    ),
   replaceLectureVideo: (lectureId: string, file: File) => {
     const form = new FormData();
     form.append("file", file);
