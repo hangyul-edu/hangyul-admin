@@ -8,6 +8,7 @@ import {
   HelpCircle,
   Image as ImageIcon,
   LayoutDashboard,
+  LogOut,
   Megaphone,
   MessagesSquare,
   PenLine,
@@ -167,15 +168,21 @@ export function AdminLayout() {
         <header className="hgadm-topbar">
           <div className="hgadm-topbar__title">{title}</div>
           <div className="hgadm-topbar__right">
-            <div className="hgadm-topbar__who">
-              <div className="hgadm-topbar__who-name">
-                {me?.nickname || me?.name || me?.email}
-              </div>
-              <div className="hgadm-topbar__who-role">
-                {TIER_LABELS[me?.admin_role ?? ""] ?? me?.admin_role}
+            <div className="hgadm-topbar__user">
+              <span className="hgadm-avatar" aria-hidden>
+                {(me?.nickname || me?.name || me?.email || "?").trim().charAt(0).toUpperCase()}
+              </span>
+              <div className="hgadm-topbar__who">
+                <div className="hgadm-topbar__who-name">
+                  {me?.nickname || me?.name || me?.email}
+                </div>
+                <div className="hgadm-topbar__who-role">
+                  {TIER_LABELS[me?.admin_role ?? ""] ?? me?.admin_role}
+                </div>
               </div>
             </div>
             <Button size="sm" variant="ghost" onClick={() => void logout()}>
+              <LogOut size={15} strokeWidth={2} />
               로그아웃
             </Button>
           </div>
