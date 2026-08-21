@@ -1,8 +1,9 @@
 // Admin design-system primitives. Every visual atom the portal uses is
 // defined here against the classes in src/admin/styles/admin.css.
-import { useEffect, useRef, useState } from "react";
-import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
-import { AlertTriangle, Inbox, Search as SearchIcon, X } from "lucide-react";
+import { Children, isValidElement, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import type { ButtonHTMLAttributes, CSSProperties, InputHTMLAttributes, KeyboardEvent as ReactKeyboardEvent, ReactNode, TextareaHTMLAttributes } from "react";
+import { AlertTriangle, Check, ChevronDown, Inbox, Search as SearchIcon, X } from "lucide-react";
 
 /* ---------- Button ---------- */
 
@@ -136,8 +137,246 @@ export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
   return <input {...props} className={`hgadm-input ${props.className ?? ""}`} />;
 }
 
-export function Select(props: SelectHTMLAttributes<HTMLSelectElement>) {
-  return <select {...props} className={`hgadm-select ${props.className ?? ""}`} />;
+/**
+ * Custom single-select dropdown. Drop-in replacement for a native <select>:
+ * accepts the same `value` / `onChange(e => e.target.value)` / <option> children
+ * API, but renders its own listbox (portalled to <body>) that always opens
+ * directly BELOW the field — flipping above only when there isn't room — instead
+ * of the native macOS overlay that covers the control. Keyboard + a11y complete.
+ */
+interface SelectOption {
+  value: string;
+  label: ReactNode;
+  disabled?: boolean;
+}
+
+interface SelectProps {
+  value?: string | number;
+  onChange?: (e: { target: { value: string } }) => void;
+  children?: ReactNode;
+  disabled?: boolean;
+  className?: string;
+  style?: CSSProperties;
+  id?: string;
+  name?: string;
+  required?: boolean;
+  "aria-label"?: string;
+  "aria-invalid"?: boolean;
+}
+
+export function Select({
+  value,
+  onChange,
+  children,
+  disabled,
+  className = "",
+  style,
+  id,
+  "aria-label": ariaLabel,
+  "aria-invalid": ariaInvalid,
+}: SelectProps) {
+  const options = useMemo<SelectOption[]>(() => {
+    const out: SelectOption[] = [];
+    Children.forEach(children, (child) => {
+      if (!isValidElement(child) || child.type !== "option") return;
+      const p = child.props as { value?: string | number; children?: ReactNode; disabled?: boolean };
+      out.push({ value: String(p.value ?? ""), label: p.children, disabled: p.disabled });
+    });
+    return out;
+  }, [children]);
+
+  const current = String(value ?? "");
+  const selectedIndex = options.findIndex((o) => o.value === current);
+  const selectedLabel = selectedIndex >= 0 ? options[selectedIndex].label : "";
+
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(0);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLUListElement>(null);
+  const [pos, setPos] = useState<
+    { left: number; width: number; maxHeight: number; top?: number; bottom?: number } | null
+  >(null);
+
+  const place = useCallback(() => {
+    const el = triggerRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const gap = 4;
+    const spaceBelow = window.innerHeight - r.bottom - 8;
+    const spaceAbove = r.top - 8;
+    const desired = Math.min(288, options.length * 37 + 8);
+    const openUp = spaceBelow < Math.min(desired, 200) && spaceAbove > spaceBelow;
+    const maxHeight = Math.max(120, Math.min(desired, openUp ? spaceAbove : spaceBelow));
+    setPos(
+      openUp
+        ? { left: r.left, bottom: window.innerHeight - r.top + gap, width: r.width, maxHeight }
+        : { left: r.left, top: r.bottom + gap, width: r.width, maxHeight },
+    );
+  }, [options.length]);
+
+  const openMenu = useCallback(() => {
+    if (disabled) return;
+    setActive(selectedIndex >= 0 ? selectedIndex : 0);
+    place();
+    setOpen(true);
+  }, [disabled, place, selectedIndex]);
+
+  const close = useCallback((refocus = true) => {
+    setOpen(false);
+    if (refocus) triggerRef.current?.focus();
+  }, []);
+
+  const choose = useCallback(
+    (index: number) => {
+      const opt = options[index];
+      if (!opt || opt.disabled) return;
+      if (opt.value !== current) onChange?.({ target: { value: opt.value } });
+      close();
+    },
+    [options, current, onChange, close],
+  );
+
+  // Keep the menu glued to the trigger while scrolling/resizing; close on an
+  // outside pointer press. The menu's own scroll is ignored via the ref check.
+  useLayoutEffect(() => {
+    if (!open) return;
+    place();
+    menuRef.current?.focus();
+    const onScroll = (e: Event) => {
+      if (menuRef.current?.contains(e.target as Node)) return;
+      place();
+    };
+    const onResize = () => place();
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (menuRef.current?.contains(t) || triggerRef.current?.contains(t)) return;
+      close(false);
+    };
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", onResize);
+    document.addEventListener("mousedown", onDown);
+    return () => {
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", onResize);
+      document.removeEventListener("mousedown", onDown);
+    };
+  }, [open, place, close]);
+
+  const step = useCallback(
+    (dir: 1 | -1) => {
+      setActive((prev) => {
+        let next = prev;
+        for (let i = 0; i < options.length; i++) {
+          next = (next + dir + options.length) % options.length;
+          if (!options[next]?.disabled) break;
+        }
+        return next;
+      });
+    },
+    [options.length, options],
+  );
+
+  function onTriggerKey(e: ReactKeyboardEvent) {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp" || e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      openMenu();
+    }
+  }
+
+  function onMenuKey(e: ReactKeyboardEvent) {
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        step(1);
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        step(-1);
+        break;
+      case "Home":
+        e.preventDefault();
+        setActive(0);
+        break;
+      case "End":
+        e.preventDefault();
+        setActive(options.length - 1);
+        break;
+      case "Enter":
+      case " ":
+        e.preventDefault();
+        choose(active);
+        break;
+      case "Escape":
+        e.preventDefault();
+        close();
+        break;
+      case "Tab":
+        close(false);
+        break;
+    }
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        ref={triggerRef}
+        id={id}
+        className={`hgadm-select hgadm-select-trigger ${className}`}
+        style={style}
+        disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={ariaLabel}
+        aria-invalid={ariaInvalid}
+        onClick={() => (open ? close(false) : openMenu())}
+        onKeyDown={onTriggerKey}
+      >
+        <span>{selectedLabel}</span>
+        <ChevronDown size={16} strokeWidth={2} className="hgadm-select-trigger__caret" aria-hidden />
+      </button>
+      {open &&
+        pos &&
+        createPortal(
+          <ul
+            ref={menuRef}
+            className="hgadm-dropdown-menu"
+            role="listbox"
+            tabIndex={-1}
+            aria-activedescendant={undefined}
+            style={{
+              left: pos.left,
+              width: pos.width,
+              maxHeight: pos.maxHeight,
+              ...(pos.top !== undefined ? { top: pos.top } : { bottom: pos.bottom }),
+            }}
+            onKeyDown={onMenuKey}
+          >
+            {options.map((opt, i) => {
+              const isSelected = opt.value === current;
+              return (
+                <li
+                  key={`${opt.value}-${i}`}
+                  role="option"
+                  aria-selected={isSelected}
+                  aria-disabled={opt.disabled || undefined}
+                  className={`hgadm-dropdown-option ${i === active ? "active" : ""}`}
+                  onMouseEnter={() => setActive(i)}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => choose(i)}
+                >
+                  <span className="hgadm-dropdown-option__label">{opt.label}</span>
+                  {isSelected && (
+                    <Check size={15} strokeWidth={2.5} className="hgadm-dropdown-option__check" aria-hidden />
+                  )}
+                </li>
+              );
+            })}
+          </ul>,
+          document.body,
+        )}
+    </>
+  );
 }
 
 export function Textarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {

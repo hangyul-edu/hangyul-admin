@@ -620,12 +620,86 @@ body {
 }
 .hgadm-select {
   appearance: none;
-  /* lucide-style chevron in slate (--ink-3) to match the icon set + cool palette */
-  background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-  background-size: 16px 16px;
-  padding-right: 34px;
+}
+/* Custom dropdown trigger — styled like an input, with a lucide chevron. */
+.hgadm-select-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--ink);
+  line-height: 1.3;
+}
+.hgadm-select-trigger > span {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hgadm-select-trigger__caret {
+  flex: none;
+  color: var(--ink-3);
+  transition: transform 0.15s ease;
+}
+.hgadm-select-trigger[aria-expanded="true"] .hgadm-select-trigger__caret {
+  transform: rotate(180deg);
+}
+.hgadm-select-trigger:disabled {
+  background: var(--surface-3);
+  color: var(--ink-3);
+  cursor: not-allowed;
+}
+/* Portalled listbox that opens directly below (or above) the trigger. */
+.hgadm-dropdown-menu {
+  position: fixed;
+  z-index: 3000;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  box-shadow: var(--ad-shadow-md);
+  overflow-y: auto;
+  outline: none;
+  animation: ad-pop 0.12s ease;
+}
+.hgadm-dropdown-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  font-size: 13.5px;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.hgadm-dropdown-option__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hgadm-dropdown-option.active {
+  background: var(--ad-neutral-soft);
+}
+.hgadm-dropdown-option[aria-selected="true"] {
+  color: var(--ad-primary);
+  font-weight: 600;
+}
+.hgadm-dropdown-option[aria-selected="true"].active {
+  background: var(--ad-primary-soft);
+}
+.hgadm-dropdown-option[aria-disabled="true"] {
+  color: var(--ink-3);
+  cursor: not-allowed;
+}
+.hgadm-dropdown-option__check {
+  flex: none;
+  color: var(--ad-primary);
 }
 .hgadm-form-grid {
   display: grid;
@@ -747,7 +821,7 @@ body {
 .hgadm-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(30, 20, 12, 0.45);
+  background: rgba(15, 23, 42, 0.5);
   display: grid;
   place-items: center;
   z-index: 100;
