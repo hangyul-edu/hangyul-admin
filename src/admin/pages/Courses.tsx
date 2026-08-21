@@ -31,7 +31,6 @@ interface CourseDraft {
   track_id: string;
   title: string;
   description: string;
-  level: string;
   sequence: string;
   cover_image_url: string;
 }
@@ -40,7 +39,6 @@ const EMPTY: CourseDraft = {
   track_id: "track_conversation",
   title: "",
   description: "",
-  level: "1",
   sequence: "0",
   cover_image_url: "",
 };
@@ -71,7 +69,6 @@ export function CoursesPage() {
       const body = {
         title: d.title,
         description: d.description,
-        level: Number(d.level),
         sequence: Number(d.sequence),
         cover_image_url: d.cover_image_url || null,
       };
@@ -139,7 +136,6 @@ export function CoursesPage() {
       header: "트랙",
       render: (c) => <Badge tone="brand">{TRACK_LABEL[c.track_id] ?? c.track_id}</Badge>,
     },
-    { key: "level", header: "레벨", numeric: true, render: (c) => c.level },
     { key: "sequence", header: "순서", numeric: true, render: (c) => c.sequence },
     {
       key: "lectures",
@@ -165,7 +161,6 @@ export function CoursesPage() {
                   track_id: c.track_id,
                   title: c.title,
                   description: c.description,
-                  level: String(c.level),
                   sequence: String(c.sequence),
                   cover_image_url: c.cover_image_url ?? "",
                 });
@@ -267,15 +262,6 @@ export function CoursesPage() {
                     </option>
                   ))}
                 </Select>
-              </Field>
-              <Field label="레벨" required hint="회화 1–10 · TOPIK 1–6">
-                <Input
-                  type="number"
-                  min={1}
-                  max={draft.track_id === "track_topik" ? 6 : 10}
-                  value={draft.level}
-                  onChange={(e) => setDraft({ ...draft, level: e.target.value })}
-                />
               </Field>
               <Field label="제목" required>
                 <Input

@@ -374,7 +374,6 @@ export interface AdminCourse {
   track_id: string;
   title: string;
   description: string;
-  level: number;
   cover_image_url: string | null;
   sequence: number;
   lecture_count: number;
