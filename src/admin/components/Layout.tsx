@@ -18,6 +18,7 @@ import {
   ScrollText,
   ShieldCheck,
   Ticket,
+  UserRound,
   Users as UsersIcon,
   type LucideIcon,
 } from "lucide-react";
@@ -149,7 +150,7 @@ export function AdminLayout() {
           <div className="hgadm-topbar__right">
             <div className="hgadm-topbar__user">
               <span className="hgadm-avatar" aria-hidden>
-                {(me?.nickname || me?.name || me?.email || "?").trim().charAt(0).toUpperCase()}
+                <UserRound size={17} strokeWidth={2} />
               </span>
               <div className="hgadm-topbar__who">
                 <div className="hgadm-topbar__who-name">
