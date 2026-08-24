@@ -4,6 +4,7 @@ import {
   Bell,
   BookOpen,
   Bot,
+  Citrus,
   Clapperboard,
   CreditCard,
   HelpCircle,
@@ -106,7 +107,7 @@ export function AdminLayout() {
       <aside className="hgadm-sidebar">
         <div className="hgadm-sidebar__brand">
           <span className="hgadm-sidebar__brand-mark" aria-hidden>
-            한
+            <Citrus size={19} strokeWidth={2} />
           </span>
           <span>
             한귤 관리자
