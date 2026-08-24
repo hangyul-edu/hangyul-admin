@@ -7,6 +7,7 @@ import type { AdminQuiz } from "../api";
 import { errorMessage } from "../../lib/http";
 import { useToast } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
+import { ContentCleanupButton } from "../components/ContentCleanupButton";
 import {
   Badge,
   Button,
@@ -291,6 +292,25 @@ export function QuizzesPage() {
         </div>
         {canWrite && (
           <div className="hgadm-page-head__actions">
+            {can("admins:manage") && (
+              <ContentCleanupButton
+                label="문제 전체 삭제"
+                preview={adminApi.previewTopikCleanup}
+                clear={adminApi.clearTopik}
+                countLabels={[
+                  ["questions", "문제"],
+                  ["quiz_histories", "풀이 이력"],
+                  ["saved_quizzes", "저장된 문제"],
+                  ["quiz_attempts", "풀이 기록"],
+                  ["exam_sets", "모의고사"],
+                  ["exam_set_questions", "모의고사 문항"],
+                  ["exam_attempts", "모의고사 응시"],
+                  ["practice_sets", "AI 연습 세트"],
+                  ["generated_questions", "문제 AI 캐시"],
+                ]}
+                invalidateKeys={[["admin", "quizzes"]]}
+              />
+            )}
             <Button
               variant="primary"
               onClick={() => {

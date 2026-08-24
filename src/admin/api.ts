@@ -379,6 +379,26 @@ export interface AdminCourse {
   lecture_count: number;
 }
 
+export interface SentenceCleanupCounts {
+  sentences: number;
+  sentence_histories: number;
+  saved_sentences: number;
+  speech_attempts: number;
+  generated_sentences: number;
+}
+
+export interface TopikCleanupCounts {
+  questions: number;
+  quiz_histories: number;
+  saved_quizzes: number;
+  quiz_attempts: number;
+  exam_sets: number;
+  exam_set_questions: number;
+  exam_attempts: number;
+  practice_sets: number;
+  generated_questions: number;
+}
+
 export interface AdminLecture {
   lecture_id: string;
   track_id: string;
@@ -726,6 +746,20 @@ export const adminApi = {
   replaceQuiz: (quizId: string, body: Record<string, unknown>) =>
     http.put<AdminQuiz>(`/admin/quizzes/${quizId}`, body),
   deleteQuiz: (quizId: string) => http.del<void>(`/admin/quizzes/${quizId}`),
+
+  // Content cleanup (super-admin only; destructive bulk reset)
+  previewSentenceCleanup: () =>
+    http.get<SentenceCleanupCounts>("/admin/content/sentences/cleanup-preview"),
+  clearSentences: () =>
+    http.del<{ success: boolean; deleted: SentenceCleanupCounts }>("/admin/content/sentences", {
+      body: { confirmation: "DELETE_ALL_SENTENCES" },
+    }),
+  previewTopikCleanup: () =>
+    http.get<TopikCleanupCounts>("/admin/content/topik-questions/cleanup-preview"),
+  clearTopik: () =>
+    http.del<{ success: boolean; deleted: TopikCleanupCounts }>("/admin/content/topik-questions", {
+      body: { confirmation: "DELETE_ALL_TOPIK_QUESTIONS" },
+    }),
 
   // Generated content
   listGenerated: (params: Query) =>

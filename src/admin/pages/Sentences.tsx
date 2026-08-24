@@ -6,6 +6,7 @@ import type { AdminSentence } from "../api";
 import { errorMessage } from "../../lib/http";
 import { useToast } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
+import { ContentCleanupButton } from "../components/ContentCleanupButton";
 import {
   Badge,
   Button,
@@ -198,6 +199,21 @@ export function SentencesPage() {
         </div>
         {canWrite && (
           <div className="hgadm-page-head__actions">
+            {can("admins:manage") && (
+              <ContentCleanupButton
+                label="문장 전체 삭제"
+                preview={adminApi.previewSentenceCleanup}
+                clear={adminApi.clearSentences}
+                countLabels={[
+                  ["sentences", "문장"],
+                  ["sentence_histories", "학습 이력"],
+                  ["saved_sentences", "저장된 문장"],
+                  ["speech_attempts", "발음 시도"],
+                  ["generated_sentences", "문장 AI 캐시"],
+                ]}
+                invalidateKeys={[["admin", "sentences"], ["admin", "sentence-topics"]]}
+              />
+            )}
             <Button
               variant="primary"
               onClick={() => {
