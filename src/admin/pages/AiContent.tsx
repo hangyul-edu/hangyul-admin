@@ -61,7 +61,9 @@ export function AiContentPage() {
     queryFn: () =>
       adminApi.listGenerated({
         q: q || undefined,
-        review_status: reviewStatus || undefined,
+        // "all" is a sentinel for "no status filter"; sending it would filter
+        // to a non-existent status. Everything else is a real status value.
+        review_status: reviewStatus === "all" ? undefined : reviewStatus,
         content_kind: kind || undefined,
         level: level || undefined,
         page,
@@ -183,7 +185,7 @@ export function AiContentPage() {
             <option value="pending">검수 대기</option>
             <option value="approved">승인됨</option>
             <option value="rejected">반려됨</option>
-            <option value="">전체</option>
+            <option value="all">전체</option>
           </Select>
           <Select
             value={kind}
