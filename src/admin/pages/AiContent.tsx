@@ -17,6 +17,7 @@ import {
   LoadingState,
   Modal,
   Pagination,
+  SearchBox,
   Select,
   Textarea,
   formatDateTime,
@@ -40,6 +41,7 @@ export function AiContentPage() {
   const [note, setNote] = useState("");
   const [deleting, setDeleting] = useState<GeneratedSummary | GeneratedDetail | null>(null);
 
+  const q = params.get("q") ?? "";
   const reviewStatus = params.get("review_status") ?? "pending";
   const kind = params.get("content_kind") ?? "";
   const level = params.get("level") ?? "";
@@ -55,9 +57,10 @@ export function AiContentPage() {
   }
 
   const query = useQuery({
-    queryKey: ["admin", "generated", { reviewStatus, kind, level, page }],
+    queryKey: ["admin", "generated", { q, reviewStatus, kind, level, page }],
     queryFn: () =>
       adminApi.listGenerated({
+        q: q || undefined,
         review_status: reviewStatus || undefined,
         content_kind: kind || undefined,
         level: level || undefined,
@@ -167,6 +170,11 @@ export function AiContentPage() {
 
       <div className="hgadm-card">
         <div className="hgadm-toolbar">
+          <SearchBox
+            value={q}
+            placeholder="생성 내용·주제·콘텐츠 ID 검색"
+            onSearch={(next) => patchParams({ q: next, page: null })}
+          />
           <Select
             value={reviewStatus}
             onChange={(e) => patchParams({ review_status: e.target.value, page: null })}

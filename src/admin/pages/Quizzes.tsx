@@ -19,6 +19,7 @@ import {
   LoadingState,
   Modal,
   Pagination,
+  SearchBox,
   Select,
   Textarea,
 } from "../components/kit";
@@ -150,6 +151,7 @@ export function QuizzesPage() {
   const [viewing, setViewing] = useState<AdminQuiz | null>(null);
   const [deleting, setDeleting] = useState<AdminQuiz | null>(null);
 
+  const q = params.get("q") ?? "";
   const format = params.get("answer_format") ?? "";
   const section = params.get("topik_section") ?? "";
   const level = params.get("level") ?? "";
@@ -166,9 +168,10 @@ export function QuizzesPage() {
   }
 
   const query = useQuery({
-    queryKey: ["admin", "quizzes", { format, section, level, page }],
+    queryKey: ["admin", "quizzes", { q, format, section, level, page }],
     queryFn: () =>
       adminApi.listQuizzes({
+        q: q || undefined,
         answer_format: format || undefined,
         topik_section: section || undefined,
         level: level || undefined,
@@ -326,6 +329,11 @@ export function QuizzesPage() {
 
       <div className="hgadm-card">
         <div className="hgadm-toolbar">
+          <SearchBox
+            value={q}
+            placeholder="문항·번역·문제 ID 검색"
+            onSearch={(next) => patchParams({ q: next, page: null })}
+          />
           <Select
             value={format}
             onChange={(e) => patchParams({ answer_format: e.target.value, page: null })}
