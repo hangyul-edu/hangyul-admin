@@ -5,6 +5,7 @@ import { Check, X } from "lucide-react";
 import { adminApi } from "../api";
 import type { AdminQuiz } from "../api";
 import { errorMessage } from "../../lib/http";
+import { TOPIK_GRADES } from "../../lib/levels";
 import { useToast } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
 import { BatchAddButton } from "../components/BatchAddButton";
@@ -278,7 +279,7 @@ export function QuizzesPage() {
           "—"
         ),
     },
-    { key: "level", header: "레벨", numeric: true, render: (quiz) => quiz.level },
+    { key: "level", header: "급수", numeric: true, render: (quiz) => `${quiz.level}급` },
     {
       key: "source",
       header: "출처",
@@ -404,10 +405,10 @@ export function QuizzesPage() {
             onChange={(e) => patchParams({ level: e.target.value, page: null })}
             style={{ width: 120 }}
           >
-            <option value="">레벨: 전체</option>
-            {Array.from({ length: 10 }, (_, i) => i + 1).map((l) => (
+            <option value="">급수: 전체</option>
+            {TOPIK_GRADES.map((l) => (
               <option key={l} value={l}>
-                레벨 {l}
+                {l}급
               </option>
             ))}
           </Select>
@@ -447,7 +448,7 @@ export function QuizzesPage() {
             <div className="hgadm-row hgadm-row--wrap" style={{ marginBottom: 10 }}>
               <Badge tone="info">{FORMAT_LABEL[viewing.answer_format]}</Badge>
               {viewing.topik_section && <Badge tone="brand">{viewing.topik_section}</Badge>}
-              <Badge tone="neutral">레벨 {viewing.level}</Badge>
+              <Badge tone="neutral">{viewing.level}급</Badge>
               {viewing.is_ai_generated && <Badge tone="warning">AI 생성</Badge>}
             </div>
             <p style={{ fontWeight: 700, whiteSpace: "pre-wrap" }}>{viewing.prompt}</p>
@@ -564,14 +565,17 @@ export function QuizzesPage() {
                   }
                 />
               </Field>
-              <Field label="레벨" required>
-                <Input
-                  type="number"
-                  min={1}
-                  max={10}
+              <Field label="TOPIK 급수" required hint="1~6급 (회화 레벨과 다른 척도)">
+                <Select
                   value={draft.level}
                   onChange={(e) => setDraft({ ...draft, level: e.target.value })}
-                />
+                >
+                  {TOPIK_GRADES.map((l) => (
+                    <option key={l} value={l}>
+                      {l}급
+                    </option>
+                  ))}
+                </Select>
               </Field>
               {draft.material_kind === "audio" && (
                 <Field label="오디오 길이 (ms)" required>

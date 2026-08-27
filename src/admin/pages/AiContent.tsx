@@ -4,6 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import { adminApi } from "../api";
 import type { GeneratedDetail, GeneratedSummary } from "../api";
 import { errorMessage } from "../../lib/http";
+import { CONVERSATION_LEVELS, TOPIK_GRADES } from "../../lib/levels";
 import { useToast } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
 import {
@@ -46,6 +47,13 @@ export function AiContentPage() {
   const kind = params.get("content_kind") ?? "";
   const level = params.get("level") ?? "";
   const page = Number(params.get("page") ?? "1");
+
+  // The queue mixes generated sentences (회화 1~10) and questions (TOPIK 1~6),
+  // so the level options follow whichever kind is filtered; with no kind
+  // selected they span both scales.
+  const levelOptions =
+    kind === "question" ? TOPIK_GRADES : CONVERSATION_LEVELS;
+  const levelLabel = kind === "question" ? "급수" : "레벨";
 
   function patchParams(patch: Record<string, string | null>) {
     const next = new URLSearchParams(params);
@@ -189,7 +197,11 @@ export function AiContentPage() {
           </Select>
           <Select
             value={kind}
-            onChange={(e) => patchParams({ content_kind: e.target.value, page: null })}
+            // Clear the level too: the two kinds run different scales, so a
+            // level picked for one can be out of range for the other.
+            onChange={(e) =>
+              patchParams({ content_kind: e.target.value, level: null, page: null })
+            }
             style={{ width: 140 }}
           >
             <option value="">종류: 전체</option>
@@ -201,10 +213,10 @@ export function AiContentPage() {
             onChange={(e) => patchParams({ level: e.target.value, page: null })}
             style={{ width: 120 }}
           >
-            <option value="">레벨: 전체</option>
-            {[1, 2, 3, 4, 5, 6].map((l) => (
+            <option value="">{levelLabel}: 전체</option>
+            {levelOptions.map((l) => (
               <option key={l} value={l}>
-                레벨 {l}
+                {levelLabel} {l}
               </option>
             ))}
           </Select>

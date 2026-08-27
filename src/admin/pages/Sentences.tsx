@@ -4,6 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import { adminApi } from "../api";
 import type { AdminSentence } from "../api";
 import { errorMessage } from "../../lib/http";
+import { CONVERSATION_LEVELS } from "../../lib/levels";
 import { useToast } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
 import { BatchAddButton } from "../components/BatchAddButton";
@@ -270,7 +271,7 @@ export function SentencesPage() {
             style={{ width: 120 }}
           >
             <option value="">레벨: 전체</option>
-            {[1, 2, 3, 4, 5, 6].map((l) => (
+            {CONVERSATION_LEVELS.map((l) => (
               <option key={l} value={l}>
                 레벨 {l}
               </option>
@@ -377,7 +378,7 @@ export function SentencesPage() {
                   value={draft.level}
                   onChange={(e) => setDraft({ ...draft, level: e.target.value })}
                 >
-                  {[1, 2, 3, 4, 5, 6].map((l) => (
+                  {CONVERSATION_LEVELS.map((l) => (
                     <option key={l} value={l}>
                       레벨 {l}
                     </option>
