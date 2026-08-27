@@ -70,7 +70,7 @@ describe("BatchAddButton", () => {
     expect(await screen.findByText("2건을 추가했어요.")).toBeInTheDocument();
   });
 
-  it("unwraps an { items: [...] } envelope and enforces the 100-item cap", () => {
+  it("unwraps an { items: [...] } envelope and enforces the 1000-item cap", () => {
     renderButton();
     openModal();
 
@@ -80,10 +80,10 @@ describe("BatchAddButton", () => {
     });
     expect(screen.getByText("1건 인식됨")).toBeInTheDocument();
 
-    const oversized = Array.from({ length: 101 }, (_, i) => ({ korean: `문장 ${i}` }));
+    const oversized = Array.from({ length: 1001 }, (_, i) => ({ korean: `문장 ${i}` }));
     fireEvent.change(editor, { target: { value: JSON.stringify(oversized) } });
     expect(
-      screen.getByText("한 번에 최대 100건까지 추가할 수 있습니다."),
+      screen.getByText("한 번에 최대 1,000건까지 추가할 수 있습니다."),
     ).toBeInTheDocument();
   });
 });

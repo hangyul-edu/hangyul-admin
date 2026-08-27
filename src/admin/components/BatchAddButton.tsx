@@ -5,7 +5,7 @@ import { errorMessage } from "../../lib/http";
 import { useToast } from "../../hooks/toast";
 import { Button, Field, Modal, Textarea } from "./kit";
 
-const MAX_ITEMS = 100;
+const MAX_ITEMS = 1000;
 
 /**
  * JSON-paste bulk registration for content catalogs (sentences, TOPIK
@@ -79,7 +79,7 @@ export function BatchAddButton({
         <Field
           label="JSON 배열"
           required
-          hint={`${hint} 한 번에 최대 ${MAX_ITEMS}건. 한 건이라도 실패하면 아무것도 저장되지 않습니다.`}
+          hint={`${hint} 한 번에 최대 ${MAX_ITEMS.toLocaleString()}건. 한 건이라도 실패하면 아무것도 저장되지 않습니다.`}
         >
           <Textarea
             rows={14}
@@ -124,7 +124,10 @@ function parseItems(text: string): {
   if (!Array.isArray(data)) return { items: null, error: "JSON 배열이어야 합니다." };
   if (data.length === 0) return { items: null, error: "항목이 비어 있습니다." };
   if (data.length > MAX_ITEMS)
-    return { items: null, error: `한 번에 최대 ${MAX_ITEMS}건까지 추가할 수 있습니다.` };
+    return {
+      items: null,
+      error: `한 번에 최대 ${MAX_ITEMS.toLocaleString()}건까지 추가할 수 있습니다.`,
+    };
   if (!data.every((it) => it && typeof it === "object" && !Array.isArray(it)))
     return { items: null, error: "모든 항목은 JSON 객체여야 합니다." };
   return { items: data as Record<string, unknown>[], error: null };
