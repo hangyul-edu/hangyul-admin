@@ -6,6 +6,7 @@ import type { AdminSentence } from "../api";
 import { errorMessage } from "../../lib/http";
 import { useToast } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
+import { BatchAddButton } from "../components/BatchAddButton";
 import { ContentCleanupButton } from "../components/ContentCleanupButton";
 import {
   Badge,
@@ -32,6 +33,28 @@ interface SentenceDraft {
   level: string;
   grammar_points: string;
 }
+
+const BATCH_TEMPLATE = JSON.stringify(
+  [
+    {
+      korean: "오늘 날씨가 정말 좋아요.",
+      translation: "The weather is really nice today.",
+      romanization: "oneul nalssiga jeongmal joayo",
+      topic: "daily",
+      level: 1,
+      grammar_points: ["-아요/어요"],
+    },
+    {
+      korean: "주말에 친구를 만나요.",
+      translation: "I meet a friend on the weekend.",
+      topic: "daily",
+      level: 1,
+      grammar_points: ["-아요/어요"],
+    },
+  ],
+  null,
+  2,
+);
 
 const EMPTY: SentenceDraft = {
   korean: "",
@@ -214,6 +237,13 @@ export function SentencesPage() {
                 invalidateKeys={[["admin", "sentences"], ["admin", "sentence-topics"]]}
               />
             )}
+            <BatchAddButton
+              title="문장 일괄 추가"
+              hint="단건 등록과 같은 필드(korean·translation 필수)를 담은 JSON 배열을 붙여넣으세요."
+              template={BATCH_TEMPLATE}
+              submit={adminApi.createSentencesBatch}
+              invalidateKeys={[["admin", "sentences"], ["admin", "sentence-topics"]]}
+            />
             <Button
               variant="primary"
               onClick={() => {

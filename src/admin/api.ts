@@ -730,6 +730,10 @@ export const adminApi = {
   sentenceTopics: () => http.get<{ topics: string[] }>("/admin/sentences/topics"),
   createSentence: (body: Partial<AdminSentence> & { korean: string; translation: string }) =>
     http.post<AdminSentence>("/admin/sentences", body),
+  createSentencesBatch: (items: Record<string, unknown>[]) =>
+    http.post<{ created: number; items: AdminSentence[] }>("/admin/sentences/batch", {
+      items,
+    }),
   updateSentence: (sentenceId: string, body: Partial<AdminSentence>) =>
     http.patch<AdminSentence>(`/admin/sentences/${sentenceId}`, body),
   deleteSentence: (sentenceId: string) =>
@@ -743,6 +747,10 @@ export const adminApi = {
     ),
   createQuiz: (body: Record<string, unknown>) =>
     http.post<AdminQuiz>("/admin/quizzes", body),
+  createQuizzesBatch: (items: Record<string, unknown>[]) =>
+    http.post<{ created: number; items: AdminQuiz[] }>("/admin/quizzes/batch", {
+      items,
+    }),
   replaceQuiz: (quizId: string, body: Record<string, unknown>) =>
     http.put<AdminQuiz>(`/admin/quizzes/${quizId}`, body),
   deleteQuiz: (quizId: string) => http.del<void>(`/admin/quizzes/${quizId}`),

@@ -7,6 +7,7 @@ import type { AdminQuiz } from "../api";
 import { errorMessage } from "../../lib/http";
 import { useToast } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
+import { BatchAddButton } from "../components/BatchAddButton";
 import { ContentCleanupButton } from "../components/ContentCleanupButton";
 import {
   Badge,
@@ -36,6 +37,39 @@ const SECTIONS = [
   ["reading", "읽기"],
   ["writing", "쓰기"],
 ] as const;
+
+const BATCH_TEMPLATE = JSON.stringify(
+  [
+    {
+      answer_format: "single_choice",
+      material_kind: "text",
+      topik_section: "reading",
+      topik_question_type: "reading_01",
+      prompt: "빈칸에 들어갈 말로 가장 알맞은 것을 고르십시오.",
+      content_html: "<p>주말에 친구를 (      ).</p>",
+      level: 1,
+      choices: [
+        { key: "1", text: "만납니다" },
+        { key: "2", text: "먹습니다" },
+        { key: "3", text: "읽습니다" },
+        { key: "4", text: "봅니다" },
+      ],
+      correct_choice: "1",
+      explanation: "사람을 만나다: '친구를 만납니다'가 자연스럽습니다.",
+    },
+    {
+      answer_format: "short_answer",
+      topik_section: "writing",
+      topik_question_type: "writing_51_52",
+      prompt: "빈칸 ㄱ에 알맞은 말을 쓰십시오.",
+      content_html: "<p>내일 시간이 ( ㄱ ) 같이 영화를 봅시다.</p>",
+      level: 3,
+      blanks: [{ label: "ㄱ", answer: "있으면" }],
+    },
+  ],
+  null,
+  2,
+);
 
 interface QuizDraft {
   answer_format: string;
@@ -314,6 +348,13 @@ export function QuizzesPage() {
                 invalidateKeys={[["admin", "quizzes"]]}
               />
             )}
+            <BatchAddButton
+              title="문제 일괄 추가"
+              hint="단건 생성과 같은 필드(answer_format·prompt·level 필수, 형식별 필드 포함)를 담은 JSON 배열을 붙여넣으세요."
+              template={BATCH_TEMPLATE}
+              submit={adminApi.createQuizzesBatch}
+              invalidateKeys={[["admin", "quizzes"]]}
+            />
             <Button
               variant="primary"
               onClick={() => {
