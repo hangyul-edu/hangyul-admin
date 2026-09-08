@@ -72,7 +72,8 @@ export function DashboardPage() {
         <div>
           <h1>대시보드</h1>
           <div className="hgadm-page-head__desc">
-            주요 지표와 최근 활동을 한눈에 확인합니다.
+            주요 지표와 최근 활동을 한눈에 확인합니다. ‘오늘’·‘이번 달’ 등 모든 기간은{" "}
+            <strong>한국 시간(KST)</strong> 기준입니다.
           </div>
         </div>
       </div>
@@ -183,7 +184,7 @@ export function DashboardPage() {
           <div>
             <div className="hgadm-card__title">월별 매출 추이</div>
             <div className="hgadm-cell-sub" style={{ marginTop: 2 }}>
-              달력 월 기준 결제 금액. 마지막 달은 아직 진행 중입니다.
+              한국 시간(KST) 달력 월 기준 결제 금액. 마지막 달은 아직 진행 중입니다.
             </div>
           </div>
           <div className="hgadm-row">

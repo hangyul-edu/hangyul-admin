@@ -135,6 +135,17 @@ describe("DashboardPage revenue", () => {
     expect(await screen.findByText(/2026년 9월 1일부터/)).toBeInTheDocument();
   });
 
+  it("says which clock the figures are on", async () => {
+    renderPage();
+
+    // Without this an admin cannot tell whether "오늘" turned over at midnight
+    // Seoul or at 09:00, which is nine hours of ambiguity every day.
+    expect(await screen.findByText("한국 시간(KST)")).toBeInTheDocument();
+    expect(
+      screen.getByText(/한국 시간\(KST\) 달력 월 기준 결제 금액/),
+    ).toBeInTheDocument();
+  });
+
   it("requests 12 months of revenue by default", async () => {
     renderPage();
 
