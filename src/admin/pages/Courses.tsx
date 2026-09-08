@@ -112,7 +112,7 @@ export function CoursesPage() {
   const columns: Column<AdminCourse>[] = [
     {
       key: "cover",
-      header: "커버",
+      header: "대표 이미지",
       width: 90,
       render: (c) =>
         c.cover_image_url ? (
@@ -286,12 +286,12 @@ export function CoursesPage() {
                 onChange={(e) => setDraft({ ...draft, description: e.target.value })}
               />
             </Field>
-            <Field label="커버 이미지" hint="JPEG/PNG/WebP, 최대 5MB">
+            <Field label="대표 이미지" hint="JPEG/PNG/WebP, 최대 5MB">
               <div>
                 {draft.cover_image_url && (
                   <img
                     src={draft.cover_image_url}
-                    alt="커버 미리보기"
+                    alt="대표 이미지 미리보기"
                     className="hgadm-thumb"
                     style={{ width: 140, height: 84, marginBottom: 8 }}
                   />

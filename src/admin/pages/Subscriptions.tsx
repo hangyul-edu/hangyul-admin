@@ -13,6 +13,7 @@ import {
   SearchBox,
   Select,
   formatDateTime,
+  statusLabel,
   statusTone,
 } from "../components/kit";
 import type { Column } from "../components/kit";
@@ -63,7 +64,7 @@ export function SubscriptionsPage() {
       header: "상태",
       render: (s) => (
         <div>
-          <Badge tone={statusTone(s.status)}>{s.status}</Badge>
+          <Badge tone={statusTone(s.status)}>{statusLabel(s.status)}</Badge>
           {s.cancel_at_period_end && (
             <div className="hgadm-cell-sub">기간 종료 시 해지</div>
           )}
@@ -91,7 +92,7 @@ export function SubscriptionsPage() {
           <h1>구독 현황</h1>
           <div className="hgadm-page-head__desc">
             전체 구독 상태를 조회합니다. 가입자를 클릭하면 사용자 상세로 이동합니다.
-            구독 변경(해지·환불)은 사용자 요청 기반 플로우와 결제사 콘솔에서 처리합니다.
+            구독 변경(해지·환불)은 사용자 요청 기반 절차와 결제사 콘솔에서 처리합니다.
           </div>
         </div>
       </div>

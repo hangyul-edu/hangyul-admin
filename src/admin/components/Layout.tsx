@@ -64,12 +64,12 @@ const NAV: NavGroup[] = [
     ],
   },
   {
-    label: "커머스",
+    label: "결제·구독",
     items: [
       { to: "/plans", icon: CreditCard, label: "요금제", scopes: ["commerce:read"] },
       { to: "/coupons", icon: Ticket, label: "쿠폰", scopes: ["commerce:read"] },
       { to: "/subscriptions", icon: Repeat, label: "구독", scopes: ["commerce:read"] },
-      { to: "/payments", icon: Receipt, label: "결제·인보이스", scopes: ["commerce:read"] },
+      { to: "/payments", icon: Receipt, label: "결제·청구서", scopes: ["commerce:read"] },
     ],
   },
   {
@@ -85,7 +85,7 @@ const NAV: NavGroup[] = [
   {
     label: "시스템",
     items: [
-      { to: "/audit-logs", icon: ScrollText, label: "감사 로그", scopes: ["audit:read"] },
+      { to: "/audit-logs", icon: ScrollText, label: "관리자 활동 내역", scopes: ["audit:read"] },
       { to: "/admins", icon: ShieldCheck, label: "관리자 계정", scopes: ["admins:manage"] },
     ],
   },
@@ -96,7 +96,7 @@ const TIER_LABELS: Record<string, string> = {
   operator: "운영자",
   content_manager: "콘텐츠 관리자",
   support_agent: "고객지원",
-  viewer: "뷰어",
+  viewer: "조회 전용",
 };
 
 export function AdminLayout() {

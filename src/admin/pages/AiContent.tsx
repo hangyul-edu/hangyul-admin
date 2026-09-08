@@ -22,6 +22,7 @@ import {
   Select,
   Textarea,
   formatDateTime,
+  statusLabel,
   statusTone,
 } from "../components/kit";
 import type { Column } from "../components/kit";
@@ -142,7 +143,7 @@ export function AiContentPage() {
     },
     {
       key: "kind",
-      header: "종류",
+      header: "유형",
       render: (g) => (
         <div>
           <Badge tone="info">{KIND_LABEL[g.content_kind] ?? g.content_kind}</Badge>
@@ -161,7 +162,7 @@ export function AiContentPage() {
     {
       key: "status",
       header: "검수 상태",
-      render: (g) => <Badge tone={statusTone(g.review_status)}>{g.review_status}</Badge>,
+      render: (g) => <Badge tone={statusTone(g.review_status)}>{statusLabel(g.review_status)}</Badge>,
     },
     { key: "created", header: "생성일", render: (g) => formatDateTime(g.created_at) },
   ];
@@ -172,8 +173,8 @@ export function AiContentPage() {
         <div>
           <h1>AI 생성 콘텐츠 검수</h1>
           <div className="hgadm-page-head__desc">
-            AI가 생성한 문장·문제 라이브러리입니다. 원본 페이로드와 생성 파라미터를
-            확인하고 승인/반려하거나, 품질이 낮은 항목을 재사용 풀에서 제거하세요.
+            AI가 생성한 문장·문제 라이브러리입니다. 원본 데이터와 생성 조건을
+            확인하고 승인/반려하거나, 품질이 낮은 항목은 재사용 목록에서 제외하세요.
           </div>
         </div>
       </div>
@@ -309,7 +310,7 @@ export function AiContentPage() {
               items={[
                 ["생성일", formatDateTime(detail.data.created_at)],
                 ["생성 경로", detail.data.source],
-                ["토픽", detail.data.topic],
+                ["주제", detail.data.topic],
                 ["TOPIK 유형", detail.data.topik_question_type],
                 ["언어", detail.data.language],
                 ["요청 사용자", detail.data.created_by_user_id],
@@ -323,7 +324,7 @@ export function AiContentPage() {
               ]}
             />
             <hr className="hgadm-divider" />
-            <div className="hgadm-field__label">생성된 페이로드</div>
+            <div className="hgadm-field__label">생성 결과 원본</div>
             <pre className="hgadm-json">{JSON.stringify(detail.data.payload, null, 2)}</pre>
             {canWrite && (
               <Field label="검수 메모" hint="승인/반려와 함께 저장됩니다.">
@@ -342,7 +343,7 @@ export function AiContentPage() {
       <ConfirmDialog
         open={deleting !== null}
         title="생성 콘텐츠 삭제"
-        message="이 항목을 라이브러리에서 영구 삭제할까요? 재사용 풀에서 제거되며 되돌릴 수 없습니다."
+        message="이 항목을 라이브러리에서 영구 삭제할까요? 재사용 목록에서도 빠지며 되돌릴 수 없습니다."
         danger
         confirmLabel="삭제"
         loading={remove.isPending}

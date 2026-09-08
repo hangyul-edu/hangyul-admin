@@ -11,6 +11,7 @@ import {
   Stat,
   formatDateTime,
   formatMoney,
+  statusLabel,
   statusTone,
 } from "../components/kit";
 
@@ -235,7 +236,7 @@ export function DashboardPage() {
                 <div className="hgadm-cell-main">{formatMoney(p.amount_cents, p.currency)}</div>
                 <div className="hgadm-cell-sub">{formatDateTime(p.created_at)}</div>
               </div>
-              <Badge tone={statusTone(p.status)}>{p.status}</Badge>
+              <Badge tone={statusTone(p.status)}>{statusLabel(p.status)}</Badge>
             </div>
           ))}
           {data.recent_payments.length === 0 && (

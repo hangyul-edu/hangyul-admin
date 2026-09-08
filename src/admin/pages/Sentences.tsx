@@ -164,7 +164,7 @@ export function SentencesPage() {
     { key: "level", header: "레벨", numeric: true, render: (s) => s.level },
     {
       key: "topic",
-      header: "토픽",
+      header: "주제",
       render: (s) => (s.topic ? <Badge tone="info">{s.topic}</Badge> : "—"),
     },
     {
@@ -217,7 +217,7 @@ export function SentencesPage() {
         <div>
           <h1>문장 관리</h1>
           <div className="hgadm-page-head__desc">
-            학습 문장 카탈로그입니다. 오디오는 TTS가 자동 생성하므로 별도 업로드가
+            학습 문장 목록입니다. 오디오는 TTS가 자동 생성하므로 별도 업로드가
             필요 없습니다. 삭제 시 사용자 학습 이력도 함께 삭제됩니다.
           </div>
         </div>
@@ -233,7 +233,7 @@ export function SentencesPage() {
                   ["sentence_histories", "학습 이력"],
                   ["saved_sentences", "저장된 문장"],
                   ["speech_attempts", "발음 시도"],
-                  ["generated_sentences", "문장 AI 캐시"],
+                  ["generated_sentences", "AI 생성 문장"],
                 ]}
                 invalidateKeys={[["admin", "sentences"], ["admin", "sentence-topics"]]}
               />
@@ -282,7 +282,7 @@ export function SentencesPage() {
             onChange={(e) => patchParams({ topic: e.target.value, page: null })}
             style={{ minWidth: 150 }}
           >
-            <option value="">토픽: 전체</option>
+            <option value="">주제: 전체</option>
             {topics.data?.topics.map((t) => (
               <option key={t} value={t}>
                 {t}
@@ -365,7 +365,7 @@ export function SentencesPage() {
               />
             </Field>
             <div className="hgadm-form-grid">
-              <Field label="토픽">
+              <Field label="주제">
                 <Input
                   value={draft.topic}
                   maxLength={80}

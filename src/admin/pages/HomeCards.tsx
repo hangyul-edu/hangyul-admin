@@ -133,7 +133,7 @@ export function BannersPage() {
         <div>
           <h1>배너 관리</h1>
           <div className="hgadm-page-head__desc">
-            강의 홈 상단 캐러셀 배너입니다. 순서는 위/아래 버튼으로 조정하고, 노출
+            강의 홈 상단 슬라이드 배너입니다. 순서는 위/아래 버튼으로 조정하고, 노출
             기간을 지정하면 그 기간에만 표시됩니다.
           </div>
         </div>

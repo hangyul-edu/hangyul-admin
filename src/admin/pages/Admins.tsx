@@ -65,7 +65,7 @@ export function AdminsPage() {
     mutationFn: (target: AdminAccount) =>
       adminApi.updateAdmin(target.user_id, { admin_role: editTier }),
     onSuccess: () => {
-      toast.success("티어를 변경했어요.");
+      toast.success("권한 등급을 변경했어요.");
       setEditing(null);
       refresh();
     },
@@ -100,7 +100,7 @@ export function AdminsPage() {
     },
     {
       key: "tier",
-      header: "티어",
+      header: "권한 등급",
       render: (a) => (
         <Badge tone={a.admin_role === "super_admin" ? "brand" : "info"}>
           {TIER_LABEL[a.admin_role] ?? a.admin_role}
@@ -130,7 +130,7 @@ export function AdminsPage() {
                 setEditTier(a.admin_role as AdminTier);
               }}
             >
-              티어 변경
+              권한 등급 변경
             </Button>
             <Button size="sm" variant="danger-soft" onClick={() => setRevoking(a)}>
               권한 회수
@@ -203,7 +203,7 @@ export function AdminsPage() {
             placeholder="staff@talkhangyul.co.kr"
           />
         </Field>
-        <Field label="티어" required>
+        <Field label="권한 등급" required>
           <Select value={tier} onChange={(e) => setTier(e.target.value as AdminTier)}>
             {TIERS.map((t) => (
               <option key={t.value} value={t.value}>
@@ -224,7 +224,7 @@ export function AdminsPage() {
 
       <Modal
         open={editing !== null}
-        title={`티어 변경 — ${editing?.email ?? ""}`}
+        title={`권한 등급 변경 — ${editing?.email ?? ""}`}
         onClose={() => setEditing(null)}
         footer={
           <>
@@ -241,7 +241,7 @@ export function AdminsPage() {
           </>
         }
       >
-        <Field label="새 티어" required>
+        <Field label="새 권한 등급" required>
           <Select
             value={editTier}
             onChange={(e) => setEditTier(e.target.value as AdminTier)}

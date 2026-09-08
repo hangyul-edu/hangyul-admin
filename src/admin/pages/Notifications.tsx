@@ -97,7 +97,7 @@ export function NotificationsPage() {
           <h1>알림 발송</h1>
           <div className="hgadm-page-head__desc">
             대량 발송은 되돌릴 수 없습니다. 발송 전 내용과 대상을 반드시 확인하세요.
-            모든 발송은 감사 로그에 기록됩니다.
+            모든 발송은 관리자 활동 내역에 기록됩니다.
           </div>
         </div>
       </div>
@@ -138,7 +138,7 @@ export function NotificationsPage() {
                 onChange={(e) => setBody(e.target.value)}
               />
             </Field>
-            <Field label="딥링크" hint="알림 탭 시 이동할 앱 내 경로 (예: /subscription)">
+            <Field label="이동 링크" hint="알림을 눌렀을 때 이동할 앱 내 경로 (예: /subscription)">
               <Input
                 value={deepLink}
                 maxLength={500}

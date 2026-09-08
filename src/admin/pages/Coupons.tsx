@@ -21,6 +21,7 @@ import {
   Select,
   formatDateTime,
   fromAdminInputValue,
+  statusLabel,
   statusTone,
 } from "../components/kit";
 import type { Column } from "../components/kit";
@@ -34,7 +35,7 @@ export function CouponsPage() {
         <div>
           <h1>쿠폰 관리</h1>
           <div className="hgadm-page-head__desc">
-            B2B/프로모션 쿠폰 배치를 생성·회수하고 개별 코드를 조회합니다. 회수는 미사용
+            B2B/프로모션 쿠폰을 묶음으로 발행·회수하고 개별 코드를 조회합니다. 회수는 미사용
             쿠폰만 무효화하며, 이미 활성화된 이용권은 유지됩니다.
           </div>
         </div>
@@ -44,7 +45,7 @@ export function CouponsPage() {
           className={`hgadm-tab ${tab === "batches" ? "active" : ""}`}
           onClick={() => setParams({ tab: "batches" }, { replace: true })}
         >
-          배치
+          발행 묶음
         </button>
         <button
           className={`hgadm-tab ${tab === "coupons" ? "active" : ""}`}
@@ -99,7 +100,7 @@ function BatchesTab() {
   const revoke = useMutation({
     mutationFn: (batch: CouponBatch) => adminApi.revokeCouponBatch(batch.batch_id),
     onSuccess: () => {
-      toast.success("배치를 회수했어요.");
+      toast.success("발행 묶음을 회수했어요.");
       setRevoking(null);
       void qc.invalidateQueries({ queryKey: ["admin", "coupon-batches"] });
     },
@@ -109,7 +110,7 @@ function BatchesTab() {
   const columns: Column<CouponBatch>[] = [
     {
       key: "name",
-      header: "배치",
+      header: "발행 묶음",
       render: (b) => (
         <div>
           <div className="hgadm-cell-main">{b.name}</div>
@@ -132,7 +133,7 @@ function BatchesTab() {
     {
       key: "status",
       header: "상태",
-      render: (b) => <Badge tone={statusTone(b.status)}>{b.status}</Badge>,
+      render: (b) => <Badge tone={statusTone(b.status)}>{statusLabel(b.status)}</Badge>,
     },
     { key: "created", header: "생성일", render: (b) => formatDateTime(b.created_at) },
     {
@@ -154,12 +155,12 @@ function BatchesTab() {
     <div className="hgadm-card">
       <div className="hgadm-toolbar">
         <span className="hgadm-muted" style={{ fontSize: 13 }}>
-          쿠폰 배치 목록
+          발행 묶음 목록
         </span>
         <span className="hgadm-toolbar__spacer" />
         {canWrite && (
           <Button variant="primary" onClick={() => setCreateOpen(true)}>
-            + 배치 생성
+            + 쿠폰 발행
           </Button>
         )}
       </div>
@@ -173,7 +174,7 @@ function BatchesTab() {
             columns={columns}
             rows={query.data.items}
             rowKey={(b) => b.batch_id}
-            empty="쿠폰 배치가 없습니다."
+            empty="발행한 쿠폰 묶음이 없습니다."
           />
           <Pagination
             page={page}
@@ -186,7 +187,7 @@ function BatchesTab() {
 
       <Modal
         open={createOpen}
-        title="쿠폰 배치 생성"
+        title="쿠폰 발행"
         onClose={() => setCreateOpen(false)}
         footer={
           <>
@@ -238,7 +239,7 @@ function BatchesTab() {
 
       <Modal
         open={created !== null}
-        title="배치가 생성되었습니다"
+        title="쿠폰을 발행했습니다"
         onClose={() => setCreated(null)}
         footer={
           <Button variant="primary" onClick={() => setCreated(null)}>
@@ -254,7 +255,7 @@ function BatchesTab() {
             </p>
             <pre className="hgadm-json">{created.sample.join("\n")}</pre>
             <p className="hgadm-muted" style={{ fontSize: 12.5 }}>
-              전체 코드는 '쿠폰 검색' 탭에서 배치로 필터해 확인하거나 내보낼 수 있습니다.
+              전체 코드는 '쿠폰 검색' 탭에서 발행 묶음으로 필터해 확인하거나 내보낼 수 있습니다.
             </p>
           </div>
         )}
@@ -262,8 +263,8 @@ function BatchesTab() {
 
       <ConfirmDialog
         open={revoking !== null}
-        title="배치 회수"
-        message={`'${revoking?.name ?? ""}' 배치의 미사용 쿠폰을 모두 무효화할까요? 이미 사용된 이용권은 유지됩니다.`}
+        title="발행 묶음 회수"
+        message={`'${revoking?.name ?? ""}' 발행 묶음의 미사용 쿠폰을 모두 무효화할까요? 이미 사용된 이용권은 유지됩니다.`}
         danger
         confirmLabel="회수"
         loading={revoke.isPending}
@@ -320,14 +321,14 @@ function CouponSearchTab() {
     },
     {
       key: "batch",
-      header: "배치",
+      header: "발행 묶음",
       render: (c) => c.batch_name ?? c.batch_id,
     },
     { key: "duration", header: "기간", render: (c) => `${c.duration_days}일` },
     {
       key: "status",
       header: "상태",
-      render: (c) => <Badge tone={statusTone(c.status)}>{c.status}</Badge>,
+      render: (c) => <Badge tone={statusTone(c.status)}>{statusLabel(c.status)}</Badge>,
     },
     {
       key: "redeemed",
@@ -393,7 +394,7 @@ function CouponSearchTab() {
           }}
           style={{ minWidth: 200 }}
         >
-          <option value="">배치: 전체</option>
+          <option value="">발행 묶음: 전체</option>
           {batches.data?.items.map((b) => (
             <option key={b.batch_id} value={b.batch_id}>
               {b.name}

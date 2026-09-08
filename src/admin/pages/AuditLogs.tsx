@@ -50,13 +50,13 @@ export function AuditLogsPage() {
   const columns: Column<AuditLogEntry>[] = [
     {
       key: "when",
-      header: "시각",
+      header: "일시",
       render: (e) => formatDateTime(e.occurred_at),
       width: 150,
     },
     {
       key: "actor",
-      header: "수행자",
+      header: "관리자",
       render: (e) => (
         <div>
           <div className="hgadm-cell-main">{e.actor_email ?? e.actor_id ?? "—"}</div>
@@ -70,7 +70,7 @@ export function AuditLogsPage() {
     },
     {
       key: "action",
-      header: "행위",
+      header: "작업",
       render: (e) => <span className="hgadm-cell-mono">{e.action}</span>,
     },
     {
@@ -94,7 +94,7 @@ export function AuditLogsPage() {
     <div>
       <div className="hgadm-page-head">
         <div>
-          <h1>감사 로그</h1>
+          <h1>관리자 활동 내역</h1>
           <div className="hgadm-page-head__desc">
             누가, 언제, 무엇을 변경했는지의 전체 기록입니다. 행을 클릭하면 요청 본문
             (민감 필드 마스킹)과 변경 전후 상태를 볼 수 있습니다.
@@ -106,7 +106,7 @@ export function AuditLogsPage() {
         <div className="hgadm-toolbar">
           <SearchBox
             value={action}
-            placeholder="행위 검색 (예: PATCH /admin/users)"
+            placeholder="작업 검색 (예: PATCH /admin/users)"
             onSearch={(next) => patchParams({ action: next, page: null })}
           />
           <Select
@@ -148,7 +148,7 @@ export function AuditLogsPage() {
               rows={query.data.items}
               rowKey={(e) => String(e.id)}
               onRowClick={setDetail}
-              empty="감사 로그가 없습니다."
+              empty="활동 내역이 없습니다."
             />
             <Pagination
               page={query.data.page}
@@ -162,7 +162,7 @@ export function AuditLogsPage() {
 
       <Modal
         open={detail !== null}
-        title={`감사 로그 #${detail?.id ?? ""}`}
+        title={`활동 내역 #${detail?.id ?? ""}`}
         size="lg"
         onClose={() => setDetail(null)}
       >

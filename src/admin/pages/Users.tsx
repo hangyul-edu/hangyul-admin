@@ -20,6 +20,7 @@ import {
   SearchBox,
   Select,
   formatDateTime,
+  statusLabel,
   statusTone,
 } from "../components/kit";
 import type { Column } from "../components/kit";
@@ -144,7 +145,7 @@ export function UsersPage() {
     {
       key: "status",
       header: "상태",
-      render: (u) => <Badge tone={statusTone(u.status)} dot>{u.status}</Badge>,
+      render: (u) => <Badge tone={statusTone(u.status)} dot>{statusLabel(u.status)}</Badge>,
     },
     {
       key: "subscription",
@@ -153,7 +154,7 @@ export function UsersPage() {
         u.subscription_status ? (
           <div>
             <Badge tone={statusTone(u.subscription_status)}>
-              {u.subscription_status}
+              {statusLabel(u.subscription_status)}
             </Badge>
             <div className="hgadm-cell-sub">{u.plan_id}</div>
           </div>

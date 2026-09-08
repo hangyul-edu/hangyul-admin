@@ -19,6 +19,7 @@ import {
   Select,
   formatDateTime,
   formatMoney,
+  statusLabel,
   statusTone,
 } from "../components/kit";
 import type { Column } from "../components/kit";
@@ -30,9 +31,9 @@ export function PaymentsPage() {
     <div>
       <div className="hgadm-page-head">
         <div>
-          <h1>결제·인보이스</h1>
+          <h1>결제·청구서</h1>
           <div className="hgadm-page-head__desc">
-            결제 시도와 인보이스 전체 내역입니다. 결제 수단 정보는 항상 마스킹된
+            결제 시도와 청구서 전체 내역입니다. 결제 수단 정보는 항상 마스킹된
             형태로만 저장·표시됩니다.
           </div>
         </div>
@@ -48,7 +49,7 @@ export function PaymentsPage() {
           className={`hgadm-tab ${tab === "invoices" ? "active" : ""}`}
           onClick={() => setParams({ tab: "invoices" }, { replace: true })}
         >
-          인보이스
+          청구서
         </button>
       </div>
       {tab === "payments" ? <PaymentsTab /> : <InvoicesTab />}
@@ -132,7 +133,7 @@ function PaymentsTab() {
       header: "상태",
       render: (p) => (
         <div>
-          <Badge tone={statusTone(p.status)}>{p.status}</Badge>
+          <Badge tone={statusTone(p.status)}>{statusLabel(p.status)}</Badge>
           {p.failure_class && <div className="hgadm-cell-sub">{p.failure_class}</div>}
         </div>
       ),
@@ -225,7 +226,7 @@ function InvoicesTab() {
   const columns: Column<AdminInvoiceRow>[] = [
     {
       key: "invoice",
-      header: "인보이스",
+      header: "청구서",
       render: (inv) => (
         <div>
           <div className="hgadm-cell-main">{inv.user_email ?? "(탈퇴한 사용자)"}</div>
@@ -253,7 +254,7 @@ function InvoicesTab() {
     {
       key: "status",
       header: "상태",
-      render: (inv) => <Badge tone={statusTone(inv.status)}>{inv.status}</Badge>,
+      render: (inv) => <Badge tone={statusTone(inv.status)}>{statusLabel(inv.status)}</Badge>,
     },
     { key: "paid", header: "결제일", render: (inv) => formatDateTime(inv.paid_at) },
     { key: "created", header: "생성일", render: (inv) => formatDateTime(inv.created_at) },
@@ -264,7 +265,7 @@ function InvoicesTab() {
       <div className="hgadm-toolbar">
         <SearchBox
           value={q}
-          placeholder="이메일·인보이스 ID 검색"
+          placeholder="이메일·청구서 ID 검색"
           onSearch={(next) => {
             setQ(next);
             setPage(1);
@@ -297,7 +298,7 @@ function InvoicesTab() {
             rows={query.data.items}
             rowKey={(inv) => inv.invoice_id}
             onRowClick={(inv) => inv.user_id && navigate(`/users/${inv.user_id}`)}
-            empty="인보이스가 없습니다."
+            empty="청구서가 없습니다."
           />
           <Pagination
             page={query.data.page}

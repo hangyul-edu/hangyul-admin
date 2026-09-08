@@ -22,6 +22,7 @@ import {
   Select,
   formatDateTime,
   formatDuration,
+  statusLabel,
   statusTone,
 } from "../components/kit";
 import type { Column } from "../components/kit";
@@ -198,7 +199,7 @@ export function LecturesPage() {
         l.kind !== "video" ? (
           <span className="hgadm-muted">해당 없음</span>
         ) : l.video_status ? (
-          <Badge tone={statusTone(l.video_status)}>{l.video_status}</Badge>
+          <Badge tone={statusTone(l.video_status)}>{statusLabel(l.video_status)}</Badge>
         ) : (
           <Badge tone="danger">영상 없음</Badge>
         ),
@@ -255,8 +256,8 @@ export function LecturesPage() {
         <div>
           <h1>강의·영상 관리</h1>
           <div className="hgadm-page-head__desc">
-            강의 메타데이터(제목·레벨·코스·공개 범위)와 호스팅 영상 업로드를 관리합니다.
-            영상은 업로드 후 인코딩이 끝나면 자동으로 재생 가능(ready) 상태가 됩니다.
+            강의 기본 정보(제목·레벨·코스·공개 범위)와 호스팅 영상 업로드를 관리합니다.
+            영상은 업로드 후 인코딩이 끝나면 자동으로 ‘재생 가능’ 상태가 됩니다.
           </div>
         </div>
         {canWrite && (
@@ -660,7 +661,7 @@ function VideoManagerModal({
                     </div>
                   </td>
                   <td>
-                    <Badge tone={statusTone(v.upload_status)}>{v.upload_status}</Badge>
+                    <Badge tone={statusTone(v.upload_status)}>{statusLabel(v.upload_status)}</Badge>
                     {v.failure_reason && (
                       <div className="hgadm-cell-sub" style={{ color: "var(--danger)" }}>
                         {v.failure_reason}

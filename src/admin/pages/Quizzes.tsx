@@ -324,7 +324,7 @@ export function QuizzesPage() {
         <div>
           <h1>문제 관리</h1>
           <div className="hgadm-page-head__desc">
-            일일 퀴즈·TOPIK 문제 카탈로그입니다. 저장 시 형식별 도메인 검증(정답 필수,
+            일일 퀴즈·TOPIK 문제 목록입니다. 저장 시 형식별 형식 검사(정답 필수,
             빈칸 구성 등)이 수행되어 잘못된 문제가 등록될 수 없습니다.
           </div>
         </div>
@@ -344,7 +344,7 @@ export function QuizzesPage() {
                   ["exam_set_questions", "모의고사 문항"],
                   ["exam_attempts", "모의고사 응시"],
                   ["practice_sets", "AI 연습 세트"],
-                  ["generated_questions", "문제 AI 캐시"],
+                  ["generated_questions", "AI 생성 문제"],
                 ]}
                 invalidateKeys={[["admin", "quizzes"]]}
               />

@@ -66,6 +66,61 @@ export function Badge({
 }
 
 /** Canonical tone mapping for the platform's status strings. */
+/**
+ * Korean label for a backend status value.
+ *
+ * The tables used to print the raw enum — an admin read "grace_period" and
+ * "trial_ending" in English. Every label here is written from the state's
+ * documented meaning, and states that differ stay distinct: `open`(청구서 발행,
+ * 아직 결제 전) is not `unpaid`(납부 기한이 지난 미납), and `cancelled`(이미 해지됨)
+ * is not the `cancel_at_period_end` flag(기간 말 해지 예약), which the tables show
+ * separately.
+ *
+ * An unknown value falls through to itself, so a status added on the server
+ * shows up verbatim rather than disappearing.
+ */
+const STATUS_LABELS: Record<string, string> = {
+  // 구독 — /subscriptions/me 가 문서화한 9개 실효 상태.
+  trial: "무료 체험",
+  trial_ending: "체험 종료 임박",
+  active: "이용 중",
+  payment_pending: "결제 대기",
+  payment_failed: "결제 실패",
+  grace_period: "유예 기간",
+  suspended: "이용 중지",
+  cancelled: "해지됨",
+  expired: "만료",
+  // 결제 / 청구서
+  succeeded: "결제 성공",
+  failed: "실패",
+  refunded: "환불됨",
+  paid: "결제 완료",
+  open: "결제 전",
+  unpaid: "미납",
+  void: "무효",
+  // 영상 업로드
+  pending: "대기 중",
+  uploading: "업로드 중",
+  processing: "변환 중",
+  ready: "재생 가능",
+  deleted: "삭제됨",
+  // 쿠폰
+  consumed: "사용 완료",
+  revoked: "회수됨",
+  queued: "사용 대기",
+  // 계정 / 검수 / 요금제
+  deactivated: "탈퇴",
+  approved: "승인",
+  rejected: "반려",
+  archived: "보관됨",
+};
+
+/** The Korean label for a status, or the raw value when it has none yet. */
+export function statusLabel(status: string | null | undefined): string {
+  if (!status) return "—";
+  return STATUS_LABELS[status] ?? status;
+}
+
 export function statusTone(status: string | null | undefined): BadgeTone {
   switch (status) {
     case "active":

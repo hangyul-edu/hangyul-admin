@@ -7,6 +7,7 @@ import {
   DataTable,
   Pagination,
   formatMoney,
+  statusLabel,
   statusTone,
 } from "./kit";
 import type { Column } from "./kit";
@@ -120,5 +121,34 @@ describe("helpers", () => {
   it("renders badges with the tone class", () => {
     render(<Badge tone="danger">정지</Badge>);
     expect(screen.getByText("정지").className).toContain("hgadm-badge--danger");
+  });
+});
+
+
+describe("statusLabel", () => {
+  it("renders backend enums as Korean, not raw values", () => {
+    expect(statusLabel("grace_period")).toBe("유예 기간");
+    expect(statusLabel("trial_ending")).toBe("체험 종료 임박");
+    expect(statusLabel("ready")).toBe("재생 가능");
+  });
+
+  it("keeps states that mean different things distinct", () => {
+    // `open` is an issued invoice not yet paid; `unpaid` is one past due.
+    // Collapsing them would hide which invoices actually need chasing.
+    expect(statusLabel("open")).not.toBe(statusLabel("unpaid"));
+    // A payment succeeding is not the same as the invoice being settled.
+    expect(statusLabel("succeeded")).not.toBe(statusLabel("paid"));
+    // Every label is distinct, so no two states read the same on screen.
+    const labels = [
+      "trial", "trial_ending", "active", "payment_pending", "payment_failed",
+      "grace_period", "suspended", "cancelled", "expired",
+    ].map(statusLabel);
+    expect(new Set(labels).size).toBe(labels.length);
+  });
+
+  it("falls through to the raw value for a status it does not know", () => {
+    // A state added on the server should still show, not vanish.
+    expect(statusLabel("some_new_state")).toBe("some_new_state");
+    expect(statusLabel(null)).toBe("—");
   });
 });

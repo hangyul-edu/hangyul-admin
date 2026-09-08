@@ -19,6 +19,7 @@ import {
   Switch,
   Textarea,
   formatMoney,
+  statusLabel,
   statusTone,
 } from "../components/kit";
 import type { Column } from "../components/kit";
@@ -176,7 +177,7 @@ export function PlansPage() {
     {
       key: "status",
       header: "상태",
-      render: (p) => <Badge tone={statusTone(p.status)}>{p.status}</Badge>,
+      render: (p) => <Badge tone={statusTone(p.status)}>{statusLabel(p.status)}</Badge>,
     },
     {
       key: "actions",
@@ -203,7 +204,7 @@ export function PlansPage() {
         <div>
           <h1>요금제 관리</h1>
           <div className="hgadm-page-head__desc">
-            구독 카탈로그를 관리합니다. 보관된 요금제는 신규 구매에서 숨겨지지만 기존
+            구독 요금제 목록을 관리합니다. 보관된 요금제는 신규 구매에서 숨겨지지만 기존
             구독자는 유지됩니다. 통화·주기는 생성 후 변경할 수 없습니다.
           </div>
         </div>
@@ -326,7 +327,7 @@ export function PlansPage() {
                 onChange={(e) => setDraft({ ...draft, trial_days: e.target.value })}
               />
             </Field>
-            <Field label="대상(audience)" hint="default = 일반 공개 카탈로그">
+            <Field label="공개 대상" hint="기본값 = 모두에게 공개">
               <Select
                 value={draft.audience}
                 onChange={(e) => setDraft({ ...draft, audience: e.target.value })}
@@ -336,7 +337,7 @@ export function PlansPage() {
                 <option value="retention">retention</option>
               </Select>
             </Field>
-            <Field label="우선순위" hint="클수록 카탈로그 상단">
+            <Field label="우선순위" hint="클수록 목록 위쪽">
               <Input
                 type="number"
                 value={draft.priority}
@@ -351,7 +352,7 @@ export function PlansPage() {
                   label="공개 여부"
                 />
                 <span style={{ fontSize: 13 }}>
-                  {draft.is_public ? "카탈로그에 노출" : "비공개 (타겟 제안 전용)"}
+                  {draft.is_public ? "목록에 노출" : "비공개 (타겟 제안 전용)"}
                 </span>
               </div>
             </Field>

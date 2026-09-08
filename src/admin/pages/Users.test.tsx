@@ -80,7 +80,9 @@ describe("UsersPage", () => {
     expect(await screen.findByText("hangyul-fan")).toBeInTheDocument();
     expect(screen.getByText("learner@talkhangyul.co.kr")).toBeInTheDocument();
     expect(screen.getByText("+821••••1234")).toBeInTheDocument();
-    expect(screen.getByText("trial")).toBeInTheDocument();
+    // Status badges render the Korean label, not the raw backend enum.
+    expect(screen.getByText("무료 체험")).toBeInTheDocument();
+    expect(screen.queryByText("trial")).not.toBeInTheDocument();
     expect(screen.getByText(/1건 중 1–1/)).toBeInTheDocument();
   });
 

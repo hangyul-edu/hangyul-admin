@@ -19,6 +19,7 @@ import {
   formatDateTime,
   formatDuration,
   formatMoney,
+  statusLabel,
   statusTone,
 } from "../components/kit";
 
@@ -87,7 +88,7 @@ export function UserDetailPage() {
           <h1 className="hgadm-row">
             {user.nickname ?? user.name}
             <Badge tone={statusTone(user.status)} dot>
-              {user.status}
+              {statusLabel(user.status)}
             </Badge>
             <Badge tone={isAdminAccount ? "brand" : "neutral"}>{user.role}</Badge>
           </h1>
@@ -110,7 +111,7 @@ export function UserDetailPage() {
                 <Button
                   onClick={() =>
                     setConfirm({
-                      title: "일반 회원으로 전환",
+                      title: "일반 사용자로 전환",
                       message: `${user.email} 계정의 테스터 권한(프리미엄 상시 접근)을 해제할까요?`,
                       body: { role: "member" },
                     })
@@ -254,7 +255,7 @@ export function UserDetailPage() {
               <div className="hgadm-card__title">현재 구독</div>
               {user.subscription && (
                 <Badge tone={statusTone(user.subscription.status)}>
-                  {user.subscription.status}
+                  {statusLabel(user.subscription.status)}
                 </Badge>
               )}
             </div>
@@ -290,13 +291,13 @@ export function UserDetailPage() {
           </div>
           <div className="hgadm-card">
             <div className="hgadm-card__head">
-              <div className="hgadm-card__title">최근 인보이스</div>
+              <div className="hgadm-card__title">최근 청구서</div>
             </div>
             <div className="hgadm-table-wrap">
               <table className="hgadm-table">
                 <thead>
                   <tr>
-                    <th>인보이스</th>
+                    <th>청구서</th>
                     <th>요금제</th>
                     <th className="num">금액</th>
                     <th>상태</th>
@@ -307,7 +308,7 @@ export function UserDetailPage() {
                   {user.recent_invoices.length === 0 && (
                     <tr>
                       <td colSpan={5}>
-                        <div className="hgadm-table__empty">인보이스가 없습니다.</div>
+                        <div className="hgadm-table__empty">청구서가 없습니다.</div>
                       </td>
                     </tr>
                   )}
@@ -317,7 +318,7 @@ export function UserDetailPage() {
                       <td>{inv.plan_name}</td>
                       <td className="num">{formatMoney(inv.total_cents, inv.currency)}</td>
                       <td>
-                        <Badge tone={statusTone(inv.status)}>{inv.status}</Badge>
+                        <Badge tone={statusTone(inv.status)}>{statusLabel(inv.status)}</Badge>
                       </td>
                       <td>{formatDateTime(inv.paid_at)}</td>
                     </tr>
@@ -424,7 +425,7 @@ export function UserDetailPage() {
                       <td className="hgadm-cell-mono">{c.coupon_id}</td>
                       <td>{c.duration_days}일</td>
                       <td>
-                        <Badge tone={statusTone(c.status)}>{c.status}</Badge>
+                        <Badge tone={statusTone(c.status)}>{statusLabel(c.status)}</Badge>
                       </td>
                       <td>{formatDateTime(c.expires_at)}</td>
                     </tr>
