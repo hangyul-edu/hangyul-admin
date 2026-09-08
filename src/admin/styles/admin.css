@@ -310,6 +310,22 @@ body {
   margin-bottom: 20px;
   flex-wrap: wrap;
 }
+/* The title + description column.
+   Every page writes this as a bare <div>, so it is selected by exclusion —
+   the head only ever holds this block and the optional actions block. That
+   keeps the rule working on all 19 pages (and any new one) without each page
+   having to opt in.
+
+   Without a flex basis the column was `flex: 0 1 auto` with the actions
+   pinned at `flex-shrink: 0`, so on the eleven pages that have buttons the
+   description was squeezed into a narrow ragged column beside them. It now
+   GROWS to take the free space, and `min-width` stops it collapsing: once
+   the row cannot give it 320px the actions wrap to their own line instead of
+   crushing the text — which is also what makes narrow screens behave. */
+.hgadm-page-head > *:not(.hgadm-page-head__actions) {
+  flex: 1 1 420px;
+  min-width: min(100%, 320px);
+}
 .hgadm-page-head h1 {
   font-size: 23px;
   letter-spacing: -0.02em;
@@ -318,7 +334,14 @@ body {
 .hgadm-page-head__desc {
   color: var(--ink-2);
   font-size: 13.5px;
-  max-width: 640px;
+  /* Descriptions are two to three lines on most pages; 1.25 from the topbar
+     rule left them cramped once they actually wrapped. */
+  line-height: 1.55;
+  /* A readable measure rather than a hard pixel cap. The text wraps here, it
+     is never clipped — nothing in this block sets overflow or ellipsis. */
+  max-width: 78ch;
+  /* An ID or URL pasted into a description cannot punch out of the column. */
+  overflow-wrap: anywhere;
 }
 .hgadm-page-head__actions {
   display: flex;
