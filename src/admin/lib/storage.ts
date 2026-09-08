@@ -27,3 +27,28 @@ export function saveAdminSession(session: AdminStoredSession): void {
 export function clearAdminSession(): void {
   localStorage.removeItem(KEY);
 }
+
+
+// --- UI preferences ---------------------------------------------------------
+// Kept in its own versioned key, and deliberately NOT cleared on sign-out:
+// how wide someone likes their sidebar is a display preference, not session
+// state, so it should survive logging out and back in.
+const NAV_KEY = "hangyul.admin.sidebar.v1";
+
+/** Whether the sidebar was last left collapsed. Defaults to expanded. */
+export function loadSidebarCollapsed(): boolean {
+  try {
+    return localStorage.getItem(NAV_KEY) === "collapsed";
+  } catch {
+    // Storage can be unavailable (private mode); fall back to the default.
+    return false;
+  }
+}
+
+export function saveSidebarCollapsed(collapsed: boolean): void {
+  try {
+    localStorage.setItem(NAV_KEY, collapsed ? "collapsed" : "expanded");
+  } catch {
+    /* preference is best-effort — never break navigation over it */
+  }
+}

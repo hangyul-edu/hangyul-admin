@@ -13,6 +13,8 @@ import {
   LayoutDashboard,
   LogOut,
   Megaphone,
+  PanelLeftClose,
+  PanelLeftOpen,
   MessagesSquare,
   PenLine,
   Receipt,
@@ -25,6 +27,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useAdminAuth } from "../auth";
+import { loadSidebarCollapsed, saveSidebarCollapsed } from "../lib/storage";
 import { Button, ConfirmDialog } from "./kit";
 
 interface NavItem {
@@ -101,12 +104,15 @@ const TIER_LABELS: Record<string, string> = {
 
 export function AdminLayout() {
   const { me, can, logout } = useAdminAuth();
+  // Lazy initialiser so the stored preference is read once, before first
+  // paint — the sidebar never renders wide and then snaps narrow.
+  const [collapsed, setCollapsed] = useState(loadSidebarCollapsed);
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
   return (
     <div className="hgadm-frame">
-      <aside className="hgadm-sidebar">
+      <aside className={`hgadm-sidebar ${collapsed ? "is-collapsed" : ""}`}>
         <div className="hgadm-sidebar__brand">
           <span className="hgadm-sidebar__brand-mark" aria-hidden>
             <Citrus size={19} strokeWidth={2} />
@@ -116,7 +122,7 @@ export function AdminLayout() {
             <span className="hgadm-sidebar__brand-sub">Hangyul Admin</span>
           </span>
         </div>
-        <nav className="hgadm-nav" aria-label="관리자 메뉴">
+        <nav className="hgadm-nav" id="hgadm-nav" aria-label="관리자 메뉴">
           {NAV.map((group) => {
             const visible = group.items.filter((item) =>
               item.scopes.some((scope) => can(scope)),
@@ -135,6 +141,14 @@ export function AdminLayout() {
                       className={({ isActive }) =>
                         `hgadm-nav__link ${isActive ? "active" : ""}`
                       }
+                      // The label is display:none when collapsed, which also
+                      // removes it from the accessibility tree — so the link
+                      // carries its own name, and `title` gives sighted users
+                      // the tooltip. Both are always set: identical to the
+                      // visible text when expanded, and the only description
+                      // available when not.
+                      title={item.label}
+                      aria-label={item.label}
                     >
                       <span className="hgadm-nav__icon" aria-hidden>
                         <Icon size={18} strokeWidth={1.75} />
@@ -147,6 +161,30 @@ export function AdminLayout() {
             );
           })}
         </nav>
+        <div className="hgadm-sidebar__foot">
+          <button
+            type="button"
+            className="hgadm-sidebar__toggle"
+            onClick={() => {
+              const next = !collapsed;
+              setCollapsed(next);
+              saveSidebarCollapsed(next);
+            }}
+            aria-expanded={!collapsed}
+            aria-controls="hgadm-nav"
+            // Named for the action it performs, not the current state, so the
+            // tooltip and the screen-reader name agree with what a click does.
+            aria-label={collapsed ? "사이드바 펼치기" : "사이드바 접기"}
+            title={collapsed ? "사이드바 펼치기" : "사이드바 접기"}
+          >
+            {collapsed ? (
+              <PanelLeftOpen size={18} strokeWidth={1.75} aria-hidden />
+            ) : (
+              <PanelLeftClose size={18} strokeWidth={1.75} aria-hidden />
+            )}
+            <span className="hgadm-nav__label">{collapsed ? "사이드바 펼치기" : "사이드바 접기"}</span>
+          </button>
+        </div>
       </aside>
       <div className="hgadm-main">
         <header className="hgadm-topbar">

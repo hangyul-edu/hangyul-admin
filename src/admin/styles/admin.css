@@ -8,6 +8,8 @@
 
 :root {
   --ad-sidebar-w: 256px;
+  /* Icon-only rail: 34px brand mark + breathing room on each side. */
+  --ad-sidebar-w-collapsed: 64px;
   --ad-topbar-h: 60px;
   --ad-content-max: 1320px;
 
@@ -155,7 +157,16 @@ body {
 
 /* ---------- Sidebar ---------- */
 .hgadm-sidebar {
-  width: var(--ad-sidebar-w);
+  /* The collapsed look is defined ONCE, here, as a set of custom properties,
+     and switched on by two independent triggers: the user's toggle
+     (.is-collapsed) and the narrow-viewport breakpoint. Without this the two
+     would be duplicate rule blocks that drift apart. */
+  --nav-width: var(--ad-sidebar-w);
+  --nav-label-display: block;
+  --nav-link-justify: flex-start;
+  --nav-link-padding: 9px 12px;
+  width: var(--nav-width);
+  transition: width 0.18s ease;
   flex-shrink: 0;
   background: linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%);
   color: var(--ink-2);
@@ -167,6 +178,42 @@ body {
   height: 100vh;
   overflow-y: auto;
 }
+/* Collapsed: the user asked for the space back. */
+.hgadm-sidebar.is-collapsed {
+  --nav-width: var(--ad-sidebar-w-collapsed);
+  --nav-label-display: none;
+  --nav-link-justify: center;
+  --nav-link-padding: 10px;
+}
+/* The toggle itself is hidden below the breakpoint, where the sidebar is
+   collapsed for lack of room rather than by choice — offering a control that
+   cannot widen the layout would be a lie. */
+.hgadm-sidebar__foot {
+  margin-top: auto;
+  padding: 10px 12px 14px;
+  border-top: 1px solid var(--line);
+}
+.hgadm-sidebar__toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: var(--nav-link-justify);
+  gap: 11px;
+  padding: var(--nav-link-padding);
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink-3);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+.hgadm-sidebar__toggle:hover {
+  background: var(--ad-neutral-soft);
+  color: var(--ink);
+}
+
 .hgadm-sidebar__brand {
   position: sticky;
   top: 0;
@@ -183,6 +230,9 @@ body {
   border-bottom: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: saturate(1.4) blur(8px);
+}
+.hgadm-sidebar__brand span:not(.hgadm-sidebar__brand-mark) {
+  display: var(--nav-label-display);
 }
 .hgadm-sidebar__brand-mark {
   width: 34px;
@@ -211,6 +261,7 @@ body {
   gap: 2px;
 }
 .hgadm-nav__group {
+  display: var(--nav-label-display);
   margin: 16px 10px 4px;
   font-size: 11px;
   font-weight: 700;
@@ -222,14 +273,20 @@ body {
   position: relative;
   display: flex;
   align-items: center;
+  justify-content: var(--nav-link-justify);
   gap: 11px;
-  padding: 9px 12px;
+  padding: var(--nav-link-padding);
   border-radius: 10px;
   color: var(--ink-2);
   font-size: 14px;
   font-weight: 500;
   text-decoration: none;
   transition: background 0.14s ease, color 0.14s ease;
+}
+/* The one rule that hides nav text. Both collapse triggers flip the property
+   above rather than each hiding the label themselves. */
+.hgadm-nav__label {
+  display: var(--nav-label-display);
 }
 .hgadm-nav__link:hover {
   background: var(--ad-neutral-soft);
@@ -1348,17 +1405,17 @@ a.hgadm-recent-row:hover {
 
 /* ---------- Responsive (tablet) ---------- */
 @media (max-width: 1024px) {
+  /* Below this width the sidebar is collapsed for lack of room, not by
+     choice — same properties, so the look cannot drift from .is-collapsed. */
   .hgadm-sidebar {
-    width: 64px;
+    --nav-width: var(--ad-sidebar-w-collapsed);
+    --nav-label-display: none;
+    --nav-link-justify: center;
+    --nav-link-padding: 10px;
   }
-  .hgadm-sidebar__brand span:not(.hgadm-sidebar__brand-mark),
-  .hgadm-nav__group,
-  .hgadm-nav__label {
+  /* Offering a control that cannot widen the layout here would be a lie. */
+  .hgadm-sidebar__foot {
     display: none;
-  }
-  .hgadm-nav__link {
-    justify-content: center;
-    padding: 10px;
   }
   .hgadm-content {
     padding: 20px 16px 40px;
@@ -1373,5 +1430,11 @@ a.hgadm-recent-row:hover {
   }
   .hgadm-dl {
     grid-template-columns: 130px 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hgadm-sidebar {
+    transition: none;
   }
 }
