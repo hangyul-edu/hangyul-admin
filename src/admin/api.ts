@@ -553,6 +553,21 @@ export interface AdminNotice {
   published_at: string | null;
 }
 
+// ---- Notification settings -------------------------------------------------
+
+/**
+ * The one admin-owned send time for the daily study reminder. `HH:MM` is a
+ * wall-clock time read on each recipient's OWN clock — the timezone of the
+ * country their verified phone number belongs to — never a UTC instant and
+ * never derived from their app language.
+ */
+export interface DailyReminderSettings {
+  daily_reminder_time: string;
+  /** When an admin last changed it; null while it is still the default. */
+  updated_at: string | null;
+  updated_by_admin_id: string | null;
+}
+
 // ---------------------------------------------------------------------------
 
 type Query = Record<string, string | number | boolean | undefined | null>;
@@ -826,6 +841,10 @@ export const adminApi = {
     deep_link?: string;
     dedup_key?: string;
   }) => http.post<{ created: number }>("/admin/notifications/announcement", body),
+  getDailyReminder: () =>
+    http.get<DailyReminderSettings>("/admin/notifications/daily-reminder"),
+  updateDailyReminder: (body: { daily_reminder_time: string }) =>
+    http.put<DailyReminderSettings>("/admin/notifications/daily-reminder", body),
 };
 
 function buildExportUrl(path: string, query: Query): string {

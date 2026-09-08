@@ -6,6 +6,7 @@ import {
   Bot,
   Citrus,
   Clapperboard,
+  Clock,
   CreditCard,
   HelpCircle,
   Image as ImageIcon,
@@ -78,6 +79,7 @@ const NAV: NavGroup[] = [
       { to: "/notices", icon: Megaphone, label: "공지", scopes: ["ops:read"] },
       { to: "/faqs", icon: MessagesSquare, label: "FAQ", scopes: ["ops:read"] },
       { to: "/notifications", icon: Bell, label: "알림 발송", scopes: ["ops:write"] },
+      { to: "/notification-settings", icon: Clock, label: "알림 설정", scopes: ["ops:read"] },
     ],
   },
   {

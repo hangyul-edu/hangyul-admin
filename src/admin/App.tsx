@@ -22,6 +22,7 @@ import { BannersPage } from "./pages/HomeCards";
 import { NoticesPage } from "./pages/Notices";
 import { FaqsPage } from "./pages/Faqs";
 import { NotificationsPage } from "./pages/Notifications";
+import { NotificationSettingsPage } from "./pages/NotificationSettings";
 import { CoursesPage } from "./pages/Courses";
 import { LecturesPage } from "./pages/Lectures";
 import { SentencesPage } from "./pages/Sentences";
@@ -94,6 +95,10 @@ const router = createBrowserRouter(
         <Route path="/notices" element={<RequireScope scope="ops:read"><NoticesPage /></RequireScope>} />
         <Route path="/faqs" element={<RequireScope scope="ops:read"><FaqsPage /></RequireScope>} />
         <Route path="/notifications" element={<RequireScope scope="ops:write"><NotificationsPage /></RequireScope>} />
+        {/* ops:read, unlike the send page above: the reminder time is worth
+            seeing for anyone who can read ops, and the form itself is what
+            gates on ops:write. */}
+        <Route path="/notification-settings" element={<RequireScope scope="ops:read"><NotificationSettingsPage /></RequireScope>} />
         <Route path="/audit-logs" element={<RequireScope scope="audit:read"><AuditLogsPage /></RequireScope>} />
         <Route path="/admins" element={<RequireScope scope="admins:manage"><AdminsPage /></RequireScope>} />
         <Route path="*" element={<EmptyState icon={<Compass size={28} strokeWidth={1.75} />} title="페이지를 찾을 수 없습니다" />} />
