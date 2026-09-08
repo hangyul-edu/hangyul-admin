@@ -170,3 +170,31 @@ describe("admin brand", () => {
     expect(screen.getByText("USERS PAGE")).toBeInTheDocument();
   });
 });
+
+describe("content nav labels", () => {
+  it("names the two content types by their learning track", () => {
+    renderLayout();
+    // The pair has to disambiguate together: a bare "문장" beside "문제(TOPIK)"
+    // left the conversation track unnamed, which is what these two labels fix.
+    const nav = sidebar();
+    expect(within(nav).getByRole("link", { name: "문장(회화)" })).toHaveAttribute(
+      "href", "/sentences",
+    );
+    expect(within(nav).getByRole("link", { name: "문제(TOPIK)" })).toHaveAttribute(
+      "href", "/quizzes",
+    );
+    expect(within(nav).queryByRole("link", { name: "문장" })).toBeNull();
+  });
+
+  it("carries the qualified name into the tooltip and the collapsed rail", async () => {
+    const user = userEvent.setup();
+    renderLayout();
+    const link = within(sidebar()).getByRole("link", { name: "문장(회화)" });
+    // Collapsed, this is the ONLY description of the item, so the qualifier
+    // has to travel with it rather than living in the visible text alone.
+    expect(link).toHaveAttribute("title", "문장(회화)");
+
+    await user.click(toggle());
+    expect(within(sidebar()).getByRole("link", { name: "문장(회화)" })).toBeInTheDocument();
+  });
+});

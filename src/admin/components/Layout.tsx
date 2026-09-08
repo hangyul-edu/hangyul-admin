@@ -60,7 +60,7 @@ const NAV: NavGroup[] = [
     items: [
       { to: "/courses", icon: BookOpen, label: "코스", scopes: ["content:read"] },
       { to: "/lectures", icon: Clapperboard, label: "강의·영상", scopes: ["content:read"] },
-      { to: "/sentences", icon: PenLine, label: "문장", scopes: ["content:read"] },
+      { to: "/sentences", icon: PenLine, label: "문장(회화)", scopes: ["content:read"] },
       { to: "/quizzes", icon: HelpCircle, label: "문제(TOPIK)", scopes: ["content:read"] },
       { to: "/ai-content", icon: Bot, label: "AI 생성 검수", scopes: ["content:read"] },
     ],
