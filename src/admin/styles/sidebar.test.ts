@@ -95,7 +95,7 @@ describe("collapsible sidebar", () => {
     document.body.innerHTML = `
       <div class="hgadm-frame"><aside class="hgadm-sidebar">
         <div class="hgadm-sidebar__brand">
-          <span class="hgadm-brand-mark hgadm-sidebar__brand-mark" id="mark"></span>
+          <span id="wordmark">한귤 관리자</span>
           <button class="hgadm-sidebar__collapse" id="btn"></button>
         </div>
       </aside></div>`;
@@ -109,23 +109,33 @@ describe("collapsible sidebar", () => {
     expect(btn.marginLeft).toBe("var(--collapse-push)");
   });
 
-  it("stacks the control under the mark in the rail, and never squashes it", () => {
+  it("centres the control in the rail, where it is the only thing left", () => {
     document.body.innerHTML = `
       <div class="hgadm-frame"><aside class="hgadm-sidebar is-collapsed" id="rail">
         <div class="hgadm-sidebar__brand" id="brand">
-          <span class="hgadm-brand-mark hgadm-sidebar__brand-mark" id="mark"></span>
+          <span id="wordmark">한귤 관리자</span>
+          <button class="hgadm-sidebar__collapse" id="btn"></button>
         </div>
       </aside></div>`;
     const rail = getComputedStyle(document.getElementById("rail")!);
-    // 34px mark + 26px button cannot sit side by side in a 64px rail.
-    expect(rail.getPropertyValue("--brand-direction")).toBe("column");
+    // The brand row used to hold a logo mark too, which had to stack above the
+    // control. With the mark gone the control is alone and simply centres.
+    expect(rail.getPropertyValue("--brand-justify")).toBe("center");
     expect(rail.getPropertyValue("--collapse-push")).toBe("0");
-    // The rail's padding tightens so the mark is not compressed…
     expect(rail.getPropertyValue("--brand-pad-x")).toBe("8px");
-    // …and the mark refuses to shrink regardless. It carries both classes:
-    // the shared .hgadm-brand-mark holds the square, and the sidebar class
-    // remains because a :not() selector uses it to hide the brand text.
-    expect(getComputedStyle(document.getElementById("mark")!).flexShrink).toBe("0");
+    // The wordmark hides with the rest of the sidebar text…
+    expect(getComputedStyle(document.getElementById("wordmark")!).display)
+      .toBe("var(--nav-label-display)");
+    // …but the control is a <button>, so that rule cannot swallow it.
+    expect(getComputedStyle(document.getElementById("btn")!).display).not.toBe("none");
+  });
+
+  it("pushes the control to the far edge when expanded", () => {
+    document.body.innerHTML = `
+      <div class="hgadm-frame"><aside class="hgadm-sidebar" id="side"></aside></div>`;
+    const side = getComputedStyle(document.getElementById("side")!);
+    expect(side.getPropertyValue("--brand-justify")).toBe("flex-start");
+    expect(side.getPropertyValue("--collapse-push")).toBe("auto");
   });
 
   it("draws the control at all times, not only on hover", () => {

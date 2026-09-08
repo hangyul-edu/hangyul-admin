@@ -4,7 +4,6 @@ import {
   Bell,
   BookOpen,
   Bot,
-  Citrus,
   Clapperboard,
   Clock,
   CreditCard,
@@ -114,9 +113,6 @@ export function AdminLayout() {
     <div className="hgadm-frame">
       <aside className={`hgadm-sidebar ${collapsed ? "is-collapsed" : ""}`}>
         <div className="hgadm-sidebar__brand">
-          <span className="hgadm-brand-mark hgadm-sidebar__brand-mark" aria-hidden>
-            <Citrus size={19} strokeWidth={2} />
-          </span>
           <span>
             한귤 관리자
             <span className="hgadm-sidebar__brand-sub">Hangyul Admin</span>

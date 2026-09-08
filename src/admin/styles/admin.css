@@ -165,8 +165,7 @@ body {
   --nav-label-display: block;
   --nav-link-justify: flex-start;
   --nav-link-padding: 9px 12px;
-  --brand-direction: row;
-  --brand-gap: 11px;
+  --brand-justify: flex-start;
   --brand-pad-x: 18px;
   --collapse-push: auto;
   width: var(--nav-width);
@@ -188,10 +187,9 @@ body {
   --nav-label-display: none;
   --nav-link-justify: center;
   --nav-link-padding: 10px;
-  /* Stacked: the 64px rail cannot hold the 34px mark and the button side by
-     side, so the control drops beneath it and both centre. */
-  --brand-direction: column;
-  --brand-gap: 8px;
+  /* Only the collapse control is left in the brand row once the wordmark is
+     hidden, so it centres in the rail instead of hugging an edge. */
+  --brand-justify: center;
   --brand-pad-x: 8px;
   --collapse-push: 0;
 }
@@ -227,8 +225,8 @@ body {
   z-index: 1;
   display: flex;
   align-items: center;
-  flex-direction: var(--brand-direction);
-  gap: var(--brand-gap);
+  justify-content: var(--brand-justify);
+  gap: 10px;
   padding: 18px var(--brand-pad-x) 15px;
   margin-bottom: 4px;
   font-family: var(--font-display);
@@ -239,27 +237,9 @@ body {
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: saturate(1.4) blur(8px);
 }
-.hgadm-sidebar__brand span:not(.hgadm-sidebar__brand-mark) {
+/* The wordmark. The collapse control is a <button>, so it is unaffected. */
+.hgadm-sidebar__brand span {
   display: var(--nav-label-display);
-}
-/* The app's identity square — the mark a device shows as the push icon, and
-   the mark the sidebar shows as the logo. Defined once so the two cannot
-   drift; the notification preview reuses it rather than hand-rolling its own. */
-.hgadm-brand-mark {
-  width: 34px;
-  height: 34px;
-  /* Without this a narrower content box (the collapsed rail) squeezes the mark
-     to 28px and the rounded square becomes a rectangle. */
-  flex-shrink: 0;
-  border-radius: 10px;
-  background: var(--brand-gradient);
-  display: grid;
-  place-items: center;
-  color: #fff;
-  box-shadow: var(--shadow-brand), inset 0 1px 0 rgba(255, 255, 255, 0.28);
-}
-.hgadm-sidebar__brand-mark {
-  font-size: 17px;
 }
 .hgadm-sidebar__brand-sub {
   display: block;
@@ -1428,8 +1408,7 @@ a.hgadm-recent-row:hover {
     --nav-label-display: none;
     --nav-link-justify: center;
     --nav-link-padding: 10px;
-    --brand-direction: column;
-    --brand-gap: 8px;
+    --brand-justify: center;
     --brand-pad-x: 8px;
     --collapse-push: 0;
   }

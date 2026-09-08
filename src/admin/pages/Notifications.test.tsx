@@ -30,25 +30,24 @@ function preview(): HTMLElement {
 }
 
 describe("notification preview", () => {
-  it("shows the app's own mark, not a stand-in glyph", () => {
+  it("shows no icon or decorative image beside the title", () => {
     renderPage();
-    // It used to render a hand-made gradient square containing the bare glyph
-    // "한" — not the app's mark (한귤 is a tangerine), and a lone 한 reads as
-    // 한글. The preview must show what a device actually puts there.
-    expect(preview().querySelector(".hgadm-brand-mark")).not.toBeNull();
-    expect(preview().textContent).not.toContain("한글");
-    const marks = preview().querySelectorAll(".hgadm-brand-mark");
-    expect(marks).toHaveLength(1);
-    // The mark is decorative beside the title, so it is hidden from readers.
-    expect(marks[0]).toHaveAttribute("aria-hidden");
+    // The slot previously held a gradient square — first with the glyph "한",
+    // then the app mark. Neither is here now: the preview is text only.
+    expect(preview().querySelector(".hgadm-brand-mark")).toBeNull();
+    expect(preview().querySelector("svg")).toBeNull();
+    expect(preview().querySelector("img")).toBeNull();
   });
 
-  it("shares one brand-mark definition with the rest of the admin", () => {
-    // A class rather than inline styles: the sidebar logo and this icon are
-    // the same mark, and duplicating the gradient would let them drift.
+  it("leaves no gap where the icon used to sit", () => {
     renderPage();
-    const mark = preview().querySelector(".hgadm-brand-mark") as HTMLElement;
-    expect(mark.getAttribute("style")).toBeNull();
+    // The row was a flex container whose gap and alignment existed only to
+    // place the icon. With one child left, that spacing would show as an
+    // indent before the title.
+    const title = screen.getByText("알림 제목");
+    const box = title.closest("[style*='border-radius']") as HTMLElement;
+    expect(box.style.display).not.toBe("flex");
+    expect(box.style.gap).toBe("");
   });
 
   it("previews the title and body the admin is typing", async () => {
@@ -62,15 +61,4 @@ describe("notification preview", () => {
     expect(preview().textContent).not.toContain("알림 제목");
   });
 
-  it("keeps the mark beside the title, not above it", () => {
-    // The icon and the text column are siblings in a flex row; if the mark
-    // ended up inside the text block the preview would stop resembling a
-    // notification.
-    renderPage();
-    const mark = preview().querySelector(".hgadm-brand-mark")!;
-    const row = mark.parentElement!;
-    expect(row.style.display).toBe("flex");
-    expect(row.style.alignItems).toBe("flex-start");
-    expect(row.children).toHaveLength(2);
-  });
 });
