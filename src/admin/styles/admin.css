@@ -1141,18 +1141,6 @@ body {
 .hgadm-dropzone input {
   display: none;
 }
-.hgadm-progress {
-  height: 8px;
-  background: var(--surface-3);
-  border-radius: var(--r-full);
-  overflow: hidden;
-}
-.hgadm-progress__bar {
-  height: 100%;
-  background: var(--brand-gradient);
-  border-radius: var(--r-full);
-  transition: width 0.2s ease;
-}
 
 /* ---------- Recent-activity rows (dashboard) ---------- */
 .hgadm-recent-row {
@@ -1206,14 +1194,6 @@ a.hgadm-recent-row:hover {
 }
 .hgadm-muted {
   color: var(--ink-3);
-}
-.hgadm-kbd {
-  font-family: ui-monospace, monospace;
-  background: var(--surface-3);
-  border: 1px solid var(--border-strong);
-  border-radius: 5px;
-  padding: 1px 5px;
-  font-size: 11px;
 }
 .hgadm-divider {
   border: none;
