@@ -48,7 +48,10 @@ export interface MetricsOverview {
   revenue: {
     currency: string;
     today_cents: number;
-    last_30d_cents: number;
+    /** `YYYY-MM` the figure below covers — stated by the server, not derived here. */
+    this_month: string;
+    /** This CALENDAR month, 1st → now. Not a rolling 30-day window. */
+    this_month_cents: number;
     refunded_30d_cents: number;
     failed_payments_24h: number;
   };
@@ -106,6 +109,19 @@ export interface TimeseriesResponse {
   metric: string;
   days: number;
   points: { date: string; value: number }[];
+}
+
+/**
+ * Revenue by calendar month, oldest first, ending with the month in progress.
+ * The server derives every bucket — and the overview's `this_month_cents` —
+ * from one query, so the last point always equals that KPI.
+ */
+export interface MonthlyRevenueResponse {
+  currency: string;
+  months: number;
+  /** `YYYY-MM` of the in-progress month: its bar covers the 1st → today only. */
+  current_month: string;
+  points: { month: string; value_cents: number }[];
 }
 
 // ---- Users -----------------------------------------------------------------
@@ -577,6 +593,8 @@ export const adminApi = {
   metricsOverview: () => http.get<MetricsOverview>("/admin/metrics/overview"),
   metricsTimeseries: (metric: string, days: number) =>
     http.get<TimeseriesResponse>("/admin/metrics/timeseries", { metric, days }),
+  metricsMonthlyRevenue: (months: number) =>
+    http.get<MonthlyRevenueResponse>("/admin/metrics/monthly-revenue", { months }),
 
   // Users
   listUsers: (params: UserListParams) =>

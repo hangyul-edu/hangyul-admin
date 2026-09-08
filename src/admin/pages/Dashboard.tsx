@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { adminApi } from "../api";
+import type { MonthlyRevenueResponse } from "../api";
 import { errorMessage } from "../../lib/http";
 import {
   Badge,
@@ -19,6 +20,14 @@ const METRICS: { key: string; label: string }[] = [
   { key: "active_learners", label: "학습 사용자" },
   { key: "attendance", label: "출석 체크인" },
 ];
+
+const MONTH_RANGES = [6, 12, 24];
+
+/** `"2026-09"` → `"2026년 9월"`. The month string comes from the server. */
+export function monthLabel(month: string): string {
+  const [year, m] = month.split("-");
+  return `${year}년 ${Number(m)}월`;
+}
 
 const ALERT_ROUTES: Record<string, string> = {
   lecture_videos_failed: "/lectures",
@@ -39,6 +48,11 @@ export function DashboardPage() {
   const series = useQuery({
     queryKey: ["admin", "metrics", "timeseries", metric],
     queryFn: () => adminApi.metricsTimeseries(metric, 30),
+  });
+  const [months, setMonths] = useState(12);
+  const monthly = useQuery({
+    queryKey: ["admin", "metrics", "monthly-revenue", months],
+    queryFn: () => adminApi.metricsMonthlyRevenue(months),
   });
 
   if (overview.isPending) return <LoadingState label="지표를 불러오는 중…" />;
@@ -114,9 +128,9 @@ export function DashboardPage() {
           sub={`체험 ${data.subscriptions.trialing} · 해지 예약 ${data.subscriptions.canceling}`}
         />
         <Stat
-          label="최근 30일 매출"
-          value={formatMoney(data.revenue.last_30d_cents, currency)}
-          sub={`오늘 ${formatMoney(data.revenue.today_cents, currency)}`}
+          label="이번 달 매출"
+          value={formatMoney(data.revenue.this_month_cents, currency)}
+          sub={`${monthLabel(data.revenue.this_month)} 1일부터 · 오늘 ${formatMoney(data.revenue.today_cents, currency)}`}
         />
         <Stat
           label="오늘 학습 활동"
@@ -160,6 +174,40 @@ export function DashboardPage() {
               points={series.data.points}
               money={metric === "revenue" ? currency : null}
             />
+          )}
+        </div>
+      </div>
+
+      <div className="hgadm-card hgadm-section">
+        <div className="hgadm-card__head">
+          <div>
+            <div className="hgadm-card__title">월별 매출 추이</div>
+            <div className="hgadm-cell-sub" style={{ marginTop: 2 }}>
+              달력 월 기준 결제 금액. 마지막 달은 아직 진행 중입니다.
+            </div>
+          </div>
+          <div className="hgadm-row">
+            {MONTH_RANGES.map((m) => (
+              <button
+                key={m}
+                className={`hgadm-tab ${months === m ? "active" : ""}`}
+                onClick={() => setMonths(m)}
+              >
+                {m}개월
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="hgadm-card__body">
+          {monthly.isPending ? (
+            <LoadingState />
+          ) : monthly.isError ? (
+            <ErrorState
+              message={errorMessage(monthly.error)}
+              onRetry={() => void monthly.refetch()}
+            />
+          ) : (
+            <MonthlyRevenueChart data={monthly.data} />
           )}
         </div>
       </div>
@@ -223,19 +271,119 @@ function RecentCard({ title, children }: { title: string; children: React.ReactN
   );
 }
 
-/**
- * Single-series 30-day bar chart (inline SVG).
- * Mark spec: thin bars, 4px rounded data-end anchored to the baseline via a
- * squared-off bottom, 2px gaps, recessive grid, ink-token text, per-bar hover
- * tooltip. Bar color #2563eb (brand blue) validated ≥3:1 against the white
- * surface (~5.2:1).
- */
+/** Daily 30-day chart: labels every 7th day so the axis stays readable. */
 function TimeseriesChart({
   points,
   money,
 }: {
   points: { date: string; value: number }[];
   money: string | null;
+}) {
+  const bars: Bar[] = points.map((p) => ({
+    key: p.date,
+    label: p.date.slice(5).replace("-", "/"),
+    caption: p.date,
+    value: p.value,
+  }));
+  return (
+    <BarChart
+      bars={bars}
+      money={money}
+      ariaLabel="최근 30일 일자별 추이 막대 차트"
+      showLabel={(i, n) => i === 0 || i === n - 1 || i % 7 === 0}
+    />
+  );
+}
+
+/**
+ * Revenue by calendar month. Every month is labelled — the trend is the point
+ * of the chart — and the year is shown whenever it changes so a window
+ * spanning New Year reads correctly.
+ *
+ * The month in progress is drawn hatched rather than solid: it holds the 1st
+ * to today only, so showing it as a flat bar next to completed months would
+ * read as a collapse in revenue every single month.
+ */
+function MonthlyRevenueChart({ data }: { data: MonthlyRevenueResponse }) {
+  const bars: Bar[] = data.points.map((p, i) => {
+    const [year, month] = p.month.split("-");
+    const yearChanged = i === 0 || p.month.slice(0, 4) !== data.points[i - 1].month.slice(0, 4);
+    return {
+      key: p.month,
+      label: yearChanged ? `${year.slice(2)}'${Number(month)}월` : `${Number(month)}월`,
+      caption: `${year}년 ${Number(month)}월`,
+      value: p.value_cents,
+      partial: p.month === data.current_month,
+    };
+  });
+
+  return (
+    <>
+      <BarChart
+        bars={bars}
+        money={data.currency}
+        ariaLabel={`최근 ${data.months}개월 월별 매출 막대 차트`}
+        showLabel={() => true}
+      />
+      <div
+        className="hgadm-row"
+        style={{ gap: 14, marginTop: 10, fontSize: 12, color: "var(--ink-3)" }}
+      >
+        <span className="hgadm-row" style={{ gap: 6 }}>
+          <span
+            aria-hidden
+            style={{ width: 10, height: 10, borderRadius: 2, background: "#2563eb" }}
+          />
+          완료된 달
+        </span>
+        <span className="hgadm-row" style={{ gap: 6 }}>
+          <span
+            aria-hidden
+            style={{
+              width: 10,
+              height: 10,
+              borderRadius: 2,
+              background: "#2563eb",
+              opacity: 0.35,
+              border: "1px dashed #2563eb",
+            }}
+          />
+          이번 달 (진행 중 · 1일~오늘)
+        </span>
+      </div>
+    </>
+  );
+}
+
+interface Bar {
+  key: string;
+  /** Axis label. */
+  label: string;
+  /** Tooltip title. */
+  caption: string;
+  value: number;
+  /** Incomplete period — drawn hatched so it is not read as a real drop. */
+  partial?: boolean;
+}
+
+/**
+ * Single-series bar chart (inline SVG), shared by both dashboard charts so the
+ * two cannot drift apart visually.
+ * Mark spec: thin bars, 4px rounded data-end anchored to the baseline via a
+ * squared-off bottom, 2px gaps, recessive grid, ink-token text, per-bar hover
+ * tooltip. Bar color #2563eb (brand blue) validated ≥3:1 against the white
+ * surface (~5.2:1).
+ */
+function BarChart({
+  bars: points,
+  money,
+  ariaLabel,
+  showLabel,
+}: {
+  bars: Bar[];
+  money: string | null;
+  ariaLabel: string;
+  showLabel: (index: number, total: number) => boolean;
 }) {
   const [hover, setHover] = useState<number | null>(null);
   const width = 920;
@@ -263,9 +411,24 @@ function TimeseriesChart({
         viewBox={`0 0 ${width} ${height}`}
         style={{ width: "100%", minWidth: 640, display: "block" }}
         role="img"
-        aria-label="최근 30일 일자별 추이 막대 차트"
+        aria-label={ariaLabel}
         onMouseLeave={() => setHover(null)}
       >
+        <defs>
+          {/* Diagonal hatch for a period that is not over yet. Reads as
+              "incomplete" rather than "lower" at a glance, and survives being
+              printed or viewed without color. */}
+          <pattern
+            id="hgadm-bar-partial"
+            width={6}
+            height={6}
+            patternUnits="userSpaceOnUse"
+            patternTransform="rotate(45)"
+          >
+            <rect width={6} height={6} fill="#2563eb" opacity={0.18} />
+            <line x1={0} y1={0} x2={0} y2={6} stroke="#2563eb" strokeWidth={2.5} />
+          </pattern>
+        </defs>
         {gridLines.map((f) => {
           const y = pad.top + innerH * (1 - f);
           return (
@@ -306,7 +469,7 @@ function TimeseriesChart({
           const y = pad.top + innerH - h;
           const isHover = hover === i;
           return (
-            <g key={p.date}>
+            <g key={p.key}>
               {/* Full-height hit target, larger than the mark itself. */}
               <rect
                 x={x - barGap / 2}
@@ -319,12 +482,15 @@ function TimeseriesChart({
               {p.value > 0 && (
                 <path
                   d={roundedTopBar(x, y, barW, h, Math.min(4, barW / 2, h))}
-                  fill="#2563eb"
+                  fill={p.partial ? "url(#hgadm-bar-partial)" : "#2563eb"}
+                  stroke={p.partial ? "#2563eb" : undefined}
+                  strokeWidth={p.partial ? 1 : undefined}
+                  strokeDasharray={p.partial ? "3 2" : undefined}
                   opacity={hover === null || isHover ? 1 : 0.45}
                   pointerEvents="none"
                 />
               )}
-              {(i === 0 || i === points.length - 1 || i % 7 === 0) && (
+              {showLabel(i, points.length) && (
                 <text
                   x={x + barW / 2}
                   y={height - 8}
@@ -332,7 +498,7 @@ function TimeseriesChart({
                   fontSize={10.5}
                   fill="var(--ink-3)"
                 >
-                  {p.date.slice(5).replace("-", "/")}
+                  {p.label}
                 </text>
               )}
             </g>
@@ -356,7 +522,8 @@ function TimeseriesChart({
             boxShadow: "var(--shadow-md)",
           }}
         >
-          <strong>{hovered.date}</strong> · {fmt(hovered.value)}
+          <strong>{hovered.caption}</strong> · {fmt(hovered.value)}
+          {hovered.partial && " (진행 중)"}
         </div>
       )}
     </div>
