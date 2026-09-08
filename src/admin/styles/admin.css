@@ -165,6 +165,10 @@ body {
   --nav-label-display: block;
   --nav-link-justify: flex-start;
   --nav-link-padding: 9px 12px;
+  --brand-direction: row;
+  --brand-gap: 11px;
+  --brand-pad-x: 18px;
+  --collapse-push: auto;
   width: var(--nav-width);
   transition: width 0.18s ease;
   flex-shrink: 0;
@@ -184,34 +188,37 @@ body {
   --nav-label-display: none;
   --nav-link-justify: center;
   --nav-link-padding: 10px;
+  /* Stacked: the 64px rail cannot hold the 34px mark and the button side by
+     side, so the control drops beneath it and both centre. */
+  --brand-direction: column;
+  --brand-gap: 8px;
+  --brand-pad-x: 8px;
+  --collapse-push: 0;
 }
-/* The toggle itself is hidden below the breakpoint, where the sidebar is
-   collapsed for lack of room rather than by choice — offering a control that
-   cannot widen the layout would be a lie. */
-.hgadm-sidebar__foot {
-  margin-top: auto;
-  padding: 10px 12px 14px;
-  border-top: 1px solid var(--line);
-}
-.hgadm-sidebar__toggle {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: var(--nav-link-justify);
-  gap: 11px;
-  padding: var(--nav-link-padding);
+/* Sidebar chrome: a compact icon button in the brand row. Muted until hovered
+   so it reads as part of the frame rather than a navigation entry, but always
+   drawn — never hover-only, which would make it undiscoverable in the rail.
+   Hidden below the breakpoint, where the sidebar is collapsed for lack of room
+   rather than by choice: a control that cannot widen the layout would be a
+   lie. */
+.hgadm-sidebar__collapse {
+  margin-left: var(--collapse-push);
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  padding: 0;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   background: transparent;
-  color: var(--ink-3);
-  font-size: 13px;
-  font-weight: 500;
+  color: var(--ink-muted);
   cursor: pointer;
   transition: background 0.14s ease, color 0.14s ease;
 }
-.hgadm-sidebar__toggle:hover {
+.hgadm-sidebar__collapse:hover {
   background: var(--ad-neutral-soft);
-  color: var(--ink);
+  color: var(--ink-2);
 }
 
 .hgadm-sidebar__brand {
@@ -220,8 +227,9 @@ body {
   z-index: 1;
   display: flex;
   align-items: center;
-  gap: 11px;
-  padding: 18px 18px 15px;
+  flex-direction: var(--brand-direction);
+  gap: var(--brand-gap);
+  padding: 18px var(--brand-pad-x) 15px;
   margin-bottom: 4px;
   font-family: var(--font-display);
   font-weight: 800;
@@ -237,6 +245,9 @@ body {
 .hgadm-sidebar__brand-mark {
   width: 34px;
   height: 34px;
+  /* Without this the rail's narrower content box shrinks the mark to 28px and
+     the rounded square becomes a rectangle. */
+  flex-shrink: 0;
   border-radius: 10px;
   background: var(--brand-gradient);
   display: grid;
@@ -1412,9 +1423,13 @@ a.hgadm-recent-row:hover {
     --nav-label-display: none;
     --nav-link-justify: center;
     --nav-link-padding: 10px;
+    --brand-direction: column;
+    --brand-gap: 8px;
+    --brand-pad-x: 8px;
+    --collapse-push: 0;
   }
   /* Offering a control that cannot widen the layout here would be a lie. */
-  .hgadm-sidebar__foot {
+  .hgadm-sidebar__collapse {
     display: none;
   }
   .hgadm-content {

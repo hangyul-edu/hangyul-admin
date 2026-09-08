@@ -87,8 +87,51 @@ describe("collapsible sidebar", () => {
     const breakpoint = code.slice(code.indexOf("@media (max-width: 1024px)"));
     expect(breakpoint).toContain("--nav-width: var(--ad-sidebar-w-collapsed)");
     expect(breakpoint).toContain("--nav-label-display: none");
-    // …and it hides the toggle, which cannot widen the layout at that size.
-    expect(breakpoint).toMatch(/\.hgadm-sidebar__foot\s*\{\s*display:\s*none/);
+    // …and it hides the control, which cannot widen the layout at that size.
+    expect(breakpoint).toMatch(/\.hgadm-sidebar__collapse\s*\{\s*display:\s*none/);
+  });
+
+  it("keeps the control compact chrome rather than a menu row", () => {
+    document.body.innerHTML = `
+      <div class="hgadm-frame"><aside class="hgadm-sidebar">
+        <div class="hgadm-sidebar__brand">
+          <span class="hgadm-sidebar__brand-mark" id="mark"></span>
+          <button class="hgadm-sidebar__collapse" id="btn"></button>
+        </div>
+      </aside></div>`;
+    const btn = getComputedStyle(document.getElementById("btn")!);
+    // A 26px square, not a full-width row: it must not claim nav space.
+    expect(btn.width).toBe("26px");
+    expect(btn.height).toBe("26px");
+    // No chrome of its own until hovered — jsdom reports transparent as rgba.
+    expect(btn.backgroundColor).toBe("rgba(0, 0, 0, 0)");
+    // Pushed to the far edge of the brand row when expanded.
+    expect(btn.marginLeft).toBe("var(--collapse-push)");
+  });
+
+  it("stacks the control under the mark in the rail, and never squashes it", () => {
+    document.body.innerHTML = `
+      <div class="hgadm-frame"><aside class="hgadm-sidebar is-collapsed" id="rail">
+        <div class="hgadm-sidebar__brand" id="brand">
+          <span class="hgadm-sidebar__brand-mark" id="mark"></span>
+        </div>
+      </aside></div>`;
+    const rail = getComputedStyle(document.getElementById("rail")!);
+    // 34px mark + 26px button cannot sit side by side in a 64px rail.
+    expect(rail.getPropertyValue("--brand-direction")).toBe("column");
+    expect(rail.getPropertyValue("--collapse-push")).toBe("0");
+    // The rail's padding tightens so the mark is not compressed…
+    expect(rail.getPropertyValue("--brand-pad-x")).toBe("8px");
+    // …and the mark refuses to shrink regardless.
+    expect(getComputedStyle(document.getElementById("mark")!).flexShrink).toBe("0");
+  });
+
+  it("draws the control at all times, not only on hover", () => {
+    // Hover-only chrome is undiscoverable in an icon rail.
+    const code = CSS.replace(/\/\*[\s\S]*?\*\//g, "");
+    const base = /\.hgadm-sidebar__collapse\s*\{([^}]*)\}/.exec(code);
+    expect(base).not.toBeNull();
+    expect(base![1]).not.toMatch(/display\s*:\s*none|opacity\s*:\s*0/);
   });
 
   it("respects a reduced-motion preference for the width animation", () => {

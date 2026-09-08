@@ -121,6 +121,33 @@ export function AdminLayout() {
             한귤 관리자
             <span className="hgadm-sidebar__brand-sub">Hangyul Admin</span>
           </span>
+          {/* Sidebar chrome, not a menu item: a 26px icon button that sits in
+              the brand row (right of the wordmark when expanded, under the
+              mark when collapsed) so it is always visible without competing
+              with navigation for space. The row is sticky, so it stays put
+              while the nav scrolls. */}
+          <button
+            type="button"
+            className="hgadm-sidebar__collapse"
+            onClick={() => {
+              const next = !collapsed;
+              setCollapsed(next);
+              saveSidebarCollapsed(next);
+            }}
+            aria-expanded={!collapsed}
+            aria-controls="hgadm-nav"
+            // Named for the action it performs, not the current state, so the
+            // tooltip and the screen-reader name agree with what a click does.
+            // Icon-only, so this is the ONLY name it has.
+            aria-label={collapsed ? "사이드바 펼치기" : "사이드바 접기"}
+            title={collapsed ? "사이드바 펼치기" : "사이드바 접기"}
+          >
+            {collapsed ? (
+              <PanelLeftOpen size={16} strokeWidth={1.75} aria-hidden />
+            ) : (
+              <PanelLeftClose size={16} strokeWidth={1.75} aria-hidden />
+            )}
+          </button>
         </div>
         <nav className="hgadm-nav" id="hgadm-nav" aria-label="관리자 메뉴">
           {NAV.map((group) => {
@@ -161,30 +188,6 @@ export function AdminLayout() {
             );
           })}
         </nav>
-        <div className="hgadm-sidebar__foot">
-          <button
-            type="button"
-            className="hgadm-sidebar__toggle"
-            onClick={() => {
-              const next = !collapsed;
-              setCollapsed(next);
-              saveSidebarCollapsed(next);
-            }}
-            aria-expanded={!collapsed}
-            aria-controls="hgadm-nav"
-            // Named for the action it performs, not the current state, so the
-            // tooltip and the screen-reader name agree with what a click does.
-            aria-label={collapsed ? "사이드바 펼치기" : "사이드바 접기"}
-            title={collapsed ? "사이드바 펼치기" : "사이드바 접기"}
-          >
-            {collapsed ? (
-              <PanelLeftOpen size={18} strokeWidth={1.75} aria-hidden />
-            ) : (
-              <PanelLeftClose size={18} strokeWidth={1.75} aria-hidden />
-            )}
-            <span className="hgadm-nav__label">{collapsed ? "사이드바 펼치기" : "사이드바 접기"}</span>
-          </button>
-        </div>
       </aside>
       <div className="hgadm-main">
         <header className="hgadm-topbar">
