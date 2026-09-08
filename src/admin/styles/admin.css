@@ -128,6 +128,16 @@ body {
 .hgadm-frame {
   display: flex;
   min-height: 100vh;
+  /* Wrap at word boundaries, not inside words.
+     With the default `word-break: normal` a browser breaks Korean at ANY
+     syllable, so "관리합니다" could split as "관리합 / 니다" — mid-word by any
+     reader's judgement, and the same rule mangles Latin terms like TOPIK.
+     `keep-all` wraps Korean at spaces (어절) and keeps English words whole.
+     `break-word` stays as the last resort so a genuinely unbreakable token —
+     an ID, a URL, a long email — still wraps instead of overflowing, which is
+     what keeps this from trading mid-word breaks for horizontal scrolling. */
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 .hgadm-main {
   flex: 1;
@@ -340,8 +350,9 @@ body {
   /* A readable measure rather than a hard pixel cap. The text wraps here, it
      is never clipped — nothing in this block sets overflow or ellipsis. */
   max-width: 78ch;
-  /* An ID or URL pasted into a description cannot punch out of the column. */
-  overflow-wrap: anywhere;
+  /* Wrapping is inherited from .hgadm-frame: keep-all + break-word. This used
+     to say `overflow-wrap: anywhere`, which also breaks ordinary words mid
+     character — the safety valve was doing damage of its own. */
 }
 .hgadm-page-head__actions {
   display: flex;
@@ -643,6 +654,10 @@ body {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 12px;
   color: var(--ink-2);
+  /* Escape hatch from the shell's keep-all: these hold IDs and tokens with no
+     spaces to wrap at, so they must be allowed to break anywhere rather than
+     widen the table. */
+  word-break: break-all;
 }
 
 /* ---------- Toolbar / filters ---------- */
@@ -1066,7 +1081,10 @@ body {
 .hgadm-dl dd {
   margin: 0;
   color: var(--ink);
-  word-break: break-word;
+  /* Values here are emails, IDs and free text. Inherit keep-all for the prose
+     and let a long unbroken value break rather than stretch the two-column
+     grid. (`word-break: break-word` was a deprecated alias for exactly this.) */
+  overflow-wrap: break-word;
 }
 
 /* ---------- States ---------- */

@@ -71,8 +71,11 @@ describe("admin page header", () => {
     expect(desc.lineHeight).toBe("1.55");
     // A measure cap wraps the text; it does not cut it.
     expect(desc.maxWidth).toBe("78ch");
-    // A pasted ID or URL wraps instead of punching out of the column.
-    expect(desc.overflowWrap).toBe("anywhere");
+    // Wrapping is not overridden here — it inherits keep-all + break-word from
+    // .hgadm-frame, so the description wraps at word boundaries like the rest
+    // of the portal. See wrapping.test.ts.
+    expect(desc.overflowWrap).toBe("");
+    expect(desc.wordBreak).toBe("");
   });
 
   it("lets the title column grow instead of being squeezed by the buttons", () => {
