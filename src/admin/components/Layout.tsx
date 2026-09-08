@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { Link, NavLink, Outlet } from "react-router-dom";
 import {
   Bell,
   BookOpen,
@@ -113,10 +113,15 @@ export function AdminLayout() {
     <div className="hgadm-frame">
       <aside className={`hgadm-sidebar ${collapsed ? "is-collapsed" : ""}`}>
         <div className="hgadm-sidebar__brand">
-          <span>
+          {/* The whole two-line label is one link to the dashboard, the way a
+              product logo usually is. It is the LINK that carries the padding,
+              so the clickable area covers the block rather than just the
+              glyphs. Hidden when collapsed along with the rest of the sidebar
+              text — the nav's own 대시보드 entry remains. */}
+          <Link to="/" className="hgadm-sidebar__brand-link" title="대시보드로 이동">
             한귤 관리자
             <span className="hgadm-sidebar__brand-sub">Hangyul Admin</span>
-          </span>
+          </Link>
           {/* Sidebar chrome, not a menu item: a 26px icon button that sits in
               the brand row (right of the wordmark when expanded, under the
               mark when collapsed) so it is always visible without competing

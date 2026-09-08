@@ -20,6 +20,7 @@ function renderLayout() {
     <MemoryRouter initialEntries={["/users"]}>
       <Routes>
         <Route element={<AdminLayout />}>
+          <Route path="/" element={<div>DASHBOARD PAGE</div>} />
           <Route path="/users" element={<div>USERS PAGE</div>} />
         </Route>
       </Routes>
@@ -117,5 +118,55 @@ describe("admin sidebar", () => {
     expect(() => renderLayout()).not.toThrow();
     expect(sidebar().className).not.toContain("is-collapsed");
     getItem.mockRestore();
+  });
+});
+
+describe("admin brand", () => {
+  beforeEach(() => localStorage.clear());
+
+  it("navigates to the dashboard when clicked", async () => {
+    const user = userEvent.setup();
+    renderLayout();
+    expect(screen.getByText("USERS PAGE")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("link", { name: /한귤 관리자/ }));
+    expect(screen.getByText("DASHBOARD PAGE")).toBeInTheDocument();
+  });
+
+  it("makes the whole label one target, both lines included", () => {
+    renderLayout();
+    const link = screen.getByRole("link", { name: /한귤 관리자/ });
+    // Korean and English are inside the same anchor, so clicking either — or
+    // the padding around them — goes to the dashboard.
+    expect(link.textContent).toContain("한귤 관리자");
+    expect(link.textContent).toContain("Hangyul Admin");
+    expect(link).toHaveAttribute("href", "/");
+    // A real anchor, so keyboard focus and Enter work without extra handlers.
+    expect(link.tagName).toBe("A");
+  });
+
+  it("is reachable by keyboard", async () => {
+    const user = userEvent.setup();
+    renderLayout();
+    const link = screen.getByRole("link", { name: /한귤 관리자/ });
+    link.focus();
+    expect(link).toHaveFocus();
+
+    await user.keyboard("{Enter}");
+    expect(screen.getByText("DASHBOARD PAGE")).toBeInTheDocument();
+  });
+
+  it("does not swallow the collapse control", async () => {
+    const user = userEvent.setup();
+    renderLayout();
+    // The control sits beside the link, not inside it — nesting a button in an
+    // anchor would be invalid and would make one of them unclickable.
+    const link = screen.getByRole("link", { name: /한귤 관리자/ });
+    expect(link.querySelector("button")).toBeNull();
+
+    await user.click(toggle());
+    expect(sidebar().className).toContain("is-collapsed");
+    // Collapsing must not have navigated.
+    expect(screen.getByText("USERS PAGE")).toBeInTheDocument();
   });
 });

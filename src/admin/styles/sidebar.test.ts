@@ -95,7 +95,7 @@ describe("collapsible sidebar", () => {
     document.body.innerHTML = `
       <div class="hgadm-frame"><aside class="hgadm-sidebar">
         <div class="hgadm-sidebar__brand">
-          <span id="wordmark">한귤 관리자</span>
+          <a class="hgadm-sidebar__brand-link" id="wordmark" href="/">한귤 관리자</a>
           <button class="hgadm-sidebar__collapse" id="btn"></button>
         </div>
       </aside></div>`;
@@ -113,7 +113,7 @@ describe("collapsible sidebar", () => {
     document.body.innerHTML = `
       <div class="hgadm-frame"><aside class="hgadm-sidebar is-collapsed" id="rail">
         <div class="hgadm-sidebar__brand" id="brand">
-          <span id="wordmark">한귤 관리자</span>
+          <a class="hgadm-sidebar__brand-link" id="wordmark" href="/">한귤 관리자</a>
           <button class="hgadm-sidebar__collapse" id="btn"></button>
         </div>
       </aside></div>`;
@@ -123,7 +123,10 @@ describe("collapsible sidebar", () => {
     expect(rail.getPropertyValue("--brand-justify")).toBe("center");
     expect(rail.getPropertyValue("--collapse-push")).toBe("0");
     expect(rail.getPropertyValue("--brand-pad-x")).toBe("8px");
-    // The wordmark hides with the rest of the sidebar text…
+    // The wordmark hides with the rest of the sidebar text. It is an <a> since
+    // it became a dashboard link, so the rule that hides sidebar text has to
+    // name the class — a `span` selector alone would leave the brand showing
+    // in the 64px rail.
     expect(getComputedStyle(document.getElementById("wordmark")!).display)
       .toBe("var(--nav-label-display)");
     // …but the control is a <button>, so that rule cannot swallow it.
@@ -136,6 +139,31 @@ describe("collapsible sidebar", () => {
     const side = getComputedStyle(document.getElementById("side")!);
     expect(side.getPropertyValue("--brand-justify")).toBe("flex-start");
     expect(side.getPropertyValue("--collapse-push")).toBe("auto");
+  });
+
+  it("gives the brand link a hit area, a hover and a focus ring", () => {
+    document.body.innerHTML = `
+      <div class="hgadm-frame"><aside class="hgadm-sidebar">
+        <div class="hgadm-sidebar__brand">
+          <a class="hgadm-sidebar__brand-link" id="brand" href="/">한귤 관리자</a>
+        </div>
+      </aside></div>`;
+    const link = getComputedStyle(document.getElementById("brand")!);
+    // Fills the row so the target is the label area, not just the glyphs…
+    expect(link.flexGrow).toBe("1");
+    // …and the padding is cancelled by an equal negative margin, so widening
+    // the target did not move the text.
+    expect(link.padding).toBe("6px");
+    expect(link.margin).toBe("-6px");
+    // Visual styling otherwise unchanged: it inherits the brand type colour
+    // and carries no underline.
+    expect(link.color).toBe("inherit");
+    expect(link.textDecoration).toBe("none");
+
+    const code = CSS.replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(code).toMatch(/\.hgadm-sidebar__brand-link:hover\s*\{[^}]*background/);
+    // Keyboard users get the same focus treatment as the admin's buttons.
+    expect(code).toMatch(/\.hgadm-sidebar__brand-link:focus-visible\s*\{[^}]*--focus-ring/);
   });
 
   it("draws the control at all times, not only on hover", () => {

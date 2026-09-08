@@ -237,9 +237,34 @@ body {
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: saturate(1.4) blur(8px);
 }
-/* The wordmark. The collapse control is a <button>, so it is unaffected. */
+/* The wordmark — now an <a>, so it is named here explicitly; the earlier
+   `span` selector alone would have left it visible in the collapsed rail.
+   The collapse control is a <button>, so it is unaffected either way. */
+.hgadm-sidebar__brand-link,
 .hgadm-sidebar__brand span {
   display: var(--nav-label-display);
+}
+.hgadm-sidebar__brand-link {
+  /* Take the row's free space so the target is the whole label area, not the
+     text glyphs. The negative margin with equal padding widens the hit area
+     and gives hover something to paint WITHOUT moving the text a pixel; 6px
+     against the row's 10px gap leaves clearance before the collapse button. */
+  flex: 1;
+  min-width: 0;
+  margin: -6px;
+  padding: 6px;
+  border-radius: 8px;
+  color: inherit;
+  text-decoration: none;
+  transition: background 0.14s ease;
+}
+.hgadm-sidebar__brand-link:hover {
+  background: var(--ad-neutral-soft);
+}
+/* Matches the focus treatment the admin's buttons already use. */
+.hgadm-sidebar__brand-link:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 .hgadm-sidebar__brand-sub {
   display: block;
