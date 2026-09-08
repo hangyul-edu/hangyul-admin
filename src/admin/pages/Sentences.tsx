@@ -266,18 +266,6 @@ export function SentencesPage() {
             onSearch={(next) => patchParams({ q: next, page: null })}
           />
           <Select
-            value={level}
-            onChange={(e) => patchParams({ level: e.target.value, page: null })}
-            style={{ width: 120 }}
-          >
-            <option value="">레벨: 전체</option>
-            {CONVERSATION_LEVELS.map((l) => (
-              <option key={l} value={l}>
-                레벨 {l}
-              </option>
-            ))}
-          </Select>
-          <Select
             value={topic}
             onChange={(e) => patchParams({ topic: e.target.value, page: null })}
             style={{ minWidth: 150 }}
@@ -286,6 +274,18 @@ export function SentencesPage() {
             {topics.data?.topics.map((t) => (
               <option key={t} value={t}>
                 {t}
+              </option>
+            ))}
+          </Select>
+          <Select
+            value={level}
+            onChange={(e) => patchParams({ level: e.target.value, page: null })}
+            style={{ width: 120 }}
+          >
+            <option value="">레벨: 전체</option>
+            {CONVERSATION_LEVELS.map((l) => (
+              <option key={l} value={l}>
+                레벨 {l}
               </option>
             ))}
           </Select>
