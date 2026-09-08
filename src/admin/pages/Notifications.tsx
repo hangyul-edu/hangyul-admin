@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Citrus } from "lucide-react";
 import { adminApi } from "../api";
 import { errorMessage } from "../../lib/http";
 import { useToast } from "../../hooks/toast";
@@ -202,26 +202,31 @@ export function NotificationsPage() {
                 border: "1px solid var(--border)",
               }}
             >
-              <div
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 10,
-                  background: "var(--brand-gradient)",
-                  display: "grid",
-                  placeItems: "center",
-                  color: "#fff",
-                  fontWeight: 800,
-                  flexShrink: 0,
-                }}
-              >
-                한
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontWeight: 700, fontSize: 14 }}>
+              {/* The app icon, which is what a device actually puts here.
+                  Was a hand-made gradient square containing the glyph "한" —
+                  not the app's mark (한귤 is a tangerine), and a lone 한 reads
+                  as 한글. This is the same .hgadm-brand-mark the sidebar uses,
+                  so the preview shows the real identity rather than a
+                  decorative stand-in. */}
+              <span className="hgadm-brand-mark" aria-hidden>
+                <Citrus size={19} strokeWidth={2} />
+              </span>
+              <div style={{ minWidth: 0, paddingTop: 1 }}>
+                {/* paddingTop nudges the title's cap-height onto the mark's
+                    optical centre-top; without it the 14px text sits a hair
+                    high against a 34px square. */}
+                <div style={{ fontWeight: 700, fontSize: 14, lineHeight: 1.4 }}>
                   {title || "알림 제목"}
                 </div>
-                <div style={{ fontSize: 13, color: "var(--ink-2)", whiteSpace: "pre-wrap" }}>
+                <div
+                  style={{
+                    fontSize: 13,
+                    lineHeight: 1.45,
+                    color: "var(--ink-2)",
+                    whiteSpace: "pre-wrap",
+                    marginTop: 2,
+                  }}
+                >
                   {body || "본문 내용이 여기에 표시됩니다."}
                 </div>
                 {deepLink && (

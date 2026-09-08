@@ -114,7 +114,7 @@ export function AdminLayout() {
     <div className="hgadm-frame">
       <aside className={`hgadm-sidebar ${collapsed ? "is-collapsed" : ""}`}>
         <div className="hgadm-sidebar__brand">
-          <span className="hgadm-sidebar__brand-mark" aria-hidden>
+          <span className="hgadm-brand-mark hgadm-sidebar__brand-mark" aria-hidden>
             <Citrus size={19} strokeWidth={2} />
           </span>
           <span>

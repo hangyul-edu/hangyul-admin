@@ -242,19 +242,24 @@ body {
 .hgadm-sidebar__brand span:not(.hgadm-sidebar__brand-mark) {
   display: var(--nav-label-display);
 }
-.hgadm-sidebar__brand-mark {
+/* The app's identity square — the mark a device shows as the push icon, and
+   the mark the sidebar shows as the logo. Defined once so the two cannot
+   drift; the notification preview reuses it rather than hand-rolling its own. */
+.hgadm-brand-mark {
   width: 34px;
   height: 34px;
-  /* Without this the rail's narrower content box shrinks the mark to 28px and
-     the rounded square becomes a rectangle. */
+  /* Without this a narrower content box (the collapsed rail) squeezes the mark
+     to 28px and the rounded square becomes a rectangle. */
   flex-shrink: 0;
   border-radius: 10px;
   background: var(--brand-gradient);
   display: grid;
   place-items: center;
   color: #fff;
-  font-size: 17px;
   box-shadow: var(--shadow-brand), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+.hgadm-sidebar__brand-mark {
+  font-size: 17px;
 }
 .hgadm-sidebar__brand-sub {
   display: block;

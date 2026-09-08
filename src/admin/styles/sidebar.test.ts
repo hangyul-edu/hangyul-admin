@@ -95,7 +95,7 @@ describe("collapsible sidebar", () => {
     document.body.innerHTML = `
       <div class="hgadm-frame"><aside class="hgadm-sidebar">
         <div class="hgadm-sidebar__brand">
-          <span class="hgadm-sidebar__brand-mark" id="mark"></span>
+          <span class="hgadm-brand-mark hgadm-sidebar__brand-mark" id="mark"></span>
           <button class="hgadm-sidebar__collapse" id="btn"></button>
         </div>
       </aside></div>`;
@@ -113,7 +113,7 @@ describe("collapsible sidebar", () => {
     document.body.innerHTML = `
       <div class="hgadm-frame"><aside class="hgadm-sidebar is-collapsed" id="rail">
         <div class="hgadm-sidebar__brand" id="brand">
-          <span class="hgadm-sidebar__brand-mark" id="mark"></span>
+          <span class="hgadm-brand-mark hgadm-sidebar__brand-mark" id="mark"></span>
         </div>
       </aside></div>`;
     const rail = getComputedStyle(document.getElementById("rail")!);
@@ -122,7 +122,9 @@ describe("collapsible sidebar", () => {
     expect(rail.getPropertyValue("--collapse-push")).toBe("0");
     // The rail's padding tightens so the mark is not compressed…
     expect(rail.getPropertyValue("--brand-pad-x")).toBe("8px");
-    // …and the mark refuses to shrink regardless.
+    // …and the mark refuses to shrink regardless. It carries both classes:
+    // the shared .hgadm-brand-mark holds the square, and the sidebar class
+    // remains because a :not() selector uses it to hide the brand text.
     expect(getComputedStyle(document.getElementById("mark")!).flexShrink).toBe("0");
   });
 
