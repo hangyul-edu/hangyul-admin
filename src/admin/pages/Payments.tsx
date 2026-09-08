@@ -1,16 +1,11 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Download } from "lucide-react";
-import { adminApi, downloadCsv } from "../api";
+import { adminApi } from "../api";
 import type { AdminInvoiceRow, AdminPaymentRow } from "../api";
 import { errorMessage } from "../../lib/http";
-import { loadAdminSession } from "../lib/storage";
-import { useToast } from "../../hooks/toast";
 import {
   Badge,
-  Button,
-  ConfirmDialog,
   DataTable,
   ErrorState,
   LoadingState,
@@ -58,13 +53,10 @@ export function PaymentsPage() {
 }
 
 function PaymentsTab() {
-  const toast = useToast();
   const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
-  const [confirmExport, setConfirmExport] = useState(false);
-  const [exporting, setExporting] = useState(false);
   const pageSize = 25;
 
   const query = useQuery({
@@ -77,29 +69,6 @@ function PaymentsTab() {
         page_size: pageSize,
       }),
   });
-
-  async function exportCsv() {
-    try {
-      await downloadCsv(
-        adminApi.paymentsExportUrl({ q: q || undefined, status: status || undefined }),
-        "payments.csv",
-        loadAdminSession()?.accessToken ?? null,
-      );
-      toast.success("CSV 다운로드를 시작했어요.");
-    } catch (e) {
-      toast.error(errorMessage(e));
-    }
-  }
-
-  async function runExport() {
-    setExporting(true);
-    try {
-      await exportCsv();
-    } finally {
-      setExporting(false);
-      setConfirmExport(false);
-    }
-  }
 
   const columns: Column<AdminPaymentRow>[] = [
     {
@@ -142,7 +111,6 @@ function PaymentsTab() {
   ];
 
   return (
-    <>
     <div className="hgadm-card">
       <div className="hgadm-toolbar">
         <SearchBox
@@ -166,8 +134,6 @@ function PaymentsTab() {
           <option value="failed">실패</option>
           <option value="refunded">환불</option>
         </Select>
-        <span className="hgadm-toolbar__spacer" />
-        <Button onClick={() => setConfirmExport(true)}>CSV 내보내기</Button>
       </div>
       {query.isPending ? (
         <LoadingState />
@@ -191,17 +157,6 @@ function PaymentsTab() {
         </>
       )}
     </div>
-    <ConfirmDialog
-      open={confirmExport}
-      title="CSV 내보내기"
-      message="현재 검색·필터 조건에 해당하는 결제 내역을 CSV 파일로 내려받습니다. 계속할까요?"
-      confirmLabel="내보내기"
-      icon={<Download size={24} strokeWidth={2} />}
-      loading={exporting}
-      onConfirm={() => void runExport()}
-      onCancel={() => setConfirmExport(false)}
-    />
-    </>
   );
 }
 

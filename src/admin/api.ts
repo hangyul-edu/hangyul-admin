@@ -1,6 +1,5 @@
 // Typed client for every /admin/* backend endpoint the portal uses.
 // All requests go through src/lib/http.ts (Bearer auth + auto refresh).
-import { API_BASE_URL } from "../lib/config";
 import { apiFetch, http } from "../lib/http";
 
 export interface TokenPair {
@@ -619,9 +618,6 @@ export const adminApi = {
       password: string;
       role: string;
     }>("/admin/users/testers"),
-  usersExportUrl: (params: UserListParams) =>
-    buildExportUrl("/admin/users/export", params as Query),
-
   // Admin accounts
   listAdmins: () => http.get<{ items: AdminAccount[] }>("/admin/admins"),
   grantAdmin: (body: { email: string; admin_role: AdminTier; note?: string }) =>
@@ -641,8 +637,6 @@ export const adminApi = {
     http.get<Page<AdminInvoiceRow>>("/admin/commerce/invoices", params),
   listPayments: (params: Query) =>
     http.get<Page<AdminPaymentRow>>("/admin/commerce/payments", params),
-  paymentsExportUrl: (params: Query) =>
-    buildExportUrl("/admin/commerce/payments/export", params),
 
   // Plans
   listPlans: () => http.get<{ plans: Plan[] }>("/admin/subscriptions/plans"),
@@ -864,27 +858,3 @@ export const adminApi = {
   updateDailyReminder: (body: { daily_reminder_time: string }) =>
     http.put<DailyReminderSettings>("/admin/notifications/daily-reminder", body),
 };
-
-function buildExportUrl(path: string, query: Query): string {
-  const url = new URL(API_BASE_URL + path, window.location.origin);
-  for (const [k, v] of Object.entries(query)) {
-    if (v !== undefined && v !== null && v !== "") url.searchParams.set(k, String(v));
-  }
-  return url.toString();
-}
-
-/** Download an authenticated CSV export and hand it to the browser. */
-export async function downloadCsv(url: string, filename: string, token: string | null): Promise<void> {
-  const res = await fetch(url, {
-    headers: token ? { authorization: `Bearer ${token}` } : {},
-  });
-  if (!res.ok) throw new Error(`내보내기 실패 (HTTP ${res.status})`);
-  const blob = await res.blob();
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(link.href);
-}

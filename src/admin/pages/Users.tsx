@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Download, UserPlus } from "lucide-react";
-import { adminApi, downloadCsv } from "../api";
+import { UserPlus } from "lucide-react";
+import { adminApi } from "../api";
 import type { AdminUserSummary } from "../api";
 import { errorMessage } from "../../lib/http";
-import { loadAdminSession } from "../lib/storage";
 import { useToast } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
 import {
@@ -43,8 +42,6 @@ export function UsersPage() {
     nickname: string;
   } | null>(null);
   const [confirmTester, setConfirmTester] = useState(false);
-  const [confirmExport, setConfirmExport] = useState(false);
-  const [exporting, setExporting] = useState(false);
 
   const q = params.get("q") ?? "";
   const role = params.get("role") ?? "";
@@ -87,34 +84,6 @@ export function UsersPage() {
     onError: (e) => toast.error(errorMessage(e)),
     onSettled: () => setConfirmTester(false),
   });
-
-  async function exportCsv() {
-    try {
-      await downloadCsv(
-        adminApi.usersExportUrl({
-          q: q || undefined,
-          role: role || undefined,
-          status: status || undefined,
-          subscription_status: subscription || undefined,
-        }),
-        "users.csv",
-        loadAdminSession()?.accessToken ?? null,
-      );
-      toast.success("CSV 다운로드를 시작했어요.");
-    } catch (e) {
-      toast.error(errorMessage(e));
-    }
-  }
-
-  async function runExport() {
-    setExporting(true);
-    try {
-      await exportCsv();
-    } finally {
-      setExporting(false);
-      setConfirmExport(false);
-    }
-  }
 
   const columns: Column<AdminUserSummary>[] = [
     {
@@ -181,7 +150,6 @@ export function UsersPage() {
           </div>
         </div>
         <div className="hgadm-page-head__actions">
-          <Button onClick={() => setConfirmExport(true)}>CSV 내보내기</Button>
           {can("users:write") && (
             <Button
               variant="primary"
@@ -265,17 +233,6 @@ export function UsersPage() {
           </>
         )}
       </div>
-
-      <ConfirmDialog
-        open={confirmExport}
-        title="CSV 내보내기"
-        message="현재 검색·필터 조건에 해당하는 사용자 목록을 CSV 파일로 내려받습니다. 계속할까요?"
-        confirmLabel="내보내기"
-        icon={<Download size={24} strokeWidth={2} />}
-        loading={exporting}
-        onConfirm={() => void runExport()}
-        onCancel={() => setConfirmExport(false)}
-      />
 
       <ConfirmDialog
         open={confirmTester}
