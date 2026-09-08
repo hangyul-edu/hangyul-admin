@@ -150,6 +150,12 @@ export function AdminLayout() {
       </aside>
       <div className="hgadm-main">
         <header className="hgadm-topbar">
+          {/* The portal renders and accepts every time on Seoul's clock, no
+              matter where the admin is sitting. Saying so once here means no
+              screen has to caveat its own timestamps. */}
+          <span className="hgadm-muted" style={{ fontSize: 12.5 }}>
+            모든 시각은 한국 시간(KST) 기준
+          </span>
           <div className="hgadm-topbar__right">
             <div className="hgadm-topbar__user">
               <span className="hgadm-avatar" aria-hidden>

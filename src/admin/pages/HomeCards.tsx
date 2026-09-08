@@ -17,6 +17,8 @@ import {
   Modal,
   Switch,
   formatDateTime,
+  fromAdminInputValue,
+  toAdminInputValue,
 } from "../components/kit";
 
 interface BannerDraft {
@@ -36,13 +38,6 @@ const EMPTY: BannerDraft = {
   starts_at: "",
   ends_at: "",
 };
-
-function toLocalInput(iso: string | null): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
 
 export function BannersPage() {
   const qc = useQueryClient();
@@ -69,8 +64,8 @@ export function BannersPage() {
         action_url: d.action_url || undefined,
         clear_action_url: editingId !== null && d.action_url === "",
         is_active: d.is_active,
-        starts_at: d.starts_at ? new Date(d.starts_at).toISOString() : undefined,
-        ends_at: d.ends_at ? new Date(d.ends_at).toISOString() : undefined,
+        starts_at: fromAdminInputValue(d.starts_at) ?? undefined,
+        ends_at: fromAdminInputValue(d.ends_at) ?? undefined,
         clear_window: editingId !== null && !d.starts_at && !d.ends_at,
       };
       return editingId
@@ -241,8 +236,8 @@ export function BannersPage() {
                         alt_text: banner.alt_text,
                         action_url: banner.action_url ?? "",
                         is_active: banner.is_active,
-                        starts_at: toLocalInput(banner.starts_at),
-                        ends_at: toLocalInput(banner.ends_at),
+                        starts_at: toAdminInputValue(banner.starts_at),
+                        ends_at: toAdminInputValue(banner.ends_at),
                       });
                     }}
                   >
@@ -335,14 +330,14 @@ export function BannersPage() {
               />
             </Field>
             <div className="hgadm-form-grid">
-              <Field label="노출 시작" hint="비우면 즉시">
+              <Field label="노출 시작" hint="KST 기준. 비우면 즉시">
                 <Input
                   type="datetime-local"
                   value={draft.starts_at}
                   onChange={(e) => setDraft({ ...draft, starts_at: e.target.value })}
                 />
               </Field>
-              <Field label="노출 종료" hint="비우면 무기한">
+              <Field label="노출 종료" hint="KST 기준. 비우면 무기한">
                 <Input
                   type="datetime-local"
                   value={draft.ends_at}

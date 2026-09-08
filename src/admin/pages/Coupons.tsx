@@ -20,6 +20,7 @@ import {
   SearchBox,
   Select,
   formatDateTime,
+  fromAdminInputValue,
   statusTone,
 } from "../components/kit";
 import type { Column } from "../components/kit";
@@ -84,7 +85,7 @@ function BatchesTab() {
         name,
         duration_days: Number(durationDays),
         quantity: Number(quantity),
-        valid_until: validUntil ? new Date(validUntil).toISOString() : null,
+        valid_until: fromAdminInputValue(validUntil),
       }),
     onSuccess: (result) => {
       setCreateOpen(false);
@@ -226,7 +227,7 @@ function BatchesTab() {
             />
           </Field>
         </div>
-        <Field label="사용 기한" hint="비우면 무기한">
+        <Field label="사용 기한" hint="KST 기준. 비우면 무기한">
           <Input
             type="datetime-local"
             value={validUntil}
