@@ -544,13 +544,29 @@ export interface GeneratedDetail {
 
 // ---- Support ---------------------------------------------------------------
 
+/** One authored language of a FAQ. */
+export interface FaqTranslation {
+  locale: string;
+  question: string;
+  answer: string;
+}
+
 export interface AdminFaq {
   faq_id: string;
   category: string;
-  question: string;
-  answer: string;
+  /** Every authored locale, sorted by locale. At least one is always present. */
+  translations: FaqTranslation[];
   order: number;
   published: boolean;
+}
+
+/** Body for creating/updating a FAQ. On update every field is optional; the
+ *  translations sent are upserted by locale and others are left untouched. */
+export interface AdminFaqBody {
+  category?: string;
+  translations?: FaqTranslation[];
+  order?: number;
+  published?: boolean;
 }
 
 export interface NoticeTranslation {
@@ -810,11 +826,13 @@ export const adminApi = {
 
   // Support
   listFaqs: () => http.get<{ items: AdminFaq[] }>("/admin/support/faqs"),
-  createFaq: (body: Partial<AdminFaq> & { category: string; question: string; answer: string }) =>
+  createFaq: (body: AdminFaqBody & { category: string; translations: FaqTranslation[] }) =>
     http.post<AdminFaq>("/admin/support/faqs", body),
-  updateFaq: (faqId: string, body: Partial<AdminFaq>) =>
+  updateFaq: (faqId: string, body: AdminFaqBody) =>
     http.patch<AdminFaq>(`/admin/support/faqs/${faqId}`, body),
   deleteFaq: (faqId: string) => http.del<void>(`/admin/support/faqs/${faqId}`),
+  deleteFaqTranslation: (faqId: string, locale: string) =>
+    http.del<AdminFaq>(`/admin/support/faqs/${faqId}/translations/${locale}`),
   listNotices: () => http.get<{ items: AdminNotice[] }>("/admin/support/notices"),
   createNotice: (body: {
     translations: NoticeTranslation[];
