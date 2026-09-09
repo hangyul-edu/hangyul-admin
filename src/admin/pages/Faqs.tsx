@@ -5,6 +5,7 @@ import type { AdminFaq, FaqTranslation } from "../api";
 import { errorMessage } from "../../lib/http";
 import { useToast } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
+import { SUPPORTED_LANGUAGES } from "../../lib/language";
 import {
   Badge,
   Button,
@@ -32,13 +33,29 @@ const CATEGORIES = [
 
 const CATEGORY_LABEL = Object.fromEntries(CATEGORIES);
 
-/** The languages a FAQ can be authored in, in the order the form shows them. */
-const LOCALES = [
-  ["ko", "한국어"],
-  ["en", "영어"],
-] as const;
+/**
+ * Languages a FAQ can be authored in.
+ *
+ * Taken from the app's supported-language list rather than a FAQ-specific
+ * ko/en pair, so adding a language is one entry in `SUPPORTED_LANGUAGES` (plus
+ * the matching `AppLanguage` value on the backend) — no schema change, no
+ * migration, and no edit here. `AUTHORING_PRIORITY` only decides the order the
+ * editor shows: the languages we author first today lead, and anything new
+ * appears after them automatically.
+ */
+const AUTHORING_PRIORITY: string[] = ["ko", "en"];
 
-type Locale = (typeof LOCALES)[number][0];
+const AUTHORING_LANGUAGES = [...SUPPORTED_LANGUAGES].sort((a, b) => {
+  const rank = (code: string) => {
+    const i = AUTHORING_PRIORITY.indexOf(code);
+    return i === -1 ? AUTHORING_PRIORITY.length : i;
+  };
+  return rank(a.code) - rank(b.code);
+});
+
+const LANGUAGE_LABEL: Record<string, string> = Object.fromEntries(
+  SUPPORTED_LANGUAGES.map((l) => [l.code, l.nativeLabel]),
+);
 
 interface FaqText {
   question: string;
@@ -49,49 +66,80 @@ interface FaqDraft {
   category: string;
   order: string;
   published: boolean;
-  /** One entry per language; a language left blank is simply not submitted. */
-  text: Record<Locale, FaqText>;
+  /** Keyed by locale, one entry per authoring language. A language left blank
+   *  is simply not submitted, so no FAQ is forced to carry every language. */
+  text: Record<string, FaqText>;
+}
+
+function emptyText(): Record<string, FaqText> {
+  return Object.fromEntries(
+    AUTHORING_LANGUAGES.map((l) => [l.code, { question: "", answer: "" }]),
+  );
 }
 
 const EMPTY: FaqDraft = {
   category: "getting_started",
   order: "0",
   published: true,
-  text: { ko: { question: "", answer: "" }, en: { question: "", answer: "" } },
+  text: emptyText(),
 };
 
 /** A language counts as authored only when BOTH fields pass the API's 2-char
  *  minimum — a half-filled language would be rejected by the server. */
-function isComplete(text: FaqText): boolean {
-  return text.question.trim().length >= 2 && text.answer.trim().length >= 2;
+function isComplete(text: FaqText | undefined): boolean {
+  return (
+    !!text && text.question.trim().length >= 2 && text.answer.trim().length >= 2
+  );
 }
 
-function completedLocales(draft: FaqDraft): Locale[] {
-  return LOCALES.map(([code]) => code).filter((code) => isComplete(draft.text[code]));
+/**
+ * Every locale the draft carries: the editor's languages first, then any other
+ * locale the FAQ already had.
+ *
+ * The trailing group matters. A FAQ may hold a translation in a language this
+ * build has no fields for — added by a newer client, or by a language rolled
+ * out backend-first. Those have to round-trip untouched, otherwise saving an
+ * unrelated edit would quietly delete them.
+ */
+function draftLocales(draft: FaqDraft): string[] {
+  const known: string[] = AUTHORING_LANGUAGES.map((l) => l.code);
+  const extra = Object.keys(draft.text)
+    .filter((code) => !known.includes(code))
+    .sort();
+  return [...known, ...extra];
+}
+
+function completedLocales(draft: FaqDraft): string[] {
+  return draftLocales(draft).filter((code) => isComplete(draft.text[code]));
 }
 
 function draftFrom(faq: AdminFaq): FaqDraft {
   const byLocale = new Map(faq.translations.map((t) => [t.locale, t]));
+  const text = emptyText();
+  for (const [locale, t] of byLocale) {
+    // Keep a locale the editor has no field for rather than dropping it, so
+    // editing a FAQ never silently discards a translation.
+    text[locale] = { question: t.question, answer: t.answer };
+  }
   return {
     category: faq.category,
     order: String(faq.order),
     published: faq.published,
-    text: {
-      ko: {
-        question: byLocale.get("ko")?.question ?? "",
-        answer: byLocale.get("ko")?.answer ?? "",
-      },
-      en: {
-        question: byLocale.get("en")?.question ?? "",
-        answer: byLocale.get("en")?.answer ?? "",
-      },
-    },
+    text,
   };
 }
 
-/** The row's headline text — Korean if authored, else whatever exists. */
-function preview(faq: AdminFaq): FaqTranslation | undefined {
-  return faq.translations.find((t) => t.locale === "ko") ?? faq.translations[0];
+/** Registered translations in the editor's language order. Languages with no
+ *  content are absent entirely — there is nothing to say about them. */
+function registered(faq: AdminFaq): FaqTranslation[] {
+  const order: string[] = AUTHORING_LANGUAGES.map((l) => l.code);
+  return [...faq.translations].sort((a, b) => {
+    const rank = (code: string) => {
+      const i = order.indexOf(code);
+      return i === -1 ? order.length : i;
+    };
+    return rank(a.locale) - rank(b.locale);
+  });
 }
 
 export function FaqsPage() {
@@ -181,33 +229,21 @@ export function FaqsPage() {
     {
       key: "question",
       header: "질문",
-      render: (f) => {
-        const shown = preview(f);
-        return (
-          <div>
-            <div className="hgadm-cell-main">{shown?.question ?? "—"}</div>
-            <div className="hgadm-cell-sub" style={{ maxWidth: 480, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {shown?.answer ?? ""}
-            </div>
-          </div>
-        );
-      },
-    },
-    {
-      key: "languages",
-      header: "언어",
-      width: 130,
-      // Which languages are authored. A missing one is worth flagging: readers
-      // in that language fall back to the other one.
+      // One block per registered language. A language with no content simply
+      // does not appear — no "미등록" placeholder to read past.
       render: (f) => (
-        <div className="hgadm-row" style={{ gap: 4 }}>
-          {LOCALES.map(([code, label]) =>
-            f.translations.some((t) => t.locale === code) ? (
-              <Badge key={code} tone="success">{label}</Badge>
-            ) : (
-              <Badge key={code} tone="neutral">{label} 없음</Badge>
-            ),
-          )}
+        <div className="hgadm-faq-langs">
+          {registered(f).map((t) => (
+            <div key={t.locale} className="hgadm-faq-lang">
+              <div className="hgadm-cell-main">
+                <span className="hgadm-faq-lang__tag">
+                  {LANGUAGE_LABEL[t.locale] ?? t.locale}
+                </span>
+                {t.question}
+              </div>
+              <div className="hgadm-cell-sub hgadm-faq-lang__answer">{t.answer}</div>
+            </div>
+          ))}
         </div>
       ),
     },
@@ -266,7 +302,7 @@ export function FaqsPage() {
               onClick={() => {
                 setEditingId(null);
                 setEditing(null);
-                setDraft({ ...EMPTY, text: { ko: { question: "", answer: "" }, en: { question: "", answer: "" } } });
+                setDraft({ ...EMPTY, text: emptyText() });
               }}
             >
               + FAQ 추가
@@ -353,41 +389,40 @@ export function FaqsPage() {
                 />
               </Field>
             </div>
-            {LOCALES.map(([code, label]) => (
+            {AUTHORING_LANGUAGES.map(({ code, nativeLabel }) => (
               <div key={code} className="hgadm-form-section">
-                <div className="hgadm-form-section__title">
-                  {label}
-                  {isComplete(draft.text[code]) ? (
-                    <Badge tone="success">등록</Badge>
-                  ) : (
-                    <Badge tone="neutral">미등록</Badge>
-                  )}
-                </div>
-                <Field label={`질문 (${label})`} hint="2~300자">
+                <div className="hgadm-form-section__title">{nativeLabel}</div>
+                <Field label={`질문 (${nativeLabel})`} hint="2~300자">
                   <Input
-                    value={draft.text[code].question}
+                    value={draft.text[code]?.question ?? ""}
                     maxLength={300}
                     onChange={(e) =>
                       setDraft({
                         ...draft,
                         text: {
                           ...draft.text,
-                          [code]: { ...draft.text[code], question: e.target.value },
+                          [code]: {
+                            question: e.target.value,
+                            answer: draft.text[code]?.answer ?? "",
+                          },
                         },
                       })
                     }
                   />
                 </Field>
-                <Field label={`답변 (${label})`}>
+                <Field label={`답변 (${nativeLabel})`}>
                   <Textarea
                     rows={5}
-                    value={draft.text[code].answer}
+                    value={draft.text[code]?.answer ?? ""}
                     onChange={(e) =>
                       setDraft({
                         ...draft,
                         text: {
                           ...draft.text,
-                          [code]: { ...draft.text[code], answer: e.target.value },
+                          [code]: {
+                            question: draft.text[code]?.question ?? "",
+                            answer: e.target.value,
+                          },
                         },
                       })
                     }

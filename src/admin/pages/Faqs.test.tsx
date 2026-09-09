@@ -13,6 +13,7 @@ import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ToastProvider } from "../../hooks/toast";
 import type { AdminFaq } from "../api";
+import { SUPPORTED_LANGUAGES } from "../../lib/language";
 
 const listFaqs = vi.fn();
 const createFaq = vi.fn();
@@ -76,17 +77,61 @@ beforeEach(() => {
 });
 
 describe("FAQ list", () => {
-  it("shows which languages each FAQ is authored in", async () => {
+  it("shows every registered language's content", async () => {
     renderPage();
-    await screen.findByText("가입은 어떻게 하나요?");
-    // The bilingual row has both; the Korean-only row is flagged as missing EN.
-    expect(screen.getByText("영어 없음")).toBeInTheDocument();
-    expect(screen.getAllByText("한국어").length).toBeGreaterThan(0);
+    // Both languages of the bilingual row are rendered, not summarised.
+    expect(await screen.findByText(/가입은 어떻게 하나요\?/)).toBeInTheDocument();
+    expect(screen.getByText(/How do I sign up\?/)).toBeInTheDocument();
+    expect(screen.getByText("With email or social login.")).toBeInTheDocument();
   });
 
-  it("falls back to any authored language for the row preview", async () => {
+  it("says nothing at all about a language with no content", async () => {
     renderPage();
-    expect(await screen.findByText("한국어만")).toBeInTheDocument();
+    // The Korean-only row shows its Korean and simply omits the rest — no
+    // "not available" placeholder to read past.
+    expect(await screen.findByText(/한국어만/)).toBeInTheDocument();
+    expect(screen.queryByText(/없음/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/미등록/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/등록/)).not.toBeInTheDocument();
+  });
+});
+
+describe("extensible language set", () => {
+  it("offers a field pair for every supported app language", async () => {
+    renderPage();
+    await screen.findByText(/가입은 어떻게 하나요\?/);
+    await userEvent.click(screen.getByRole("button", { name: "+ FAQ 추가" }));
+    // Driven by SUPPORTED_LANGUAGES, so a new language appears here without
+    // touching this page — that is what makes the design extensible.
+    for (const { nativeLabel } of SUPPORTED_LANGUAGES) {
+      expect(screen.getByLabelText(new RegExp(`질문 \\(${nativeLabel}\\)`))).toBeInTheDocument();
+      expect(screen.getByLabelText(new RegExp(`답변 \\(${nativeLabel}\\)`))).toBeInTheDocument();
+    }
+  });
+
+  it("keeps a translation in a language the editor has no field for", async () => {
+    // A locale added by another client (or a future language) must survive an
+    // edit rather than being silently dropped on save.
+    listFaqs.mockResolvedValue({
+      items: [
+        {
+          ...BILINGUAL,
+          translations: [
+            ...BILINGUAL.translations,
+            { locale: "ja", question: "登録方法は?", answer: "メールまたはSNSで。" },
+          ],
+        },
+      ],
+    });
+    renderPage();
+    await screen.findByText(/가입은 어떻게 하나요\?/);
+    await userEvent.click(screen.getAllByRole("button", { name: "수정" })[0]);
+    await userEvent.click(screen.getByRole("button", { name: "저장" }));
+
+    await waitFor(() => expect(updateFaq).toHaveBeenCalled());
+    const sent = updateFaq.mock.calls[0][1].translations as { locale: string }[];
+    expect(sent.map((t) => t.locale)).toContain("ja");
+    expect(deleteFaqTranslation).not.toHaveBeenCalled();
   });
 });
 
@@ -98,8 +143,8 @@ describe("authoring both languages", () => {
 
     await userEvent.type(screen.getByLabelText(/질문 \(한국어\)/), "질문입니다");
     await userEvent.type(screen.getByLabelText(/답변 \(한국어\)/), "답변입니다");
-    await userEvent.type(screen.getByLabelText(/질문 \(영어\)/), "A question");
-    await userEvent.type(screen.getByLabelText(/답변 \(영어\)/), "An answer");
+    await userEvent.type(screen.getByLabelText(/질문 \(English\)/), "A question");
+    await userEvent.type(screen.getByLabelText(/답변 \(English\)/), "An answer");
     await userEvent.click(screen.getByRole("button", { name: "저장" }));
 
     await waitFor(() => expect(createFaq).toHaveBeenCalled());
@@ -147,8 +192,8 @@ describe("authoring both languages", () => {
     await userEvent.click(screen.getAllByRole("button", { name: "수정" })[0]);
 
     expect(screen.getByLabelText(/질문 \(한국어\)/)).toHaveValue("가입은 어떻게 하나요?");
-    expect(screen.getByLabelText(/질문 \(영어\)/)).toHaveValue("How do I sign up?");
-    expect(screen.getByLabelText(/답변 \(영어\)/)).toHaveValue("With email or social login.");
+    expect(screen.getByLabelText(/질문 \(English\)/)).toHaveValue("How do I sign up?");
+    expect(screen.getByLabelText(/답변 \(English\)/)).toHaveValue("With email or social login.");
   });
 
   it("removes a language that the admin clears", async () => {
@@ -156,8 +201,8 @@ describe("authoring both languages", () => {
     await screen.findByText("가입은 어떻게 하나요?");
     await userEvent.click(screen.getAllByRole("button", { name: "수정" })[0]);
 
-    await userEvent.clear(screen.getByLabelText(/질문 \(영어\)/));
-    await userEvent.clear(screen.getByLabelText(/답변 \(영어\)/));
+    await userEvent.clear(screen.getByLabelText(/질문 \(English\)/));
+    await userEvent.clear(screen.getByLabelText(/답변 \(English\)/));
     await userEvent.click(screen.getByRole("button", { name: "저장" }));
 
     await waitFor(() => expect(updateFaq).toHaveBeenCalled());
