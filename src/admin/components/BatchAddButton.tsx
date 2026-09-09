@@ -1,8 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ListPlus } from "lucide-react";
-import { errorMessage } from "../../lib/http";
-import { useToast } from "../../hooks/toast";
+import { useToast, useToastError } from "../../hooks/toast";
 import { Button, Field, Modal, Textarea } from "./kit";
 
 const MAX_ITEMS = 1000;
@@ -33,6 +32,7 @@ export function BatchAddButton({
 }) {
   const qc = useQueryClient();
   const toast = useToast();
+  const toastError = useToastError();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
 
@@ -46,7 +46,7 @@ export function BatchAddButton({
       setOpen(false);
       setText("");
     },
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   return (

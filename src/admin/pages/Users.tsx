@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { UserPlus } from "lucide-react";
+import { useUrlFilters } from "../lib/urlFilters";
 import { adminApi } from "../api";
 import type { AdminUserSummary } from "../api";
 import { errorMessage } from "../../lib/http";
-import { useToast } from "../../hooks/toast";
+import { useToastError } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
 import {
   Badge,
@@ -32,9 +33,9 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export function UsersPage() {
-  const [params, setParams] = useSearchParams();
+  const filters = useUrlFilters();
   const navigate = useNavigate();
-  const toast = useToast();
+  const toastError = useToastError();
   const { can } = useAdminAuth();
   const [testerInfo, setTesterInfo] = useState<{
     email: string;
@@ -43,22 +44,13 @@ export function UsersPage() {
   } | null>(null);
   const [confirmTester, setConfirmTester] = useState(false);
 
-  const q = params.get("q") ?? "";
-  const role = params.get("role") ?? "";
-  const status = params.get("status") ?? "";
-  const subscription = params.get("subscription_status") ?? "";
-  const sort = params.get("sort") ?? "created_at";
-  const order = (params.get("order") ?? "desc") as "asc" | "desc";
-  const page = Number(params.get("page") ?? "1");
-
-  function patchParams(patch: Record<string, string | null>) {
-    const next = new URLSearchParams(params);
-    for (const [k, v] of Object.entries(patch)) {
-      if (v === null || v === "") next.delete(k);
-      else next.set(k, v);
-    }
-    setParams(next, { replace: true });
-  }
+  const q = filters.value("q");
+  const role = filters.value("role");
+  const status = filters.value("status");
+  const subscription = filters.value("subscription_status");
+  const sort = filters.value("sort", "created_at");
+  const order = (filters.value("order", "desc")) as "asc" | "desc";
+  const page = filters.number("page", 1);
 
   const query = useQuery({
     queryKey: ["admin", "users", { q, role, status, subscription, sort, order, page }],
@@ -81,7 +73,7 @@ export function UsersPage() {
       setTesterInfo(created);
       void query.refetch();
     },
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
     onSettled: () => setConfirmTester(false),
   });
 
@@ -167,11 +159,11 @@ export function UsersPage() {
           <SearchBox
             value={q}
             placeholder="이메일·닉네임·이름·ID·전화번호 검색"
-            onSearch={(next) => patchParams({ q: next, page: null })}
+            onSearch={(next) => filters.patch({ q: next, page: null })}
           />
           <Select
             value={role}
-            onChange={(e) => patchParams({ role: e.target.value, page: null })}
+            onChange={(e) => filters.patch({ role: e.target.value, page: null })}
             style={{ width: 130 }}
           >
             <option value="">역할: 전체</option>
@@ -181,7 +173,7 @@ export function UsersPage() {
           </Select>
           <Select
             value={status}
-            onChange={(e) => patchParams({ status: e.target.value, page: null })}
+            onChange={(e) => filters.patch({ status: e.target.value, page: null })}
             style={{ width: 140 }}
           >
             <option value="">상태: 전체</option>
@@ -192,7 +184,7 @@ export function UsersPage() {
           <Select
             value={subscription}
             onChange={(e) =>
-              patchParams({ subscription_status: e.target.value, page: null })
+              filters.patch({ subscription_status: e.target.value, page: null })
             }
             style={{ width: 150 }}
           >
@@ -221,14 +213,14 @@ export function UsersPage() {
               onRowClick={(u) => navigate(`/users/${u.user_id}`)}
               sort={sort}
               order={order}
-              onSortChange={(s, o) => patchParams({ sort: s, order: o, page: null })}
+              onSortChange={(s, o) => filters.patch({ sort: s, order: o, page: null })}
               empty="조건에 맞는 사용자가 없습니다."
             />
             <Pagination
               page={query.data.page}
               pageSize={query.data.page_size}
               total={query.data.total}
-              onPageChange={(next) => patchParams({ page: String(next) })}
+              onPageChange={(next) => filters.patch({ page: String(next) })}
             />
           </>
         )}

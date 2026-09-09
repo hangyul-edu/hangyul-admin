@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
+import { useUrlFilters } from "../lib/urlFilters";
 import { adminApi } from "../api";
 import type { AdminSentence } from "../api";
 import { errorMessage } from "../../lib/http";
 import { CONVERSATION_LEVELS } from "../../lib/levels";
-import { useToast } from "../../hooks/toast";
+import { useToast, useToastError } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
 import { BatchAddButton } from "../components/BatchAddButton";
 import { ContentCleanupButton } from "../components/ContentCleanupButton";
@@ -69,27 +69,19 @@ const EMPTY: SentenceDraft = {
 export function SentencesPage() {
   const qc = useQueryClient();
   const toast = useToast();
+  const toastError = useToastError();
   const { can } = useAdminAuth();
   const canWrite = can("content:write");
-  const [params, setParams] = useSearchParams();
+  const filters = useUrlFilters();
   const [draft, setDraft] = useState<SentenceDraft | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<AdminSentence | null>(null);
 
-  const q = params.get("q") ?? "";
-  const level = params.get("level") ?? "";
-  const topic = params.get("topic") ?? "";
-  const aiOnly = params.get("is_ai_generated") ?? "";
-  const page = Number(params.get("page") ?? "1");
-
-  function patchParams(patch: Record<string, string | null>) {
-    const next = new URLSearchParams(params);
-    for (const [k, v] of Object.entries(patch)) {
-      if (v === null || v === "") next.delete(k);
-      else next.set(k, v);
-    }
-    setParams(next, { replace: true });
-  }
+  const q = filters.value("q");
+  const level = filters.value("level");
+  const topic = filters.value("topic");
+  const aiOnly = filters.value("is_ai_generated");
+  const page = filters.number("page", 1);
 
   const topics = useQuery({
     queryKey: ["admin", "sentence-topics"],
@@ -137,7 +129,7 @@ export function SentencesPage() {
       setEditingId(null);
       refresh();
     },
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   const remove = useMutation({
@@ -147,7 +139,7 @@ export function SentencesPage() {
       setDeleting(null);
       refresh();
     },
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   const columns: Column<AdminSentence>[] = [
@@ -263,11 +255,11 @@ export function SentencesPage() {
           <SearchBox
             value={q}
             placeholder="한국어·번역 검색"
-            onSearch={(next) => patchParams({ q: next, page: null })}
+            onSearch={(next) => filters.patch({ q: next, page: null })}
           />
           <Select
             value={topic}
-            onChange={(e) => patchParams({ topic: e.target.value, page: null })}
+            onChange={(e) => filters.patch({ topic: e.target.value, page: null })}
             style={{ minWidth: 150 }}
           >
             <option value="">주제: 전체</option>
@@ -279,7 +271,7 @@ export function SentencesPage() {
           </Select>
           <Select
             value={level}
-            onChange={(e) => patchParams({ level: e.target.value, page: null })}
+            onChange={(e) => filters.patch({ level: e.target.value, page: null })}
             style={{ width: 120 }}
           >
             <option value="">레벨: 전체</option>
@@ -291,7 +283,7 @@ export function SentencesPage() {
           </Select>
           <Select
             value={aiOnly}
-            onChange={(e) => patchParams({ is_ai_generated: e.target.value, page: null })}
+            onChange={(e) => filters.patch({ is_ai_generated: e.target.value, page: null })}
             style={{ width: 140 }}
           >
             <option value="">출처: 전체</option>
@@ -315,7 +307,7 @@ export function SentencesPage() {
               page={query.data.page}
               pageSize={query.data.page_size}
               total={query.data.total}
-              onPageChange={(next) => patchParams({ page: String(next) })}
+              onPageChange={(next) => filters.patch({ page: String(next) })}
             />
           </>
         )}

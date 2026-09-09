@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { adminApi } from "../api";
 import type { Plan } from "../api";
 import { errorMessage } from "../../lib/http";
-import { useToast } from "../../hooks/toast";
+import { useToast, useToastError } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
 import {
   Badge,
@@ -57,6 +57,7 @@ const EMPTY_DRAFT: PlanDraft = {
 export function PlansPage() {
   const qc = useQueryClient();
   const toast = useToast();
+  const toastError = useToastError();
   const { can } = useAdminAuth();
   const canWrite = can("commerce:write");
   const [draft, setDraft] = useState<PlanDraft | null>(null);
@@ -99,7 +100,7 @@ export function PlansPage() {
       setEditingId(null);
       refresh();
     },
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   const archive = useMutation({
@@ -109,7 +110,7 @@ export function PlansPage() {
       setArchiving(null);
       refresh();
     },
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   function edit(plan: Plan) {

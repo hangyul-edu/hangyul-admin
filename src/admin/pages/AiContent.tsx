@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
+import { useUrlFilters } from "../lib/urlFilters";
 import { adminApi } from "../api";
 import type { GeneratedDetail, GeneratedSummary } from "../api";
 import { errorMessage } from "../../lib/http";
 import { CONVERSATION_LEVELS, TOPIK_GRADES } from "../../lib/levels";
-import { useToast } from "../../hooks/toast";
+import { useToast, useToastError } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
 import {
   Badge,
@@ -36,18 +36,19 @@ const KIND_LABEL: Record<string, string> = {
 export function AiContentPage() {
   const qc = useQueryClient();
   const toast = useToast();
+  const toastError = useToastError();
   const { can } = useAdminAuth();
   const canWrite = can("content:write");
-  const [params, setParams] = useSearchParams();
+  const filters = useUrlFilters();
   const [detailId, setDetailId] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [deleting, setDeleting] = useState<GeneratedSummary | GeneratedDetail | null>(null);
 
-  const q = params.get("q") ?? "";
-  const reviewStatus = params.get("review_status") ?? "pending";
-  const kind = params.get("content_kind") ?? "";
-  const level = params.get("level") ?? "";
-  const page = Number(params.get("page") ?? "1");
+  const q = filters.value("q");
+  const reviewStatus = filters.value("review_status", "pending");
+  const kind = filters.value("content_kind");
+  const level = filters.value("level");
+  const page = filters.number("page", 1);
 
   // The queue mixes generated sentences (회화 1~10) and questions (TOPIK 1~6),
   // so the level options follow whichever kind is filtered; with no kind
@@ -55,15 +56,6 @@ export function AiContentPage() {
   const levelOptions =
     kind === "question" ? TOPIK_GRADES : CONVERSATION_LEVELS;
   const levelLabel = kind === "question" ? "급수" : "레벨";
-
-  function patchParams(patch: Record<string, string | null>) {
-    const next = new URLSearchParams(params);
-    for (const [k, v] of Object.entries(patch)) {
-      if (v === null || v === "") next.delete(k);
-      else next.set(k, v);
-    }
-    setParams(next, { replace: true });
-  }
 
   const query = useQuery({
     queryKey: ["admin", "generated", { q, reviewStatus, kind, level, page }],
@@ -111,7 +103,7 @@ export function AiContentPage() {
       setNote("");
       refresh();
     },
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   const remove = useMutation({
@@ -122,7 +114,7 @@ export function AiContentPage() {
       setDetailId(null);
       refresh();
     },
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   const columns: Column<GeneratedSummary>[] = [
@@ -184,11 +176,11 @@ export function AiContentPage() {
           <SearchBox
             value={q}
             placeholder="생성 내용·주제·콘텐츠 ID 검색"
-            onSearch={(next) => patchParams({ q: next, page: null })}
+            onSearch={(next) => filters.patch({ q: next, page: null })}
           />
           <Select
             value={reviewStatus}
-            onChange={(e) => patchParams({ review_status: e.target.value, page: null })}
+            onChange={(e) => filters.patch({ review_status: e.target.value, page: null })}
             style={{ width: 160 }}
           >
             <option value="pending">검수 대기</option>
@@ -201,7 +193,7 @@ export function AiContentPage() {
             // Clear the level too: the two kinds run different scales, so a
             // level picked for one can be out of range for the other.
             onChange={(e) =>
-              patchParams({ content_kind: e.target.value, level: null, page: null })
+              filters.patch({ content_kind: e.target.value, level: null, page: null })
             }
             style={{ width: 140 }}
           >
@@ -211,7 +203,7 @@ export function AiContentPage() {
           </Select>
           <Select
             value={level}
-            onChange={(e) => patchParams({ level: e.target.value, page: null })}
+            onChange={(e) => filters.patch({ level: e.target.value, page: null })}
             style={{ width: 120 }}
           >
             <option value="">{levelLabel}: 전체</option>
@@ -243,7 +235,7 @@ export function AiContentPage() {
               page={query.data.page}
               pageSize={query.data.page_size}
               total={query.data.total}
-              onPageChange={(next) => patchParams({ page: String(next) })}
+              onPageChange={(next) => filters.patch({ page: String(next) })}
             />
           </>
         )}

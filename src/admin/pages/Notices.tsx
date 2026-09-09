@@ -4,7 +4,7 @@ import { Pin } from "lucide-react";
 import { adminApi } from "../api";
 import type { AdminNotice, NoticeTranslation } from "../api";
 import { errorMessage } from "../../lib/http";
-import { useToast } from "../../hooks/toast";
+import { useToast, useToastError } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
 import {
   Badge,
@@ -49,6 +49,7 @@ function pick(notice: AdminNotice, locale: string): NoticeTranslation | undefine
 export function NoticesPage() {
   const qc = useQueryClient();
   const toast = useToast();
+  const toastError = useToastError();
   const { can } = useAdminAuth();
   const canWrite = can("ops:write");
   const [draft, setDraft] = useState<NoticeDraft | null>(null);
@@ -80,14 +81,14 @@ export function NoticesPage() {
       setEditingId(null);
       refresh();
     },
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   const togglePublish = useMutation({
     mutationFn: (notice: AdminNotice) =>
       adminApi.updateNotice(notice.notice_id, { published: !notice.published }),
     onSuccess: refresh,
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   const remove = useMutation({
@@ -97,7 +98,7 @@ export function NoticesPage() {
       setDeleting(null);
       refresh();
     },
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   const columns: Column<AdminNotice>[] = [

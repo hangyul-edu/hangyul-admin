@@ -4,7 +4,7 @@ import { ChevronDown, ChevronUp, ImageIcon } from "lucide-react";
 import { adminApi } from "../api";
 import type { AdminBanner } from "../api";
 import { errorMessage } from "../../lib/http";
-import { useToast } from "../../hooks/toast";
+import { useToast, useToastError } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
 import {
   Badge,
@@ -42,6 +42,7 @@ const EMPTY: BannerDraft = {
 export function BannersPage() {
   const qc = useQueryClient();
   const toast = useToast();
+  const toastError = useToastError();
   const { can } = useAdminAuth();
   const canWrite = can("ops:write");
   const [draft, setDraft] = useState<BannerDraft | null>(null);
@@ -78,14 +79,14 @@ export function BannersPage() {
       setEditingId(null);
       refresh();
     },
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   const toggleActive = useMutation({
     mutationFn: (banner: AdminBanner) =>
       adminApi.updateBanner(banner.banner_id, { is_active: !banner.is_active }),
     onSuccess: refresh,
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   const move = useMutation({
@@ -99,7 +100,7 @@ export function BannersPage() {
       return adminApi.reorderBanners(ids);
     },
     onSuccess: refresh,
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   const remove = useMutation({
@@ -109,7 +110,7 @@ export function BannersPage() {
       setDeleting(null);
       refresh();
     },
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   async function onFileChosen(file: File | undefined) {

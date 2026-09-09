@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
 import { Check, X } from "lucide-react";
+import { useUrlFilters } from "../lib/urlFilters";
 import { adminApi } from "../api";
 import type { AdminQuiz } from "../api";
 import { errorMessage } from "../../lib/http";
 import { TOPIK_GRADES } from "../../lib/levels";
-import { useToast } from "../../hooks/toast";
+import { useToast, useToastError } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
 import { BatchAddButton } from "../components/BatchAddButton";
 import { ContentCleanupButton } from "../components/ContentCleanupButton";
@@ -178,30 +178,22 @@ function draftToBody(d: QuizDraft): Record<string, unknown> {
 export function QuizzesPage() {
   const qc = useQueryClient();
   const toast = useToast();
+  const toastError = useToastError();
   const { can } = useAdminAuth();
   const canWrite = can("content:write");
-  const [params, setParams] = useSearchParams();
+  const filters = useUrlFilters();
   const [draft, setDraft] = useState<QuizDraft | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [viewing, setViewing] = useState<AdminQuiz | null>(null);
   const [deleting, setDeleting] = useState<AdminQuiz | null>(null);
 
-  const q = params.get("q") ?? "";
-  const format = params.get("answer_format") ?? "";
-  const section = params.get("topik_section") ?? "";
-  const level = params.get("level") ?? "";
-  const aiOnly = params.get("is_ai_generated") ?? "";
-  const page = Number(params.get("page") ?? "1");
+  const q = filters.value("q");
+  const format = filters.value("answer_format");
+  const section = filters.value("topik_section");
+  const level = filters.value("level");
+  const aiOnly = filters.value("is_ai_generated");
+  const page = filters.number("page", 1);
   const pageSize = 25;
-
-  function patchParams(patch: Record<string, string | null>) {
-    const next = new URLSearchParams(params);
-    for (const [k, v] of Object.entries(patch)) {
-      if (v === null || v === "") next.delete(k);
-      else next.set(k, v);
-    }
-    setParams(next, { replace: true });
-  }
 
   const query = useQuery({
     queryKey: ["admin", "quizzes", { q, format, section, level, aiOnly, page }],
@@ -232,7 +224,7 @@ export function QuizzesPage() {
       setEditingId(null);
       refresh();
     },
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   const remove = useMutation({
@@ -242,7 +234,7 @@ export function QuizzesPage() {
       setDeleting(null);
       refresh();
     },
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   const columns: Column<AdminQuiz>[] = [
@@ -376,11 +368,11 @@ export function QuizzesPage() {
           <SearchBox
             value={q}
             placeholder="문항·번역·문제 ID 검색"
-            onSearch={(next) => patchParams({ q: next, page: null })}
+            onSearch={(next) => filters.patch({ q: next, page: null })}
           />
           <Select
             value={format}
-            onChange={(e) => patchParams({ answer_format: e.target.value, page: null })}
+            onChange={(e) => filters.patch({ answer_format: e.target.value, page: null })}
             style={{ width: 150 }}
           >
             <option value="">형식: 전체</option>
@@ -392,7 +384,7 @@ export function QuizzesPage() {
           </Select>
           <Select
             value={section}
-            onChange={(e) => patchParams({ topik_section: e.target.value, page: null })}
+            onChange={(e) => filters.patch({ topik_section: e.target.value, page: null })}
             style={{ width: 140 }}
           >
             <option value="">섹션: 전체</option>
@@ -404,7 +396,7 @@ export function QuizzesPage() {
           </Select>
           <Select
             value={level}
-            onChange={(e) => patchParams({ level: e.target.value, page: null })}
+            onChange={(e) => filters.patch({ level: e.target.value, page: null })}
             style={{ width: 120 }}
           >
             <option value="">급수: 전체</option>
@@ -419,7 +411,7 @@ export function QuizzesPage() {
               a filtered list reads consistently with its rows. */}
           <Select
             value={aiOnly}
-            onChange={(e) => patchParams({ is_ai_generated: e.target.value, page: null })}
+            onChange={(e) => filters.patch({ is_ai_generated: e.target.value, page: null })}
             style={{ width: 140 }}
           >
             <option value="">출처: 전체</option>
@@ -444,7 +436,7 @@ export function QuizzesPage() {
               page={page}
               pageSize={pageSize}
               total={query.data.total}
-              onPageChange={(next) => patchParams({ page: String(next) })}
+              onPageChange={(next) => filters.patch({ page: String(next) })}
             />
           </>
         )}

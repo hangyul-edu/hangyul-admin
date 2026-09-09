@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { adminApi } from "../api";
 import type { AdminFaq, FaqTranslation } from "../api";
 import { errorMessage } from "../../lib/http";
-import { useToast } from "../../hooks/toast";
+import { useToast, useToastError } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
 import { SUPPORTED_LANGUAGES } from "../../lib/language";
 import {
@@ -145,6 +145,7 @@ function registered(faq: AdminFaq): FaqTranslation[] {
 export function FaqsPage() {
   const qc = useQueryClient();
   const toast = useToast();
+  const toastError = useToastError();
   const { can } = useAdminAuth();
   const canWrite = can("ops:write");
   const [category, setCategory] = useState("");
@@ -195,14 +196,14 @@ export function FaqsPage() {
       setEditing(null);
       refresh();
     },
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   const togglePublish = useMutation({
     mutationFn: (faq: AdminFaq) =>
       adminApi.updateFaq(faq.faq_id, { published: !faq.published }),
     onSuccess: refresh,
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   const remove = useMutation({
@@ -212,7 +213,7 @@ export function FaqsPage() {
       setDeleting(null);
       refresh();
     },
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   const rows = (query.data?.items ?? []).filter(

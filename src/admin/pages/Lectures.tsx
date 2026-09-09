@@ -1,11 +1,11 @@
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
+import { useUrlFilters } from "../lib/urlFilters";
 import { adminApi } from "../api";
 import type { AdminLecture, AdminLectureVideo } from "../api";
 import { tusUploadToUrl } from "../lib/videoUpload";
 import { errorMessage } from "../../lib/http";
-import { useToast } from "../../hooks/toast";
+import { useToast, useToastError } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
 import {
   Badge,
@@ -65,28 +65,20 @@ const EMPTY: LectureDraft = {
 export function LecturesPage() {
   const qc = useQueryClient();
   const toast = useToast();
+  const toastError = useToastError();
   const { can } = useAdminAuth();
   const canWrite = can("content:write");
-  const [params, setParams] = useSearchParams();
+  const filters = useUrlFilters();
   const [draft, setDraft] = useState<LectureDraft | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<AdminLecture | null>(null);
   const [videoLecture, setVideoLecture] = useState<AdminLecture | null>(null);
 
-  const q = params.get("q") ?? "";
-  const track = params.get("track_id") ?? "";
-  const courseId = params.get("course_id") ?? "";
-  const access = params.get("access") ?? "";
-  const page = Number(params.get("page") ?? "1");
-
-  function patchParams(patch: Record<string, string | null>) {
-    const next = new URLSearchParams(params);
-    for (const [k, v] of Object.entries(patch)) {
-      if (v === null || v === "") next.delete(k);
-      else next.set(k, v);
-    }
-    setParams(next, { replace: true });
-  }
+  const q = filters.value("q");
+  const track = filters.value("track_id");
+  const courseId = filters.value("course_id");
+  const access = filters.value("access");
+  const page = filters.number("page", 1);
 
   const courses = useQuery({
     queryKey: ["admin", "courses", ""],
@@ -141,7 +133,7 @@ export function LecturesPage() {
       setEditingId(null);
       refresh();
     },
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   const remove = useMutation({
@@ -151,7 +143,7 @@ export function LecturesPage() {
       setDeleting(null);
       refresh();
     },
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   const columns: Column<AdminLecture>[] = [
@@ -280,11 +272,11 @@ export function LecturesPage() {
           <SearchBox
             value={q}
             placeholder="제목·강의 ID 검색"
-            onSearch={(next) => patchParams({ q: next, page: null })}
+            onSearch={(next) => filters.patch({ q: next, page: null })}
           />
           <Select
             value={track}
-            onChange={(e) => patchParams({ track_id: e.target.value, page: null })}
+            onChange={(e) => filters.patch({ track_id: e.target.value, page: null })}
             style={{ width: 130 }}
           >
             <option value="">트랙: 전체</option>
@@ -296,7 +288,7 @@ export function LecturesPage() {
           </Select>
           <Select
             value={courseId}
-            onChange={(e) => patchParams({ course_id: e.target.value, page: null })}
+            onChange={(e) => filters.patch({ course_id: e.target.value, page: null })}
             style={{ minWidth: 180 }}
           >
             <option value="">코스: 전체</option>
@@ -308,7 +300,7 @@ export function LecturesPage() {
           </Select>
           <Select
             value={access}
-            onChange={(e) => patchParams({ access: e.target.value, page: null })}
+            onChange={(e) => filters.patch({ access: e.target.value, page: null })}
             style={{ width: 140 }}
           >
             <option value="">공개: 전체</option>
@@ -332,7 +324,7 @@ export function LecturesPage() {
               page={query.data.page}
               pageSize={query.data.page_size}
               total={query.data.total}
-              onPageChange={(next) => patchParams({ page: String(next) })}
+              onPageChange={(next) => filters.patch({ page: String(next) })}
             />
           </>
         )}
@@ -532,6 +524,7 @@ function VideoManagerModal({
   onClose: () => void;
 }) {
   const toast = useToast();
+  const toastError = useToastError();
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -582,7 +575,7 @@ function VideoManagerModal({
   const refreshStatus = useMutation({
     mutationFn: (video: AdminLectureVideo) => adminApi.refreshLectureVideo(video.video_id),
     onSuccess: refresh,
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   const removeVideo = useMutation({
@@ -592,7 +585,7 @@ function VideoManagerModal({
       setDeleting(null);
       refresh();
     },
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   const hasPrimary = query.data?.items.some(

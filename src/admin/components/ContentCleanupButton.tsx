@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Trash2 } from "lucide-react";
 import { errorMessage } from "../../lib/http";
-import { useToast } from "../../hooks/toast";
+import { useToast, useToastError } from "../../hooks/toast";
 import { Button, ConfirmDialog } from "./kit";
 
 /**
@@ -29,6 +29,7 @@ export function ContentCleanupButton<T>({
 }) {
   const qc = useQueryClient();
   const toast = useToast();
+  const toastError = useToastError();
   const [open, setOpen] = useState(false);
 
   const previewQuery = useQuery({
@@ -47,7 +48,7 @@ export function ContentCleanupButton<T>({
       for (const key of invalidateKeys) void qc.invalidateQueries({ queryKey: key });
       setOpen(false);
     },
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   return (

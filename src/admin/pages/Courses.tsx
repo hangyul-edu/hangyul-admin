@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { adminApi } from "../api";
 import type { AdminCourse } from "../api";
 import { errorMessage } from "../../lib/http";
-import { useToast } from "../../hooks/toast";
+import { useToast, useToastError } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
 import {
   Badge,
@@ -46,6 +46,7 @@ const EMPTY: CourseDraft = {
 export function CoursesPage() {
   const qc = useQueryClient();
   const toast = useToast();
+  const toastError = useToastError();
   const { can } = useAdminAuth();
   const canWrite = can("content:write");
   const [track, setTrack] = useState("");
@@ -82,7 +83,7 @@ export function CoursesPage() {
       setEditingId(null);
       refresh();
     },
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   const remove = useMutation({
@@ -92,7 +93,7 @@ export function CoursesPage() {
       setDeleting(null);
       refresh();
     },
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   async function onFileChosen(file: File | undefined) {

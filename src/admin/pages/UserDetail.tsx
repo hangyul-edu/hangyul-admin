@@ -4,7 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { adminApi } from "../api";
 import { errorMessage } from "../../lib/http";
-import { useToast } from "../../hooks/toast";
+import { useToast, useToastError } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
 import {
   Badge,
@@ -27,6 +27,7 @@ export function UserDetailPage() {
   const { userId = "" } = useParams();
   const qc = useQueryClient();
   const toast = useToast();
+  const toastError = useToastError();
   const { can, me } = useAdminAuth();
   const [tab, setTab] = useState<"overview" | "billing" | "learning" | "misc">("overview");
   const [confirm, setConfirm] = useState<null | {
@@ -54,7 +55,7 @@ export function UserDetailPage() {
       void qc.invalidateQueries({ queryKey: ["admin", "user", userId] });
       void qc.invalidateQueries({ queryKey: ["admin", "users"] });
     },
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   if (query.isPending) return <LoadingState label="사용자 정보를 불러오는 중…" />;

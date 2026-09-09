@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { adminApi } from "../api";
 import type { AdminAccount, AdminTier } from "../api";
 import { errorMessage } from "../../lib/http";
-import { useToast } from "../../hooks/toast";
+import { useToast, useToastError } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
 import {
   Badge,
@@ -33,6 +33,7 @@ const TIER_LABEL = Object.fromEntries(TIERS.map((t) => [t.value, t.label]));
 export function AdminsPage() {
   const qc = useQueryClient();
   const toast = useToast();
+  const toastError = useToastError();
   const { me } = useAdminAuth();
   const [grantOpen, setGrantOpen] = useState(false);
   const [email, setEmail] = useState("");
@@ -58,7 +59,7 @@ export function AdminsPage() {
       setNote("");
       refresh();
     },
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   const update = useMutation({
@@ -69,7 +70,7 @@ export function AdminsPage() {
       setEditing(null);
       refresh();
     },
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   const revoke = useMutation({
@@ -79,7 +80,7 @@ export function AdminsPage() {
       setRevoking(null);
       refresh();
     },
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   const columns: Column<AdminAccount>[] = [

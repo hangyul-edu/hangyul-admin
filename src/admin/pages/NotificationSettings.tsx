@@ -5,7 +5,7 @@ import { Globe2, Info, Languages, Phone } from "lucide-react";
 import { adminApi } from "../api";
 import { useAdminAuth } from "../auth";
 import { errorMessage } from "../../lib/http";
-import { useToast } from "../../hooks/toast";
+import { useToast, useToastError } from "../../hooks/toast";
 import {
   Button,
   Dl,
@@ -40,6 +40,7 @@ export function validateReminderTime(value: string): string | null {
 
 export function NotificationSettingsPage() {
   const toast = useToast();
+  const toastError = useToastError();
   const qc = useQueryClient();
   const { can } = useAdminAuth();
   const canEdit = can("ops:write");
@@ -68,7 +69,7 @@ export function NotificationSettingsPage() {
       setTime(result.daily_reminder_time);
       toast.success(`발송 시각을 ${result.daily_reminder_time}으로 변경했어요.`);
     },
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   return (

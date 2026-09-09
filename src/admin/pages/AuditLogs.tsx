@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
+import { useUrlFilters } from "../lib/urlFilters";
 import { adminApi } from "../api";
 import type { AuditLogEntry } from "../api";
 import { errorMessage } from "../../lib/http";
@@ -18,22 +18,13 @@ import {
 import type { Column } from "../components/kit";
 
 export function AuditLogsPage() {
-  const [params, setParams] = useSearchParams();
+  const filters = useUrlFilters();
   const [detail, setDetail] = useState<AuditLogEntry | null>(null);
 
-  const actorType = params.get("actor_type") ?? "";
-  const objectType = params.get("object_type") ?? "";
-  const action = params.get("action") ?? "";
-  const page = Number(params.get("page") ?? "1");
-
-  function patchParams(patch: Record<string, string | null>) {
-    const next = new URLSearchParams(params);
-    for (const [k, v] of Object.entries(patch)) {
-      if (v === null || v === "") next.delete(k);
-      else next.set(k, v);
-    }
-    setParams(next, { replace: true });
-  }
+  const actorType = filters.value("actor_type");
+  const objectType = filters.value("object_type");
+  const action = filters.value("action");
+  const page = filters.number("page", 1);
 
   const query = useQuery({
     queryKey: ["admin", "audit", { actorType, objectType, action, page }],
@@ -107,11 +98,11 @@ export function AuditLogsPage() {
           <SearchBox
             value={action}
             placeholder="작업 검색 (예: PATCH /admin/users)"
-            onSearch={(next) => patchParams({ action: next, page: null })}
+            onSearch={(next) => filters.patch({ action: next, page: null })}
           />
           <Select
             value={actorType}
-            onChange={(e) => patchParams({ actor_type: e.target.value, page: null })}
+            onChange={(e) => filters.patch({ actor_type: e.target.value, page: null })}
             style={{ width: 150 }}
           >
             <option value="">수행자: 전체</option>
@@ -120,7 +111,7 @@ export function AuditLogsPage() {
           </Select>
           <Select
             value={objectType}
-            onChange={(e) => patchParams({ object_type: e.target.value, page: null })}
+            onChange={(e) => filters.patch({ object_type: e.target.value, page: null })}
             style={{ width: 170 }}
           >
             <option value="">대상: 전체</option>
@@ -154,7 +145,7 @@ export function AuditLogsPage() {
               page={query.data.page}
               pageSize={query.data.page_size}
               total={query.data.total}
-              onPageChange={(next) => patchParams({ page: String(next) })}
+              onPageChange={(next) => filters.patch({ page: String(next) })}
             />
           </>
         )}

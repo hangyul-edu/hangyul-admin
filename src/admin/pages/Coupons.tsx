@@ -4,7 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import { adminApi } from "../api";
 import type { CouponBatch, CouponRow } from "../api";
 import { errorMessage } from "../../lib/http";
-import { useToast } from "../../hooks/toast";
+import { useToast, useToastError } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
 import {
   Badge,
@@ -62,6 +62,7 @@ export function CouponsPage() {
 function BatchesTab() {
   const qc = useQueryClient();
   const toast = useToast();
+  const toastError = useToastError();
   const { can } = useAdminAuth();
   const canWrite = can("commerce:write");
   const [page, setPage] = useState(1);
@@ -94,7 +95,7 @@ function BatchesTab() {
       setName("");
       void qc.invalidateQueries({ queryKey: ["admin", "coupon-batches"] });
     },
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   const revoke = useMutation({
@@ -104,7 +105,7 @@ function BatchesTab() {
       setRevoking(null);
       void qc.invalidateQueries({ queryKey: ["admin", "coupon-batches"] });
     },
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   const columns: Column<CouponBatch>[] = [
@@ -278,6 +279,7 @@ function BatchesTab() {
 function CouponSearchTab() {
   const qc = useQueryClient();
   const toast = useToast();
+  const toastError = useToastError();
   const { can } = useAdminAuth();
   const [code, setCode] = useState("");
   const [status, setStatus] = useState("");
@@ -310,7 +312,7 @@ function CouponSearchTab() {
       setRevoking(null);
       void qc.invalidateQueries({ queryKey: ["admin", "coupons"] });
     },
-    onError: (e) => toast.error(errorMessage(e)),
+    onError: toastError,
   });
 
   const columns: Column<CouponRow>[] = [
