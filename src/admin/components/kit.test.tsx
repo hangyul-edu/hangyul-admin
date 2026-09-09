@@ -6,10 +6,12 @@ import {
   ConfirmDialog,
   DataTable,
   Pagination,
-  formatMoney,
   statusLabel,
   statusTone,
 } from "./kit";
+import {
+  formatMoney,
+} from "../lib/format";
 import type { Column } from "./kit";
 
 interface Row {

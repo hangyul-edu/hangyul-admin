@@ -18,8 +18,10 @@ import {
   Modal,
   Switch,
   Textarea,
-  formatDateTime,
 } from "../components/kit";
+import {
+  formatDateTime,
+} from "../lib/format";
 import type { Column } from "../components/kit";
 
 interface NoticeDraft {

@@ -19,7 +19,7 @@ import {
   formatDateTime,
   fromAdminInputValue,
   toAdminInputValue,
-} from "./kit";
+} from "../lib/format";
 
 /** 2026-09-08 15:00Z — midnight on the 9th in Seoul, 11:00 on the 8th in NY. */
 const SEAM = "2026-09-08T15:00:00Z";

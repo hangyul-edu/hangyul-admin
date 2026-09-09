@@ -21,10 +21,12 @@ import {
   SearchBox,
   Select,
   Textarea,
-  formatDateTime,
   statusLabel,
   statusTone,
 } from "../components/kit";
+import {
+  formatDateTime,
+} from "../lib/format";
 import type { Column } from "../components/kit";
 
 const KIND_LABEL: Record<string, string> = {

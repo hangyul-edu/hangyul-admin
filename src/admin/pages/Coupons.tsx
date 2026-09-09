@@ -19,11 +19,13 @@ import {
   Pagination,
   SearchBox,
   Select,
-  formatDateTime,
-  fromAdminInputValue,
   statusLabel,
   statusTone,
 } from "../components/kit";
+import {
+  formatDateTime,
+  fromAdminInputValue,
+} from "../lib/format";
 import type { Column } from "../components/kit";
 
 export function CouponsPage() {

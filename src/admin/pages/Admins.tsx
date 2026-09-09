@@ -16,8 +16,10 @@ import {
   LoadingState,
   Modal,
   Select,
-  formatDateTime,
 } from "../components/kit";
+import {
+  formatDateTime,
+} from "../lib/format";
 import type { Column } from "../components/kit";
 
 const TIERS: { value: AdminTier; label: string; desc: string }[] = [

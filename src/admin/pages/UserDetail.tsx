@@ -16,12 +16,14 @@ import {
   Input,
   LoadingState,
   Modal,
-  formatDateTime,
-  formatDuration,
-  formatMoney,
   statusLabel,
   statusTone,
 } from "../components/kit";
+import {
+  formatDateTime,
+  formatDuration,
+  formatMoney,
+} from "../lib/format";
 
 export function UserDetailPage() {
   const { userId = "" } = useParams();

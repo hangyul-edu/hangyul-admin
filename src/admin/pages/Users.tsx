@@ -19,10 +19,12 @@ import {
   Pagination,
   SearchBox,
   Select,
-  formatDateTime,
   statusLabel,
   statusTone,
 } from "../components/kit";
+import {
+  formatDateTime,
+} from "../lib/format";
 import type { Column } from "../components/kit";
 
 const ROLE_LABELS: Record<string, string> = {

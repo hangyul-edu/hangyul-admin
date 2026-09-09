@@ -16,10 +16,12 @@ import {
   LoadingState,
   Modal,
   Switch,
+} from "../components/kit";
+import {
   formatDateTime,
   fromAdminInputValue,
   toAdminInputValue,
-} from "../components/kit";
+} from "../lib/format";
 
 interface BannerDraft {
   image_url: string;

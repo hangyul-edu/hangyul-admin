@@ -13,8 +13,10 @@ import {
   Field,
   Input,
   LoadingState,
-  formatDateTime,
 } from "../components/kit";
+import {
+  formatDateTime,
+} from "../lib/format";
 
 /** Matches the server's default; the reminder uses it until an admin changes it. */
 const DEFAULT_TIME = "19:00";

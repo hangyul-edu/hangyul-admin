@@ -12,11 +12,13 @@ import {
   Pagination,
   SearchBox,
   Select,
-  formatDateTime,
-  formatMoney,
   statusLabel,
   statusTone,
 } from "../components/kit";
+import {
+  formatDateTime,
+  formatMoney,
+} from "../lib/format";
 import type { Column } from "../components/kit";
 
 export function PaymentsPage() {

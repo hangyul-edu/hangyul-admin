@@ -9,11 +9,13 @@ import {
   ErrorState,
   LoadingState,
   Stat,
-  formatDateTime,
-  formatMoney,
   statusLabel,
   statusTone,
 } from "../components/kit";
+import {
+  formatDateTime,
+  formatMoney,
+} from "../lib/format";
 
 const METRICS: { key: string; label: string }[] = [
   { key: "signups", label: "신규 가입" },

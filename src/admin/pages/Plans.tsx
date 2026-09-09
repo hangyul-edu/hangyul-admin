@@ -18,10 +18,12 @@ import {
   Select,
   Switch,
   Textarea,
-  formatMoney,
   statusLabel,
   statusTone,
 } from "../components/kit";
+import {
+  formatMoney,
+} from "../lib/format";
 import type { Column } from "../components/kit";
 
 interface PlanDraft {
