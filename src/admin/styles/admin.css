@@ -752,7 +752,21 @@ body {
 }
 .hgadm-search {
   position: relative;
-  min-width: 240px;
+  /* 240px left 196px for text after the icon inset and right padding, which
+     clipped the two longest placeholders — the user search
+     ("이메일·닉네임·이름·ID·전화번호 검색", ~237px) and the activity-log one —
+     with three more sitting within a few pixels of the edge. The floor is now
+     sized to the longest placeholder plus headroom; a test measures them all
+     against it, so a longer one added later fails rather than silently clips.
+
+     It also GROWS into whatever the toolbar's filters leave over, so the field
+     is comfortable on a wide desktop, and the max-width stops it sprawling on
+     a toolbar that has few filters. `min()` lets it fall below the floor only
+     when the container itself is narrower — so a narrow screen wraps the
+     filters onto the next line instead of overflowing sideways. */
+  flex: 1 1 320px;
+  min-width: min(100%, 320px);
+  max-width: 460px;
 }
 .hgadm-search input {
   width: 100%;
