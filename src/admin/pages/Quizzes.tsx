@@ -190,6 +190,7 @@ export function QuizzesPage() {
   const format = params.get("answer_format") ?? "";
   const section = params.get("topik_section") ?? "";
   const level = params.get("level") ?? "";
+  const aiOnly = params.get("is_ai_generated") ?? "";
   const page = Number(params.get("page") ?? "1");
   const pageSize = 25;
 
@@ -203,13 +204,14 @@ export function QuizzesPage() {
   }
 
   const query = useQuery({
-    queryKey: ["admin", "quizzes", { q, format, section, level, page }],
+    queryKey: ["admin", "quizzes", { q, format, section, level, aiOnly, page }],
     queryFn: () =>
       adminApi.listQuizzes({
         q: q || undefined,
         answer_format: format || undefined,
         topik_section: section || undefined,
         level: level || undefined,
+        is_ai_generated: aiOnly === "" ? undefined : aiOnly === "true",
         limit: pageSize,
         offset: (page - 1) * pageSize,
       }),
@@ -411,6 +413,18 @@ export function QuizzesPage() {
                 {l}급
               </option>
             ))}
+          </Select>
+          {/* Creation provenance, from the quiz's own `is_ai_generated` flag —
+              the same field the 출처 column badges. Labels match that badge so
+              a filtered list reads consistently with its rows. */}
+          <Select
+            value={aiOnly}
+            onChange={(e) => patchParams({ is_ai_generated: e.target.value, page: null })}
+            style={{ width: 140 }}
+          >
+            <option value="">출처: 전체</option>
+            <option value="true">AI 생성</option>
+            <option value="false">수동</option>
           </Select>
         </div>
         {query.isPending ? (
