@@ -98,7 +98,9 @@ export function AuditLogsPage() {
     {
       key: "ip",
       header: "IP",
-      render: (e) => <span className="hgadm-cell-mono">{e.ip_address ?? "—"}</span>,
+      render: (e) => (
+        <span className="hgadm-cell-mono hgadm-ip">{e.ip_address ?? "—"}</span>
+      ),
     },
   ];
 
@@ -205,8 +207,10 @@ export function AuditLogsPage() {
               <dd className="hgadm-cell-mono">{detail.user_id ?? "—"}</dd>
               <dt>요청 ID</dt>
               <dd className="hgadm-cell-mono">{detail.request_id ?? "—"}</dd>
-              <dt>IP / UA</dt>
-              <dd className="hgadm-cell-mono">{detail.ip_address ?? "—"}</dd>
+              {/* The row also stores a user agent, but the API does not expose
+                  it — the label said "IP / UA" while only ever showing the IP. */}
+              <dt>IP</dt>
+              <dd className="hgadm-cell-mono hgadm-ip">{detail.ip_address ?? "—"}</dd>
             </dl>
             {detail.before && (
               <>

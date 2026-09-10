@@ -738,6 +738,20 @@ body {
   word-break: break-all;
 }
 
+/* An IP is the one mono value that must NOT take that escape hatch. Broken
+   across lines, "192.168.0.1" reads as two plausible fragments and an IPv6's
+   colon groups are worse — you cannot tell a wrap from part of the address.
+   `white-space: nowrap` leaves break-all nothing to act on, so no extra
+   override is needed. Width is handled by letting it overflow rather than
+   wrap: the table already scrolls (.hgadm-table-wrap is overflow-x: auto), and
+   in a block context — the detail drawer's <dd> — the value scrolls on its own
+   instead of pushing the dialog wider. */
+.hgadm-ip {
+  white-space: nowrap;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
 /* ---------- Toolbar / filters ---------- */
 .hgadm-toolbar {
   display: flex;
