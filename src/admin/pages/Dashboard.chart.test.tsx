@@ -158,3 +158,34 @@ describe("the bars themselves", () => {
     expect(container.innerHTML).not.toContain("NaN");
   });
 });
+
+describe("the date axis", () => {
+  /** The x-axis labels, left to right. */
+  function dayLabels(container: HTMLElement): string[] {
+    return Array.from(container.querySelectorAll("text[text-anchor='middle']")).map(
+      (t) => t.textContent ?? "",
+    );
+  }
+
+  it("names the weekday alongside the date", () => {
+    // A bare 09/10 says nothing about the shape of the week, and traffic here
+    // is weekly — a dip that is every Sunday is a different story from a dip.
+    // Only the first and last of three are labelled; both carry the weekday.
+    const container = renderChart([1, 2, 3]);
+    expect(dayLabels(container)).toEqual(["09/01 (화)", "09/03 (목)"]);
+  });
+
+  it("reads the date at Seoul, not at the viewer's midnight", () => {
+    // 2026-09-06 is a Sunday in KST. A browser west of UTC parsing the bare
+    // date as local midnight would name Saturday.
+    expect(dayLabels(renderChart([1, 1, 1, 1, 1, 1])).slice(-1)).toEqual(["09/06 (일)"]);
+  });
+
+  it("keeps every labelled day on the same weekday across a 30-day window", () => {
+    // The labels fall every 7th day, so they should all agree — which is what
+    // makes the weekday worth showing at all.
+    const labelled = dayLabels(renderChart(new Array(30).fill(1))).filter(Boolean);
+    const weekdays = labelled.slice(0, -1).map((l) => l.slice(-2, -1));
+    expect(new Set(weekdays).size).toBe(1);
+  });
+});

@@ -181,6 +181,40 @@ export function formatMoney(cents: number, currency: string): string {
   }
 }
 
+/**
+ * `"2026-09-10"` → `"09/10 (목)"`.
+ *
+ * A bare `09/10` on a chart axis says nothing about the shape of the week, and
+ * traffic on this dashboard is weekly: a dip that turns out to be every Sunday
+ * is not the same story as a dip on the 13th. The weekday makes that legible
+ * without a second axis.
+ *
+ * The date arrives as a KST calendar date with no time in it, so it is read at
+ * Seoul's fixed +09:00 rather than at the viewer's midnight — otherwise a
+ * browser west of UTC would name the previous day.
+ */
+export function chartDayLabel(date: string): string {
+  const weekday = weekdayShort(date);
+  if (!weekday) return date;
+  const [, month, day] = date.split("-");
+  return `${month}/${day} (${weekday})`;
+}
+
+/**
+ * The one-character Korean weekday for a KST calendar date — `"목"`.
+ *
+ * Empty for a date that cannot be read, so a caller can fall back to the plain
+ * date rather than printing `(Invalid Date)`.
+ */
+export function weekdayShort(date: string): string {
+  const parsed = new Date(`${date}T00:00:00+09:00`);
+  if (Number.isNaN(parsed.getTime())) return "";
+  return parsed.toLocaleDateString(ADMIN_LOCALE, {
+    timeZone: ADMIN_TIME_ZONE,
+    weekday: "short",
+  });
+}
+
 /** Currencies whose smallest unit IS the unit — for a chart axis to know. */
 export function isZeroDecimal(currency: string): boolean {
   return ZERO_DECIMAL.has(currency.toUpperCase());

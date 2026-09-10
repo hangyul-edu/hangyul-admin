@@ -1327,6 +1327,28 @@ body {
   display: none;
 }
 
+/* ---------- Chart tooltip ----------
+   Fixed and portalled to <body>, so it is bounded by the viewport rather than
+   by the chart's scroll container; lib/tooltipPlacement.ts supplies the point.
+   The high z-index only has to clear the admin chrome, and pointer-events:none
+   keeps it from stealing the hover that produced it. */
+.hgadm-chart-tip {
+  position: fixed;
+  z-index: 60;
+  max-width: min(320px, calc(100vw - 16px));
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #2b2019;
+  color: #fff;
+  font-size: 12px;
+  line-height: 1.45;
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+  /* Wraps rather than running off: the placement can slide a wide tooltip back
+     inside, but only if it is allowed to be narrower than its one long line. */
+  overflow-wrap: break-word;
+}
+
 /* ---------- Timestamps ----------
    Two lines, each unbreakable: the date, then the time to the second. Split so
    neither line has to survive a wrap — a timestamp broken mid-value is as
@@ -1351,6 +1373,17 @@ body {
 }
 .hgadm-timestamp__time {
   color: var(--ink-3);
+}
+
+/* The three recent-activity cards stack down the page rather than sitting in
+   three columns. Side by side they each had about a third of the width, which
+   is not enough for a name, an email and a timestamp on one row — every one of
+   them ellipsised. Full width is what makes the truncation rules a fallback
+   again instead of the normal case. */
+.hgadm-recent-stack {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
 }
 
 /* ---------- Recent-activity cards (dashboard) ----------

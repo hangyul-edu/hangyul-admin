@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { adminApi } from "../api";
@@ -17,12 +18,16 @@ import {
   Timestamp,
 } from "../components/kit";
 import {
+  chartDayLabel,
   currencySymbol,
   formatMoney,
   isZeroDecimal,
   toMajorUnits,
+  weekdayShort,
 } from "../lib/format";
 import { formatTick, niceScale } from "../lib/chartScale";
+import { placeTooltip } from "../lib/tooltipPlacement";
+import type { Rect } from "../lib/tooltipPlacement";
 
 const METRICS: { key: string; label: string }[] = [
   { key: "signups", label: "신규 가입" },
@@ -223,7 +228,7 @@ export function DashboardPage() {
         </div>
       </div>
 
-      <div className="hgadm-grid-3">
+      <div className="hgadm-recent-stack">
         <RecentCard title="최근 가입">
           {data.recent_signups.map((u) => (
             <SignupRow key={u.user_id} user={u} />
@@ -433,17 +438,23 @@ export function TimeseriesChart({
   points: { date: string; value: number }[];
   money: string | null;
 }) {
-  const bars: Bar[] = points.map((p) => ({
-    key: p.date,
-    label: p.date.slice(5).replace("-", "/"),
-    caption: p.date,
-    value: p.value,
-  }));
+  const bars: Bar[] = points.map((p) => {
+    const weekday = weekdayShort(p.date);
+    return {
+      key: p.date,
+      label: chartDayLabel(p.date),
+      // The axis drops the year for width; the tooltip has room to keep it.
+      caption: weekday ? `${p.date} (${weekday})` : p.date,
+      value: p.value,
+    };
+  });
   return (
     <BarChart
       bars={bars}
       money={money}
       ariaLabel="최근 30일 일별 현황 막대 차트"
+      // The weekday makes each label wider, so one fewer fits: every 7th day
+      // still lands on the same weekday, which is the point of showing it.
       showLabel={(i, n) => i === 0 || i === n - 1 || (i % 7 === 0 && n - 1 - i >= 3)}
     />
   );
@@ -543,6 +554,10 @@ function BarChart({
   showLabel: (index: number, total: number) => boolean;
 }) {
   const [hover, setHover] = useState<number | null>(null);
+  // Where the hovered bar sits on screen, captured on enter. The tooltip is
+  // placed against the viewport rather than against the chart, so it needs the
+  // bar in viewport coordinates.
+  const anchorRef = useRef<Rect | null>(null);
   const width = 920;
   const height = 220;
 
@@ -662,7 +677,10 @@ function BarChart({
                 width={slot}
                 height={innerH}
                 fill="transparent"
-                onMouseEnter={() => setHover(i)}
+                onMouseEnter={(e) => {
+                  anchorRef.current = e.currentTarget.getBoundingClientRect();
+                  setHover(i);
+                }}
               />
               {p.value > 0 && (
                 <path
@@ -690,28 +708,62 @@ function BarChart({
           );
         })}
       </svg>
-      {hovered && hover !== null && (
-        <div
-          style={{
-            position: "absolute",
-            left: `${((pad.left + (hover + 0.5) * slot) / width) * 100}%`,
-            top: 0,
-            transform: "translateX(-50%)",
-            background: "#2b2019",
-            color: "#fff",
-            borderRadius: 8,
-            padding: "6px 10px",
-            fontSize: 12,
-            pointerEvents: "none",
-            whiteSpace: "nowrap",
-            boxShadow: "var(--shadow-md)",
-          }}
-        >
+      {hovered && (
+        <ChartTooltip anchor={anchorRef.current}>
           <strong>{hovered.caption}</strong> · {fmt(hovered.value)}
           {hovered.partial && " (진행 중)"}
-        </div>
+        </ChartTooltip>
       )}
     </div>
+  );
+}
+
+/**
+ * The hover readout for a chart bar.
+ *
+ * It renders into `document.body` rather than into the chart. The chart's
+ * scroll container is a clipping context — `overflow-x: auto` makes it one —
+ * so a tooltip parented there is cut off at the card's edge no matter how it is
+ * positioned. A portal escapes every ancestor's overflow, and `position: fixed`
+ * then puts it in the same coordinate space the viewport bounds are measured
+ * in, which is what lets `placeTooltip` guarantee the whole of it is on screen.
+ *
+ * Placement runs in a layout effect, after the browser has sized the box but
+ * before it paints, so the tooltip is never seen in the wrong place. Until the
+ * first measurement it is rendered hidden rather than not at all — it has to be
+ * in the DOM to have a size.
+ */
+function ChartTooltip({ anchor, children }: { anchor: Rect | null; children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [placed, setPlaced] = useState<{ left: number; top: number } | null>(null);
+
+  useLayoutEffect(() => {
+    const node = ref.current;
+    if (!node || !anchor) return setPlaced(null);
+    const box = node.getBoundingClientRect();
+    setPlaced(
+      placeTooltip(anchor, box, {
+        // clientWidth, not innerWidth: the scrollbar is not usable space.
+        width: document.documentElement.clientWidth,
+        height: document.documentElement.clientHeight,
+      }),
+    );
+  }, [anchor, children]);
+
+  return createPortal(
+    <div
+      ref={ref}
+      role="tooltip"
+      className="hgadm-chart-tip"
+      style={{
+        left: placed?.left ?? 0,
+        top: placed?.top ?? 0,
+        visibility: placed ? "visible" : "hidden",
+      }}
+    >
+      {children}
+    </div>,
+    document.body,
   );
 }
 
