@@ -46,7 +46,7 @@ const EMPTY_DRAFT: PlanDraft = {
   name: "",
   description: "",
   price_cents: "0",
-  currency: "KRW",
+  currency: "USD",
   interval: "month",
   trial_days: "0",
   promo_price_cents: "",
@@ -201,6 +201,14 @@ export function PlansPage() {
     },
   ];
 
+  /** What the number in a price box actually costs, for the field hint.
+   *  Only called from inside the editor, where `draft` is non-null. */
+  function pricePreview(minorUnits: string, currency: string): string {
+    const n = Number(minorUnits);
+    if (!minorUnits.trim() || Number.isNaN(n) || n < 0) return "";
+    return ` — ${formatMoney(n, currency)}`;
+  }
+
   return (
     <div>
       <div className="hgadm-page-head">
@@ -282,7 +290,11 @@ export function PlansPage() {
                 onChange={(e) => setDraft({ ...draft, name: e.target.value })}
               />
             </Field>
-            <Field label={`가격 (${draft.currency} 최소 단위)`} required>
+            <Field
+              label={`가격 (${draft.currency} 최소 단위)`}
+              required
+              hint={`센트 단위로 입력합니다${pricePreview(draft.price_cents, draft.currency)}`}
+            >
               <Input
                 type="number"
                 min={0}
@@ -290,7 +302,10 @@ export function PlansPage() {
                 onChange={(e) => setDraft({ ...draft, price_cents: e.target.value })}
               />
             </Field>
-            <Field label="프로모션 가격" hint="비우면 프로모션 없음">
+            <Field
+              label="프로모션 가격"
+              hint={`비우면 프로모션 없음${pricePreview(draft.promo_price_cents, draft.currency)}`}
+            >
               <Input
                 type="number"
                 min={0}
@@ -307,7 +322,9 @@ export function PlansPage() {
                     value={draft.currency}
                     onChange={(e) => setDraft({ ...draft, currency: e.target.value })}
                   >
-                    <option value="KRW">KRW</option>
+                    {/* Billing is USD-only. The field stays so an existing
+                        plan shows what it is priced in, but there is nothing
+                        else to choose. */}
                     <option value="USD">USD</option>
                   </Select>
                 </Field>

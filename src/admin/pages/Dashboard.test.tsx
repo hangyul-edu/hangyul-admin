@@ -38,7 +38,7 @@ const OVERVIEW = {
   },
   subscriptions: { active: 40, trialing: 5, in_grace: 0, suspended: 0, canceling: 2 },
   revenue: {
-    currency: "KRW",
+    currency: "USD",
     today_cents: 12_000,
     this_month: "2026-09",
     this_month_cents: 480_000,
@@ -65,7 +65,7 @@ const OVERVIEW = {
 } as unknown as MetricsOverview;
 
 const MONTHLY: MonthlyRevenueResponse = {
-  currency: "KRW",
+  currency: "USD",
   months: 12,
   current_month: "2026-09",
   points: [
@@ -125,8 +125,8 @@ describe("DashboardPage revenue", () => {
 
     expect(await screen.findByText("이번 달 매출")).toBeInTheDocument();
     expect(screen.queryByText("최근 30일 매출")).not.toBeInTheDocument();
-    // 480,000 cents of KRW — formatMoney renders KRW without minor units.
-    expect(screen.getByText("₩480,000")).toBeInTheDocument();
+    // 480,000 cents of USD, shown as dollars behind a plain $.
+    expect(screen.getByText("$4,800.00")).toBeInTheDocument();
   });
 
   it("names the month the figure covers, using the server's value", async () => {

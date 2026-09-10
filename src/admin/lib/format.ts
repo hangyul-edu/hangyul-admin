@@ -88,18 +88,48 @@ export function fromAdminInputValue(value: string | null | undefined): string | 
   return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
 }
 
-/** cents(minor units) → localized currency string. KRW has no minor unit. */
+/** Currencies whose smallest unit IS the unit — no cents to divide out. */
+const ZERO_DECIMAL = new Set(["KRW", "JPY"]);
+
+/**
+ * Minor units → the number a person reads, without a symbol.
+ *
+ * For chart axes, where the currency is named once on the axis rather than
+ * repeated on every tick. Same rule as `formatMoney` so the two cannot
+ * disagree about whether a currency has cents.
+ */
+export function toMajorUnits(cents: number, currency: string): number {
+  return ZERO_DECIMAL.has(currency.toUpperCase()) ? cents : cents / 100;
+}
+
+/**
+ * Minor units → a currency string, formatted the way the money is priced.
+ *
+ * Everything is billed in USD: the plan catalogue is USD, an invoice copies its
+ * plan's currency and a payment copies its invoice's, so amounts arrive here as
+ * cents and read back as dollars. Nothing is converted — the number is already
+ * in the currency it says it is.
+ *
+ * The locale is `en-US`, not the portal's Korean, because `ko-KR` renders USD
+ * as `US$12.99`; the dollar sign belongs on its own. The currency still comes
+ * from the row rather than being assumed, so a legacy amount in anything else
+ * is labelled honestly instead of being silently relabelled as dollars —
+ * including the zero-decimal currencies, where treating the stored integer as
+ * cents would divide the amount by a hundred.
+ */
 export function formatMoney(cents: number, currency: string): string {
-  const zeroDecimal = ["KRW", "JPY"].includes(currency.toUpperCase());
+  const code = currency.toUpperCase();
+  const zeroDecimal = ZERO_DECIMAL.has(code);
   const amount = zeroDecimal ? cents : cents / 100;
   try {
-    return new Intl.NumberFormat("ko-KR", {
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency,
+      currency: code,
+      minimumFractionDigits: zeroDecimal ? 0 : 2,
       maximumFractionDigits: zeroDecimal ? 0 : 2,
     }).format(amount);
   } catch {
-    return `${amount.toLocaleString()} ${currency}`;
+    return `${amount.toLocaleString("en-US")} ${code}`;
   }
 }
 

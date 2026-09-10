@@ -16,6 +16,7 @@ import {
 import {
   formatDateTime,
   formatMoney,
+  toMajorUnits,
 } from "../lib/format";
 
 const METRICS: { key: string; label: string }[] = [
@@ -454,8 +455,8 @@ function BarChart({
                 fill="var(--ink-3)"
               >
                 {money
-                  ? Math.round((niceMax * f) / (money === "KRW" ? 1 : 100)).toLocaleString()
-                  : Math.round(niceMax * f).toLocaleString()}
+                  ? Math.round(toMajorUnits(niceMax * f, money)).toLocaleString("en-US")
+                  : Math.round(niceMax * f).toLocaleString("en-US")}
               </text>
             </g>
           );
