@@ -276,6 +276,7 @@ export type AdminTier =
 export interface AdminLeagueSummary {
   season_id: string;
   group_id: string;
+  group_ordinal: number;
   tier: string;
   tier_label: string;
   season_name: string;
@@ -290,8 +291,20 @@ export interface AdminLeagueSummary {
   demote_cutoff_rank: number;
 }
 
+/** The cycle every league on the page belongs to, named as the member app names it. */
+export interface AdminLeagueSeasonContext {
+  season_id: string;
+  name: string;
+  calendar_label: string;
+  week_ordinal: number;
+  starts_at: string;
+  ends_at: string;
+  league_count: number;
+  participant_count: number;
+}
+
 export interface AdminLeaguesPage extends Page<AdminLeagueSummary> {
-  season_ids: string[];
+  seasons: AdminLeagueSeasonContext[];
 }
 
 /** One person's standing inside a league. */
@@ -311,6 +324,7 @@ export interface AdminLeagueMember {
 
 export interface AdminLeagueDetail {
   league: AdminLeagueSummary;
+  season: AdminLeagueSeasonContext;
   members: AdminLeagueMember[];
   member_total: number;
   promote_cutoff_rank: number;

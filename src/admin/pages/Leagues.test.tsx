@@ -15,7 +15,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ToastProvider } from "../../hooks/toast";
 import { LeagueDetailPage, LeaguesPage } from "./Leagues";
 import { adminApi } from "../api";
-import type { AdminLeagueMember, AdminLeagueSummary } from "../api";
+import type {
+  AdminLeagueMember,
+  AdminLeagueSeasonContext,
+  AdminLeagueSummary,
+} from "../api";
 
 vi.mock("../api", async () => {
   const actual = await vi.importActual<typeof import("../api")>("../api");
@@ -28,10 +32,23 @@ vi.mock("../api", async () => {
 const listActiveLeagues = vi.mocked(adminApi.listActiveLeagues);
 const getLeague = vi.mocked(adminApi.getLeague);
 
+/** The cycle the fixtures run in, named as the member app names it. */
+const SEASON: AdminLeagueSeasonContext = {
+  season_id: "2026-W37",
+  name: "2026 가을 시즌 2주차",
+  calendar_label: "2026 가을 시즌",
+  week_ordinal: 2,
+  starts_at: "2026-09-07T04:00:00Z", // Mon 00:00 EDT
+  ends_at: "2026-09-14T01:00:00Z", // Sun 21:00 EDT
+  league_count: 4,
+  participant_count: 96,
+};
+
 function league(overrides: Partial<AdminLeagueSummary> = {}): AdminLeagueSummary {
   return {
     season_id: "2026-W37",
     group_id: "grp-7f3a",
+    group_ordinal: 1,
     tier: "yellow",
     tier_label: "Yellow League",
     season_name: "Season 2026-W37",
@@ -65,14 +82,12 @@ function member(overrides: Partial<AdminLeagueMember> = {}): AdminLeagueMember {
   };
 }
 
-function renderList(items: AdminLeagueSummary[], total = items.length) {
-  listActiveLeagues.mockResolvedValue({
-    items,
-    total,
-    page: 1,
-    page_size: 25,
-    season_ids: ["2026-W37"],
-  });
+function renderList(
+  items: AdminLeagueSummary[],
+  total = items.length,
+  seasons: AdminLeagueSeasonContext[] = [SEASON],
+) {
+  listActiveLeagues.mockResolvedValue({ items, total, page: 1, page_size: 25, seasons });
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
@@ -91,6 +106,7 @@ function renderList(items: AdminLeagueSummary[], total = items.length) {
 function renderDetail(members: AdminLeagueMember[], overrides: Partial<AdminLeagueSummary> = {}) {
   getLeague.mockResolvedValue({
     league: league(overrides),
+    season: SEASON,
     members,
     member_total: members.length,
     promote_cutoff_rank: 6,
@@ -115,18 +131,18 @@ describe("the active leagues list", () => {
   it("shows what an admin needs to size up a league at a glance", async () => {
     renderList([league()]);
 
-    expect(await screen.findByText("Yellow League")).toBeInTheDocument();
-    expect(screen.getByText("grp-7f3a")).toBeInTheDocument();
-    expect(screen.getByText("2026-W37")).toBeInTheDocument();
+    // Named the way the member app names a tier, not "Yellow League".
+    expect(await screen.findByText("Yellow 리그")).toBeInTheDocument();
     expect(screen.getByText("28")).toBeInTheDocument();
     expect(screen.getByText("/ 30")).toBeInTheDocument();
     expect(screen.getByText("4,210")).toBeInTheDocument();
-    expect(screen.getByText("진행 중")).toBeInTheDocument();
+    // The group id survives as the support handle, below the name.
+    expect(screen.getByText("grp-7f3a")).toHaveClass("hgadm-cell-mono");
   });
 
   it("asks the backend only for what is running", async () => {
     renderList([league()]);
-    await screen.findByText("Yellow League");
+    await screen.findByText("Yellow 리그");
 
     // No status parameter: the endpoint returns active leagues and nothing
     // else, so "active" cannot be turned off from the client.
@@ -136,11 +152,13 @@ describe("the active leagues list", () => {
   });
 
   it("treats a group as the league, so two groups in a tier are two rows", async () => {
-    renderList([league(), league({ group_id: "grp-b21c", participants: 12 })]);
+    renderList([league(), league({ group_id: "grp-b21c", group_ordinal: 2, participants: 12 })]);
     await screen.findByText("grp-7f3a");
 
+    // Two groups in one tier are numbered rather than told apart by their ids.
+    expect(screen.getByText("Yellow 리그 1그룹")).toBeInTheDocument();
+    expect(screen.getByText("Yellow 리그 2그룹")).toBeInTheDocument();
     expect(screen.getByText("grp-b21c")).toBeInTheDocument();
-    expect(screen.getAllByText("Yellow League")).toHaveLength(2);
   });
 
   it("opens the league keyed by its season and its group", async () => {
@@ -156,9 +174,9 @@ describe("the active leagues list", () => {
   it("passes the search and tier filter through", async () => {
     const user = userEvent.setup();
     renderList([league()]);
-    await screen.findByText("Yellow League");
+    await screen.findByText("Yellow 리그");
 
-    await user.type(screen.getByPlaceholderText("그룹 ID·시즌·티어 검색"), "grp-7f3a{Enter}");
+    await user.type(screen.getByPlaceholderText("리그·그룹 ID 검색"), "grp-7f3a{Enter}");
 
     await waitFor(() =>
       expect(listActiveLeagues).toHaveBeenCalledWith(
@@ -181,12 +199,12 @@ describe("the active leagues list", () => {
     // next actions, so they must not share one message.
     const user = userEvent.setup();
     renderList([league()]);
-    await screen.findByText("Yellow League");
+    await screen.findByText("Yellow 리그");
 
     listActiveLeagues.mockResolvedValue({
-      items: [], total: 0, page: 1, page_size: 25, season_ids: ["2026-W37"],
+      items: [], total: 0, page: 1, page_size: 25, seasons: [SEASON],
     });
-    await user.type(screen.getByPlaceholderText("그룹 ID·시즌·티어 검색"), "zzz{Enter}");
+    await user.type(screen.getByPlaceholderText("리그·그룹 ID 검색"), "zzz{Enter}");
 
     expect(await screen.findByText("조건에 맞는 리그가 없습니다")).toBeInTheDocument();
   });
@@ -214,13 +232,16 @@ describe("the league detail", () => {
     expect(screen.getByText("haneul · haneul@talkhangyul.co.kr")).toBeInTheDocument();
   });
 
-  it("names the league, its season and its window", async () => {
+  it("names the league and its cycle in the app's own words", async () => {
     renderDetail([member()]);
 
-    expect(await screen.findByText(/Yellow League/)).toBeInTheDocument();
-    expect(screen.getByText("grp-7f3a")).toBeInTheDocument();
-    expect(screen.getByText(/2026-W37/)).toBeInTheDocument();
+    // The heading names the league; the badge beside it repeats the tier.
+    await screen.findByText(/2026 가을 시즌 2주차/);
+    expect(screen.getByRole("heading").textContent).toContain("Yellow 리그 1그룹");
+    expect(screen.getByText(/2026\.09\.07 ~ 2026\.09\.13/)).toBeInTheDocument();
     expect(screen.getByText(/상위 6위까지 승급/)).toBeInTheDocument();
+    // The internal keys stay, demoted to technical detail.
+    expect(screen.getByText("2026-W37 · grp-7f3a")).toHaveClass("hgadm-cell-mono");
   });
 
   it("sends a clicked member to the existing user detail page", async () => {
@@ -268,6 +289,7 @@ describe("the league detail", () => {
 
     getLeague.mockResolvedValue({
       league: league(),
+      season: SEASON,
       members: [member()],
       member_total: 2,
       promote_cutoff_rank: 6,
@@ -298,5 +320,56 @@ describe("long values do not break the layout", () => {
     renderDetail([member({ name: "Alexandra Konstantinopoulos-Wren" })]);
 
     expect(await screen.findByText("Alexandra Konstantinopoulos-Wren")).toBeInTheDocument();
+  });
+});
+
+describe("the cycle above the list", () => {
+  it("names the period the way the member app does, once", async () => {
+    // The app never shows `2026-W37`; it groups weeks into calendar quarters
+    // and labels them "2026 가을 시즌".
+    renderList([league(), league({ group_id: "grp-b21c", group_ordinal: 2 })]);
+
+    expect(await screen.findByText("2026 가을 시즌 2주차")).toBeInTheDocument();
+    expect(screen.getByText("2026.09.07 ~ 2026.09.13")).toBeInTheDocument();
+  });
+
+  it("does not repeat the season and period down the table", async () => {
+    // They are identical on every row, so as columns they carried nothing and
+    // took the width the rows needed.
+    renderList([league(), league({ group_id: "grp-b21c", group_ordinal: 2 })]);
+    await screen.findByText("2026 가을 시즌 2주차");
+
+    const headers = screen.getAllByRole("columnheader").map((h) => h.textContent);
+    expect(headers).not.toContain("시즌");
+    expect(headers).not.toContain("기간");
+    // What is left is what actually differs between leagues.
+    expect(headers).toEqual(
+      expect.arrayContaining(["리그", "티어", "참가자", "포인트", "상태"]),
+    );
+    // And the period appears once — in the header, not per row.
+    expect(screen.getAllByText("2026.09.07 ~ 2026.09.13")).toHaveLength(1);
+  });
+
+  it("keeps the internal key available without making it the label", async () => {
+    renderList([league()]);
+    await screen.findByText("2026 가을 시즌 2주차");
+
+    expect(screen.getByText("2026-W37")).toHaveClass("hgadm-season__key");
+  });
+
+  it("summarises how much is running in the cycle", async () => {
+    renderList([league()]);
+    await screen.findByText("2026 가을 시즌 2주차");
+
+    expect(screen.getByText("4")).toBeInTheDocument(); // league_count
+    expect(screen.getByText("96")).toBeInTheDocument(); // participant_count
+  });
+
+  it("shows no header when nothing is running", async () => {
+    // No open season at all — distinct from a season with no matching leagues.
+    renderList([], 0, []);
+    await screen.findByText("진행 중인 리그가 없습니다");
+
+    expect(document.querySelector(".hgadm-season")).toBeNull();
   });
 });

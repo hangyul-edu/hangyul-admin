@@ -7,6 +7,7 @@ import type { AdminTier } from "../api";
 import { errorMessage } from "../../lib/http";
 import { useToast, useToastError } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
+import { backNavigationState, useBackTarget } from "../lib/navigation";
 import {
   Badge,
   Button,
@@ -40,6 +41,7 @@ export function UserDetailPage() {
   const toast = useToast();
   const toastError = useToastError();
   const { can, me } = useAdminAuth();
+  const back = useBackTarget({ to: "/users", label: "사용자 목록" });
   const [tab, setTab] = useState<"overview" | "billing" | "learning" | "misc">("overview");
   const [confirm, setConfirm] = useState<null | {
     title: string;
@@ -131,13 +133,17 @@ export function UserDetailPage() {
       <div className="hgadm-page-head">
         <div>
           <div className="hgadm-row" style={{ marginBottom: 4 }}>
+            {/* Back to wherever this page was opened from — the directory by
+                default, but the league that linked here if that is where the
+                admin came from. */}
             <Link
-              to="/users"
+              to={back.to}
+              state={backNavigationState(back)}
               className="hgadm-muted hgadm-row"
               style={{ fontSize: 13, gap: 4 }}
             >
               <ArrowLeft size={14} strokeWidth={2} />
-              사용자 목록
+              {back.label}
             </Link>
           </div>
           <h1 className="hgadm-row">
