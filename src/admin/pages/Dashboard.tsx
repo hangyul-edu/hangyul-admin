@@ -2,7 +2,9 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { adminApi } from "../api";
+import type { RecentAdminActionRow } from "../api";
 import { personName } from "../lib/adminIdentity";
+import { describeAuditAction } from "../lib/auditActions";
 import type { MonthlyRevenueResponse } from "../api";
 import { errorMessage } from "../../lib/http";
 import {
@@ -249,19 +251,62 @@ export function DashboardPage() {
         </RecentCard>
         <RecentCard title="최근 관리자 활동">
           {data.recent_admin_actions.map((a) => (
-            <div key={a.id} className="hgadm-recent-row">
-              <div>
-                <div className="hgadm-cell-main">{a.actor_id ? personName({ name: a.actor_name, email: a.actor_email, user_id: a.actor_id }) : "system"}</div>
-                <div className="hgadm-cell-sub hgadm-cell-mono">{a.action}</div>
-              </div>
-              <div className="hgadm-cell-sub">{formatDateTime(a.occurred_at)}</div>
-            </div>
+            <AdminActivityRow key={a.id} entry={a} />
           ))}
           {data.recent_admin_actions.length === 0 && (
             <div className="hgadm-muted" style={{ padding: 12 }}>기록이 없습니다.</div>
           )}
         </RecentCard>
       </div>
+    </div>
+  );
+}
+
+/**
+ * One line of the dashboard's recent-activity list.
+ *
+ * Same reading order as the Activity History table — what was done, who did
+ * it, on what, and the endpoint underneath — through the same
+ * `describeAuditAction`, so the two screens can never describe one row two
+ * ways.
+ *
+ * The layout is a two-column grid rather than a `space-between` flex. The text
+ * column is `minmax(0, 1fr)`, which is what actually lets its children shrink
+ * and ellipsis instead of shoving the timestamp leftwards; the timestamp column
+ * is `auto` and never wraps, so it sizes to its own content. Every timestamp
+ * has the same shape, so that column comes out the same width on every row
+ * without anyone naming a pixel value — and a long action or a long name
+ * changes only its own line.
+ */
+export function AdminActivityRow({ entry }: { entry: RecentAdminActionRow }) {
+  const described = describeAuditAction({
+    ...entry,
+    actor_type: "admin",
+    user_id: null,
+    request_id: null,
+    ip_address: null,
+  });
+  const actor = entry.actor_id
+    ? personName({ name: entry.actor_name, email: entry.actor_email, user_id: entry.actor_id })
+    : "시스템";
+  const target = described.context ?? `${entry.object_type} · ${entry.object_id}`;
+
+  return (
+    <div className="hgadm-activity">
+      <div className="hgadm-activity__body">
+        <div className="hgadm-activity__action">{described.label}</div>
+        <div className="hgadm-activity__meta">
+          <span className="hgadm-activity__actor">{actor}</span>
+          <span className="hgadm-activity__sep" aria-hidden="true">·</span>
+          <span className="hgadm-activity__target">{target}</span>
+        </div>
+        {described.known && (
+          <div className="hgadm-activity__endpoint hgadm-cell-mono">{described.raw}</div>
+        )}
+      </div>
+      <time className="hgadm-activity__time" dateTime={entry.occurred_at}>
+        {formatDateTime(entry.occurred_at)}
+      </time>
     </div>
   );
 }

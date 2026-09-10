@@ -26,6 +26,21 @@ export interface OperationalAlert {
   count: number;
 }
 
+/** One row of the dashboard's recent admin activity — an audit entry, trimmed
+ *  to what that list needs plus the snapshots its action label reads. */
+export interface RecentAdminActionRow {
+  id: number;
+  actor_id: string | null;
+  actor_name: string | null;
+  actor_email: string | null;
+  action: string;
+  object_type: string;
+  object_id: string;
+  before: Record<string, unknown> | null;
+  after: Record<string, unknown> | null;
+  occurred_at: string;
+}
+
 export interface MetricsOverview {
   generated_at: string;
   users: {
@@ -93,16 +108,7 @@ export interface MetricsOverview {
     paid_at: string | null;
     created_at: string;
   }[];
-  recent_admin_actions: {
-    id: number;
-    actor_id: string | null;
-    actor_name: string | null;
-    actor_email: string | null;
-    action: string;
-    object_type: string;
-    object_id: string;
-    occurred_at: string;
-  }[];
+  recent_admin_actions: RecentAdminActionRow[];
 }
 
 export interface TimeseriesResponse {
