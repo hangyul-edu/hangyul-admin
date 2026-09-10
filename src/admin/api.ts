@@ -272,6 +272,51 @@ export type AdminTier =
 
 // ---- Audit -----------------------------------------------------------------
 
+/** One competing group on the Active Leagues page. */
+export interface AdminLeagueSummary {
+  season_id: string;
+  group_id: string;
+  tier: string;
+  tier_label: string;
+  season_name: string;
+  starts_at: string;
+  ends_at: string;
+  status: string;
+  participants: number;
+  capacity: number;
+  total_points: number;
+  top_points: number;
+  promote_cutoff_rank: number;
+  demote_cutoff_rank: number;
+}
+
+export interface AdminLeaguesPage extends Page<AdminLeagueSummary> {
+  season_ids: string[];
+}
+
+/** One person's standing inside a league. */
+export interface AdminLeagueMember {
+  user_id: string;
+  name: string | null;
+  nickname: string | null;
+  email: string | null;
+  account_status: string | null;
+  role: string | null;
+  rank: number;
+  points: number;
+  band: string;
+  outcome: string | null;
+  last_activity_at: string | null;
+}
+
+export interface AdminLeagueDetail {
+  league: AdminLeagueSummary;
+  members: AdminLeagueMember[];
+  member_total: number;
+  promote_cutoff_rank: number;
+  demote_cutoff_rank: number;
+}
+
 export interface AuditLogEntry {
   id: number;
   actor_type: string;
@@ -657,6 +702,15 @@ export const adminApi = {
   // Audit
   listAuditLogs: (params: Query) =>
     http.get<Page<AuditLogEntry>>("/admin/audit-logs", params),
+
+  // Leagues
+  listActiveLeagues: (params: Query) =>
+    http.get<AdminLeaguesPage>("/admin/leagues", params),
+  getLeague: (seasonId: string, groupId: string, params?: Query) =>
+    http.get<AdminLeagueDetail>(
+      `/admin/leagues/${encodeURIComponent(seasonId)}/${encodeURIComponent(groupId)}`,
+      params,
+    ),
 
   // Commerce
   listSubscriptions: (params: Query) =>

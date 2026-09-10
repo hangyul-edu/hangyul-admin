@@ -1327,6 +1327,29 @@ body {
   display: none;
 }
 
+/* ---------- Small text utilities ----------
+   `hgadm-nowrap` keeps a value that reads as one token — a date range, a count
+   over a capacity — from folding mid-value in a narrow column. `hgadm-truncate`
+   is the opposite case: a secondary line that may hold a long email, allowed to
+   shorten so it cannot widen the table. Its zero minimum is what lets it. */
+.hgadm-nowrap {
+  white-space: nowrap;
+}
+.hgadm-truncate {
+  display: block;
+  min-width: 0;
+  max-width: 44ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* The identifier beside a detail page's title, sized down to sit under it. */
+.hgadm-page-head__id {
+  font-size: 0.7em;
+  font-weight: 500;
+  color: var(--ink-3);
+}
+
 /* ---------- Chart tooltip ----------
    Fixed and portalled to <body>, so it is bounded by the viewport rather than
    by the chart's scroll container; lib/tooltipPlacement.ts supplies the point.

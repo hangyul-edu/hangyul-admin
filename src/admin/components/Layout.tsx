@@ -21,6 +21,7 @@ import {
   ScrollText,
   ShieldCheck,
   Ticket,
+  Trophy,
   UserRound,
   Users as UsersIcon,
   type LucideIcon,
@@ -53,6 +54,7 @@ const NAV: NavGroup[] = [
     label: "사용자",
     items: [
       { to: "/users", icon: UsersIcon, label: "사용자 관리", scopes: ["users:read"] },
+      { to: "/leagues", icon: Trophy, label: "진행 중인 리그", scopes: ["users:read"] },
     ],
   },
   {
