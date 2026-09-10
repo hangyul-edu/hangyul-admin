@@ -1327,6 +1327,78 @@ body {
   display: none;
 }
 
+/* ---------- Tier chip ----------
+   The tier in its own colour, borrowed from the member app's ladder
+   (src/lib/league.ts). The colour arrives inline because it belongs to the
+   data, not to the stylesheet; what is here is the shape it sits in. The
+   fallback border/tint keep an unknown tier legible rather than invisible. */
+.hgadm-tier {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface-3);
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.hgadm-tier__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+/* ---------- Page-head facts ----------
+   The second line of a detail page: the few numbers that describe the thing
+   you are looking at. Each is a label with its value, so it reads as a fact
+   rather than as an unlabelled counter, and they wrap as units. */
+.hgadm-page-head__facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 20px;
+  margin-top: 8px;
+}
+.hgadm-fact {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+}
+.hgadm-fact__label {
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.hgadm-fact__value {
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+/* The cutoff each zone is measured against — the reason the count is what it
+   is, kept beside it rather than in a paragraph further down. */
+.hgadm-fact__note {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.hgadm-fact--promote .hgadm-fact__value {
+  color: var(--ad-success);
+}
+.hgadm-fact--demote .hgadm-fact__value {
+  color: var(--ad-danger);
+}
+.hgadm-fact--period .hgadm-fact__value {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
 /* ---------- Active-league season header ----------
    The cycle every league on the page belongs to, stated once. It is a header
    rather than a table column because the value is identical on every row: two
@@ -1392,13 +1464,6 @@ body {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--ink);
-}
-/* The weekly key: the thing you quote in a support ticket, and nothing an
-   admin needs to read at a glance. */
-.hgadm-season__key {
-  font-size: 12px;
-  color: var(--ink-3);
-  white-space: nowrap;
 }
 @media (max-width: 720px) {
   .hgadm-season__stats {

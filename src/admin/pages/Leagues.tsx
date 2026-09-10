@@ -22,7 +22,8 @@ import {
 } from "../components/kit";
 import type { Column } from "../components/kit";
 import { personName } from "../lib/adminIdentity";
-import { TIER_NAMES, leagueName, leaguePeriod } from "../lib/leagueNames";
+import { leagueName, leaguePeriod, tierColor, tierName } from "../lib/leagueNames";
+import { LEAGUE_TIERS } from "../../lib/league";
 import { originFrom, useRestoreScroll } from "../lib/navigation";
 
 /**
@@ -31,14 +32,31 @@ import { originFrom, useRestoreScroll } from "../lib/navigation";
  * holds many groups across five tiers — so a league is identified by its
  * season *and* its group, which is why the detail route carries both.
  */
-/** Tier colours follow the app's ladder; the badge tones are the nearest set. */
-const TIER_TONE: Record<string, "neutral" | "success" | "brand" | "warning"> = {
-  green: "success",
-  lime: "success",
-  yellow: "warning",
-  orange: "warning",
-  golden: "brand",
-};
+/**
+ * The tier, in the tier's own colour.
+ *
+ * The badge palette could only approximate the ladder — two of the five came
+ * out the same "warning" amber — which defeats the point of a colour that is
+ * meant to be recognised at a glance. This borrows the app's colour directly
+ * and puts the text on a tint of it, so the five tiers are five colours here
+ * exactly as they are in the app.
+ */
+function TierChip({ tier }: { tier: string }) {
+  const color = tierColor(tier);
+  return (
+    <span
+      className="hgadm-tier"
+      style={
+        color
+          ? { color, background: `${color}1f`, borderColor: `${color}59` }
+          : undefined
+      }
+    >
+      <span className="hgadm-tier__dot" style={color ? { background: color } : undefined} />
+      {tierName(tier)}
+    </span>
+  );
+}
 
 const BAND_LABEL: Record<string, string> = {
   promote: "승급권",
@@ -103,7 +121,6 @@ function SeasonHeader({ seasons }: { seasons: AdminLeagueSeasonContext[] }) {
                 {season.participant_count.toLocaleString()}
               </span>
             </div>
-            <div className="hgadm-season__key hgadm-cell-mono">{season.season_id}</div>
           </div>
         </div>
       ))}
@@ -133,31 +150,18 @@ export function LeaguesPage() {
   // Season and period are the same on every row, so they are stated once in
   // the header above instead of filling two columns. What is left is what
   // actually differs between leagues.
-  const groupsPerTier = new Map<string, number>();
-  for (const l of query.data?.items ?? []) {
-    groupsPerTier.set(l.tier, (groupsPerTier.get(l.tier) ?? 0) + 1);
-  }
-
   const columns: Column<AdminLeagueSummary>[] = [
     {
       key: "league",
       header: "리그",
       render: (l) => (
-        <div>
-          <div className="hgadm-cell-main">
-            {leagueName(l.tier, l.group_ordinal, groupsPerTier.get(l.tier) ?? 1)}
-          </div>
-          {/* The group id is the support handle, not the name. */}
-          <div className="hgadm-cell-sub hgadm-cell-mono">{l.group_id}</div>
-        </div>
+        <span className="hgadm-cell-main">{leagueName(l.tier, l.group_ordinal)}</span>
       ),
     },
     {
       key: "tier",
       header: "티어",
-      render: (l) => (
-        <Badge tone={TIER_TONE[l.tier] ?? "neutral"}>{TIER_NAMES[l.tier] ?? l.tier}</Badge>
-      ),
+      render: (l) => <TierChip tier={l.tier} />,
       width: 120,
     },
     {
@@ -217,7 +221,7 @@ export function LeaguesPage() {
         <div className="hgadm-toolbar">
           <SearchBox
             value={q}
-            placeholder="리그·그룹 ID 검색"
+            placeholder="리그 검색 (예: Golden)"
             onSearch={(next) => filters.patch({ q: next, page: null })}
           />
           <Select
@@ -226,9 +230,9 @@ export function LeaguesPage() {
             style={{ width: 160 }}
           >
             <option value="">티어: 전체</option>
-            {Object.entries(TIER_NAMES).map(([value, label]) => (
+            {LEAGUE_TIERS.map((value) => (
               <option key={value} value={value}>
-                {label}
+                {tierName(value)}
               </option>
             ))}
           </Select>
@@ -375,7 +379,14 @@ export function LeagueDetailPage() {
       />
     );
 
-  const { league, season, members, member_total: memberTotal } = query.data;
+  const {
+    league,
+    season,
+    members,
+    member_total: memberTotal,
+    promote_count: promoteCount,
+    demote_count: demoteCount,
+  } = query.data;
 
   return (
     <div>
@@ -393,18 +404,38 @@ export function LeagueDetailPage() {
           </div>
           <h1 className="hgadm-row">
             {leagueName(league.tier, league.group_ordinal)}
-            <Badge tone={TIER_TONE[league.tier] ?? "neutral"}>
-              {TIER_NAMES[league.tier] ?? league.tier}
-            </Badge>
+            <TierChip tier={league.tier} />
           </h1>
-          <div className="hgadm-page-head__desc">
-            {season.name} · {leaguePeriod(season.starts_at, season.ends_at)} · 참가자{" "}
-            {memberTotal.toLocaleString()}/{league.capacity}명. 상위{" "}
-            {league.promote_cutoff_rank}위까지 승급, {league.demote_cutoff_rank}위부터
-            강등됩니다. 회원을 클릭하면 해당 회원 상세로 이동합니다.
+          {/* Second line: the shape of the league — how full it is, and how
+              many are heading up or down. Written as sentences rather than as
+              a row of counters, since that is how an admin would say it. */}
+          <div className="hgadm-page-head__facts">
+            <span className="hgadm-fact">
+              <span className="hgadm-fact__label">참가자</span>
+              <span className="hgadm-fact__value">
+                {memberTotal.toLocaleString()}/{league.capacity}명
+              </span>
+            </span>
+            <span className="hgadm-fact hgadm-fact--promote">
+              <span className="hgadm-fact__label">승급권</span>
+              <span className="hgadm-fact__value">{promoteCount.toLocaleString()}명</span>
+              <span className="hgadm-fact__note">상위 {league.promote_cutoff_rank}위</span>
+            </span>
+            <span className="hgadm-fact hgadm-fact--demote">
+              <span className="hgadm-fact__label">강등권</span>
+              <span className="hgadm-fact__value">{demoteCount.toLocaleString()}명</span>
+              <span className="hgadm-fact__note">{league.demote_cutoff_rank}위부터</span>
+            </span>
+            <span className="hgadm-fact hgadm-fact--period">
+              <span className="hgadm-fact__label">{season.name}</span>
+              <span className="hgadm-fact__value">
+                {leaguePeriod(season.starts_at, season.ends_at)}
+              </span>
+            </span>
           </div>
-          <div className="hgadm-cell-sub hgadm-cell-mono" style={{ marginTop: 4 }}>
-            {season.season_id} · {league.group_id}
+          {/* Third line: what clicking a row does. */}
+          <div className="hgadm-page-head__desc">
+            회원을 클릭하면 해당 회원 상세 페이지로 이동합니다.
           </div>
         </div>
       </div>

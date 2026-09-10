@@ -114,6 +114,8 @@ function renderApp(entry: string) {
     season: SEASON,
     members: [MEMBER],
     member_total: 1,
+    promote_count: 1,
+    demote_count: 0,
     promote_cutoff_rank: 6,
     demote_cutoff_rank: 25,
   } as never);

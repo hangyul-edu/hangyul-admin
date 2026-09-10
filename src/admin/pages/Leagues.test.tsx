@@ -109,6 +109,8 @@ function renderDetail(members: AdminLeagueMember[], overrides: Partial<AdminLeag
     season: SEASON,
     members,
     member_total: members.length,
+    promote_count: members.filter((m) => m.band === "promote").length,
+    demote_count: members.filter((m) => m.band === "demote").length,
     promote_cutoff_rank: 6,
     demote_cutoff_rank: 25,
   });
@@ -131,18 +133,26 @@ describe("the active leagues list", () => {
   it("shows what an admin needs to size up a league at a glance", async () => {
     renderList([league()]);
 
-    // Named the way the member app names a tier, not "Yellow League".
-    expect(await screen.findByText("Yellow 리그")).toBeInTheDocument();
+    // Named the way the member app names a tier, and always numbered.
+    expect(await screen.findByText("Yellow 리그 1그룹")).toBeInTheDocument();
     expect(screen.getByText("28")).toBeInTheDocument();
     expect(screen.getByText("/ 30")).toBeInTheDocument();
     expect(screen.getByText("4,210")).toBeInTheDocument();
-    // The group id survives as the support handle, below the name.
-    expect(screen.getByText("grp-7f3a")).toHaveClass("hgadm-cell-mono");
+  });
+
+  it("shows no internal identifier anywhere on the page", () => {
+    // `grp-7f3a` and `2026-W37` are developer-facing handles. They stay in the
+    // URL, which is where you get one when support needs it.
+    renderList([league()]);
+    return screen.findByText("Yellow 리그 1그룹").then(() => {
+      expect(document.body.textContent).not.toContain("grp-7f3a");
+      expect(document.body.textContent).not.toContain("2026-W37");
+    });
   });
 
   it("asks the backend only for what is running", async () => {
     renderList([league()]);
-    await screen.findByText("Yellow 리그");
+    await screen.findByText("Yellow 리그 1그룹");
 
     // No status parameter: the endpoint returns active leagues and nothing
     // else, so "active" cannot be turned off from the client.
@@ -153,12 +163,11 @@ describe("the active leagues list", () => {
 
   it("treats a group as the league, so two groups in a tier are two rows", async () => {
     renderList([league(), league({ group_id: "grp-b21c", group_ordinal: 2, participants: 12 })]);
-    await screen.findByText("grp-7f3a");
+    await screen.findByText("Yellow 리그 1그룹");
 
-    // Two groups in one tier are numbered rather than told apart by their ids.
-    expect(screen.getByText("Yellow 리그 1그룹")).toBeInTheDocument();
+    // Two groups in one tier are told apart by their number, not by their ids.
     expect(screen.getByText("Yellow 리그 2그룹")).toBeInTheDocument();
-    expect(screen.getByText("grp-b21c")).toBeInTheDocument();
+    expect(document.body.textContent).not.toContain("grp-b21c");
   });
 
   it("opens the league keyed by its season and its group", async () => {
@@ -166,7 +175,7 @@ describe("the active leagues list", () => {
     // league entirely.
     const user = userEvent.setup();
     renderList([league()]);
-    await user.click(await screen.findByText("grp-7f3a"));
+    await user.click(await screen.findByText("Yellow 리그 1그룹"));
 
     expect(await screen.findByText("DETAIL")).toBeInTheDocument();
   });
@@ -174,9 +183,9 @@ describe("the active leagues list", () => {
   it("passes the search and tier filter through", async () => {
     const user = userEvent.setup();
     renderList([league()]);
-    await screen.findByText("Yellow 리그");
+    await screen.findByText("Yellow 리그 1그룹");
 
-    await user.type(screen.getByPlaceholderText("리그·그룹 ID 검색"), "grp-7f3a{Enter}");
+    await user.type(screen.getByPlaceholderText("리그 검색 (예: Golden)"), "grp-7f3a{Enter}");
 
     await waitFor(() =>
       expect(listActiveLeagues).toHaveBeenCalledWith(
@@ -199,12 +208,12 @@ describe("the active leagues list", () => {
     // next actions, so they must not share one message.
     const user = userEvent.setup();
     renderList([league()]);
-    await screen.findByText("Yellow 리그");
+    await screen.findByText("Yellow 리그 1그룹");
 
     listActiveLeagues.mockResolvedValue({
       items: [], total: 0, page: 1, page_size: 25, seasons: [SEASON],
     });
-    await user.type(screen.getByPlaceholderText("리그·그룹 ID 검색"), "zzz{Enter}");
+    await user.type(screen.getByPlaceholderText("리그 검색 (예: Golden)"), "zzz{Enter}");
 
     expect(await screen.findByText("조건에 맞는 리그가 없습니다")).toBeInTheDocument();
   });
@@ -221,8 +230,9 @@ describe("the league detail", () => {
     await screen.findByText("김하늘");
     expect(screen.getByText("620")).toBeInTheDocument();
     expect(screen.getByText("480")).toBeInTheDocument();
-    expect(screen.getAllByText("승급권")).toHaveLength(2);
-    expect(screen.getByText("강등권")).toBeInTheDocument();
+    // Two rows in the promotion zone, plus the header's own count of them.
+    expect(screen.getAllByText("승급권")).toHaveLength(3);
+    expect(screen.getAllByText("강등권")).toHaveLength(2);
   });
 
   it("shows each member's name, nickname and email", async () => {
@@ -235,13 +245,65 @@ describe("the league detail", () => {
   it("names the league and its cycle in the app's own words", async () => {
     renderDetail([member()]);
 
-    // The heading names the league; the badge beside it repeats the tier.
-    await screen.findByText(/2026 가을 시즌 2주차/);
+    // The heading names the league; the chip beside it repeats the tier.
+    await screen.findByText("2026 가을 시즌 2주차");
     expect(screen.getByRole("heading").textContent).toContain("Yellow 리그 1그룹");
-    expect(screen.getByText(/2026\.09\.07 ~ 2026\.09\.13/)).toBeInTheDocument();
-    expect(screen.getByText(/상위 6위까지 승급/)).toBeInTheDocument();
-    // The internal keys stay, demoted to technical detail.
-    expect(screen.getByText("2026-W37 · grp-7f3a")).toHaveClass("hgadm-cell-mono");
+    expect(screen.getByText("2026.09.07 ~ 2026.09.13")).toBeInTheDocument();
+  });
+
+  it("reads as name, then the numbers, then what a click does", async () => {
+    renderDetail([
+      member(),
+      member({ user_id: "usr_2", rank: 2, band: "promote" }),
+      member({ user_id: "usr_3", rank: 26, band: "demote" }),
+    ]);
+    await screen.findByRole("heading");
+
+    // 1 — the league's name.
+    expect(screen.getByRole("heading").textContent).toContain("Yellow 리그 1그룹");
+    // 2 — how full it is and who is moving.
+    const facts = document.querySelector(".hgadm-page-head__facts")!;
+    expect(facts.textContent).toContain("3/30명");
+    expect(facts.textContent).toContain("승급권");
+    expect(facts.textContent).toContain("2명");
+    expect(facts.textContent).toContain("강등권");
+    expect(facts.textContent).toContain("1명");
+    // 3 — the guidance, in that order below them.
+    const desc = document.querySelector(".hgadm-page-head__desc")!;
+    expect(desc.textContent).toBe("회원을 클릭하면 해당 회원 상세 페이지로 이동합니다.");
+    expect(facts.compareDocumentPosition(desc) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("counts the zones over the whole league, not the filtered view", async () => {
+    // The counts come from the server precisely so a member search cannot
+    // appear to change how many people are promoting.
+    getLeague.mockResolvedValue({
+      league: league(),
+      season: SEASON,
+      members: [member()],
+      member_total: 28,
+      promote_count: 6,
+      demote_count: 4,
+      promote_cutoff_rank: 6,
+      demote_cutoff_rank: 25,
+    });
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <ToastProvider>
+          <MemoryRouter initialEntries={["/leagues/2026-W37/grp-7f3a?q=x"]}>
+            <Routes>
+              <Route path="/leagues/:seasonId/:groupId" element={<LeagueDetailPage />} />
+            </Routes>
+          </MemoryRouter>
+        </ToastProvider>
+      </QueryClientProvider>,
+    );
+    await screen.findByRole("heading");
+
+    const facts = document.querySelector(".hgadm-page-head__facts")!;
+    expect(facts.textContent).toContain("28/30명");
+    expect(facts.textContent).toContain("6명");
+    expect(facts.textContent).toContain("4명");
   });
 
   it("sends a clicked member to the existing user detail page", async () => {
@@ -292,6 +354,8 @@ describe("the league detail", () => {
       season: SEASON,
       members: [member()],
       member_total: 2,
+      promote_count: 1,
+      demote_count: 0,
       promote_cutoff_rank: 6,
       demote_cutoff_rank: 25,
     });
@@ -350,11 +414,11 @@ describe("the cycle above the list", () => {
     expect(screen.getAllByText("2026.09.07 ~ 2026.09.13")).toHaveLength(1);
   });
 
-  it("keeps the internal key available without making it the label", async () => {
+  it("keeps the internal key out of the header too", async () => {
     renderList([league()]);
     await screen.findByText("2026 가을 시즌 2주차");
 
-    expect(screen.getByText("2026-W37")).toHaveClass("hgadm-season__key");
+    expect(document.body.textContent).not.toContain("2026-W37");
   });
 
   it("summarises how much is running in the cycle", async () => {
@@ -371,5 +435,39 @@ describe("the cycle above the list", () => {
     await screen.findByText("진행 중인 리그가 없습니다");
 
     expect(document.querySelector(".hgadm-season")).toBeNull();
+  });
+});
+
+describe("tier colour", () => {
+  it("paints the chip in the member app's own colour for the tier", async () => {
+    // Borrowed, not re-picked: a portal Golden that differed from the app's
+    // would look deliberate rather than approximate.
+    renderList([
+      league({ tier: "golden", group_ordinal: 1 }),
+      league({ tier: "green", group_id: "grp-g", group_ordinal: 1 }),
+    ]);
+    await screen.findByText("Golden 리그 1그룹");
+
+    const chips = Array.from(document.querySelectorAll(".hgadm-tier"));
+    const styles = chips.map((c) => (c as HTMLElement).style.color);
+    expect(styles).toContain("rgb(230, 173, 31)"); // #e6ad1f — golden
+    expect(styles).toContain("rgb(87, 182, 90)"); // #57b65a — green
+  });
+
+  it("names the tier without the 리그 suffix inside the chip", async () => {
+    // The suffix is already in the league name beside it.
+    renderList([league()]);
+    await screen.findByText("Yellow 리그 1그룹");
+
+    expect(document.querySelector(".hgadm-tier")?.textContent).toBe("Yellow");
+  });
+
+  it("stays legible for a tier it has no colour for", async () => {
+    renderList([league({ tier: "bronze" })]);
+    await screen.findByText("bronze 리그 1그룹");
+
+    const chip = document.querySelector(".hgadm-tier") as HTMLElement;
+    expect(chip.textContent).toBe("bronze");
+    expect(chip.style.color).toBe("");
   });
 });

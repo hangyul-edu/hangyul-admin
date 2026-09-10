@@ -327,6 +327,9 @@ export interface AdminLeagueDetail {
   season: AdminLeagueSeasonContext;
   members: AdminLeagueMember[];
   member_total: number;
+  /** Counted over the whole league, not the filtered member list. */
+  promote_count: number;
+  demote_count: number;
   promote_cutoff_rank: number;
   demote_cutoff_rank: number;
 }
