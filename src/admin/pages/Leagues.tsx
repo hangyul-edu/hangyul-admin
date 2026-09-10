@@ -646,24 +646,29 @@ export function LeagueDetailPage() {
                 {memberTotal.toLocaleString()} / {league.capacity}
               </span>
             </span>
-            {/* The zones are a fifth of THIS league's participants, so they
-                shrink with it — and vanish entirely in a league too small for
-                a fifth to be a whole person. "상위 0위" would be nonsense, so
-                the reason is spelled out instead. */}
+            {/* The zones are a fifth of THIS league's participants, never
+                fewer than one each way, so they shrink with the league but do
+                not vanish. They are empty only where the ladder ends — Golden
+                cannot promote, Green cannot relegate — and "상위 0위" would be
+                nonsense there, so the reason is named instead. */}
             <span className="hgadm-fact hgadm-fact--promote">
               <span className="hgadm-fact__label">승급권</span>
               <span className="hgadm-fact__value">{promoteCount.toLocaleString()}명</span>
               <span className="hgadm-fact__note">
                 {league.promote_cutoff_rank > 0
                   ? `상위 ${league.promote_cutoff_rank}위`
-                  : "인원 부족"}
+                  : "최상위 티어"}
               </span>
             </span>
             <span className="hgadm-fact hgadm-fact--demote">
               <span className="hgadm-fact__label">강등권</span>
               <span className="hgadm-fact__value">{demoteCount.toLocaleString()}명</span>
               <span className="hgadm-fact__note">
-                {demoteCount > 0 ? `${league.demote_cutoff_rank}위부터` : "인원 부족"}
+                {demoteCount > 0
+                  ? `${league.demote_cutoff_rank}위부터`
+                  : league.tier === "green"
+                    ? "최하위 티어"
+                    : "인원 부족"}
               </span>
             </span>
           </div>

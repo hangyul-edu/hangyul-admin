@@ -530,18 +530,19 @@ describe("the promotion and relegation zones", () => {
     expect(facts.textContent).toContain("24위부터");
   });
 
-  it("says why a league too small for a zone has none", async () => {
-    // Four participants: a fifth of four is not a person. "상위 0위" would be
-    // nonsense, so the reason is given instead.
+  it("still shows a zone in a league of three", async () => {
+    // A fifth of three rounds to zero, but at least one moves each way.
     getLeague.mockResolvedValue({
-      league: league({ participants: 4, promote_cutoff_rank: 0, demote_cutoff_rank: 5 }),
+      league: league({
+        participants: 3, tier: "lime", promote_cutoff_rank: 1, demote_cutoff_rank: 3,
+      }),
       season: SEASON,
       members: [member()],
-      member_total: 4,
-      promote_count: 0,
-      demote_count: 0,
-      promote_cutoff_rank: 0,
-      demote_cutoff_rank: 5,
+      member_total: 3,
+      promote_count: 1,
+      demote_count: 1,
+      promote_cutoff_rank: 1,
+      demote_cutoff_rank: 3,
     });
     render(
       <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
@@ -558,6 +559,40 @@ describe("the promotion and relegation zones", () => {
 
     const facts = document.querySelector(".hgadm-page-head__facts")!;
     expect(facts.textContent).not.toContain("상위 0위");
-    expect(facts.textContent).toContain("인원 부족");
+    expect(facts.textContent).toContain("상위 1위");
+    expect(facts.textContent).toContain("3위부터");
+  });
+
+  it("names the ladder end rather than printing a zero rank", async () => {
+    // Golden cannot promote — the only case where a zone is genuinely empty.
+    getLeague.mockResolvedValue({
+      league: league({
+        tier: "golden", participants: 30, promote_cutoff_rank: 0, demote_cutoff_rank: 25,
+      }),
+      season: SEASON,
+      members: [member({ band: "maintain" })],
+      member_total: 30,
+      promote_count: 0,
+      demote_count: 6,
+      promote_cutoff_rank: 0,
+      demote_cutoff_rank: 25,
+    });
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <ToastProvider>
+          <MemoryRouter initialEntries={["/leagues/2026-W37/grp-7f3a"]}>
+            <Routes>
+              <Route path="/leagues/:seasonId/:groupId" element={<LeagueDetailPage />} />
+            </Routes>
+          </MemoryRouter>
+        </ToastProvider>
+      </QueryClientProvider>,
+    );
+    await screen.findByRole("heading");
+
+    const facts = document.querySelector(".hgadm-page-head__facts")!;
+    expect(facts.textContent).not.toContain("상위 0위");
+    expect(facts.textContent).toContain("최상위 티어");
+    expect(facts.textContent).toContain("25위부터");
   });
 });
