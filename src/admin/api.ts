@@ -301,6 +301,29 @@ export interface AdminLeagueSeasonContext {
   ends_at: string;
   league_count: number;
   participant_count: number;
+  /** Active accounts not placed in any league this season. */
+  unassigned_count: number;
+}
+
+/** One member waiting to be placed in a league. */
+export interface AdminUnassignedMember {
+  user_id: string;
+  name: string | null;
+  nickname: string | null;
+  email: string;
+  status: string;
+  role: string;
+  created_at: string;
+  last_activity_at: string | null;
+  days_since_activity: number | null;
+  inactive: boolean;
+  last_tier: string | null;
+  last_season_points: number | null;
+}
+
+export interface AdminUnassignedMembersPage extends Page<AdminUnassignedMember> {
+  inactive_total: number;
+  seasons: AdminLeagueSeasonContext[];
 }
 
 export interface AdminLeaguesPage extends Page<AdminLeagueSummary> {
@@ -723,6 +746,8 @@ export const adminApi = {
   // Leagues
   listActiveLeagues: (params: Query) =>
     http.get<AdminLeaguesPage>("/admin/leagues", params),
+  listUnassignedMembers: (params: Query) =>
+    http.get<AdminUnassignedMembersPage>("/admin/leagues/unassigned", params),
   getLeague: (seasonId: string, groupId: string, params?: Query) =>
     http.get<AdminLeagueDetail>(
       `/admin/leagues/${encodeURIComponent(seasonId)}/${encodeURIComponent(groupId)}`,

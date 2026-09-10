@@ -1327,6 +1327,113 @@ body {
   display: none;
 }
 
+/* ---------- Page kicker ----------
+   The context line above a detail page's title: which cycle the thing you are
+   looking at belongs to. It sits above the h1 because it is the frame, not the
+   subject — the page is still about one league, but which week's league is the
+   first thing you need to know. */
+.hgadm-kicker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin-bottom: 2px;
+}
+.hgadm-kicker__name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ad-primary);
+}
+.hgadm-kicker__period {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+/* ---------- League schedule ----------
+   The week's opening and closing instants on both clocks. ET leads each row
+   because the league is operated on it — the weeks are cut and settled against
+   those instants — and Korean time follows because that is what the team
+   reads. Both come from Intl with a named zone, so the offset is whatever the
+   IANA database says it was at that instant. */
+.hgadm-schedule {
+  margin-top: 12px;
+  display: grid;
+  gap: 3px;
+  font-size: 12.5px;
+}
+.hgadm-schedule__basis {
+  color: var(--ink-3);
+  margin-bottom: 2px;
+}
+.hgadm-schedule__basis strong {
+  color: var(--ink-2);
+}
+.hgadm-schedule__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+.hgadm-schedule__label {
+  min-width: 56px;
+  color: var(--ink-3);
+}
+.hgadm-schedule__et {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  color: var(--ink);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+/* EST or EDT, as it actually stood on that date. */
+.hgadm-schedule__zone {
+  padding: 0 5px;
+  border-radius: 4px;
+  background: var(--surface-3);
+  color: var(--ink-3);
+  font-size: 11px;
+  font-weight: 600;
+}
+.hgadm-schedule__kst {
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.hgadm-schedule__remaining {
+  font-weight: 700;
+  color: var(--ad-primary);
+}
+.hgadm-schedule__remaining.is-ended {
+  color: var(--ad-danger);
+}
+
+/* The waiting queue reads as a stat but behaves as a link, so it gets the
+   affordance of one without leaving the row of numbers. */
+.hgadm-season__waiting {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 4px 8px;
+  margin: -4px -8px;
+  border-radius: var(--ad-radius-sm);
+  color: inherit;
+  text-decoration: none;
+  transition: background 0.14s ease;
+}
+.hgadm-season__waiting:hover {
+  background: var(--ad-primary-soft);
+}
+.hgadm-season__waiting .hgadm-season__stat-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--ad-primary);
+}
+
 /* ---------- Tier chip ----------
    The tier in its own colour, borrowed from the member app's ladder
    (src/lib/league.ts). The colour arrives inline because it belongs to the
@@ -1392,11 +1499,6 @@ body {
 }
 .hgadm-fact--demote .hgadm-fact__value {
   color: var(--ad-danger);
-}
-.hgadm-fact--period .hgadm-fact__value {
-  font-weight: 600;
-  font-size: 14px;
-  color: var(--ink-2);
 }
 
 /* ---------- Active-league season header ----------

@@ -11,7 +11,11 @@ import { UsersPage } from "./pages/Users";
 import { UserDetailPage } from "./pages/UserDetail";
 import { AdminsPage } from "./pages/Admins";
 import { AuditLogsPage } from "./pages/AuditLogs";
-import { LeagueDetailPage, LeaguesPage } from "./pages/Leagues";
+import {
+  LeagueDetailPage,
+  LeaguesPage,
+  UnassignedMembersPage,
+} from "./pages/Leagues";
 import { PlansPage } from "./pages/Plans";
 import { CouponsPage } from "./pages/Coupons";
 import { SubscriptionsPage } from "./pages/Subscriptions";
@@ -84,6 +88,7 @@ const router = createBrowserRouter(
         <Route path="/users" element={<RequireScope scope="users:read"><UsersPage /></RequireScope>} />
         <Route path="/users/:userId" element={<RequireScope scope="users:read"><UserDetailPage /></RequireScope>} />
         <Route path="/leagues" element={<RequireScope scope="users:read"><LeaguesPage /></RequireScope>} />
+        <Route path="/leagues/unassigned" element={<RequireScope scope="users:read"><UnassignedMembersPage /></RequireScope>} />
         <Route path="/leagues/:seasonId/:groupId" element={<RequireScope scope="users:read"><LeagueDetailPage /></RequireScope>} />
         <Route path="/courses" element={<RequireScope scope="content:read"><CoursesPage /></RequireScope>} />
         <Route path="/lectures" element={<RequireScope scope="content:read"><LecturesPage /></RequireScope>} />

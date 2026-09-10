@@ -42,6 +42,7 @@ const SEASON: AdminLeagueSeasonContext = {
   ends_at: "2026-09-14T01:00:00Z", // Sun 21:00 EDT
   league_count: 4,
   participant_count: 96,
+  unassigned_count: 37,
 };
 
 function league(overrides: Partial<AdminLeagueSummary> = {}): AdminLeagueSummary {
@@ -251,7 +252,7 @@ describe("the league detail", () => {
     expect(screen.getByText("2026.09.07 ~ 2026.09.13")).toBeInTheDocument();
   });
 
-  it("reads as name, then the numbers, then what a click does", async () => {
+  it("reads as cycle, then name, then the numbers, then what a click does", async () => {
     renderDetail([
       member(),
       member({ user_id: "usr_2", rank: 2, band: "promote" }),
@@ -259,16 +260,22 @@ describe("the league detail", () => {
     ]);
     await screen.findByRole("heading");
 
-    // 1 — the league's name.
-    expect(screen.getByRole("heading").textContent).toContain("Yellow 리그 1그룹");
-    // 2 — how full it is and who is moving.
+    // 1 — the cycle, above the title: which week's standings these are.
+    const kicker = document.querySelector(".hgadm-kicker")!;
+    expect(kicker.textContent).toContain("2026 가을 시즌 2주차");
+    expect(kicker.textContent).toContain("2026.09.07 ~ 2026.09.13");
+    const heading = screen.getByRole("heading");
+    expect(kicker.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // 2 — the league's own name.
+    expect(heading.textContent).toContain("Yellow 리그 1그룹");
+    // 3 — how full it is and who is moving.
     const facts = document.querySelector(".hgadm-page-head__facts")!;
-    expect(facts.textContent).toContain("3/30명");
+    expect(facts.textContent).toContain("3 / 30");
     expect(facts.textContent).toContain("승급권");
     expect(facts.textContent).toContain("2명");
     expect(facts.textContent).toContain("강등권");
     expect(facts.textContent).toContain("1명");
-    // 3 — the guidance, in that order below them.
+    // 4 — the guidance, in that order below them.
     const desc = document.querySelector(".hgadm-page-head__desc")!;
     expect(desc.textContent).toBe("회원을 클릭하면 해당 회원 상세 페이지로 이동합니다.");
     expect(facts.compareDocumentPosition(desc) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -301,7 +308,7 @@ describe("the league detail", () => {
     await screen.findByRole("heading");
 
     const facts = document.querySelector(".hgadm-page-head__facts")!;
-    expect(facts.textContent).toContain("28/30명");
+    expect(facts.textContent).toContain("28 / 30");
     expect(facts.textContent).toContain("6명");
     expect(facts.textContent).toContain("4명");
   });

@@ -1,12 +1,14 @@
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Trophy } from "lucide-react";
+import { ArrowLeft, ChevronRight, Trophy } from "lucide-react";
 import { useUrlFilters } from "../lib/urlFilters";
 import { adminApi } from "../api";
 import type {
   AdminLeagueMember,
   AdminLeagueSeasonContext,
   AdminLeagueSummary,
+  AdminUnassignedMember,
 } from "../api";
 import { errorMessage } from "../../lib/http";
 import {
@@ -19,10 +21,19 @@ import {
   SearchBox,
   Select,
   Timestamp,
+  statusLabel,
 } from "../components/kit";
 import type { Column } from "../components/kit";
 import { personName } from "../lib/adminIdentity";
 import { leagueName, leaguePeriod, tierColor, tierName } from "../lib/leagueNames";
+import {
+  KST_ZONE,
+  LEAGUE_ZONE,
+  formatInZone,
+  formatRemaining,
+  timeRemaining,
+  zoneAbbreviation,
+} from "../lib/leagueClock";
 import { LEAGUE_TIERS } from "../../lib/league";
 import { originFrom, useRestoreScroll } from "../lib/navigation";
 
@@ -94,6 +105,14 @@ function CapacityBar({ filled, capacity }: { filled: number; capacity: number })
  * text for support, where it is genuinely the thing you quote.
  */
 function SeasonHeader({ seasons }: { seasons: AdminLeagueSeasonContext[] }) {
+  // The remaining time is the one value that goes stale while the page sits
+  // open, so it is recomputed each minute rather than at fetch time.
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
   if (seasons.length === 0) return null;
   return (
     <div className="hgadm-season">
@@ -107,6 +126,7 @@ function SeasonHeader({ seasons }: { seasons: AdminLeagueSeasonContext[] }) {
             <div className="hgadm-season__period">
               {leaguePeriod(season.starts_at, season.ends_at)}
             </div>
+            <Schedule season={season} now={now} />
           </div>
           <div className="hgadm-season__stats">
             <div className="hgadm-season__stat">
@@ -121,9 +141,62 @@ function SeasonHeader({ seasons }: { seasons: AdminLeagueSeasonContext[] }) {
                 {season.participant_count.toLocaleString()}
               </span>
             </div>
+            {/* Not a statistic but a queue: the people who have not studied
+                yet this week, and a way straight to them. */}
+            <Link to="/leagues/unassigned" className="hgadm-season__waiting">
+              <span className="hgadm-season__stat-label">미배정 회원</span>
+              <span className="hgadm-season__stat-value">
+                {season.unassigned_count.toLocaleString()}
+                <ChevronRight size={16} strokeWidth={2.25} />
+              </span>
+            </Link>
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+/**
+ * When the week opens and closes, on both clocks.
+ *
+ * The league is *operated* on US Eastern time — the weeks are cut and settled
+ * against those instants — so ET leads each row and is labelled as the basis,
+ * with Korean time beside it because that is what the team reads. The zone
+ * abbreviation comes from the instant itself, so a week that opens on EST and
+ * closes on EDT says so rather than averaging the two.
+ */
+function Schedule({ season, now }: { season: AdminLeagueSeasonContext; now: Date }) {
+  const remaining = timeRemaining(season.ends_at, now);
+  const rows: [string, string][] = [
+    ["시작", season.starts_at],
+    ["종료", season.ends_at],
+  ];
+  return (
+    <div className="hgadm-schedule">
+      <div className="hgadm-schedule__basis">
+        운영 기준 <strong>미국 동부 시간(ET)</strong>
+      </div>
+      {rows.map(([label, at]) => (
+        <div className="hgadm-schedule__row" key={label}>
+          <span className="hgadm-schedule__label">{label}</span>
+          <span className="hgadm-schedule__et">
+            {formatInZone(at, LEAGUE_ZONE)}
+            <span className="hgadm-schedule__zone">{zoneAbbreviation(at, LEAGUE_ZONE)}</span>
+          </span>
+          <span className="hgadm-schedule__kst">
+            한국 {formatInZone(at, KST_ZONE)}
+          </span>
+        </div>
+      ))}
+      <div className="hgadm-schedule__row">
+        <span className="hgadm-schedule__label">남은 시간</span>
+        <span
+          className={`hgadm-schedule__remaining ${remaining.ended ? "is-ended" : ""}`}
+        >
+          {formatRemaining(remaining)}
+        </span>
+      </div>
     </div>
   );
 }
@@ -402,18 +475,26 @@ export function LeagueDetailPage() {
               진행 중인 리그
             </Link>
           </div>
+          {/* First line: the cycle this league belongs to. It is the page's
+              top-level context — which week's standings you are looking at —
+              so it leads, above the league's own name. */}
+          <div className="hgadm-kicker">
+            <span className="hgadm-kicker__name">{season.name}</span>
+            <span className="hgadm-kicker__period">
+              {leaguePeriod(season.starts_at, season.ends_at)}
+            </span>
+          </div>
           <h1 className="hgadm-row">
             {leagueName(league.tier, league.group_ordinal)}
             <TierChip tier={league.tier} />
           </h1>
           {/* Second line: the shape of the league — how full it is, and how
-              many are heading up or down. Written as sentences rather than as
-              a row of counters, since that is how an admin would say it. */}
+              many are heading up or down. */}
           <div className="hgadm-page-head__facts">
             <span className="hgadm-fact">
               <span className="hgadm-fact__label">참가자</span>
               <span className="hgadm-fact__value">
-                {memberTotal.toLocaleString()}/{league.capacity}명
+                {memberTotal.toLocaleString()} / {league.capacity}
               </span>
             </span>
             <span className="hgadm-fact hgadm-fact--promote">
@@ -425,12 +506,6 @@ export function LeagueDetailPage() {
               <span className="hgadm-fact__label">강등권</span>
               <span className="hgadm-fact__value">{demoteCount.toLocaleString()}명</span>
               <span className="hgadm-fact__note">{league.demote_cutoff_rank}위부터</span>
-            </span>
-            <span className="hgadm-fact hgadm-fact--period">
-              <span className="hgadm-fact__label">{season.name}</span>
-              <span className="hgadm-fact__value">
-                {leaguePeriod(season.starts_at, season.ends_at)}
-              </span>
             </span>
           </div>
           {/* Third line: what clicking a row does. */}
@@ -481,6 +556,233 @@ export function LeagueDetailPage() {
             />
           }
         />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The members who have not been placed in a league this week.
+ *
+ * A member joins on their first qualifying study activity, so this list is
+ * everyone who has not studied yet — what the app calls *dormant*. It is a
+ * work queue rather than a report: the accounts idle longest come first, and
+ * the inactive ones are marked so they can be picked out at a glance.
+ */
+export function UnassignedMembersPage() {
+  const filters = useUrlFilters();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const q = filters.value("q");
+  const inactiveOnly = filters.value("inactive") === "1";
+  const page = filters.number("page", 1);
+
+  const query = useQuery({
+    queryKey: ["admin", "leagues", "unassigned", { q, inactiveOnly, page }],
+    queryFn: () =>
+      adminApi.listUnassignedMembers({
+        q: q || undefined,
+        inactive: inactiveOnly ? "true" : undefined,
+        page,
+        page_size: 25,
+      }),
+  });
+
+  useRestoreScroll(query.isSuccess);
+
+  const columns: Column<AdminUnassignedMember>[] = [
+    {
+      key: "member",
+      header: "회원",
+      render: (m) => {
+        const label = personName({ name: m.name, email: m.email, user_id: m.user_id });
+        const secondary = [m.nickname, m.email].filter(
+          (part): part is string => Boolean(part) && part !== label,
+        );
+        return (
+          <div>
+            <div className="hgadm-cell-main">{label}</div>
+            {secondary.length > 0 && (
+              <div className="hgadm-cell-sub hgadm-truncate">{secondary.join(" · ")}</div>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      key: "activity",
+      header: "마지막 학습",
+      render: (m) =>
+        m.last_activity_at ? (
+          <div className="hgadm-nowrap">
+            <Timestamp at={m.last_activity_at} />
+          </div>
+        ) : (
+          <span className="hgadm-muted hgadm-nowrap">학습 기록 없음</span>
+        ),
+      width: 160,
+    },
+    {
+      key: "idle",
+      header: "경과",
+      numeric: true,
+      render: (m) => (
+        <span className="hgadm-cell-main hgadm-nowrap">
+          {m.days_since_activity === null ? "—" : `${m.days_since_activity.toLocaleString()}일`}
+        </span>
+      ),
+      width: 100,
+    },
+    {
+      key: "state",
+      header: "상태",
+      render: (m) => (
+        <div className="hgadm-row hgadm-nowrap" style={{ gap: 6 }}>
+          {/* Dormancy is the reason they are on this list at all, so it is the
+              badge that carries colour; the account status only speaks up when
+              it is not the ordinary "active". */}
+          <Badge tone={m.inactive ? "danger" : "neutral"} dot>
+            {m.inactive ? "휴면" : "대기"}
+          </Badge>
+          {m.status !== "active" && (
+            <Badge tone="warning">{statusLabel(m.status)}</Badge>
+          )}
+        </div>
+      ),
+      width: 150,
+    },
+    {
+      key: "last-league",
+      header: "직전 리그",
+      render: (m) =>
+        m.last_tier ? (
+          <div className="hgadm-nowrap">
+            <TierChip tier={m.last_tier} />
+            {m.last_season_points !== null && (
+              <span className="hgadm-cell-sub"> {m.last_season_points.toLocaleString()}P</span>
+            )}
+          </div>
+        ) : (
+          <span className="hgadm-muted">첫 참가 대기</span>
+        ),
+      width: 180,
+    },
+  ];
+
+  return (
+    <div>
+      <div className="hgadm-page-head">
+        <div>
+          <div className="hgadm-row" style={{ marginBottom: 4 }}>
+            <Link
+              to="/leagues"
+              className="hgadm-muted hgadm-row"
+              style={{ fontSize: 13, gap: 4 }}
+            >
+              <ArrowLeft size={14} strokeWidth={2} />
+              진행 중인 리그
+            </Link>
+          </div>
+          {query.data?.seasons[0] && (
+            <div className="hgadm-kicker">
+              <span className="hgadm-kicker__name">{query.data.seasons[0].name}</span>
+              <span className="hgadm-kicker__period">
+                {leaguePeriod(
+                  query.data.seasons[0].starts_at,
+                  query.data.seasons[0].ends_at,
+                )}
+              </span>
+            </div>
+          )}
+          <h1>미배정 회원</h1>
+          {query.data && (
+            <div className="hgadm-page-head__facts">
+              <span className="hgadm-fact">
+                <span className="hgadm-fact__label">미배정</span>
+                <span className="hgadm-fact__value">
+                  {query.data.total.toLocaleString()}명
+                </span>
+              </span>
+              <span className="hgadm-fact hgadm-fact--demote">
+                <span className="hgadm-fact__label">휴면</span>
+                <span className="hgadm-fact__value">
+                  {query.data.inactive_total.toLocaleString()}명
+                </span>
+                <span className="hgadm-fact__note">30일 이상 학습 없음</span>
+              </span>
+            </div>
+          )}
+          <div className="hgadm-page-head__desc">
+            이번 주 학습 기록이 없어 아직 리그에 배정되지 않은 회원입니다. 학습을
+            시작하면 자동으로 배정됩니다. 회원을 클릭하면 해당 회원 상세 페이지로
+            이동합니다.
+          </div>
+        </div>
+      </div>
+
+      <div className="hgadm-card">
+        <div className="hgadm-toolbar">
+          <SearchBox
+            value={q}
+            placeholder="이름·닉네임·이메일 검색"
+            onSearch={(next) => filters.patch({ q: next, page: null })}
+          />
+          <Select
+            value={inactiveOnly ? "1" : ""}
+            onChange={(e) => filters.patch({ inactive: e.target.value, page: null })}
+            style={{ width: 190 }}
+          >
+            <option value="">전체 미배정 회원</option>
+            <option value="1">휴면 회원만</option>
+          </Select>
+        </div>
+
+        {query.isPending ? (
+          <LoadingState />
+        ) : query.isError ? (
+          <ErrorState
+            message={errorMessage(query.error)}
+            onRetry={() => void query.refetch()}
+          />
+        ) : (
+          <>
+            <DataTable
+              columns={columns}
+              rows={query.data.items}
+              rowKey={(m) => m.user_id}
+              onRowClick={(m) =>
+                navigate(`/users/${encodeURIComponent(m.user_id)}`, {
+                  state: originFrom(
+                    "미배정 회원",
+                    `${location.pathname}${location.search}`,
+                  ),
+                })
+              }
+              empty={
+                <EmptyState
+                  icon={<Trophy size={28} strokeWidth={1.75} />}
+                  title={
+                    q || inactiveOnly
+                      ? "조건에 맞는 회원이 없습니다"
+                      : "모든 회원이 리그에 배정되었습니다"
+                  }
+                  desc={
+                    q || inactiveOnly
+                      ? "검색어나 필터를 지워보세요."
+                      : "이번 주 학습을 시작하지 않은 회원이 아직 없습니다."
+                  }
+                />
+              }
+            />
+            <Pagination
+              page={query.data.page}
+              pageSize={query.data.page_size}
+              total={query.data.total}
+              onPageChange={(next) => filters.patch({ page: String(next) })}
+            />
+          </>
+        )}
       </div>
     </div>
   );

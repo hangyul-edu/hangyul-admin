@@ -45,6 +45,7 @@ const SEASON = {
   ends_at: "2026-09-14T01:00:00Z",
   league_count: 4,
   participant_count: 96,
+  unassigned_count: 37,
 };
 
 const LEAGUE = {
