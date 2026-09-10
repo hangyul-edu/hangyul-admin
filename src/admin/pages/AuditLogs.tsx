@@ -19,6 +19,7 @@ import {
 } from "../lib/format";
 import type { Column } from "../components/kit";
 import { describeAuditAction } from "../lib/auditActions";
+import { adminName, adminNameWithEmail } from "../lib/adminIdentity";
 
 export function AuditLogsPage() {
   const filters = useUrlFilters();
@@ -53,7 +54,9 @@ export function AuditLogsPage() {
       header: "관리자",
       render: (e) => (
         <div>
-          <div className="hgadm-cell-main">{e.actor_email ?? e.actor_id ?? "—"}</div>
+          <div className="hgadm-cell-main">
+            {adminName({ name: e.actor_name, email: e.actor_email, user_id: e.actor_id })}
+          </div>
           <div className="hgadm-cell-sub">
             <Badge tone={e.actor_type === "admin" ? "brand" : "neutral"}>
               {e.actor_type}
@@ -182,7 +185,12 @@ export function AuditLogsPage() {
               <dd>{formatDateTime(detail.occurred_at)}</dd>
               <dt>수행자</dt>
               <dd>
-                {detail.actor_email ?? detail.actor_id ?? "—"} ({detail.actor_type})
+                {adminNameWithEmail({
+                  name: detail.actor_name,
+                  email: detail.actor_email,
+                  user_id: detail.actor_id,
+                })}{" "}
+                ({detail.actor_type})
               </dd>
               <dt>행위</dt>
               <dd>

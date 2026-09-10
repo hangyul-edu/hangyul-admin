@@ -96,6 +96,7 @@ export interface MetricsOverview {
   recent_admin_actions: {
     id: number;
     actor_id: string | null;
+    actor_name: string | null;
     actor_email: string | null;
     action: string;
     object_type: string;
@@ -265,6 +266,7 @@ export interface AuditLogEntry {
   id: number;
   actor_type: string;
   actor_id: string | null;
+  actor_name: string | null;
   actor_email: string | null;
   action: string;
   object_type: string;

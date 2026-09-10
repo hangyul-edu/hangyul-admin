@@ -16,7 +16,8 @@ import type { AuditLogEntry } from "../api";
 function entry(overrides: Partial<AuditLogEntry> = {}): AuditLogEntry {
   return {
     id: 1, actor_type: "admin", actor_id: "usr_admin",
-    actor_email: "admin@talkhangyul.co.kr", action: "POST /admin/admins",
+    actor_name: "관리자", actor_email: "admin@talkhangyul.co.kr",
+    action: "POST /admin/admins",
     object_type: "admin", object_id: "usr_target", user_id: "usr_target",
     request_id: "req_1", ip_address: "127.0.0.1", before: null, after: null,
     occurred_at: "2026-09-10T00:00:00Z",

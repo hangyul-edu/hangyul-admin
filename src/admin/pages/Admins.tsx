@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { adminApi } from "../api";
 import type { AdminAccount, AdminTier } from "../api";
@@ -15,6 +15,7 @@ import {
   Input,
   LoadingState,
   Modal,
+  SearchBox,
   Select,
 } from "../components/kit";
 import {
@@ -22,6 +23,7 @@ import {
 } from "../lib/format";
 import type { Column } from "../components/kit";
 import { ADMIN_TIERS as TIERS, ADMIN_TIER_LABEL as TIER_LABEL } from "../lib/adminTiers";
+import { adminName, adminNameWithEmail } from "../lib/adminIdentity";
 
 
 export function AdminsPage() {
@@ -36,8 +38,23 @@ export function AdminsPage() {
   const [editing, setEditing] = useState<AdminAccount | null>(null);
   const [editTier, setEditTier] = useState<AdminTier>("viewer");
   const [revoking, setRevoking] = useState<AdminAccount | null>(null);
+  const [search, setSearch] = useState("");
 
   const query = useQuery({ queryKey: ["admin", "admins"], queryFn: adminApi.listAdmins });
+
+  /* Filtered here rather than server-side: the endpoint returns every admin in
+     one unpaginated response — there are only ever a handful — so a round trip
+     per keystroke would buy nothing. Matches name, nickname, email or tier, so
+     "운영자" finds everyone at that tier as readily as a name does. */
+  const visible = useMemo(() => {
+    const needle = search.trim().toLowerCase();
+    const items = query.data?.items ?? [];
+    if (!needle) return items;
+    return items.filter((a) =>
+      [a.name, a.nickname, a.email, TIER_LABEL[a.admin_role], a.admin_role]
+        .some((field) => field?.toLowerCase().includes(needle)),
+    );
+  }, [query.data, search]);
 
   function refresh() {
     void qc.invalidateQueries({ queryKey: ["admin", "admins"] });
@@ -84,7 +101,7 @@ export function AdminsPage() {
       render: (a) => (
         <div>
           <div className="hgadm-cell-main">
-            {a.nickname ?? a.name}
+            {adminName(a)}
             {a.user_id === me?.user_id && (
               <span className="hgadm-muted"> (나)</span>
             )}
@@ -153,6 +170,13 @@ export function AdminsPage() {
       </div>
 
       <div className="hgadm-card">
+        <div className="hgadm-toolbar">
+          <SearchBox
+            value={search}
+            placeholder="이름 · 닉네임 · 이메일 · 등급 검색"
+            onSearch={setSearch}
+          />
+        </div>
         {query.isPending ? (
           <LoadingState />
         ) : query.isError ? (
@@ -163,9 +187,9 @@ export function AdminsPage() {
         ) : (
           <DataTable
             columns={columns}
-            rows={query.data.items}
+            rows={visible}
             rowKey={(a) => a.user_id}
-            empty="관리자 계정이 없습니다."
+            empty={search ? "검색 결과가 없습니다." : "관리자 계정이 없습니다."}
           />
         )}
       </div>
@@ -219,7 +243,7 @@ export function AdminsPage() {
 
       <Modal
         open={editing !== null}
-        title={`권한 등급 변경 — ${editing?.email ?? ""}`}
+        title={`권한 등급 변경 — ${adminNameWithEmail(editing)}`}
         onClose={() => setEditing(null)}
         footer={
           <>
@@ -253,7 +277,7 @@ export function AdminsPage() {
       <ConfirmDialog
         open={revoking !== null}
         title="관리자 권한 회수"
-        message={`${revoking?.email ?? ""} 계정의 관리자 권한을 회수하고 일반 회원으로 되돌릴까요?`}
+        message={`${adminNameWithEmail(revoking)} 계정의 관리자 권한을 회수하고 일반 회원으로 되돌릴까요?`}
         danger
         confirmLabel="회수"
         loading={revoke.isPending}
