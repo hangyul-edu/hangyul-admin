@@ -17,9 +17,12 @@ import {
   Timestamp,
 } from "../components/kit";
 import {
+  currencySymbol,
   formatMoney,
+  isZeroDecimal,
   toMajorUnits,
 } from "../lib/format";
+import { formatTick, niceScale } from "../lib/chartScale";
 
 const METRICS: { key: string; label: string }[] = [
   { key: "signups", label: "신규 가입" },
@@ -159,37 +162,8 @@ export function DashboardPage() {
 
       <div className="hgadm-card hgadm-section">
         <div className="hgadm-card__head">
-          <div className="hgadm-card__title">최근 30일 추이</div>
-          <div className="hgadm-row">
-            {METRICS.map((m) => (
-              <button
-                key={m.key}
-                className={`hgadm-tab ${metric === m.key ? "active" : ""}`}
-                onClick={() => setMetric(m.key)}
-              >
-                {m.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="hgadm-card__body">
-          {series.isPending ? (
-            <LoadingState />
-          ) : series.isError ? (
-            <ErrorState message={errorMessage(series.error)} />
-          ) : (
-            <TimeseriesChart
-              points={series.data.points}
-              money={metric === "revenue" ? currency : null}
-            />
-          )}
-        </div>
-      </div>
-
-      <div className="hgadm-card hgadm-section">
-        <div className="hgadm-card__head">
           <div>
-            <div className="hgadm-card__title">월별 매출 추이</div>
+            <div className="hgadm-card__title">월별 매출</div>
             <div className="hgadm-cell-sub" style={{ marginTop: 2 }}>
               한국 시간(KST) 달력 월 기준 결제 금액. 마지막 달은 아직 진행 중입니다.
             </div>
@@ -216,6 +190,35 @@ export function DashboardPage() {
             />
           ) : (
             <MonthlyRevenueChart data={monthly.data} />
+          )}
+        </div>
+      </div>
+
+      <div className="hgadm-card hgadm-section">
+        <div className="hgadm-card__head">
+          <div className="hgadm-card__title">최근 30일 일별 현황</div>
+          <div className="hgadm-row">
+            {METRICS.map((m) => (
+              <button
+                key={m.key}
+                className={`hgadm-tab ${metric === m.key ? "active" : ""}`}
+                onClick={() => setMetric(m.key)}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="hgadm-card__body">
+          {series.isPending ? (
+            <LoadingState />
+          ) : series.isError ? (
+            <ErrorState message={errorMessage(series.error)} />
+          ) : (
+            <TimeseriesChart
+              points={series.data.points}
+              money={metric === "revenue" ? currency : null}
+            />
           )}
         </div>
       </div>
@@ -423,7 +426,7 @@ function RecentCard({ title, children }: { title: string; children: React.ReactN
 }
 
 /** Daily 30-day chart: labels every 7th day so the axis stays readable. */
-function TimeseriesChart({
+export function TimeseriesChart({
   points,
   money,
 }: {
@@ -440,8 +443,8 @@ function TimeseriesChart({
     <BarChart
       bars={bars}
       money={money}
-      ariaLabel="최근 30일 일자별 추이 막대 차트"
-      showLabel={(i, n) => i === 0 || i === n - 1 || i % 7 === 0}
+      ariaLabel="최근 30일 일별 현황 막대 차트"
+      showLabel={(i, n) => i === 0 || i === n - 1 || (i % 7 === 0 && n - 1 - i >= 3)}
     />
   );
 }
@@ -506,6 +509,9 @@ function MonthlyRevenueChart({ data }: { data: MonthlyRevenueResponse }) {
   );
 }
 
+/** Widest a single bar is drawn, so a sparse chart is not one solid block. */
+const MAX_BAR_WIDTH = 72;
+
 interface Bar {
   key: string;
   /** Axis label. */
@@ -539,20 +545,47 @@ function BarChart({
   const [hover, setHover] = useState<number | null>(null);
   const width = 920;
   const height = 220;
-  const pad = { top: 16, right: 8, bottom: 26, left: 46 };
+
+  /*
+   * The axis is computed in the unit it is labelled in, which for money means
+   * dollars rather than cents: ticks land on $5 / $12.50, not on 500¢ rounded
+   * into two identical `$5`s. Counts are integers all the way down, so their
+   * axis is told never to offer a fractional signup.
+   */
+  const plot = useMemo(
+    () => (money ? (v: number) => toMajorUnits(v, money) : (v: number) => v),
+    [money],
+  );
+  const scale = useMemo(
+    () =>
+      niceScale(Math.max(0, ...points.map((p) => plot(p.value))), {
+        integer: !money || isZeroDecimal(money),
+      }),
+    [points, plot, money],
+  );
+  const symbol = money ? currencySymbol(money) : "";
+  const tickLabels = scale.ticks.map((t) =>
+    formatTick(t, { decimals: scale.decimals, symbol }),
+  );
+
+  // The gutter follows the widest label rather than a fixed 46px, so `$50,000`
+  // has somewhere to go instead of being clipped by the plot area.
+  const gutter = Math.max(...tickLabels.map((l) => l.length)) * 6.2 + 12;
+  const pad = { top: 16, right: 8, bottom: 26, left: Math.max(28, Math.min(96, gutter)) };
   const innerW = width - pad.left - pad.right;
   const innerH = height - pad.top - pad.bottom;
-  const max = Math.max(1, ...points.map((p) => p.value));
-  // Round the axis top to a friendly value.
-  const niceMax = useMemo(() => {
-    const raw = max;
-    const magnitude = 10 ** Math.floor(Math.log10(raw));
-    return Math.ceil(raw / magnitude) * magnitude;
-  }, [max]);
+  /*
+   * Each period owns an equal slot and its bar is centred in it. The bar is
+   * capped rather than filling its slot: a chart with one point would otherwise
+   * draw a single mark the full width of the plot, which reads as a filled area
+   * rather than as one value. The cap is above the width of a 12-bar chart, so
+   * only sparse charts are affected.
+   */
   const barGap = 2;
-  const barW = Math.max(2, innerW / points.length - barGap);
+  const slot = innerW / points.length;
+  const barW = Math.max(2, Math.min(MAX_BAR_WIDTH, slot - barGap));
+  const barX = (i: number) => pad.left + i * slot + (slot - barW) / 2;
   const fmt = (v: number) => (money ? formatMoney(v, money) : v.toLocaleString());
-  const gridLines = [0.25, 0.5, 0.75, 1];
 
   const hovered = hover !== null ? points[hover] : null;
 
@@ -580,18 +613,21 @@ function BarChart({
             <line x1={0} y1={0} x2={0} y2={6} stroke="#2563eb" strokeWidth={2.5} />
           </pattern>
         </defs>
-        {gridLines.map((f) => {
-          const y = pad.top + innerH * (1 - f);
+        {scale.ticks.map((tick, i) => {
+          const y = pad.top + innerH * (1 - tick / scale.max);
           return (
-            <g key={f}>
-              <line
-                x1={pad.left}
-                x2={width - pad.right}
-                y1={y}
-                y2={y}
-                stroke="var(--border)"
-                strokeWidth={1}
-              />
+            <g key={tick}>
+              {/* Zero already has the axis line; a grid line there would double it. */}
+              {tick > 0 && (
+                <line
+                  x1={pad.left}
+                  x2={width - pad.right}
+                  y1={y}
+                  y2={y}
+                  stroke="var(--border)"
+                  strokeWidth={1}
+                />
+              )}
               <text
                 x={pad.left - 8}
                 y={y + 4}
@@ -599,9 +635,7 @@ function BarChart({
                 fontSize={10.5}
                 fill="var(--ink-3)"
               >
-                {money
-                  ? Math.round(toMajorUnits(niceMax * f, money)).toLocaleString("en-US")
-                  : Math.round(niceMax * f).toLocaleString("en-US")}
+                {tickLabels[i]}
               </text>
             </g>
           );
@@ -615,17 +649,17 @@ function BarChart({
           strokeWidth={1}
         />
         {points.map((p, i) => {
-          const h = Math.round((p.value / niceMax) * innerH);
-          const x = pad.left + i * (barW + barGap);
+          const h = Math.round((plot(p.value) / scale.max) * innerH);
+          const x = barX(i);
           const y = pad.top + innerH - h;
           const isHover = hover === i;
           return (
             <g key={p.key}>
               {/* Full-height hit target, larger than the mark itself. */}
               <rect
-                x={x - barGap / 2}
+                x={pad.left + i * slot}
                 y={pad.top}
-                width={barW + barGap}
+                width={slot}
                 height={innerH}
                 fill="transparent"
                 onMouseEnter={() => setHover(i)}
@@ -660,7 +694,7 @@ function BarChart({
         <div
           style={{
             position: "absolute",
-            left: `${((pad.left + hover * (barW + barGap) + barW / 2) / width) * 100}%`,
+            left: `${((pad.left + (hover + 0.5) * slot) / width) * 100}%`,
             top: 0,
             transform: "translateX(-50%)",
             background: "#2b2019",

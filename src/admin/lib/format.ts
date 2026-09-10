@@ -181,6 +181,36 @@ export function formatMoney(cents: number, currency: string): string {
   }
 }
 
+/** Currencies whose smallest unit IS the unit — for a chart axis to know. */
+export function isZeroDecimal(currency: string): boolean {
+  return ZERO_DECIMAL.has(currency.toUpperCase());
+}
+
+/**
+ * Just the symbol — `$`, `₩` — for a chart axis.
+ *
+ * An axis names its currency once per tick and has no room for `US$12.99`, so
+ * it takes the symbol from the same `en-US` formatting `formatMoney` uses and
+ * puts it in front of a plain number. An unknown code has no symbol to show,
+ * and returning the code would collide with the digits; the empty string keeps
+ * the axis readable and the tooltip still spells the amount out in full.
+ */
+export function currencySymbol(currency: string): string {
+  const code = currency.toUpperCase();
+  try {
+    const parts = new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: code,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).formatToParts(0);
+    const symbol = parts.find((p) => p.type === "currency")?.value ?? "";
+    return symbol === code ? "" : symbol;
+  } catch {
+    return "";
+  }
+}
+
 export function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);

@@ -99,7 +99,7 @@ function renderPage() {
 
 /** The card wrapping the monthly chart, found via its title. */
 function monthlyCard(): HTMLElement {
-  return screen.getByText("월별 매출 추이").closest(".hgadm-card") as HTMLElement;
+  return screen.getByText("월별 매출").closest(".hgadm-card") as HTMLElement;
 }
 
 describe("monthLabel", () => {
@@ -255,7 +255,7 @@ describe("DashboardPage revenue", () => {
 
   it("labels every month and shows the year when it rolls over", async () => {
     renderPage();
-    await screen.findByText("월별 매출 추이");
+    await screen.findByText("월별 매출");
     const card = within(monthlyCard());
 
     // Mid-year months carry just the month...
@@ -269,7 +269,7 @@ describe("DashboardPage revenue", () => {
 
   it("marks the in-progress month so a partial bar is not read as a drop", async () => {
     renderPage();
-    await screen.findByText("월별 매출 추이");
+    await screen.findByText("월별 매출");
 
     expect(screen.getByText("이번 달 (진행 중 · 1일~오늘)")).toBeInTheDocument();
     expect(screen.getByText("완료된 달")).toBeInTheDocument();
@@ -286,7 +286,7 @@ describe("DashboardPage revenue", () => {
 
   it("draws one bar per non-zero month and skips the empty one", async () => {
     renderPage();
-    await screen.findByText("월별 매출 추이");
+    await screen.findByText("월별 매출");
 
     // 2026-02 is 0, so it has no mark — but it still occupies its slot on the
     // axis, which is what keeps the spacing honest.
@@ -297,7 +297,7 @@ describe("DashboardPage revenue", () => {
   it("refetches when the admin picks a different range", async () => {
     const user = userEvent.setup();
     renderPage();
-    await screen.findByText("월별 매출 추이");
+    await screen.findByText("월별 매출");
 
     await user.click(within(monthlyCard()).getByRole("button", { name: "24개월" }));
 
@@ -319,7 +319,7 @@ describe("DashboardPage revenue", () => {
 
   it("keeps the KPI and the last chart bar in agreement", async () => {
     renderPage();
-    await screen.findByText("월별 매출 추이");
+    await screen.findByText("월별 매출");
 
     // Both come from the same server-side query; the fixture mirrors that, and
     // the assertion documents the invariant the backend guarantees.
