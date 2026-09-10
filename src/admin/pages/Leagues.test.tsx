@@ -181,18 +181,29 @@ describe("the active leagues list", () => {
     expect(await screen.findByText("DETAIL")).toBeInTheDocument();
   });
 
-  it("passes the search and tier filter through", async () => {
+  it("filters the list by tier", async () => {
+    // Searching the league list by name is gone: there are ten leagues and
+    // they are all on screen. The tier filter is the list's own control; the
+    // search above it answers a different question, about a person.
     const user = userEvent.setup();
     renderList([league()]);
     await screen.findByText("Yellow 리그 1그룹");
 
-    await user.type(screen.getByPlaceholderText("리그 검색 (예: Golden)"), "grp-7f3a{Enter}");
+    await user.click(screen.getByText("티어: 전체"));
+    await user.click(await screen.findByRole("option", { name: "Golden" }));
 
     await waitFor(() =>
       expect(listActiveLeagues).toHaveBeenCalledWith(
-        expect.objectContaining({ q: "grp-7f3a" }),
+        expect.objectContaining({ tier: "golden" }),
       ),
     );
+  });
+
+  it("no longer offers a league-name search", () => {
+    renderList([league()]);
+    return screen.findByText("Yellow 리그 1그룹").then(() => {
+      expect(screen.queryByPlaceholderText(/리그 검색/)).not.toBeInTheDocument();
+    });
   });
 
   it("says so plainly when nothing is running", async () => {
@@ -204,7 +215,7 @@ describe("the active leagues list", () => {
     ).toBeInTheDocument();
   });
 
-  it("distinguishes an empty search from an empty league table", async () => {
+  it("distinguishes an empty filter from an empty league table", async () => {
     // "No leagues at all" and "none matched your filter" call for different
     // next actions, so they must not share one message.
     const user = userEvent.setup();
@@ -214,7 +225,8 @@ describe("the active leagues list", () => {
     listActiveLeagues.mockResolvedValue({
       items: [], total: 0, page: 1, page_size: 25, seasons: [SEASON],
     });
-    await user.type(screen.getByPlaceholderText("리그 검색 (예: Golden)"), "zzz{Enter}");
+    await user.click(screen.getByText("티어: 전체"));
+    await user.click(await screen.findByRole("option", { name: "Golden" }));
 
     expect(await screen.findByText("조건에 맞는 리그가 없습니다")).toBeInTheDocument();
   });
@@ -249,7 +261,9 @@ describe("the league detail", () => {
     // The heading names the league; the chip beside it repeats the tier.
     await screen.findByText("2026 가을 시즌 2주차");
     expect(screen.getByRole("heading").textContent).toContain("Yellow 리그 1그룹");
-    expect(screen.getByText("2026.09.07 ~ 2026.09.13")).toBeInTheDocument();
+    // Carries its zone: the portal's own timestamps are Korean, so a bare
+    // range beside them would be ambiguous.
+    expect(screen.getByText("2026.09.07 ~ 2026.09.13 (ET)")).toBeInTheDocument();
   });
 
   it("reads as cycle, then name, then the numbers, then what a click does", async () => {
@@ -263,7 +277,7 @@ describe("the league detail", () => {
     // 1 — the cycle, above the title: which week's standings these are.
     const kicker = document.querySelector(".hgadm-kicker")!;
     expect(kicker.textContent).toContain("2026 가을 시즌 2주차");
-    expect(kicker.textContent).toContain("2026.09.07 ~ 2026.09.13");
+    expect(kicker.textContent).toContain("2026.09.07 ~ 2026.09.13 (ET)");
     const heading = screen.getByRole("heading");
     expect(kicker.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     // 2 — the league's own name.
@@ -401,7 +415,10 @@ describe("the cycle above the list", () => {
     renderList([league(), league({ group_id: "grp-b21c", group_ordinal: 2 })]);
 
     expect(await screen.findByText("2026 가을 시즌 2주차")).toBeInTheDocument();
-    expect(screen.getByText("2026.09.07 ~ 2026.09.13")).toBeInTheDocument();
+    // The period is stated by the schedule block: on both clocks, each named.
+    const schedule = document.querySelector(".hgadm-schedule")!;
+    expect(schedule.textContent).toContain("2026.09.07 (월) 00:00");
+    expect(schedule.textContent).toContain("한국 2026.09.07 (월) 13:00");
   });
 
   it("does not repeat the season and period down the table", async () => {
@@ -418,7 +435,7 @@ describe("the cycle above the list", () => {
       expect.arrayContaining(["리그", "티어", "참가자", "포인트", "상태"]),
     );
     // And the period appears once — in the header, not per row.
-    expect(screen.getAllByText("2026.09.07 ~ 2026.09.13")).toHaveLength(1);
+    expect(document.querySelectorAll(".hgadm-schedule")).toHaveLength(1);
   });
 
   it("keeps the internal key out of the header too", async () => {

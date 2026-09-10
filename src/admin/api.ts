@@ -305,6 +305,38 @@ export interface AdminLeagueSeasonContext {
   unassigned_count: number;
 }
 
+/** Where a member currently stands, if they are in a league at all. */
+export interface AdminMemberLeagueAssignment {
+  season_id: string;
+  group_id: string;
+  group_ordinal: number;
+  tier: string;
+  rank: number;
+  points: number;
+  band: string;
+  participants: number;
+  season_name: string;
+  starts_at: string;
+  ends_at: string;
+}
+
+export interface AdminMemberLookupResult {
+  user_id: string;
+  name: string | null;
+  nickname: string | null;
+  email: string;
+  status: string;
+  role: string;
+  assignment: AdminMemberLeagueAssignment | null;
+}
+
+export interface AdminMemberLookupPage {
+  items: AdminMemberLookupResult[];
+  total: number;
+  truncated: boolean;
+  seasons: AdminLeagueSeasonContext[];
+}
+
 /** One member waiting to be placed in a league. */
 export interface AdminUnassignedMember {
   user_id: string;
@@ -746,6 +778,8 @@ export const adminApi = {
   // Leagues
   listActiveLeagues: (params: Query) =>
     http.get<AdminLeaguesPage>("/admin/leagues", params),
+  lookupMemberLeague: (params: Query) =>
+    http.get<AdminMemberLookupPage>("/admin/leagues/member-lookup", params),
   listUnassignedMembers: (params: Query) =>
     http.get<AdminUnassignedMembersPage>("/admin/leagues/unassigned", params),
   getLeague: (seasonId: string, groupId: string, params?: Query) =>

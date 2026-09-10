@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ChevronRight, Trophy } from "lucide-react";
+import { ArrowLeft, ChevronRight, Search, Trophy } from "lucide-react";
 import { useUrlFilters } from "../lib/urlFilters";
 import { adminApi } from "../api";
 import type {
   AdminLeagueMember,
   AdminLeagueSeasonContext,
   AdminLeagueSummary,
+  AdminMemberLookupResult,
   AdminUnassignedMember,
 } from "../api";
 import { errorMessage } from "../../lib/http";
@@ -31,6 +32,7 @@ import {
   LEAGUE_ZONE,
   formatInZone,
   formatRemaining,
+  periodInZone,
   timeRemaining,
   zoneAbbreviation,
 } from "../lib/leagueClock";
@@ -123,9 +125,6 @@ function SeasonHeader({ seasons }: { seasons: AdminLeagueSeasonContext[] }) {
               {season.name}
               <span className="hgadm-badge hgadm-badge--success">진행 중</span>
             </div>
-            <div className="hgadm-season__period">
-              {leaguePeriod(season.starts_at, season.ends_at)}
-            </div>
             <Schedule season={season} now={now} />
           </div>
           <div className="hgadm-season__stats">
@@ -201,6 +200,153 @@ function Schedule({ season, now }: { season: AdminLeagueSeasonContext; now: Date
   );
 }
 
+/**
+ * "Which league is this person in?"
+ *
+ * Searching the league list by name was answering a question nobody asks —
+ * there are ten leagues and they are all on screen. The question an admin
+ * actually arrives with is about a person, so the search is over accounts and
+ * the answer is their placement. Not being placed is an answer too, with the
+ * queue it belongs to one click away.
+ */
+function MemberLookup() {
+  const filters = useUrlFilters();
+  const term = filters.value("member");
+
+  const query = useQuery({
+    queryKey: ["admin", "leagues", "member-lookup", term],
+    queryFn: () => adminApi.lookupMemberLeague({ q: term }),
+    enabled: term.trim().length > 0,
+  });
+
+  return (
+    <div className="hgadm-card hgadm-section">
+      <div className="hgadm-card__head">
+        <div>
+          <div className="hgadm-card__title">회원 소속 리그 찾기</div>
+          <div className="hgadm-cell-sub" style={{ marginTop: 2 }}>
+            회원을 검색하면 이번 주 어느 리그에 속해 있는지 확인할 수 있습니다.
+          </div>
+        </div>
+      </div>
+      <div className="hgadm-toolbar">
+        <SearchBox
+          value={term}
+          placeholder="회원 이름·닉네임·이메일 검색"
+          onSearch={(next) => filters.patch({ member: next })}
+        />
+      </div>
+
+      {term.trim().length > 0 && (
+        <div className="hgadm-lookup">
+          {query.isPending ? (
+            <LoadingState />
+          ) : query.isError ? (
+            <ErrorState
+              message={errorMessage(query.error)}
+              onRetry={() => void query.refetch()}
+            />
+          ) : query.data.items.length === 0 ? (
+            <EmptyState
+              icon={<Search size={28} strokeWidth={1.75} />}
+              title="일치하는 회원이 없습니다"
+              desc="이름·닉네임·이메일의 일부로 다시 검색해 보세요."
+            />
+          ) : (
+            <>
+              {/* Several matches are listed rather than resolved by guessing:
+                  two people can share a name, and picking one silently would
+                  be worse than asking. */}
+              {query.data.items.length > 1 && (
+                <div className="hgadm-lookup__count">
+                  {query.data.total.toLocaleString()}명이 검색되었습니다. 확인할 회원을
+                  선택하세요.
+                  {query.data.truncated && " 결과가 많아 일부만 표시합니다."}
+                </div>
+              )}
+              <div className="hgadm-lookup__list">
+                {query.data.items.map((result) => (
+                  <LookupResult key={result.user_id} result={result} />
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** One matched account, and where it stands. */
+function LookupResult({ result }: { result: AdminMemberLookupResult }) {
+  const label = personName({
+    name: result.name,
+    email: result.email,
+    user_id: result.user_id,
+  });
+  const secondary = [result.nickname, result.email].filter(
+    (part): part is string => Boolean(part) && part !== label,
+  );
+  const league = result.assignment;
+
+  return (
+    <div className="hgadm-lookup__row">
+      <div className="hgadm-lookup__who">
+        <Link to={`/users/${encodeURIComponent(result.user_id)}`} className="hgadm-lookup__name">
+          {label}
+        </Link>
+        {secondary.length > 0 && (
+          <div className="hgadm-cell-sub hgadm-truncate">{secondary.join(" · ")}</div>
+        )}
+      </div>
+
+      {league ? (
+        <Link
+          className="hgadm-lookup__league"
+          to={`/leagues/${encodeURIComponent(league.season_id)}/${encodeURIComponent(league.group_id)}`}
+        >
+          <span className="hgadm-lookup__league-name">
+            {leagueName(league.tier, league.group_ordinal)}
+            <TierChip tier={league.tier} />
+          </span>
+          <span className="hgadm-lookup__stats">
+            <span className="hgadm-fact">
+              <span className="hgadm-fact__label">순위</span>
+              <span className="hgadm-fact__value">
+                {league.rank} / {league.participants}
+              </span>
+            </span>
+            <span className="hgadm-fact">
+              <span className="hgadm-fact__label">포인트</span>
+              <span className="hgadm-fact__value">{league.points.toLocaleString()}</span>
+            </span>
+            <Badge tone={BAND_TONE[league.band] ?? "neutral"}>
+              {BAND_LABEL[league.band] ?? league.band}
+            </Badge>
+          </span>
+          <span className="hgadm-lookup__period">
+            {league.season_name} · {leaguePeriod(league.starts_at, league.ends_at)}
+          </span>
+          <ChevronRight size={18} strokeWidth={2.25} className="hgadm-lookup__chevron" />
+        </Link>
+      ) : (
+        <div className="hgadm-lookup__none">
+          <Badge tone="warning" dot>
+            미배정
+          </Badge>
+          <span className="hgadm-lookup__none-text">
+            이번 주 학습 기록이 없어 아직 리그에 배정되지 않았습니다.
+          </span>
+          <Link to="/leagues/unassigned" className="hgadm-lookup__link">
+            미배정 회원 보기
+            <ChevronRight size={14} strokeWidth={2.25} />
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function LeaguesPage() {
   const filters = useUrlFilters();
   const navigate = useNavigate();
@@ -240,7 +386,9 @@ export function LeaguesPage() {
     {
       key: "participants",
       header: "참가자",
-      numeric: true,
+      // Left-aligned, not numeric: "30 / 30" is a label rather than a figure,
+      // and right-aligning it left every row's left edge in a different place
+      // while the header sat over the far end of the column.
       render: (l) => (
         <div className="hgadm-nowrap">
           <span className="hgadm-cell-main">{l.participants.toLocaleString()}</span>
@@ -290,13 +438,10 @@ export function LeaguesPage() {
 
       {query.data && <SeasonHeader seasons={query.data.seasons} />}
 
+      <MemberLookup />
+
       <div className="hgadm-card">
         <div className="hgadm-toolbar">
-          <SearchBox
-            value={q}
-            placeholder="리그 검색 (예: Golden)"
-            onSearch={(next) => filters.patch({ q: next, page: null })}
-          />
           <Select
             value={tier}
             onChange={(e) => filters.patch({ tier: e.target.value, page: null })}
@@ -562,6 +707,40 @@ export function LeagueDetailPage() {
 }
 
 /**
+ * The league week on both clocks, labelled.
+ *
+ * The league is cut on US Eastern time; every other timestamp in the portal is
+ * Korean. Showing the period as a bare range beside a Korean "last studied"
+ * column leaves the reader unable to tell which clock either is on — so both
+ * are stated, each with its zone named.
+ */
+function PeriodInBothZones({ season }: { season: AdminLeagueSeasonContext }) {
+  return (
+    <div className="hgadm-zones">
+      <div className="hgadm-zones__row">
+        <span className="hgadm-zones__label">
+          리그 기간 <strong>ET</strong>
+        </span>
+        <span className="hgadm-zones__value">
+          {periodInZone(season.starts_at, season.ends_at, LEAGUE_ZONE)}
+          <span className="hgadm-schedule__zone">
+            {zoneAbbreviation(season.starts_at, LEAGUE_ZONE)}
+          </span>
+        </span>
+      </div>
+      <div className="hgadm-zones__row">
+        <span className="hgadm-zones__label">
+          한국 시간 <strong>KST</strong>
+        </span>
+        <span className="hgadm-zones__value hgadm-zones__value--muted">
+          {periodInZone(season.starts_at, season.ends_at, KST_ZONE)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/**
  * The members who have not been placed in a league this week.
  *
  * A member joins on their first qualifying study activity, so this list is
@@ -612,7 +791,9 @@ export function UnassignedMembersPage() {
     },
     {
       key: "activity",
-      header: "마지막 학습",
+      // The zone is named in the header because the column sits on a page that
+      // also shows an ET period; unlabelled, the two are indistinguishable.
+      header: "마지막 학습 (KST)",
       render: (m) =>
         m.last_activity_at ? (
           <div className="hgadm-nowrap">
@@ -687,15 +868,12 @@ export function UnassignedMembersPage() {
           {query.data?.seasons[0] && (
             <div className="hgadm-kicker">
               <span className="hgadm-kicker__name">{query.data.seasons[0].name}</span>
-              <span className="hgadm-kicker__period">
-                {leaguePeriod(
-                  query.data.seasons[0].starts_at,
-                  query.data.seasons[0].ends_at,
-                )}
-              </span>
             </div>
           )}
           <h1>미배정 회원</h1>
+          {query.data?.seasons[0] && (
+            <PeriodInBothZones season={query.data.seasons[0]} />
+          )}
           {query.data && (
             <div className="hgadm-page-head__facts">
               <span className="hgadm-fact">

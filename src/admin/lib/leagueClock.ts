@@ -84,6 +84,11 @@ function zoneOffsetMs(date: Date, timeZone: string): number {
   return asUtc - date.getTime();
 }
 
+/** A period on one clock: `"2026.09.07 (월) 00:00 ~ 2026.09.13 (일) 21:00"`. */
+export function periodInZone(startsAt: string, endsAt: string, timeZone: string): string {
+  return `${formatInZone(startsAt, timeZone)} ~ ${formatInZone(endsAt, timeZone)}`;
+}
+
 export interface Remaining {
   days: number;
   hours: number;

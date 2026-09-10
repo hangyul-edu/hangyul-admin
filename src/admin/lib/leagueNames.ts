@@ -62,7 +62,14 @@ export function leagueDate(value: string): string {
   return parts.replace(/-/g, ".");
 }
 
-/** `"2026.09.07 ~ 2026.09.13"` — the period as the header shows it. */
+/**
+ * `"2026.09.07 ~ 2026.09.13 (ET)"` — the period at a glance.
+ *
+ * Carries its timezone even in this shortest form. The league is cut on US
+ * Eastern time while the portal's own timestamps are Korean, so a bare range
+ * beside a Korean one is genuinely ambiguous — the reader cannot tell which
+ * clock either is on. Where there is room, `periodInZone` states both in full.
+ */
 export function leaguePeriod(startsAt: string, endsAt: string): string {
-  return `${leagueDate(startsAt)} ~ ${leagueDate(endsAt)}`;
+  return `${leagueDate(startsAt)} ~ ${leagueDate(endsAt)} (ET)`;
 }
