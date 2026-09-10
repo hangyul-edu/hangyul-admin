@@ -1327,6 +1327,32 @@ body {
   display: none;
 }
 
+/* ---------- Timestamps ----------
+   Two lines, each unbreakable: the date, then the time to the second. Split so
+   neither line has to survive a wrap — a timestamp broken mid-value is as
+   unreadable as a broken IP, and a single string would wrap wherever the
+   column happened to end.
+
+   No width is set. Each line is nowrap, so the element is as wide as its
+   longest line and no wider; every row's timestamp has the same shape, so the
+   column lands the same width on its own. tabular-nums keeps the digits in
+   vertical register down that column, which is what makes a list of times
+   scannable. */
+.hgadm-timestamp {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 1px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+}
+.hgadm-timestamp__date,
+.hgadm-timestamp__time {
+  white-space: nowrap;
+}
+.hgadm-timestamp__time {
+  color: var(--ink-3);
+}
+
 /* ---------- Recent-activity cards (dashboard) ----------
    One layout for all three cards — signups, payments, admin activity — so they
    read as one dashboard rather than three blocks that happen to line up.
@@ -1377,6 +1403,13 @@ a.hgadm-recent--link:hover {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  /* The clamp ellipsises when it runs out of *lines*, so a single token wider
+     than the column — a long email standing in for a missing name — would
+     otherwise be sliced mid-character against the timestamp with no ellipsis to
+     admit it. `break-word` only breaks a word that cannot fit on a line of its
+     own, so the clamp gets its second line and Korean is left alone; the
+     stronger `anywhere`, which splits ordinary words, stays banned. */
+  overflow-wrap: break-word;
   font-weight: 600;
   color: var(--ink);
   line-height: 1.45;
@@ -1434,10 +1467,12 @@ a.hgadm-recent--link:hover {
   gap: 2px;
   white-space: nowrap;
 }
-.hgadm-recent__time {
-  color: var(--ink-3);
+/* The trailing column now holds a two-line <Timestamp>; its own lines stay
+   left-aligned with each other while the block sits at the end of the row. */
+.hgadm-recent__trailing .hgadm-timestamp {
+  align-items: flex-start;
   font-size: 12px;
-  font-variant-numeric: tabular-nums; /* digits align down the column */
+  color: var(--ink-3);
   padding-top: 1px;
 }
 

@@ -13,10 +13,8 @@ import {
   Pagination,
   SearchBox,
   Select,
+  Timestamp,
 } from "../components/kit";
-import {
-  formatDateTime,
-} from "../lib/format";
 import type { Column } from "../components/kit";
 import { describeAuditAction } from "../lib/auditActions";
 import { personName, personNameWithEmail } from "../lib/adminIdentity";
@@ -46,7 +44,7 @@ export function AuditLogsPage() {
     {
       key: "when",
       header: "일시",
-      render: (e) => formatDateTime(e.occurred_at),
+      render: (e) => <Timestamp at={e.occurred_at} />,
       width: 150,
     },
     {
@@ -184,7 +182,7 @@ export function AuditLogsPage() {
           <div style={{ fontSize: 13.5 }}>
             <dl className="hgadm-dl">
               <dt>시각</dt>
-              <dd>{formatDateTime(detail.occurred_at)}</dd>
+              <dd><Timestamp at={detail.occurred_at} /></dd>
               <dt>수행자</dt>
               <dd>
                 {personNameWithEmail({

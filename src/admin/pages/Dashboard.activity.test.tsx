@@ -16,7 +16,7 @@
 // the module is really there. Same escape hatch as styles/wrapping.test.ts.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import { AdminActivityRow } from "./Dashboard";
 import type { RecentAdminActionRow } from "../api";
 
@@ -103,11 +103,13 @@ describe("what the row says", () => {
     expect(container.querySelector(".hgadm-recent__tertiary")).toBeNull();
   });
 
-  it("renders the timestamp as a machine-readable time", () => {
-    render(<AdminActivityRow entry={entry()} />);
-    const time = screen.getByText(/2026/);
-    expect(time.tagName).toBe("TIME");
+  it("renders the timestamp as a machine-readable time, split over two lines", () => {
+    const { container } = render(<AdminActivityRow entry={entry()} />);
+    const time = container.querySelector("time")!;
+    // The instant a display format must not change travels in the attribute.
     expect(time.getAttribute("datetime")).toBe("2026-09-10T04:05:00Z");
+    expect(time.querySelector(".hgadm-timestamp__date")?.textContent).toBe("2026. 09. 10.");
+    expect(time.querySelector(".hgadm-timestamp__time")?.textContent).toBe("오후 01:05:00");
   });
 });
 
@@ -151,7 +153,23 @@ describe("why the row stays aligned", () => {
 
   it("sizes no column with a hard-coded width", () => {
     // A fixed width is the trap this layout exists to avoid: it looks tidy
-    // until a longer timestamp format or a translation clips.
-    expect(block).not.toMatch(/\.hgadm-recent__time\s*{[^}]*[^-]width:\s*\d/);
+    // until a longer timestamp format or a translation clips. The trailing
+    // column is sized by its own nowrap content instead.
+    expect(block).not.toMatch(/\.hgadm-recent__trailing\s*{[^}]*[^-]width:\s*\d/);
+  });
+});
+
+describe("a value with no spaces in it", () => {
+  const css: string = readFileSync("src/admin/styles/admin.css", "utf8");
+
+  it("breaks rather than being sliced against the timestamp", () => {
+    // A signup with no name shows its email as the primary. One long address is
+    // a single unbreakable token, and the line clamp only ellipsises when it
+    // runs out of lines — so without this the address was cut mid-character at
+    // the column edge, with no ellipsis and no gap.
+    // `break-word` and not `anywhere`: the stronger value would break Korean
+    // mid-word, and styles/wrapping.test.ts already bans it portal-wide.
+    const block = css.slice(css.indexOf(".hgadm-recent__primary {"));
+    expect(block.slice(0, block.indexOf("}"))).toContain("overflow-wrap: break-word");
   });
 });

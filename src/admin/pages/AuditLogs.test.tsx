@@ -116,3 +116,30 @@ describe("the action column", () => {
     expect(screen.getByText("POST /admin/admins")).toBeInTheDocument();
   });
 });
+
+describe("the 시각 column", () => {
+  it("splits the date and the time onto two lines, down to the second", async () => {
+    // 04:05:42Z is 13:05:42 in Seoul. Seconds matter here: two admin actions
+    // within a minute have to be told apart and put in order.
+    const { container } = renderPage([entry({ occurred_at: "2026-09-10T04:05:42Z" })]);
+    await screen.findByText("관리자 권한 부여");
+
+    const time = container.querySelector("time")!;
+    expect(time.getAttribute("datetime")).toBe("2026-09-10T04:05:42Z");
+    expect(time.querySelector(".hgadm-timestamp__date")?.textContent).toBe("2026. 09. 10.");
+    expect(time.querySelector(".hgadm-timestamp__time")?.textContent).toBe("오후 01:05:42");
+  });
+
+  it("uses the same two lines in the detail drawer", async () => {
+    // The drawer used to format its own copy; the two are one component now.
+    const user = userEvent.setup();
+    renderPage([entry({ occurred_at: "2026-09-10T04:05:42Z" })]);
+    await user.click(await screen.findByText("관리자 권한 부여"));
+
+    await waitFor(() => expect(document.querySelectorAll("time")).toHaveLength(2));
+    for (const time of document.querySelectorAll("time")) {
+      expect(time.querySelector(".hgadm-timestamp__date")?.textContent).toBe("2026. 09. 10.");
+      expect(time.querySelector(".hgadm-timestamp__time")?.textContent).toBe("오후 01:05:42");
+    }
+  });
+});

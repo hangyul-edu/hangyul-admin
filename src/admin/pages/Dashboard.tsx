@@ -14,9 +14,9 @@ import {
   Stat,
   statusLabel,
   statusTone,
+  Timestamp,
 } from "../components/kit";
 import {
-  formatDateTime,
   formatMoney,
   toMajorUnits,
 } from "../lib/format";
@@ -406,13 +406,9 @@ export function PaymentRow({ payment }: { payment: MetricsOverview["recent_payme
   );
 }
 
-/** The timestamp every card ends its rows with. */
+/** The timestamp every card ends its rows with — the shared two-line form. */
 function RecentTime({ at }: { at: string }) {
-  return (
-    <time className="hgadm-recent__time" dateTime={at}>
-      {formatDateTime(at)}
-    </time>
-  );
+  return <Timestamp at={at} />;
 }
 
 function RecentCard({ title, children }: { title: string; children: React.ReactNode }) {

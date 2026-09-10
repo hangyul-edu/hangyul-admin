@@ -18,11 +18,21 @@
  */
 export const ADMIN_TIME_ZONE = "Asia/Seoul";
 
+/**
+ * The locale every date in the portal is formatted in.
+ *
+ * The portal has no i18n layer, so this is Korean today. It exists as a
+ * constant rather than a literal repeated at each call so that adding English
+ * later is one edit — and so the date helpers cannot drift apart in the
+ * meantime.
+ */
+export const ADMIN_LOCALE = "ko-KR";
+
 export function formatDateTime(value: string | null | undefined): string {
   if (!value) return "—";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleString("ko-KR", {
+  return d.toLocaleString(ADMIN_LOCALE, {
     timeZone: ADMIN_TIME_ZONE,
     year: "numeric",
     month: "2-digit",
@@ -36,7 +46,7 @@ export function formatDate(value: string | null | undefined): string {
   if (!value) return "—";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleDateString("ko-KR", { timeZone: ADMIN_TIME_ZONE });
+  return d.toLocaleDateString(ADMIN_LOCALE, { timeZone: ADMIN_TIME_ZONE });
 }
 
 /**
@@ -86,6 +96,44 @@ export function fromAdminInputValue(value: string | null | undefined): string | 
   const iso = `${y}-${mo}-${d}T${h}:${mi}:00+09:00`;
   const parsed = new Date(iso);
   return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
+
+/**
+ * An instant split into the two lines a timestamp is shown on.
+ *
+ * The audit screens read a column of times looking for *when*, so the seconds
+ * matter and the date should not push the time off the edge. Returning the
+ * parts rather than a joined string lets the caller put each on its own line
+ * and keep both unbreakable, which a single string with a separator cannot do.
+ *
+ * Same locale and same clock as `formatDateTime` — this changes the shape of
+ * the display, not what instant it names. Returns `null` for a missing or
+ * unparseable value so the caller decides what to show instead.
+ *
+ * Both lines are built from Intl option sets rather than a written-out pattern,
+ * so `locale` is all that has to change for the portal to read in English.
+ */
+export function formatDateTimeParts(
+  value: string | null | undefined,
+  locale: string = ADMIN_LOCALE,
+): { date: string; time: string } | null {
+  if (!value) return null;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  return {
+    date: d.toLocaleDateString(locale, {
+      timeZone: ADMIN_TIME_ZONE,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }),
+    time: d.toLocaleTimeString(locale, {
+      timeZone: ADMIN_TIME_ZONE,
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    }),
+  };
 }
 
 /** Currencies whose smallest unit IS the unit — no cents to divide out. */

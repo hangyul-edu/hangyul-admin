@@ -4,6 +4,7 @@ import { Children, isValidElement, useCallback, useEffect, useLayoutEffect, useM
 import { createPortal } from "react-dom";
 import type { ButtonHTMLAttributes, CSSProperties, InputHTMLAttributes, KeyboardEvent as ReactKeyboardEvent, ReactNode, TextareaHTMLAttributes } from "react";
 import { AlertCircle, AlertTriangle, Check, ChevronDown, Inbox, Search as SearchIcon, X } from "lucide-react";
+import { formatDateTimeParts } from "../lib/format";
 
 /* ---------- Button ---------- */
 
@@ -47,6 +48,27 @@ export function Button({
 /* ---------- Badge ---------- */
 
 export type BadgeTone = "neutral" | "success" | "warning" | "danger" | "info" | "brand";
+
+/**
+ * A timestamp shown as two unbreakable lines: the date, then the time to the
+ * second.
+ *
+ * Used wherever an operator scans a column of times looking for *when* — the
+ * audit history and the dashboard's recent-activity cards. One component so
+ * the two cannot drift; `<time dateTime>` so the machine-readable instant
+ * travels with the rendered one, which is the part a display format must not
+ * change.
+ */
+export function Timestamp({ at }: { at: string | null | undefined }) {
+  const parts = formatDateTimeParts(at);
+  if (!parts) return <span className="hgadm-muted">—</span>;
+  return (
+    <time className="hgadm-timestamp" dateTime={at ?? undefined}>
+      <span className="hgadm-timestamp__date">{parts.date}</span>
+      <span className="hgadm-timestamp__time">{parts.time}</span>
+    </time>
+  );
+}
 
 export function Badge({
   tone = "neutral",
