@@ -23,7 +23,7 @@ import {
 } from "../lib/format";
 import type { Column } from "../components/kit";
 import { ADMIN_TIERS as TIERS, ADMIN_TIER_LABEL as TIER_LABEL } from "../lib/adminTiers";
-import { adminName, adminNameWithEmail } from "../lib/adminIdentity";
+import { personName, personNameWithEmail } from "../lib/adminIdentity";
 
 
 export function AdminsPage() {
@@ -101,7 +101,7 @@ export function AdminsPage() {
       render: (a) => (
         <div>
           <div className="hgadm-cell-main">
-            {adminName(a)}
+            {personName(a)}
             {a.user_id === me?.user_id && (
               <span className="hgadm-muted"> (나)</span>
             )}
@@ -243,7 +243,7 @@ export function AdminsPage() {
 
       <Modal
         open={editing !== null}
-        title={`권한 등급 변경 — ${adminNameWithEmail(editing)}`}
+        title={`권한 등급 변경 — ${personNameWithEmail(editing)}`}
         onClose={() => setEditing(null)}
         footer={
           <>
@@ -277,7 +277,7 @@ export function AdminsPage() {
       <ConfirmDialog
         open={revoking !== null}
         title="관리자 권한 회수"
-        message={`${adminNameWithEmail(revoking)} 계정의 관리자 권한을 회수하고 일반 회원으로 되돌릴까요?`}
+        message={`${personNameWithEmail(revoking)} 계정의 관리자 권한을 회수하고 일반 회원으로 되돌릴까요?`}
         danger
         confirmLabel="회수"
         loading={revoke.isPending}

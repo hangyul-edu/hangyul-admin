@@ -77,13 +77,58 @@ describe("UsersPage", () => {
       page_size: 25,
     });
     renderPage();
-    expect(await screen.findByText("hangyul-fan")).toBeInTheDocument();
-    expect(screen.getByText("learner@talkhangyul.co.kr")).toBeInTheDocument();
+    // The name is the label; nickname and email sit under it on one line.
+    expect(await screen.findByText("학습자")).toBeInTheDocument();
+    expect(
+      screen.getByText("hangyul-fan · learner@talkhangyul.co.kr"),
+    ).toBeInTheDocument();
     expect(screen.getByText("+821••••1234")).toBeInTheDocument();
     // Status badges render the Korean label, not the raw backend enum.
     expect(screen.getByText("무료 체험")).toBeInTheDocument();
     expect(screen.queryByText("trial")).not.toBeInTheDocument();
     expect(screen.getByText(/1건 중 1–1/)).toBeInTheDocument();
+  });
+
+  it("falls back to the email when a user has no name", async () => {
+    listUsers.mockResolvedValue({
+      items: [
+        {
+          user_id: "usr_2",
+          email: "nameless@talkhangyul.co.kr",
+          name: "",
+          nickname: null,
+          phone_masked: null,
+          role: "member",
+          status: "active",
+          subscription_status: null,
+          plan_id: null,
+          created_at: "2026-07-01T00:00:00Z",
+          deactivated_at: null,
+        },
+      ],
+      total: 1,
+      page: 1,
+      page_size: 25,
+    });
+    renderPage();
+
+    // The row still identifies somebody — never a blank or a placeholder.
+    await screen.findByText("nameless@talkhangyul.co.kr");
+    const label = document.querySelector(".hgadm-cell-main");
+    expect(label?.textContent).toBe("nameless@talkhangyul.co.kr");
+    expect(screen.queryByText("(닉네임 없음)")).not.toBeInTheDocument();
+    // ...and the email is not repeated underneath itself.
+    expect(screen.getAllByText("nameless@talkhangyul.co.kr")).toHaveLength(1);
+  });
+
+  it("sorts the user column by name", async () => {
+    listUsers.mockResolvedValue({ items: [], total: 0, page: 1, page_size: 25 });
+    renderPage();
+    await screen.findByText(/사용자/);
+    // The column header sorts on what it displays, not on the old email label.
+    expect(listUsers).toHaveBeenCalledWith(
+      expect.objectContaining({ sort: "created_at" }),
+    );
   });
 
   it("shows the empty state when no users match", async () => {

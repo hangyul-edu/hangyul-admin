@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ShieldAlert } from "lucide-react";
 import { http } from "../../lib/http";
 import { useAdminAuth } from "../auth";
-import { adminNameWithEmail } from "../lib/adminIdentity";
+import { personNameWithEmail } from "../lib/adminIdentity";
 import { Button } from "./kit";
 
 interface MemberProfile {
@@ -50,7 +50,7 @@ export function AccessDenied() {
         <h1 className="hgadm-login__title">관리자 권한이 없습니다</h1>
         <p className="hgadm-login__sub">
           {who.data
-            ? `현재 ${adminNameWithEmail(who.data)} 계정으로 로그인되어 있지만, 이 계정에는 관리자 권한이 없습니다.`
+            ? `현재 ${personNameWithEmail(who.data)} 계정으로 로그인되어 있지만, 이 계정에는 관리자 권한이 없습니다.`
             : "현재 로그인된 계정에는 관리자 권한이 없습니다."}
           <br />
           로그아웃 후 관리자 계정으로 다시 로그인해 주세요.

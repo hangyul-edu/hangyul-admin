@@ -33,7 +33,7 @@ function firstNonEmpty(...values: (string | null | undefined)[]): string | null 
  * name shows its email rather than a blank — the row still has to identify
  * someone.
  */
-export function adminName(person: NamedPerson | null | undefined): string {
+export function personName(person: NamedPerson | null | undefined): string {
   if (!person) return "—";
   return firstNonEmpty(person.name, person.email, person.user_id) ?? "—";
 }
@@ -45,9 +45,9 @@ export function adminName(person: NamedPerson | null | undefined): string {
  * dropped when it would only repeat the label, so an account without a name
  * reads `someone@example.com`, never `someone@example.com (someone@example.com)`.
  */
-export function adminNameWithEmail(person: NamedPerson | null | undefined): string {
+export function personNameWithEmail(person: NamedPerson | null | undefined): string {
   if (!person) return "—";
-  const label = adminName(person);
+  const label = personName(person);
   const email = person.email?.trim();
   return email && email !== label ? `${label} (${email})` : label;
 }

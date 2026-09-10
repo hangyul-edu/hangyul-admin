@@ -27,6 +27,7 @@ import {
 } from "../lib/format";
 import type { Column } from "../components/kit";
 import { ROLE_LABELS } from "../lib/adminTiers";
+import { personName } from "../lib/adminIdentity";
 
 export function UsersPage() {
   const filters = useUrlFilters();
@@ -77,13 +78,25 @@ export function UsersPage() {
     {
       key: "user",
       header: "사용자",
-      sortKey: "email",
-      render: (u) => (
-        <div>
-          <div className="hgadm-cell-main">{u.nickname ?? "(닉네임 없음)"}</div>
-          <div className="hgadm-cell-sub">{u.email}</div>
-        </div>
-      ),
+      sortKey: "name",
+      /* The name is the label; the nickname is what the learner is called in
+         the app, so it stays beside the email rather than replacing either.
+         An account with no name falls back to the email instead of the
+         "(닉네임 없음)" placeholder this used to print. */
+      render: (u) => {
+        const label = personName(u);
+        // Drop the email from the sub-line when it IS the label, so a user
+        // without a name is not printed twice.
+        const details = [u.nickname, u.email === label ? null : u.email]
+          .filter(Boolean)
+          .join(" · ");
+        return (
+          <div>
+            <div className="hgadm-cell-main">{label}</div>
+            {details && <div className="hgadm-cell-sub">{details}</div>}
+          </div>
+        );
+      },
     },
     {
       key: "phone",

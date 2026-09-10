@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { adminApi } from "../api";
-import { adminName } from "../lib/adminIdentity";
+import { personName } from "../lib/adminIdentity";
 import type { MonthlyRevenueResponse } from "../api";
 import { errorMessage } from "../../lib/http";
 import {
@@ -222,7 +222,7 @@ export function DashboardPage() {
           {data.recent_signups.map((u) => (
             <Link key={u.user_id} to={`/users/${u.user_id}`} className="hgadm-recent-row">
               <div>
-                <div className="hgadm-cell-main">{u.nickname ?? u.email}</div>
+                <div className="hgadm-cell-main">{personName(u)}</div>
                 <div className="hgadm-cell-sub">{u.email}</div>
               </div>
               <div className="hgadm-cell-sub">{formatDateTime(u.created_at)}</div>
@@ -250,7 +250,7 @@ export function DashboardPage() {
           {data.recent_admin_actions.map((a) => (
             <div key={a.id} className="hgadm-recent-row">
               <div>
-                <div className="hgadm-cell-main">{a.actor_id ? adminName({ name: a.actor_name, email: a.actor_email, user_id: a.actor_id }) : "system"}</div>
+                <div className="hgadm-cell-main">{a.actor_id ? personName({ name: a.actor_name, email: a.actor_email, user_id: a.actor_id }) : "system"}</div>
                 <div className="hgadm-cell-sub hgadm-cell-mono">{a.action}</div>
               </div>
               <div className="hgadm-cell-sub">{formatDateTime(a.occurred_at)}</div>

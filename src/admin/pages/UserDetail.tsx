@@ -32,7 +32,7 @@ import {
   DEFAULT_GRANT_TIER,
   ROLE_LABELS,
 } from "../lib/adminTiers";
-import { adminNameWithEmail } from "../lib/adminIdentity";
+import { personName, personNameWithEmail } from "../lib/adminIdentity";
 
 export function UserDetailPage() {
   const { userId = "" } = useParams();
@@ -141,7 +141,7 @@ export function UserDetailPage() {
             </Link>
           </div>
           <h1 className="hgadm-row">
-            {user.nickname ?? user.name}
+            {personName(user)}
             <Badge tone={statusTone(user.status)} dot>
               {statusLabel(user.status)}
             </Badge>
@@ -157,6 +157,7 @@ export function UserDetailPage() {
             )}
           </h1>
           <div className="hgadm-page-head__desc">
+            {user.nickname ? `${user.nickname} · ` : ""}
             {user.email} · <span className="hgadm-cell-mono">{user.user_id}</span>
           </div>
         </div>
@@ -597,7 +598,7 @@ export function UserDetailPage() {
         }
       >
         <p className="hgadm-muted" style={{ marginTop: 0, fontSize: 12.5 }}>
-          {adminNameWithEmail(user)} 계정에 관리자 포털 접근 권한을 부여합니다. 권한 등급은
+          {personNameWithEmail(user)} 계정에 관리자 포털 접근 권한을 부여합니다. 권한 등급은
           이후 관리자 계정 관리에서 변경하거나 회수할 수 있어요.
         </p>
         <Field label="권한 등급" required hint={ADMIN_TIERS.find((t) => t.value === promoteTier)?.desc}>
@@ -624,7 +625,7 @@ export function UserDetailPage() {
       <ConfirmDialog
         open={promoteConfirm}
         title="관리자 권한을 부여할까요?"
-        message={`${adminNameWithEmail(user)} 계정이 '${ADMIN_TIER_LABEL[promoteTier] ?? promoteTier}' 등급의 관리자가 됩니다. 이 변경은 관리자 활동 기록에 남습니다.`}
+        message={`${personNameWithEmail(user)} 계정이 '${ADMIN_TIER_LABEL[promoteTier] ?? promoteTier}' 등급의 관리자가 됩니다. 이 변경은 관리자 활동 기록에 남습니다.`}
         danger
         loading={promote.isPending}
         confirmLabel="권한 부여"
