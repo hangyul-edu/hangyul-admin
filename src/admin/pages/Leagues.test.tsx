@@ -495,3 +495,69 @@ describe("tier colour", () => {
     expect(chip.style.color).toBe("");
   });
 });
+
+describe("the promotion and relegation zones", () => {
+  it("reports the cutoffs the backend computed for this league", async () => {
+    // 28 participants: floor(0.2 x 28) = 5 each way. The page prints what it
+    // is given — the rule lives in one place on the server, and no frontend
+    // recomputes it from the 30-seat capacity.
+    getLeague.mockResolvedValue({
+      league: league({ participants: 28, promote_cutoff_rank: 5, demote_cutoff_rank: 24 }),
+      season: SEASON,
+      members: [member()],
+      member_total: 28,
+      promote_count: 5,
+      demote_count: 5,
+      promote_cutoff_rank: 5,
+      demote_cutoff_rank: 24,
+    });
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <ToastProvider>
+          <MemoryRouter initialEntries={["/leagues/2026-W37/grp-7f3a"]}>
+            <Routes>
+              <Route path="/leagues/:seasonId/:groupId" element={<LeagueDetailPage />} />
+            </Routes>
+          </MemoryRouter>
+        </ToastProvider>
+      </QueryClientProvider>,
+    );
+    await screen.findByRole("heading");
+
+    const facts = document.querySelector(".hgadm-page-head__facts")!;
+    expect(facts.textContent).toContain("28 / 30");
+    expect(facts.textContent).toContain("상위 5위");
+    expect(facts.textContent).toContain("24위부터");
+  });
+
+  it("says why a league too small for a zone has none", async () => {
+    // Four participants: a fifth of four is not a person. "상위 0위" would be
+    // nonsense, so the reason is given instead.
+    getLeague.mockResolvedValue({
+      league: league({ participants: 4, promote_cutoff_rank: 0, demote_cutoff_rank: 5 }),
+      season: SEASON,
+      members: [member()],
+      member_total: 4,
+      promote_count: 0,
+      demote_count: 0,
+      promote_cutoff_rank: 0,
+      demote_cutoff_rank: 5,
+    });
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <ToastProvider>
+          <MemoryRouter initialEntries={["/leagues/2026-W37/grp-7f3a"]}>
+            <Routes>
+              <Route path="/leagues/:seasonId/:groupId" element={<LeagueDetailPage />} />
+            </Routes>
+          </MemoryRouter>
+        </ToastProvider>
+      </QueryClientProvider>,
+    );
+    await screen.findByRole("heading");
+
+    const facts = document.querySelector(".hgadm-page-head__facts")!;
+    expect(facts.textContent).not.toContain("상위 0위");
+    expect(facts.textContent).toContain("인원 부족");
+  });
+});
