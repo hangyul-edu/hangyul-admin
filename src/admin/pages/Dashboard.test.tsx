@@ -120,6 +120,107 @@ describe("DashboardPage revenue", () => {
     metricsMonthlyRevenue.mockResolvedValue(MONTHLY);
   });
 
+  it("puts the name first in a signup, with nickname and email under it", async () => {
+    metricsOverview.mockResolvedValue({
+      ...OVERVIEW,
+      recent_signups: [
+        {
+          user_id: "usr_1",
+          name: "김하늘",
+          email: "haneul@talkhangyul.co.kr",
+          nickname: "haneul",
+          created_at: "2026-09-10T04:05:00Z",
+        },
+      ],
+    } as never);
+    renderPage();
+
+    const row = (await screen.findByText("김하늘")).closest(".hgadm-recent")!;
+    expect(row.querySelector(".hgadm-recent__primary")?.textContent).toBe("김하늘");
+    expect(row.querySelector(".hgadm-recent__lead")?.textContent).toBe("haneul");
+    expect(row.querySelector(".hgadm-recent__rest")?.textContent).toBe(
+      "haneul@talkhangyul.co.kr",
+    );
+  });
+
+  it("falls back to the email for a signup with no name", async () => {
+    metricsOverview.mockResolvedValue({
+      ...OVERVIEW,
+      recent_signups: [
+        {
+          user_id: "usr_1",
+          name: "",
+          email: "nameless@talkhangyul.co.kr",
+          nickname: null,
+          created_at: "2026-09-10T04:05:00Z",
+        },
+      ],
+    } as never);
+    renderPage();
+
+    const row = (await screen.findByText("nameless@talkhangyul.co.kr")).closest(
+      ".hgadm-recent",
+    )!;
+    expect(row.querySelector(".hgadm-recent__primary")?.textContent).toBe(
+      "nameless@talkhangyul.co.kr",
+    );
+    // With no nickname and the email already serving as the label, there is
+    // nothing left for a secondary line — better than repeating the address.
+    expect(row.querySelector(".hgadm-recent__secondary")).toBeNull();
+    expect(row.textContent?.match(/nameless@talkhangyul\.co\.kr/g)).toHaveLength(1);
+  });
+
+  it("leads a payment with the amount in USD, then who paid and for what", async () => {
+    metricsOverview.mockResolvedValue({
+      ...OVERVIEW,
+      recent_payments: [
+        {
+          payment_id: "pay_1",
+          user_id: "usr_1",
+          user_name: "김하늘",
+          user_email: "haneul@talkhangyul.co.kr",
+          plan_name: "프리미엄 연간",
+          amount_cents: 15588,
+          currency: "USD",
+          status: "succeeded",
+          paid_at: "2026-09-10T04:05:00Z",
+          created_at: "2026-09-10T04:00:00Z",
+        },
+      ],
+    } as never);
+    renderPage();
+
+    const amount = await screen.findByText("$155.88");
+    const row = amount.closest(".hgadm-recent")!;
+    expect(row.querySelector(".hgadm-recent__primary")?.textContent).toContain("$155.88");
+    expect(row.querySelector(".hgadm-recent__lead")?.textContent).toBe("김하늘");
+    expect(row.querySelector(".hgadm-recent__rest")?.textContent).toBe("프리미엄 연간");
+  });
+
+  it("still renders a payment whose account or invoice no longer resolves", async () => {
+    metricsOverview.mockResolvedValue({
+      ...OVERVIEW,
+      recent_payments: [
+        {
+          payment_id: "pay_1",
+          user_id: null,
+          user_name: null,
+          user_email: null,
+          plan_name: null,
+          amount_cents: 499,
+          currency: "USD",
+          status: "failed",
+          paid_at: null,
+          created_at: "2026-09-10T04:00:00Z",
+        },
+      ],
+    } as never);
+    renderPage();
+
+    // The money is the point of the row; the rest degrades without dropping it.
+    expect(await screen.findByText("$4.99")).toBeInTheDocument();
+  });
+
   it("shows this month's revenue instead of a rolling 30-day figure", async () => {
     renderPage();
 

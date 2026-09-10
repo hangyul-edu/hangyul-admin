@@ -95,6 +95,7 @@ export interface MetricsOverview {
   alerts: OperationalAlert[];
   recent_signups: {
     user_id: string;
+    name: string;
     email: string;
     nickname: string | null;
     created_at: string;
@@ -102,6 +103,9 @@ export interface MetricsOverview {
   recent_payments: {
     payment_id: string;
     user_id: string | null;
+    user_name: string | null;
+    user_email: string | null;
+    plan_name: string | null;
     amount_cents: number;
     currency: string;
     status: string;

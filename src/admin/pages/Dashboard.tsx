@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { adminApi } from "../api";
-import type { RecentAdminActionRow } from "../api";
+import type { MetricsOverview, RecentAdminActionRow } from "../api";
 import { personName } from "../lib/adminIdentity";
 import { describeAuditAction } from "../lib/auditActions";
 import type { MonthlyRevenueResponse } from "../api";
@@ -223,13 +223,7 @@ export function DashboardPage() {
       <div className="hgadm-grid-3">
         <RecentCard title="최근 가입">
           {data.recent_signups.map((u) => (
-            <Link key={u.user_id} to={`/users/${u.user_id}`} className="hgadm-recent-row">
-              <div>
-                <div className="hgadm-cell-main">{personName(u)}</div>
-                <div className="hgadm-cell-sub">{u.email}</div>
-              </div>
-              <div className="hgadm-cell-sub">{formatDateTime(u.created_at)}</div>
-            </Link>
+            <SignupRow key={u.user_id} user={u} />
           ))}
           {data.recent_signups.length === 0 && (
             <div className="hgadm-muted" style={{ padding: 12 }}>아직 가입자가 없습니다.</div>
@@ -237,13 +231,7 @@ export function DashboardPage() {
         </RecentCard>
         <RecentCard title="최근 결제">
           {data.recent_payments.map((p) => (
-            <div key={p.payment_id} className="hgadm-recent-row">
-              <div>
-                <div className="hgadm-cell-main">{formatMoney(p.amount_cents, p.currency)}</div>
-                <div className="hgadm-cell-sub">{formatDateTime(p.created_at)}</div>
-              </div>
-              <Badge tone={statusTone(p.status)}>{statusLabel(p.status)}</Badge>
-            </div>
+            <PaymentRow key={p.payment_id} payment={p} />
           ))}
           {data.recent_payments.length === 0 && (
             <div className="hgadm-muted" style={{ padding: 12 }}>결제 내역이 없습니다.</div>
@@ -263,20 +251,58 @@ export function DashboardPage() {
 }
 
 /**
+ * One line in any of the dashboard's three recent-activity cards.
+ *
+ * The cards show different things — a signup, a payment, an admin action — but
+ * they are the same shape of information: something that happened, a line of
+ * supporting detail, and when. Giving them one component is what makes the
+ * three read as one dashboard rather than three blocks that happen to sit in a
+ * row, and it means the alignment rules are written once.
+ *
+ * `trailing` is whatever belongs on the right — a timestamp on its own, or an
+ * amount above one. It never wraps, so its column is as wide as its content and
+ * no wider; because every row in a card carries the same kind of trailing
+ * content, that width comes out identical down the card without a fixed size.
+ */
+function RecentRow({
+  primary,
+  secondary,
+  tertiary,
+  trailing,
+  to,
+}: {
+  primary: React.ReactNode;
+  secondary?: React.ReactNode;
+  tertiary?: React.ReactNode;
+  trailing: React.ReactNode;
+  to?: string;
+}) {
+  const body = (
+    <>
+      <div className="hgadm-recent__body">
+        <div className="hgadm-recent__primary">{primary}</div>
+        {secondary && <div className="hgadm-recent__secondary">{secondary}</div>}
+        {tertiary && <div className="hgadm-recent__tertiary">{tertiary}</div>}
+      </div>
+      <div className="hgadm-recent__trailing">{trailing}</div>
+    </>
+  );
+  return to ? (
+    <Link to={to} className="hgadm-recent hgadm-recent--link">
+      {body}
+    </Link>
+  ) : (
+    <div className="hgadm-recent">{body}</div>
+  );
+}
+
+/**
  * One line of the dashboard's recent-activity list.
  *
  * Same reading order as the Activity History table — what was done, who did
  * it, on what, and the endpoint underneath — through the same
  * `describeAuditAction`, so the two screens can never describe one row two
  * ways.
- *
- * The layout is a two-column grid rather than a `space-between` flex. The text
- * column is `minmax(0, 1fr)`, which is what actually lets its children shrink
- * and ellipsis instead of shoving the timestamp leftwards; the timestamp column
- * is `auto` and never wraps, so it sizes to its own content. Every timestamp
- * has the same shape, so that column comes out the same width on every row
- * without anyone naming a pixel value — and a long action or a long name
- * changes only its own line.
  */
 export function AdminActivityRow({ entry }: { entry: RecentAdminActionRow }) {
   const described = describeAuditAction({
@@ -292,22 +318,100 @@ export function AdminActivityRow({ entry }: { entry: RecentAdminActionRow }) {
   const target = described.context ?? `${entry.object_type} · ${entry.object_id}`;
 
   return (
-    <div className="hgadm-activity">
-      <div className="hgadm-activity__body">
-        <div className="hgadm-activity__action">{described.label}</div>
-        <div className="hgadm-activity__meta">
-          <span className="hgadm-activity__actor">{actor}</span>
-          <span className="hgadm-activity__sep" aria-hidden="true">·</span>
-          <span className="hgadm-activity__target">{target}</span>
-        </div>
-        {described.known && (
-          <div className="hgadm-activity__endpoint hgadm-cell-mono">{described.raw}</div>
-        )}
-      </div>
-      <time className="hgadm-activity__time" dateTime={entry.occurred_at}>
-        {formatDateTime(entry.occurred_at)}
-      </time>
-    </div>
+    <RecentRow
+      primary={described.label}
+      secondary={
+        <>
+          <span className="hgadm-recent__lead">{actor}</span>
+          <span className="hgadm-recent__sep" aria-hidden="true">·</span>
+          <span className="hgadm-recent__rest">{target}</span>
+        </>
+      }
+      tertiary={described.known ? described.raw : undefined}
+      trailing={<RecentTime at={entry.occurred_at} />}
+    />
+  );
+}
+
+/**
+ * A recent signup: name over nickname and email.
+ *
+ * The nickname leads the secondary line because it is the shorter and more
+ * distinctive of the two, so the email is the half that gives way when the
+ * line runs out of room. An account with no name is labelled by its email, and
+ * then the email is not repeated underneath itself.
+ */
+export function SignupRow({ user }: { user: MetricsOverview["recent_signups"][number] }) {
+  const label = personName(user);
+  const email = user.email === label ? null : user.email;
+  return (
+    <RecentRow
+      to={`/users/${user.user_id}`}
+      primary={label}
+      secondary={
+        user.nickname || email ? (
+          <>
+            {user.nickname && (
+              <span className="hgadm-recent__lead">{user.nickname}</span>
+            )}
+            {user.nickname && email && (
+              <span className="hgadm-recent__sep" aria-hidden="true">·</span>
+            )}
+            {email && <span className="hgadm-recent__rest">{email}</span>}
+          </>
+        ) : undefined
+      }
+      trailing={<RecentTime at={user.created_at} />}
+    />
+  );
+}
+
+/**
+ * A recent charge: the amount first, then who paid and what for.
+ *
+ * The amount leads because it is what the card exists to show and what an
+ * operator scans down the column; the status rides beside it since a number
+ * without an outcome is ambiguous. A payment outlives the account and invoice
+ * behind it, so both halves of the detail line are optional and the row
+ * degrades to the money rather than disappearing.
+ */
+export function PaymentRow({ payment }: { payment: MetricsOverview["recent_payments"][number] }) {
+  const payer = personName({
+    name: payment.user_name,
+    email: payment.user_email,
+    user_id: payment.user_id,
+  });
+  return (
+    <RecentRow
+      to={payment.user_id ? `/users/${payment.user_id}` : undefined}
+      primary={
+        <>
+          {formatMoney(payment.amount_cents, payment.currency)}
+          <Badge tone={statusTone(payment.status)}>{statusLabel(payment.status)}</Badge>
+        </>
+      }
+      secondary={
+        <>
+          <span className="hgadm-recent__lead">{payer}</span>
+          {payment.plan_name && (
+            <>
+              <span className="hgadm-recent__sep" aria-hidden="true">·</span>
+              <span className="hgadm-recent__rest">{payment.plan_name}</span>
+            </>
+          )}
+        </>
+      }
+      trailing={<RecentTime at={payment.paid_at ?? payment.created_at} />}
+    />
+  );
+}
+
+/** The timestamp every card ends its rows with. */
+function RecentTime({ at }: { at: string }) {
+  return (
+    <time className="hgadm-recent__time" dateTime={at}>
+      {formatDateTime(at)}
+    </time>
   );
 }
 
