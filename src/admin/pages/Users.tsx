@@ -26,13 +26,7 @@ import {
   formatDateTime,
 } from "../lib/format";
 import type { Column } from "../components/kit";
-
-const ROLE_LABELS: Record<string, string> = {
-  member: "일반",
-  premium: "프리미엄",
-  tester: "테스터",
-  admin: "관리자",
-};
+import { ROLE_LABELS } from "../lib/adminTiers";
 
 export function UsersPage() {
   const filters = useUrlFilters();

@@ -21,16 +21,8 @@ import {
   formatDateTime,
 } from "../lib/format";
 import type { Column } from "../components/kit";
+import { ADMIN_TIERS as TIERS, ADMIN_TIER_LABEL as TIER_LABEL } from "../lib/adminTiers";
 
-const TIERS: { value: AdminTier; label: string; desc: string }[] = [
-  { value: "super_admin", label: "최고 관리자", desc: "모든 권한 + 관리자 계정 관리" },
-  { value: "operator", label: "운영자", desc: "관리자 관리를 제외한 모든 권한" },
-  { value: "content_manager", label: "콘텐츠 관리자", desc: "콘텐츠 편집 + 사용자 조회" },
-  { value: "support_agent", label: "고객지원", desc: "사용자 조회 + 운영 콘텐츠 + 커머스 조회" },
-  { value: "viewer", label: "뷰어", desc: "전체 읽기 전용" },
-];
-
-const TIER_LABEL = Object.fromEntries(TIERS.map((t) => [t.value, t.label]));
 
 export function AdminsPage() {
   const qc = useQueryClient();

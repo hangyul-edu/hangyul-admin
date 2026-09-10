@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { adminApi } from "../api";
+import type { AdminTier } from "../api";
 import { errorMessage } from "../../lib/http";
 import { useToast, useToastError } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
@@ -16,6 +17,7 @@ import {
   Input,
   LoadingState,
   Modal,
+  Select,
   statusLabel,
   statusTone,
 } from "../components/kit";
@@ -24,6 +26,12 @@ import {
   formatDuration,
   formatMoney,
 } from "../lib/format";
+import {
+  ADMIN_TIERS,
+  ADMIN_TIER_LABEL,
+  DEFAULT_GRANT_TIER,
+  ROLE_LABELS,
+} from "../lib/adminTiers";
 
 export function UserDetailPage() {
   const { userId = "" } = useParams();
@@ -40,6 +48,12 @@ export function UserDetailPage() {
   }>(null);
   const [nicknameModal, setNicknameModal] = useState(false);
   const [nickname, setNickname] = useState("");
+  // Promotion is a two-step action: pick the tier, then confirm it. The tier
+  // lives here rather than in the confirm dialog so the summary can name it.
+  const [promoteOpen, setPromoteOpen] = useState(false);
+  const [promoteTier, setPromoteTier] = useState<AdminTier>(DEFAULT_GRANT_TIER);
+  const [promoteNote, setPromoteNote] = useState("");
+  const [promoteConfirm, setPromoteConfirm] = useState(false);
 
   const query = useQuery({
     queryKey: ["admin", "user", userId],
@@ -60,6 +74,37 @@ export function UserDetailPage() {
     onError: toastError,
   });
 
+  /* Promotion goes through /admin/admins, the same endpoint the admin-accounts
+     page uses — it is the only path that carries the `admins:manage` check and
+     writes the tier row, so the user directory never becomes a second way to
+     hand out privileges. The button below is a shortcut to it, not a bypass. */
+  const promote = useMutation({
+    mutationFn: (target: { email: string }) =>
+      adminApi.grantAdmin({
+        email: target.email,
+        admin_role: promoteTier,
+        note: promoteNote.trim() || undefined,
+      }),
+    onSuccess: (account) => {
+      toast.success(
+        `관리자 권한을 부여했어요. (${ADMIN_TIER_LABEL[account.admin_role] ?? account.admin_role})`,
+      );
+      setPromoteConfirm(false);
+      setPromoteOpen(false);
+      setPromoteNote("");
+      setPromoteTier(DEFAULT_GRANT_TIER);
+      void qc.invalidateQueries({ queryKey: ["admin", "user", userId] });
+      void qc.invalidateQueries({ queryKey: ["admin", "users"] });
+      void qc.invalidateQueries({ queryKey: ["admin", "admins"] });
+    },
+    onError: (error) => {
+      // Keep the dialog open so the reason is read next to the action that
+      // caused it; the server rejects a duplicate or inactive target here.
+      setPromoteConfirm(false);
+      toastError(error);
+    },
+  });
+
   if (query.isPending) return <LoadingState label="사용자 정보를 불러오는 중…" />;
   if (query.isError)
     return (
@@ -73,6 +118,12 @@ export function UserDetailPage() {
   const isSelf = me?.user_id === user.user_id;
   const isAdminAccount = user.role === "admin";
   const actionsBlocked = !canWrite || isSelf || user.status === "deactivated";
+  /* Offered only where the grant can actually succeed: the caller holds
+     `admins:manage`, and the target is somebody else who is not an admin
+     already and whose account is active. The server enforces every one of
+     these again — this only keeps a doomed action off the screen. */
+  const canPromote =
+    can("admins:manage") && !isAdminAccount && !isSelf && user.status === "active";
 
   return (
     <div>
@@ -93,7 +144,16 @@ export function UserDetailPage() {
             <Badge tone={statusTone(user.status)} dot>
               {statusLabel(user.status)}
             </Badge>
-            <Badge tone={isAdminAccount ? "brand" : "neutral"}>{user.role}</Badge>
+            <Badge tone={isAdminAccount ? "brand" : "neutral"}>
+              {ROLE_LABELS[user.role] ?? user.role}
+            </Badge>
+            {/* The tier decides what an admin can actually do, so it belongs
+                next to the role rather than only on the admin-accounts page. */}
+            {isAdminAccount && (
+              <Badge tone="brand">
+                {ADMIN_TIER_LABEL[user.admin_role ?? ""] ?? user.admin_role ?? "최고 관리자"}
+              </Badge>
+            )}
           </h1>
           <div className="hgadm-page-head__desc">
             {user.email} · <span className="hgadm-cell-mono">{user.user_id}</span>
@@ -164,6 +224,11 @@ export function UserDetailPage() {
                 </Button>
               )}
             </>
+          )}
+          {canPromote && (
+            <Button variant="primary" onClick={() => setPromoteOpen(true)}>
+              관리자로 승격
+            </Button>
           )}
           {isAdminAccount && (
             <Link to="/admins" className="hgadm-btn hgadm-btn--secondary">
@@ -514,6 +579,57 @@ export function UserDetailPage() {
           <Input value={nickname} onChange={(e) => setNickname(e.target.value)} />
         </Field>
       </Modal>
+
+      <Modal
+        open={promoteOpen}
+        title="관리자로 승격"
+        onClose={() => setPromoteOpen(false)}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setPromoteOpen(false)}>
+              취소
+            </Button>
+            <Button variant="primary" onClick={() => setPromoteConfirm(true)}>
+              다음
+            </Button>
+          </>
+        }
+      >
+        <p className="hgadm-muted" style={{ marginTop: 0, fontSize: 12.5 }}>
+          {user.email} 계정에 관리자 포털 접근 권한을 부여합니다. 권한 등급은
+          이후 관리자 계정 관리에서 변경하거나 회수할 수 있어요.
+        </p>
+        <Field label="권한 등급" required hint={ADMIN_TIERS.find((t) => t.value === promoteTier)?.desc}>
+          <Select
+            value={promoteTier}
+            onChange={(e) => setPromoteTier(e.target.value as AdminTier)}
+          >
+            {ADMIN_TIERS.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="메모" hint="부여 사유 등 (선택)">
+          <Input
+            value={promoteNote}
+            onChange={(e) => setPromoteNote(e.target.value)}
+            placeholder="예: 2026-09 고객지원 온보딩"
+          />
+        </Field>
+      </Modal>
+
+      <ConfirmDialog
+        open={promoteConfirm}
+        title="관리자 권한을 부여할까요?"
+        message={`${user.email} 계정이 '${ADMIN_TIER_LABEL[promoteTier] ?? promoteTier}' 등급의 관리자가 됩니다. 이 변경은 관리자 활동 기록에 남습니다.`}
+        danger
+        loading={promote.isPending}
+        confirmLabel="권한 부여"
+        onConfirm={() => promote.mutate({ email: user.email })}
+        onCancel={() => setPromoteConfirm(false)}
+      />
 
       {actionsBlocked && canWrite && (isSelf || user.status === "deactivated") && (
         <p className="hgadm-muted" style={{ marginTop: 16, fontSize: 12.5 }}>
