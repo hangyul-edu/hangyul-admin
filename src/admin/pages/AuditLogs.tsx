@@ -18,6 +18,7 @@ import {
   formatDateTime,
 } from "../lib/format";
 import type { Column } from "../components/kit";
+import { describeAuditAction } from "../lib/auditActions";
 
 export function AuditLogsPage() {
   const filters = useUrlFilters();
@@ -64,7 +65,22 @@ export function AuditLogsPage() {
     {
       key: "action",
       header: "작업",
-      render: (e) => <span className="hgadm-cell-mono">{e.action}</span>,
+      render: (e) => {
+        const described = describeAuditAction(e);
+        return (
+          <div>
+            <div className="hgadm-cell-main">{described.label}</div>
+            {described.context && (
+              <div className="hgadm-cell-sub">{described.context}</div>
+            )}
+            {/* The endpoint stays on screen, demoted: it is what you quote in a
+                bug report, and the only label an unmapped route can offer. */}
+            {described.known && (
+              <div className="hgadm-cell-sub hgadm-cell-mono">{described.raw}</div>
+            )}
+          </div>
+        );
+      },
     },
     {
       key: "object",
@@ -169,7 +185,10 @@ export function AuditLogsPage() {
                 {detail.actor_email ?? detail.actor_id ?? "—"} ({detail.actor_type})
               </dd>
               <dt>행위</dt>
-              <dd className="hgadm-cell-mono">{detail.action}</dd>
+              <dd>
+                {describeAuditAction(detail).label}
+                <div className="hgadm-cell-sub hgadm-cell-mono">{detail.action}</div>
+              </dd>
               <dt>대상</dt>
               <dd className="hgadm-cell-mono">
                 {detail.object_type} / {detail.object_id}
