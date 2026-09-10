@@ -348,13 +348,18 @@ export interface AdminUnassignedMember {
   created_at: string;
   last_activity_at: string | null;
   days_since_activity: number | null;
-  inactive: boolean;
+  never_studied: boolean;
+  days_since_signup: number;
+  /** Days since the last session, or since signup for an account that never studied. */
+  idle_days: number;
+  lapsed: boolean;
   last_tier: string | null;
   last_season_points: number | null;
 }
 
 export interface AdminUnassignedMembersPage extends Page<AdminUnassignedMember> {
-  inactive_total: number;
+  lapsed_total: number;
+  lapse_after_days: number;
   seasons: AdminLeagueSeasonContext[];
 }
 

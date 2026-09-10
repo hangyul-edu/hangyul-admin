@@ -22,7 +22,6 @@ import {
   SearchBox,
   Select,
   Timestamp,
-  statusLabel,
 } from "../components/kit";
 import type { Column } from "../components/kit";
 import { personName } from "../lib/adminIdentity";
@@ -143,7 +142,7 @@ function SeasonHeader({ seasons }: { seasons: AdminLeagueSeasonContext[] }) {
             {/* Not a statistic but a queue: the people who have not studied
                 yet this week, and a way straight to them. */}
             <Link to="/leagues/unassigned" className="hgadm-season__waiting">
-              <span className="hgadm-season__stat-label">미배정 회원</span>
+              <span className="hgadm-season__stat-label">리그 미배정</span>
               <span className="hgadm-season__stat-value">
                 {season.unassigned_count.toLocaleString()}
                 <ChevronRight size={16} strokeWidth={2.25} />
@@ -338,7 +337,7 @@ function LookupResult({ result }: { result: AdminMemberLookupResult }) {
             이번 주 학습 기록이 없어 아직 리그에 배정되지 않았습니다.
           </span>
           <Link to="/leagues/unassigned" className="hgadm-lookup__link">
-            미배정 회원 보기
+            리그 미배정 회원 보기
             <ChevronRight size={14} strokeWidth={2.25} />
           </Link>
         </div>
@@ -376,6 +375,10 @@ export function LeaguesPage() {
       render: (l) => (
         <span className="hgadm-cell-main">{leagueName(l.tier, l.group_ordinal)}</span>
       ),
+      // "Golden 리그 1그룹" is about as long as this gets, so the column is
+      // sized for it rather than absorbing the table's slack — which pushed
+      // the tier chip most of the way across the screen.
+      width: 220,
     },
     {
       key: "tier",
@@ -400,8 +403,9 @@ export function LeaguesPage() {
     {
       key: "fill",
       header: "정원",
+      // The one column with no width: the bar stretches into whatever is left,
+      // so the slack lands somewhere useful instead of before the tier.
       render: (l) => <CapacityBar filled={l.participants} capacity={l.capacity} />,
-      width: 150,
     },
     {
       key: "points",
@@ -741,12 +745,12 @@ function PeriodInBothZones({ season }: { season: AdminLeagueSeasonContext }) {
 }
 
 /**
- * The members who have not been placed in a league this week.
+ * League Unassigned Members — those not placed in a league this week.
  *
  * A member joins on their first qualifying study activity, so this list is
  * everyone who has not studied yet — what the app calls *dormant*. It is a
  * work queue rather than a report: the accounts idle longest come first, and
- * the inactive ones are marked so they can be picked out at a glance.
+ * the ones idle longest are marked so they can be picked out at a glance.
  */
 export function UnassignedMembersPage() {
   const filters = useUrlFilters();
@@ -754,15 +758,15 @@ export function UnassignedMembersPage() {
   const location = useLocation();
 
   const q = filters.value("q");
-  const inactiveOnly = filters.value("inactive") === "1";
+  const lapsedOnly = filters.value("lapsed") === "1";
   const page = filters.number("page", 1);
 
   const query = useQuery({
-    queryKey: ["admin", "leagues", "unassigned", { q, inactiveOnly, page }],
+    queryKey: ["admin", "leagues", "unassigned", { q, lapsedOnly, page }],
     queryFn: () =>
       adminApi.listUnassignedMembers({
         q: q || undefined,
-        inactive: inactiveOnly ? "true" : undefined,
+        lapsed: lapsedOnly ? "true" : undefined,
         page,
         page_size: 25,
       }),
@@ -805,33 +809,25 @@ export function UnassignedMembersPage() {
       width: 160,
     },
     {
-      key: "idle",
-      header: "경과",
-      numeric: true,
-      render: (m) => (
-        <span className="hgadm-cell-main hgadm-nowrap">
-          {m.days_since_activity === null ? "—" : `${m.days_since_activity.toLocaleString()}일`}
-        </span>
-      ),
-      width: 100,
-    },
-    {
       key: "state",
       header: "상태",
+      // Not "dormant": every account on this page is dormant in the app's
+      // sense — that is what the page IS, and it is said once above. What
+      // differs per row is how long they have been idle and which clock that
+      // was measured on, so the badge names that instead.
       render: (m) => (
-        <div className="hgadm-row hgadm-nowrap" style={{ gap: 6 }}>
-          {/* Dormancy is the reason they are on this list at all, so it is the
-              badge that carries colour; the account status only speaks up when
-              it is not the ordinary "active". */}
-          <Badge tone={m.inactive ? "danger" : "neutral"} dot>
-            {m.inactive ? "휴면" : "대기"}
+        <div className="hgadm-nowrap">
+          <Badge tone={m.lapsed ? "danger" : m.never_studied ? "info" : "neutral"} dot>
+            {m.lapsed ? "장기 미학습" : m.never_studied ? "신규 가입" : "대기"}
           </Badge>
-          {m.status !== "active" && (
-            <Badge tone="warning">{statusLabel(m.status)}</Badge>
-          )}
+          <div className="hgadm-cell-sub">
+            {m.never_studied
+              ? `가입 후 ${m.days_since_signup.toLocaleString()}일`
+              : `${m.idle_days.toLocaleString()}일째 학습 없음`}
+          </div>
         </div>
       ),
-      width: 150,
+      width: 170,
     },
     {
       key: "last-league",
@@ -870,10 +866,12 @@ export function UnassignedMembersPage() {
               <span className="hgadm-kicker__name">{query.data.seasons[0].name}</span>
             </div>
           )}
-          <h1>미배정 회원</h1>
+          <h1>리그 미배정 회원</h1>
+          {/* 1 — which week this is about, on both clocks. */}
           {query.data?.seasons[0] && (
             <PeriodInBothZones season={query.data.seasons[0]} />
           )}
+          {/* 2 — the size and shape of the queue. */}
           {query.data && (
             <div className="hgadm-page-head__facts">
               <span className="hgadm-fact">
@@ -883,18 +881,24 @@ export function UnassignedMembersPage() {
                 </span>
               </span>
               <span className="hgadm-fact hgadm-fact--demote">
-                <span className="hgadm-fact__label">휴면</span>
+                <span className="hgadm-fact__label">장기 미학습</span>
                 <span className="hgadm-fact__value">
-                  {query.data.inactive_total.toLocaleString()}명
+                  {query.data.lapsed_total.toLocaleString()}명
                 </span>
-                <span className="hgadm-fact__note">30일 이상 학습 없음</span>
+                <span className="hgadm-fact__note">
+                  {query.data.lapse_after_days}일 이상
+                </span>
               </span>
             </div>
           )}
           <div className="hgadm-page-head__desc">
             이번 주 학습 기록이 없어 아직 리그에 배정되지 않은 회원입니다. 학습을
-            시작하면 자동으로 배정됩니다. 회원을 클릭하면 해당 회원 상세 페이지로
-            이동합니다.
+            시작하면 자동으로 배정됩니다. 경과 일수는 마지막 학습일 기준이며, 학습
+            기록이 없는 계정은 가입일 기준입니다.
+          </div>
+          {/* 3 — what a click does, on a line of its own. */}
+          <div className="hgadm-page-head__hint">
+            회원을 클릭하면 해당 회원 상세 페이지로 이동합니다.
           </div>
         </div>
       </div>
@@ -907,12 +911,12 @@ export function UnassignedMembersPage() {
             onSearch={(next) => filters.patch({ q: next, page: null })}
           />
           <Select
-            value={inactiveOnly ? "1" : ""}
-            onChange={(e) => filters.patch({ inactive: e.target.value, page: null })}
+            value={lapsedOnly ? "1" : ""}
+            onChange={(e) => filters.patch({ lapsed: e.target.value, page: null })}
             style={{ width: 190 }}
           >
             <option value="">전체 미배정 회원</option>
-            <option value="1">휴면 회원만</option>
+            <option value="1">장기 미학습만</option>
           </Select>
         </div>
 
@@ -932,7 +936,7 @@ export function UnassignedMembersPage() {
               onRowClick={(m) =>
                 navigate(`/users/${encodeURIComponent(m.user_id)}`, {
                   state: originFrom(
-                    "미배정 회원",
+                    "리그 미배정 회원",
                     `${location.pathname}${location.search}`,
                   ),
                 })
@@ -941,12 +945,12 @@ export function UnassignedMembersPage() {
                 <EmptyState
                   icon={<Trophy size={28} strokeWidth={1.75} />}
                   title={
-                    q || inactiveOnly
+                    q || lapsedOnly
                       ? "조건에 맞는 회원이 없습니다"
                       : "모든 회원이 리그에 배정되었습니다"
                   }
                   desc={
-                    q || inactiveOnly
+                    q || lapsedOnly
                       ? "검색어나 필터를 지워보세요."
                       : "이번 주 학습을 시작하지 않은 회원이 아직 없습니다."
                   }

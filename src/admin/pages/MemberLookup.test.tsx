@@ -264,7 +264,10 @@ describe("the two clocks on the unassigned page", () => {
       // 2026-07-09 02:00 UTC is 11:00 in Seoul.
       last_activity_at: "2026-07-09T02:00:00Z",
       days_since_activity: 3,
-      inactive: false,
+      never_studied: false,
+      days_since_signup: 250,
+      idle_days: 3,
+      lapsed: false,
       last_tier: "yellow",
       last_season_points: 420,
     };
@@ -273,7 +276,7 @@ describe("the two clocks on the unassigned page", () => {
   function renderUnassigned(season: AdminLeagueSeasonContext = SUMMER) {
     listUnassignedMembers.mockResolvedValue({
       items: [member()], total: 1, page: 1, page_size: 25,
-      inactive_total: 0, seasons: [season],
+      lapsed_total: 0, lapse_after_days: 30, seasons: [season],
     });
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     return render(

@@ -1327,6 +1327,15 @@ body {
   display: none;
 }
 
+/* The instruction line under a page head: what clicking a row does. Separated
+   from the descriptive paragraph above it so it reads as a distinct step
+   rather than trailing off the end of a sentence about something else. */
+.hgadm-page-head__hint {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
 /* ---------- Page kicker ----------
    The context line above a detail page's title: which cycle the thing you are
    looking at belongs to. It sits above the h1 because it is the frame, not the

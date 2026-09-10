@@ -56,7 +56,7 @@ const NAV: NavGroup[] = [
     items: [
       { to: "/users", icon: UsersIcon, label: "사용자 관리", scopes: ["users:read"] },
       { to: "/leagues", icon: Trophy, label: "진행 중인 리그", scopes: ["users:read"] },
-      { to: "/leagues/unassigned", icon: UserRoundX, label: "미배정 회원", scopes: ["users:read"] },
+      { to: "/leagues/unassigned", icon: UserRoundX, label: "리그 미배정 회원", scopes: ["users:read"] },
     ],
   },
   {
