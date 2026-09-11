@@ -228,12 +228,7 @@ export function UserDetailPage() {
                   onClick={() =>
                     setConfirm({
                       title: "계정 정지",
-                      /* Not "즉시 차단": the status is checked when someone
-                         logs in, not on every request, so a member already
-                         signed in keeps their session. Saying otherwise would
-                         have an admin watch a "blocked" member carry on and
-                         conclude the button had failed. */
-                      message: `${user.email} 계정을 정지하면 새로 로그인할 수 없게 됩니다. 이미 로그인되어 있는 기기에서는 로그아웃 전까지 계속 이용할 수 있습니다. 진행할까요?`,
+                      message: `${user.email} 계정을 정지하면 로그인되어 있던 모든 기기에서 즉시 로그아웃되고, 다시 로그인할 수 없게 됩니다. 진행할까요?`,
                       danger: true,
                       body: { status: "suspended", reason: "admin suspension" },
                     })

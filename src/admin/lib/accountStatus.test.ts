@@ -70,15 +70,13 @@ describe("the documented set", () => {
 });
 
 describe("the descriptions match what the backend does", () => {
-  it("does not promise that suspension ends a session already running", () => {
-    // The status is read in the login paths only; `get_current_user` and the
-    // refresh rotation never look at it, so a member already signed in stays
-    // signed in. Copy claiming otherwise would have an admin watch a
-    // "blocked" member keep working and think the button failed.
+  it("says suspension ends the sessions that are already running", () => {
+    // Suspending revokes every session and refresh token, so the cut-off is
+    // immediate. The copy said the opposite while that was true of the code;
+    // both changed together, and this is what stops them drifting apart.
     const text = accountStatusDescription("suspended") ?? "";
-    expect(text).toContain("새로 로그인할 수 없");
-    expect(text).toContain("이미 로그인");
-    expect(text).not.toContain("즉시");
+    expect(text).toContain("즉시 로그아웃");
+    expect(text).toContain("다시 로그인할 수 없");
   });
 
   it("says a withdrawal is the member's own and cannot be undone", () => {

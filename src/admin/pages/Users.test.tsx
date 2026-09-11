@@ -192,7 +192,7 @@ describe("UsersPage", () => {
     expect(screen.getByText("계정 상태 안내")).toBeInTheDocument();
     // The two facts an admin cannot guess from the labels.
     expect(
-      screen.getByText(/이미 로그인되어 있는 기기에서는 로그아웃하기 전까지/),
+      screen.getByText(/로그인되어 있던 모든 기기에서 즉시 로그아웃되고/),
     ).toBeInTheDocument();
     expect(screen.getByText(/관리자는 이 상태를 되돌릴 수 없으며/)).toBeInTheDocument();
   });
