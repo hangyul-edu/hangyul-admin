@@ -528,26 +528,29 @@ export interface AdminCourse {
   lecture_count: number;
 }
 
-/** `*_preserved` fields are learning records that are KEPT, not deleted. */
+/**
+ * `*_archived` = catalogue content retired from study (the rows stay, so a
+ * member's history and saved items keep rendering). `*_preserved` = member
+ * records left untouched. Only the regenerable AI cache is deleted.
+ */
 export interface SentenceCleanupCounts {
-  sentences: number;
-  saved_sentences: number;
+  sentences_archived: number;
   generated_sentences: number;
   sentence_histories_preserved: number;
   speech_attempts_preserved: number;
+  saved_sentences_preserved: number;
 }
 
-/** `*_preserved` fields are learning records that are KEPT, not deleted. */
+/** See `SentenceCleanupCounts` for what the two suffixes mean. */
 export interface TopikCleanupCounts {
-  questions: number;
-  saved_quizzes: number;
-  exam_sets: number;
-  exam_set_questions: number;
+  questions_archived: number;
+  exam_sets_archived: number;
   practice_sets: number;
   generated_questions: number;
   quiz_histories_preserved: number;
   quiz_attempts_preserved: number;
   exam_attempts_preserved: number;
+  saved_quizzes_preserved: number;
 }
 
 export interface AdminLecture {

@@ -6,11 +6,14 @@ import { useToast, useToastError } from "../../hooks/toast";
 import { Button, ConfirmDialog } from "./kit";
 
 /**
- * Super-admin "danger zone" action: preview then permanently clear a whole
- * content dataset (all sentences or the whole TOPIK question bank). Shows the
- * live preview counts inside the shared destructive confirm dialog before the
- * irreversible delete — never a bare browser confirm(). Render only for
- * super-admins (gate on `can("admins:manage")` at the call site).
+ * Super-admin "danger zone" action: preview then retire a whole content
+ * dataset (all sentences or the whole TOPIK question bank) from active study.
+ *
+ * The content is archived, not destroyed, so members keep their history and
+ * saved items and can still open them — the dialog says so in its own section
+ * rather than leaving an operator to assume the worst. Shows the live preview
+ * counts before the irreversible action; never a bare browser confirm().
+ * Render only for super-admins (gate on `can("admins:manage")`).
  */
 export function ContentCleanupButton<T>({
   label,
@@ -48,7 +51,9 @@ export function ContentCleanupButton<T>({
     mutationFn: clear,
     onSuccess: (res) => {
       const [headKey, headLabel] = countLabels[0];
-      toast.success(`${headLabel} ${Number(res.deleted[headKey]).toLocaleString()}건을 삭제했어요.`);
+      toast.success(
+        `${headLabel} ${Number(res.deleted[headKey]).toLocaleString()}건을 학습 대상에서 제외했어요.`,
+      );
       for (const key of invalidateKeys) void qc.invalidateQueries({ queryKey: key });
       setOpen(false);
     },
@@ -66,14 +71,15 @@ export function ContentCleanupButton<T>({
         title={label}
         danger
         icon={<Trash2 size={24} strokeWidth={2} />}
-        confirmLabel="영구 삭제"
+        confirmLabel="학습 대상에서 제외"
         loading={mutation.isPending}
         onConfirm={() => mutation.mutate()}
         onCancel={() => setOpen(false)}
         message={
           <div style={{ textAlign: "left" }}>
             <p style={{ marginBottom: 10 }}>
-              아래 데이터가 <strong>영구 삭제</strong>됩니다. 이 작업은 되돌릴 수 없습니다.
+              아래 콘텐츠가 <strong>학습 대상에서 제외</strong>됩니다. 더 이상 새
+              학습에 제공되지 않으며, 이 작업은 되돌릴 수 없습니다.
             </p>
             <dl className="hgadm-dl" style={{ gridTemplateColumns: "1fr auto", rowGap: 6 }}>
               {countLabels.map(([key, lbl]) => (
@@ -87,8 +93,8 @@ export function ContentCleanupButton<T>({
             {preservedLabels.length > 0 && (
               <>
                 <p style={{ margin: "14px 0 10px" }}>
-                  아래 <strong>학습 기록은 삭제되지 않고 보존</strong>됩니다. 삭제된
-                  콘텐츠와의 연결만 해제됩니다.
+                  아래 <strong>회원 기록은 그대로 보존</strong>되며, 회원은 이전과
+                  동일하게 열람·복습할 수 있습니다.
                 </p>
                 <dl
                   className="hgadm-dl"
