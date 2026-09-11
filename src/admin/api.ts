@@ -528,24 +528,26 @@ export interface AdminCourse {
   lecture_count: number;
 }
 
+/** `*_preserved` fields are learning records that are KEPT, not deleted. */
 export interface SentenceCleanupCounts {
   sentences: number;
-  sentence_histories: number;
   saved_sentences: number;
-  speech_attempts: number;
   generated_sentences: number;
+  sentence_histories_preserved: number;
+  speech_attempts_preserved: number;
 }
 
+/** `*_preserved` fields are learning records that are KEPT, not deleted. */
 export interface TopikCleanupCounts {
   questions: number;
-  quiz_histories: number;
   saved_quizzes: number;
-  quiz_attempts: number;
   exam_sets: number;
   exam_set_questions: number;
-  exam_attempts: number;
   practice_sets: number;
   generated_questions: number;
+  quiz_histories_preserved: number;
+  quiz_attempts_preserved: number;
+  exam_attempts_preserved: number;
 }
 
 export interface AdminLecture {

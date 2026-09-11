@@ -222,10 +222,12 @@ export function SentencesPage() {
                 clear={adminApi.clearSentences}
                 countLabels={[
                   ["sentences", "문장"],
-                  ["sentence_histories", "학습 이력"],
                   ["saved_sentences", "저장된 문장"],
-                  ["speech_attempts", "발음 시도"],
                   ["generated_sentences", "AI 생성 문장"],
+                ]}
+                preservedLabels={[
+                  ["sentence_histories_preserved", "학습 이력"],
+                  ["speech_attempts_preserved", "발음 시도"],
                 ]}
                 invalidateKeys={[["admin", "sentences"], ["admin", "sentence-topics"]]}
               />

@@ -17,13 +17,17 @@ export function ContentCleanupButton<T>({
   preview,
   clear,
   countLabels,
+  preservedLabels = [],
   invalidateKeys,
 }: {
   label: string;
   preview: () => Promise<T>;
   clear: () => Promise<{ deleted: T }>;
-  /** [key, Korean label] pairs, headline count first. */
+  /** [key, Korean label] pairs for rows that are deleted, headline first. */
   countLabels: [keyof T & string, string][];
+  /** [key, Korean label] pairs for learning records that are KEPT. Shown in
+      their own section so the dialog cannot read as if they were deleted. */
+  preservedLabels?: [keyof T & string, string][];
   /** React-Query keys to invalidate after a successful purge. */
   invalidateKeys: unknown[][];
 }) {
@@ -80,6 +84,30 @@ export function ContentCleanupButton<T>({
                 />
               ))}
             </dl>
+            {preservedLabels.length > 0 && (
+              <>
+                <p style={{ margin: "14px 0 10px" }}>
+                  아래 <strong>학습 기록은 삭제되지 않고 보존</strong>됩니다. 삭제된
+                  콘텐츠와의 연결만 해제됩니다.
+                </p>
+                <dl
+                  className="hgadm-dl"
+                  style={{ gridTemplateColumns: "1fr auto", rowGap: 6 }}
+                >
+                  {preservedLabels.map(([key, lbl]) => (
+                    <FragmentRow
+                      key={key}
+                      label={lbl}
+                      value={
+                        previewQuery.isPending
+                          ? "…"
+                          : `${Number(previewQuery.data?.[key] ?? 0).toLocaleString()}건`
+                      }
+                    />
+                  ))}
+                </dl>
+              </>
+            )}
             {previewQuery.isError && (
               <p className="hgadm-field__error" style={{ marginTop: 8 }}>
                 미리보기를 불러오지 못했어요: {errorMessage(previewQuery.error)}

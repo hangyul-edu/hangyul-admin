@@ -331,14 +331,16 @@ export function QuizzesPage() {
                 clear={adminApi.clearTopik}
                 countLabels={[
                   ["questions", "문제"],
-                  ["quiz_histories", "풀이 이력"],
                   ["saved_quizzes", "저장된 문제"],
-                  ["quiz_attempts", "풀이 기록"],
                   ["exam_sets", "모의고사"],
                   ["exam_set_questions", "모의고사 문항"],
-                  ["exam_attempts", "모의고사 응시"],
                   ["practice_sets", "AI 연습 세트"],
                   ["generated_questions", "AI 생성 문제"],
+                ]}
+                preservedLabels={[
+                  ["quiz_histories_preserved", "풀이 이력"],
+                  ["quiz_attempts_preserved", "풀이 기록"],
+                  ["exam_attempts_preserved", "모의고사 응시"],
                 ]}
                 invalidateKeys={[["admin", "quizzes"]]}
               />
