@@ -26,6 +26,7 @@ import {
 import type { Column } from "../components/kit";
 import { personName } from "../lib/adminIdentity";
 import { leagueName, leaguePeriod, tierColor, tierName } from "../lib/leagueNames";
+import { accountStatusLabel, accountStatusTone } from "../lib/accountStatus";
 import {
   KST_ZONE,
   LEAGUE_ZONE,
@@ -576,8 +577,13 @@ export function LeagueDetailPage() {
       header: "계정",
       render: (m) => (
         <div className="hgadm-nowrap">
-          <Badge tone={m.account_status === "active" ? "neutral" : "danger"}>
-            {m.account_status ?? "삭제됨"}
+          {/* Printed the raw server value — an admin read `deactivated` here
+              and 탈퇴 on the same member's detail page. Same vocabulary as
+              every other user-management surface now. A member whose account
+              row is gone entirely has no status to name, which is not any of
+              them. */}
+          <Badge tone={m.account_status ? accountStatusTone(m.account_status) : "neutral"}>
+            {m.account_status ? accountStatusLabel(m.account_status) : "계정 없음"}
           </Badge>
         </div>
       ),

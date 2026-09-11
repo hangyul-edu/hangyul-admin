@@ -1,0 +1,133 @@
+/**
+ * The one vocabulary for a member account's status.
+ *
+ * `users.status` (`src/modules/auth/domain/entities.py:27`) is its own concept
+ * and gets its own module, because the portal's shared `STATUS_LABELS` in the
+ * component kit is a single flat map keyed by bare strings — shared with
+ * subscriptions, payments, invoices, video uploads and coupons. An account and
+ * a subscription both have an `active`, and they do not mean the same thing, so
+ * routing account status through that map printed the *subscription* label:
+ * a normal member read "이용 중" in the table while the filter beside it said
+ * "활성" and the audit log said "활성" again. Same row, three words.
+ *
+ * Every user-management surface reads labels and tones from here — table,
+ * detail page, filters, badges, league rosters, audit-log diffs — so the
+ * wording cannot drift apart again.
+ *
+ * The descriptions are written from what the code does, not from what the
+ * status is called; see each entry.
+ */
+
+import type { BadgeTone } from "../components/kit";
+
+/** The values `users.status` can hold. */
+export type AccountStatus =
+  | "active"
+  | "suspended"
+  | "deactivated"
+  | "pending_verification";
+
+export interface AccountStatusMeta {
+  /** The one word this status is called, everywhere in the portal. */
+  label: string;
+  tone: BadgeTone;
+  /** What the state actually means for the member, for an admin to read. */
+  description: string;
+  /**
+   * Whether admins are shown this as a state an account can be in — a filter
+   * option, a row in the status legend.
+   */
+  documented: boolean;
+}
+
+const META: Record<AccountStatus, AccountStatusMeta> = {
+  active: {
+    label: "활성",
+    tone: "success",
+    description:
+      "정상적으로 로그인하고 서비스를 이용할 수 있는 상태입니다. 가입 직후의 기본 상태이며, 관리자가 정지했다가 해제한 계정도 이 상태로 돌아옵니다.",
+    documented: true,
+  },
+  suspended: {
+    label: "정지",
+    tone: "danger",
+    /* Deliberately does not say "즉시 차단". The status gate lives in the login
+       and social-login paths only (auth/application/services.py:183, :247);
+       `get_current_user` and the refresh-token rotation never read it, and
+       `MemberAdministration._apply` (member_administration.py:84) only writes
+       the column without revoking sessions. So a member who is already signed
+       in stays signed in. An admin who is told "blocked immediately" and then
+       sees that member active would reasonably think the suspension failed. */
+    description:
+      "관리자가 이용을 제한한 상태입니다. 새로 로그인할 수 없지만, 이미 로그인되어 있는 기기에서는 로그아웃하기 전까지 계속 이용할 수 있습니다. 계정과 학습 기록은 그대로 남아 있고, 관리자가 다시 활성으로 되돌릴 수 있습니다.",
+    documented: true,
+  },
+  deactivated: {
+    label: "탈퇴",
+    tone: "neutral",
+    /* "회원이 직접": the only writer is DELETE /auth/account
+       (auth/application/services.py:441). No admin action and no scheduled job
+       ever sets it — the admin PATCH schema does not even accept the value
+       (admin/presentation/schemas.py:347), and any status change on such a row
+       is refused with 409 (member_administration.py:128).
+
+       It deliberately does NOT claim the member's data is deleted. The
+       endpoint's own OpenAPI text says personal data is removed and the
+       subscription cancelled; no such code exists — `delete_account` flips the
+       status and revokes tokens, nothing more. Email and phone keep their
+       unique slots, which is what stops the same person re-registering
+       (tests/integration/test_account_deletion_safety.py:335). Repeating the
+       endpoint's claim here would tell an admin that a member's records are
+       gone while they are still in the database. */
+    description:
+      "회원이 직접 탈퇴한 상태입니다. 모든 기기에서 로그아웃되고 다시 로그인할 수 없습니다. 관리자는 이 상태를 되돌릴 수 없으며, 이메일과 전화번호는 그대로 남아 있어 같은 정보로 다시 가입할 수 없습니다.",
+    documented: true,
+  },
+  pending_verification: {
+    /* Declared in the enum (auth/domain/entities.py:29) and never assigned
+       anywhere in src/ or apps/. It is carried here so that a value the server
+       one day starts sending renders as Korean instead of as the bare string
+       `pending_verification`, but it is not offered as a filter and not listed
+       in the legend: an account cannot currently be in it, and documenting a
+       state that never occurs only invites an admin to look for it. */
+    label: "인증 대기",
+    tone: "warning",
+    description:
+      "가입 인증을 마치지 않은 상태입니다. 현재 서비스에서는 사용되지 않습니다.",
+    documented: false,
+  },
+};
+
+/** The statuses shown to admins as states an account can be in, in the order
+ *  an account moves through them. */
+export const DOCUMENTED_ACCOUNT_STATUSES = (
+  Object.keys(META) as AccountStatus[]
+).filter((s) => META[s].documented);
+
+function meta(status: string | null | undefined): AccountStatusMeta | null {
+  if (!status) return null;
+  return META[status as AccountStatus] ?? null;
+}
+
+/**
+ * The Korean label for an account status.
+ *
+ * An unrecognised value falls through to itself rather than to a placeholder,
+ * so a status added on the server is visible — wrong-looking, but present —
+ * instead of silently reading as something it is not.
+ */
+export function accountStatusLabel(status: string | null | undefined): string {
+  if (!status) return "—";
+  return meta(status)?.label ?? status;
+}
+
+export function accountStatusTone(status: string | null | undefined): BadgeTone {
+  return meta(status)?.tone ?? "neutral";
+}
+
+/** The admin-facing explanation, or `null` for a status with none. */
+export function accountStatusDescription(
+  status: string | null | undefined,
+): string | null {
+  return meta(status)?.description ?? null;
+}

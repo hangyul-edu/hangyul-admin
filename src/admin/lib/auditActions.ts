@@ -1,4 +1,5 @@
 import type { AuditLogEntry } from "../api";
+import { accountStatusLabel } from "./accountStatus";
 
 /**
  * Turning an audit row into a sentence an operator can read.
@@ -179,11 +180,6 @@ const ROLE_KO: Record<string, string> = {
   tester: "테스터",
   admin: "관리자",
 };
-const STATUS_KO: Record<string, string> = {
-  active: "활성",
-  suspended: "정지",
-  deactivated: "탈퇴",
-};
 const TIER_KO: Record<string, string> = {
   super_admin: "최고 관리자",
   operator: "운영자",
@@ -277,18 +273,22 @@ function context(entry: AuditLogEntry): string | null {
 
   if (entry.action === "PATCH /admin/users/{user_id}") {
     const parts: string[] = [];
+    /* `translate` renders each side of the change in the portal's own words.
+       Account status goes through the shared vocabulary rather than a local
+       copy, so a diff reads "상태 활성 → 정지" with the same two words the
+       badges on the user screens use. */
     const pair = (
       key: string,
       label: string,
-      dict?: Record<string, string>,
+      translate: (value: string) => string = (v) => v,
     ): void => {
       const was = str(before, key);
       const now = str(after, key);
       if (was !== null && now !== null && was !== now)
-        parts.push(`${label} ${dict?.[was] ?? was} → ${dict?.[now] ?? now}`);
+        parts.push(`${label} ${translate(was)} → ${translate(now)}`);
     };
-    pair("role", "역할", ROLE_KO);
-    pair("status", "상태", STATUS_KO);
+    pair("role", "역할", (v) => ROLE_KO[v] ?? v);
+    pair("status", "상태", accountStatusLabel);
     pair("nickname", "닉네임");
     return parts.length ? parts.join(" · ") : null;
   }

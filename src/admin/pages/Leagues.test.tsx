@@ -356,7 +356,11 @@ describe("the league detail", () => {
     ]);
 
     expect(await screen.findByText("usr_gone")).toHaveClass("hgadm-cell-main");
-    expect(screen.getByText("삭제됨")).toBeInTheDocument();
+    // "계정 없음", not "삭제됨": this column also shows 탈퇴, which is a member
+    // deleting their own account. Two words for "deleted" side by side, one of
+    // them meaning "there is no account row at all", is the ambiguity the
+    // shared status vocabulary exists to remove.
+    expect(screen.getByText("계정 없음")).toBeInTheDocument();
   });
 
   it("says so when a league has nobody in it", async () => {

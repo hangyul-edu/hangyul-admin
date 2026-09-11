@@ -130,8 +130,11 @@ const STATUS_LABELS: Record<string, string> = {
   consumed: "사용 완료",
   revoked: "회수됨",
   queued: "사용 대기",
-  // 계정 / 검수 / 요금제
-  deactivated: "탈퇴",
+  // 검수 / 요금제. Account status is NOT here: `users.status` has its own
+  // vocabulary in `lib/accountStatus.ts`, because an account and a
+  // subscription both have an `active` that means different things, and this
+  // map keyed by a bare string cannot tell them apart. It printed the
+  // subscription word on the user table for exactly that reason.
   approved: "승인",
   rejected: "반려",
   archived: "보관됨",
@@ -166,7 +169,6 @@ export function statusTone(status: string | null | undefined): BadgeTone {
     case "rejected":
     case "unpaid":
     case "payment_failed":
-    case "deactivated":
     case "expired":
       return "danger";
     case "cancelled":

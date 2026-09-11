@@ -19,15 +19,19 @@ import {
   Pagination,
   SearchBox,
   Select,
+  Timestamp,
   statusLabel,
   statusTone,
 } from "../components/kit";
-import {
-  formatDateTime,
-} from "../lib/format";
 import type { Column } from "../components/kit";
 import { ROLE_LABELS } from "../lib/adminTiers";
 import { personName } from "../lib/adminIdentity";
+import {
+  DOCUMENTED_ACCOUNT_STATUSES,
+  accountStatusDescription,
+  accountStatusLabel,
+  accountStatusTone,
+} from "../lib/accountStatus";
 
 export function UsersPage() {
   const filters = useUrlFilters();
@@ -115,7 +119,14 @@ export function UsersPage() {
     {
       key: "status",
       header: "상태",
-      render: (u) => <Badge tone={statusTone(u.status)} dot>{statusLabel(u.status)}</Badge>,
+      /* Account status, not subscription status — the two share the value
+         `active` and mean different things, so they read from different
+         vocabularies. The subscription column below still uses the kit's. */
+      render: (u) => (
+        <Badge tone={accountStatusTone(u.status)} dot>
+          {accountStatusLabel(u.status)}
+        </Badge>
+      ),
     },
     {
       key: "subscription",
@@ -134,9 +145,13 @@ export function UsersPage() {
     },
     {
       key: "created",
-      header: "가입일",
+      header: "가입일시",
       sortKey: "created_at",
-      render: (u) => formatDateTime(u.created_at),
+      /* To the second, and on the portal's shared timestamp component: two
+         accounts created a minute apart used to be indistinguishable here,
+         which matters when reading a burst of signups in order. "가입일" was
+         also no longer true of a value carrying a time. */
+      render: (u) => <Timestamp at={u.created_at} />,
     },
   ];
 
@@ -186,9 +201,13 @@ export function UsersPage() {
             style={{ width: 140 }}
           >
             <option value="">상태: 전체</option>
-            <option value="active">활성</option>
-            <option value="suspended">정지</option>
-            <option value="deactivated">탈퇴</option>
+            {/* Generated from the one vocabulary, so a filter can never offer
+                a word the table does not print back. */}
+            {DOCUMENTED_ACCOUNT_STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {accountStatusLabel(s)}
+              </option>
+            ))}
           </Select>
           <Select
             value={subscription}
@@ -233,6 +252,30 @@ export function UsersPage() {
             />
           </>
         )}
+      </div>
+
+      {/* What each badge in the 상태 column actually means. The differences
+          that matter are not guessable from the words: 정지 does not sign a
+          member out of a device they are already using, and 탈퇴 is the
+          member's own action that no admin can undo. */}
+      <div className="hgadm-card">
+        <div className="hgadm-card__head">
+          <div className="hgadm-card__title">계정 상태 안내</div>
+        </div>
+        <div className="hgadm-card__body">
+          <dl className="hgadm-legend">
+            {DOCUMENTED_ACCOUNT_STATUSES.map((s) => (
+              <div key={s} className="hgadm-legend__row">
+                <dt>
+                  <Badge tone={accountStatusTone(s)} dot>
+                    {accountStatusLabel(s)}
+                  </Badge>
+                </dt>
+                <dd>{accountStatusDescription(s)}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
       </div>
 
       <ConfirmDialog

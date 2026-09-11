@@ -19,6 +19,7 @@ import {
   LoadingState,
   Modal,
   Select,
+  Timestamp,
   statusLabel,
   statusTone,
 } from "../components/kit";
@@ -27,6 +28,11 @@ import {
   formatDuration,
   formatMoney,
 } from "../lib/format";
+import {
+  accountStatusDescription,
+  accountStatusLabel,
+  accountStatusTone,
+} from "../lib/accountStatus";
 import {
   ADMIN_TIERS,
   ADMIN_TIER_LABEL,
@@ -148,8 +154,8 @@ export function UserDetailPage() {
           </div>
           <h1 className="hgadm-row">
             {personName(user)}
-            <Badge tone={statusTone(user.status)} dot>
-              {statusLabel(user.status)}
+            <Badge tone={accountStatusTone(user.status)} dot>
+              {accountStatusLabel(user.status)}
             </Badge>
             <Badge tone={isAdminAccount ? "brand" : "neutral"}>
               {ROLE_LABELS[user.role] ?? user.role}
@@ -209,7 +215,7 @@ export function UserDetailPage() {
                   onClick={() =>
                     setConfirm({
                       title: "계정 정지 해제",
-                      message: `${user.email} 계정의 정지를 해제하고 로그인을 다시 허용할까요?`,
+                      message: `${user.email} 계정을 활성 상태로 되돌리고 로그인을 다시 허용할까요?`,
                       body: { status: "active" },
                     })
                   }
@@ -222,7 +228,12 @@ export function UserDetailPage() {
                   onClick={() =>
                     setConfirm({
                       title: "계정 정지",
-                      message: `${user.email} 계정을 정지하면 즉시 로그인이 차단됩니다. 진행할까요?`,
+                      /* Not "즉시 차단": the status is checked when someone
+                         logs in, not on every request, so a member already
+                         signed in keeps their session. Saying otherwise would
+                         have an admin watch a "blocked" member carry on and
+                         conclude the button had failed. */
+                      message: `${user.email} 계정을 정지하면 새로 로그인할 수 없게 됩니다. 이미 로그인되어 있는 기기에서는 로그아웃 전까지 계속 이용할 수 있습니다. 진행할까요?`,
                       danger: true,
                       body: { status: "suspended", reason: "admin suspension" },
                     })
@@ -274,13 +285,27 @@ export function UserDetailPage() {
             <div className="hgadm-card__body">
               <Dl
                 items={[
+                  /* The badge in the header says which state this is; here is
+                     what it means, where an admin deciding what to do about
+                     the account is already looking. */
+                  [
+                    "상태",
+                    <div key="status">
+                      <Badge tone={accountStatusTone(user.status)} dot>
+                        {accountStatusLabel(user.status)}
+                      </Badge>
+                      <div className="hgadm-cell-sub" style={{ lineHeight: 1.6 }}>
+                        {accountStatusDescription(user.status)}
+                      </div>
+                    </div>,
+                  ],
                   ["이름", user.name],
                   ["닉네임", user.nickname],
                   ["이메일", user.email],
                   ["전화번호", user.phone_masked ?? "—"],
                   ["전화 인증", user.phone_verified ? "완료" : "미인증"],
                   ["국적", user.nationality],
-                  ["가입일", formatDateTime(user.created_at)],
+                  ["가입일시", <Timestamp key="created" at={user.created_at} />],
                   [
                     "로그인 수단",
                     [
@@ -292,8 +317,12 @@ export function UserDetailPage() {
                   ],
                   ["마케팅 수신", user.marketing_opt_in ? "동의" : "거부"],
                   [
-                    "탈퇴일",
-                    user.deactivated_at ? formatDateTime(user.deactivated_at) : "—",
+                    "탈퇴일시",
+                    user.deactivated_at ? (
+                      <Timestamp key="deactivated" at={user.deactivated_at} />
+                    ) : (
+                      "—"
+                    ),
                   ],
                 ]}
               />

@@ -1231,6 +1231,52 @@ body {
   overflow-wrap: break-word;
 }
 
+/* ---------- Legend ----------
+   A badge and what it means, for a column whose values need explaining.
+
+   Not `.hgadm-dl`: that grid gives its term a fixed 160px, which a badge — as
+   wide as its own word — would sit alone in the left of. The term column here
+   sizes to the widest badge instead, so the explanations start just past the
+   longest label however many statuses there are. Below the narrow breakpoint
+   the badge moves above its text, since two columns leave the prose too thin
+   to read. */
+.hgadm-legend {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  row-gap: 12px;
+  column-gap: 16px;
+  margin: 0;
+  font-size: 13.5px;
+}
+.hgadm-legend__row {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: baseline;
+}
+.hgadm-legend dt {
+  /* The badge is inline-level; this keeps it from stretching to the column. */
+  justify-self: start;
+}
+.hgadm-legend dd {
+  margin: 0;
+  color: var(--ink-2);
+  line-height: 1.65;
+}
+@supports not (grid-template-columns: subgrid) {
+  /* Without subgrid each row is its own grid and the badges cannot share a
+     column width; a fixed term column keeps them aligned. */
+  .hgadm-legend__row {
+    grid-template-columns: 92px 1fr;
+  }
+}
+@media (max-width: 720px) {
+  .hgadm-legend__row {
+    grid-template-columns: 1fr;
+    row-gap: 4px;
+  }
+}
+
 /* ---------- States ---------- */
 .hgadm-state {
   display: flex;

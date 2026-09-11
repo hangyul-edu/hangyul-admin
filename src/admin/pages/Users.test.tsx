@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ToastProvider } from "../../hooks/toast";
@@ -86,6 +87,11 @@ describe("UsersPage", () => {
     // Status badges render the Korean label, not the raw backend enum.
     expect(screen.getByText("무료 체험")).toBeInTheDocument();
     expect(screen.queryByText("trial")).not.toBeInTheDocument();
+    // The account is 활성 — the word the filter and the detail page use. It
+    // used to read "이용 중", the *subscription* label, because both domains
+    // share the value `active` and both went through one map.
+    expect(screen.getAllByText("활성").length).toBeGreaterThan(0);
+    expect(screen.queryByText("이용 중")).not.toBeInTheDocument();
     expect(screen.getByText(/1건 중 1–1/)).toBeInTheDocument();
   });
 
@@ -145,5 +151,69 @@ describe("UsersPage", () => {
     expect(await screen.findByText("문제가 발생했어요")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "다시 시도" })).toBeInTheDocument();
     await waitFor(() => expect(listUsers).toHaveBeenCalled());
+  });
+
+  it("shows the signup time to the second", async () => {
+    // Two accounts a minute apart were indistinguishable while this column
+    // stopped at minutes, which is exactly when you need it: reading a burst
+    // of signups in the order they happened.
+    listUsers.mockResolvedValue({
+      items: [
+        {
+          user_id: "usr_1",
+          email: "learner@talkhangyul.co.kr",
+          name: "학습자",
+          nickname: null,
+          phone_masked: null,
+          role: "member",
+          status: "active",
+          subscription_status: null,
+          plan_id: null,
+          created_at: "2026-09-11T03:09:35Z",
+          deactivated_at: null,
+        },
+      ],
+      total: 1,
+      page: 1,
+      page_size: 25,
+    });
+    renderPage();
+
+    // 03:09:35Z is 12:09:35 in Seoul, the clock the whole portal reads on.
+    expect(await screen.findByText("오후 12:09:35")).toBeInTheDocument();
+    expect(screen.getByText("2026. 09. 11.")).toBeInTheDocument();
+  });
+
+  it("explains what each account status means", async () => {
+    listUsers.mockResolvedValue({ items: [], total: 0, page: 1, page_size: 25 });
+    renderPage();
+    await screen.findByText("조건에 맞는 사용자가 없습니다.");
+
+    expect(screen.getByText("계정 상태 안내")).toBeInTheDocument();
+    // The two facts an admin cannot guess from the labels.
+    expect(
+      screen.getByText(/이미 로그인되어 있는 기기에서는 로그아웃하기 전까지/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/관리자는 이 상태를 되돌릴 수 없으며/)).toBeInTheDocument();
+  });
+
+  it("offers the same words in the filter that the table prints", async () => {
+    listUsers.mockResolvedValue({ items: [], total: 0, page: 1, page_size: 25 });
+    renderPage();
+    await screen.findByText("조건에 맞는 사용자가 없습니다.");
+
+    // The kit's Select is a button plus a portalled listbox, so the choices
+    // exist only once it is open. They are generated from the shared
+    // vocabulary, so this fails if a label is changed in only one of the two
+    // places it appears.
+    const trigger = Array.from(
+      document.querySelectorAll<HTMLButtonElement>(".hgadm-select-trigger"),
+    ).find((b) => b.textContent?.includes("상태: 전체"));
+    await userEvent.setup().click(trigger!);
+
+    const options = Array.from(
+      document.querySelectorAll('[role="option"]'),
+    ).map((o) => o.textContent);
+    expect(options).toEqual(["상태: 전체", "활성", "정지", "탈퇴"]);
   });
 });
