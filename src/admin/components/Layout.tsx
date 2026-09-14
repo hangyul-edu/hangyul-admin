@@ -262,7 +262,7 @@ export function AdminLayout() {
         <ConfirmDialog
           open={confirmLogout}
           title="로그아웃"
-          message="관리자 세션에서 로그아웃할까요? 다시 사용하려면 재로그인이 필요합니다."
+          message="관리자 계정에서 로그아웃할까요? 다시 사용하려면 다시 로그인해야 합니다."
           confirmLabel="로그아웃"
           icon={<LogOut size={24} strokeWidth={2} />}
           loading={loggingOut}

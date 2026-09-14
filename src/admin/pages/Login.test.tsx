@@ -51,7 +51,7 @@ describe("admin login route — every session state ends somewhere usable", () =
   it("booting: shows the session-check spinner (no hidden/blank state)", () => {
     auth.current.status = "booting";
     renderLogin();
-    expect(screen.getByText("세션 확인 중…")).toBeInTheDocument();
+    expect(screen.getByText("로그인 확인 중…")).toBeInTheDocument();
   });
 
   it("non-admin session: clears it automatically and then shows the form", async () => {
@@ -76,7 +76,7 @@ describe("admin login route — every session state ends somewhere usable", () =
     expect(screen.getByLabelText(/이메일/)).toBeInTheDocument();
     expect(screen.getByLabelText(/비밀번호/)).toBeInTheDocument();
     expect(
-      screen.getByText(/관리자 권한이 없는 기존 세션을 정리했어요/),
+      screen.getByText(/관리자 권한이 없는 기존 로그인 정보를 정리했어요/),
     ).toBeInTheDocument();
   });
 

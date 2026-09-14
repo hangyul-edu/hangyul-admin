@@ -388,7 +388,7 @@ export function QuizzesPage() {
             onChange={(e) => filters.patch({ topik_section: e.target.value, page: null })}
             style={{ width: 140 }}
           >
-            <option value="">섹션: 전체</option>
+            <option value="">영역: 전체</option>
             {SECTIONS.map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
@@ -551,7 +551,7 @@ export function QuizzesPage() {
                   <option value="audio">듣기</option>
                 </Select>
               </Field>
-              <Field label="TOPIK 섹션">
+              <Field label="TOPIK 영역">
                 <Select
                   value={draft.topik_section}
                   onChange={(e) => setDraft({ ...draft, topik_section: e.target.value })}

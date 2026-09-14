@@ -358,7 +358,7 @@ export function LeaguesPage() {
     },
     {
       key: "tier",
-      header: "티어",
+      header: "등급",
       render: (l) => <TierChip tier={l.tier} />,
       width: 120,
     },
@@ -409,7 +409,7 @@ export function LeaguesPage() {
         <div>
           <h1>진행 중인 리그</h1>
           <div className="hgadm-page-head__desc">
-            지금 진행 중인 리그 목록입니다. 리그는 한 시즌·한 티어 안의 그룹(최대 30명)
+            지금 진행 중인 리그 목록입니다. 리그는 한 시즌·한 등급 안의 그룹(최대 30명)
             단위이며, 종료되었거나 아직 시작하지 않은 시즌은 표시되지 않습니다. 행을
             클릭하면 참가자 순위를 볼 수 있습니다.
           </div>
@@ -427,7 +427,7 @@ export function LeaguesPage() {
             onChange={(e) => filters.patch({ tier: e.target.value, page: null })}
             style={{ width: 160 }}
           >
-            <option value="">티어: 전체</option>
+            <option value="">등급: 전체</option>
             {LEAGUE_TIERS.map((value) => (
               <option key={value} value={value}>
                 {tierName(value)}
@@ -464,7 +464,7 @@ export function LeaguesPage() {
                   }
                   desc={
                     q || tier
-                      ? "검색어나 티어 필터를 지워보세요."
+                      ? "검색어나 등급 필터를 지워보세요."
                       : "시즌이 시작되고 참가자가 배정되면 여기에 표시됩니다."
                   }
                 />
@@ -638,7 +638,7 @@ export function LeagueDetailPage() {
               <span className="hgadm-fact__note">
                 {league.promote_cutoff_rank > 0
                   ? `상위 ${league.promote_cutoff_rank}위`
-                  : "최상위 티어"}
+                  : "최상위 등급"}
               </span>
             </span>
             <span className="hgadm-fact hgadm-fact--demote">
@@ -648,7 +648,7 @@ export function LeagueDetailPage() {
                 {demoteCount > 0
                   ? `${league.demote_cutoff_rank}위부터`
                   : league.tier === "green"
-                    ? "최하위 티어"
+                    ? "최하위 등급"
                     : "인원 부족"}
               </span>
             </span>

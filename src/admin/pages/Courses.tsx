@@ -134,7 +134,7 @@ export function CoursesPage() {
     },
     {
       key: "track",
-      header: "트랙",
+      header: "학습 분야",
       render: (c) => <Badge tone="brand">{TRACK_LABEL[c.track_id] ?? c.track_id}</Badge>,
     },
     { key: "sequence", header: "순서", numeric: true, render: (c) => c.sequence },
@@ -183,7 +183,7 @@ export function CoursesPage() {
         <div>
           <h1>코스 관리</h1>
           <div className="hgadm-page-head__desc">
-            트랙별 코스(강의 묶음)를 관리합니다. 강의가 남아 있는 코스는 삭제할 수
+            학습 분야별 코스(강의 묶음)를 관리합니다. 강의가 남아 있는 코스는 삭제할 수
             없습니다.
           </div>
         </div>
@@ -205,7 +205,7 @@ export function CoursesPage() {
       <div className="hgadm-card">
         <div className="hgadm-toolbar">
           <Select value={track} onChange={(e) => setTrack(e.target.value)} style={{ width: 150 }}>
-            <option value="">트랙: 전체</option>
+            <option value="">학습 분야: 전체</option>
             {TRACKS.map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
@@ -251,7 +251,7 @@ export function CoursesPage() {
         {draft && (
           <div>
             <div className="hgadm-form-grid">
-              <Field label="트랙" required hint={editingId ? "트랙은 변경할 수 없습니다." : undefined}>
+              <Field label="학습 분야" required hint={editingId ? "학습 분야는 변경할 수 없습니다." : undefined}>
                 <Select
                   value={draft.track_id}
                   disabled={editingId !== null}

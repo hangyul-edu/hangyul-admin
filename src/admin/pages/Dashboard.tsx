@@ -151,7 +151,7 @@ export function DashboardPage() {
         <Stat
           label="오늘 학습 활동"
           value={data.learning.active_learners_today.toLocaleString()}
-          sub={`${data.learning.sessions_today}세션 · ${data.learning.minutes_today.toLocaleString()}분`}
+          sub={`${data.learning.sessions_today}회 학습 · ${data.learning.minutes_today.toLocaleString()}분`}
         />
         <Stat
           label="AI 비용 (이번 달)"

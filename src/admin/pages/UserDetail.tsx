@@ -381,10 +381,10 @@ export function UserDetailPage() {
                 items={[
                   ["마지막 학습일", user.learning.last_active_date ?? "학습 기록 없음"],
                   [
-                    "스트릭",
+                    "연속 학습",
                     `${user.learning.current_streak}일 (최고 ${user.learning.best_streak}일)`,
                   ],
-                  ["최근 30일 세션", `${user.learning.sessions_30d}회`],
+                  ["최근 30일 학습 횟수", `${user.learning.sessions_30d}회`],
                   ["누적 학습", formatDuration(user.learning.total_minutes * 60)],
                   [
                     "일일 목표",
@@ -546,12 +546,12 @@ export function UserDetailPage() {
               <Dl
                 items={[
                   [
-                    "스트릭",
+                    "연속 학습",
                     `${user.learning.current_streak}일 (최고 ${user.learning.best_streak}일)`,
                   ],
                   ["마지막 학습일", user.learning.last_active_date ?? "—"],
                   ["누적 학습", formatDuration(user.learning.total_minutes * 60)],
-                  ["최근 30일 세션", `${user.learning.sessions_30d}회`],
+                  ["최근 30일 학습 횟수", `${user.learning.sessions_30d}회`],
                   [
                     "일일 목표",
                     <DailyGoals key="goals" learning={user.learning} />,
@@ -560,7 +560,7 @@ export function UserDetailPage() {
               />
               <hr className="hgadm-divider" />
               {user.learning.tracks.length === 0 ? (
-                <span className="hgadm-muted">트랙 진행 정보가 없습니다.</span>
+                <span className="hgadm-muted">학습 분야별 진행 정보가 없습니다.</span>
               ) : (
                 user.learning.tracks.map((t) => (
                   <div key={t.track_id} className="hgadm-row" style={{ marginBottom: 8 }}>
@@ -589,7 +589,7 @@ export function UserDetailPage() {
                     user.gamification.season_points.toLocaleString(),
                   ],
                   [
-                    "리그 티어",
+                    "리그 등급",
                     user.gamification.league_tier ? (
                       <TierChip key="tier" tier={user.gamification.league_tier} />
                     ) : (
@@ -613,7 +613,7 @@ export function UserDetailPage() {
         <div className="hgadm-grid-2">
           <div className="hgadm-card">
             <div className="hgadm-card__head">
-              <div className="hgadm-card__title">쿠폰 그랜트</div>
+              <div className="hgadm-card__title">쿠폰 지급 내역</div>
             </div>
             <div className="hgadm-table-wrap">
               <table className="hgadm-table">

@@ -189,7 +189,7 @@ describe("the active leagues list", () => {
     renderList([league()]);
     await screen.findByText("Yellow 리그 1그룹");
 
-    await user.click(screen.getByText("티어: 전체"));
+    await user.click(screen.getByText("등급: 전체"));
     await user.click(await screen.findByRole("option", { name: "Golden" }));
 
     await waitFor(() =>
@@ -225,7 +225,7 @@ describe("the active leagues list", () => {
     listActiveLeagues.mockResolvedValue({
       items: [], total: 0, page: 1, page_size: 25, seasons: [SEASON],
     });
-    await user.click(screen.getByText("티어: 전체"));
+    await user.click(screen.getByText("등급: 전체"));
     await user.click(await screen.findByRole("option", { name: "Golden" }));
 
     expect(await screen.findByText("조건에 맞는 리그가 없습니다")).toBeInTheDocument();
@@ -436,7 +436,7 @@ describe("the cycle above the list", () => {
     expect(headers).not.toContain("기간");
     // What is left is what actually differs between leagues.
     expect(headers).toEqual(
-      expect.arrayContaining(["리그", "티어", "참가자", "포인트", "상태"]),
+      expect.arrayContaining(["리그", "등급", "참가자", "포인트", "상태"]),
     );
     // And the period appears once — in the header, not per row.
     expect(document.querySelectorAll(".hgadm-schedule")).toHaveLength(1);
@@ -596,7 +596,7 @@ describe("the promotion and relegation zones", () => {
 
     const facts = document.querySelector(".hgadm-page-head__facts")!;
     expect(facts.textContent).not.toContain("상위 0위");
-    expect(facts.textContent).toContain("최상위 티어");
+    expect(facts.textContent).toContain("최상위 등급");
     expect(facts.textContent).toContain("25위부터");
   });
 });

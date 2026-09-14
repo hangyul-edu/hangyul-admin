@@ -80,7 +80,7 @@ export function NotificationSettingsPage() {
         <div>
           <h1>알림 설정</h1>
           <div className="hgadm-page-head__desc">
-            매일 발송되는 학습 리마인더의 발송 시각을 관리합니다. 사용자가 직접 바꿀 수 있는
+            매일 발송되는 학습 알림의 발송 시각을 관리합니다. 사용자가 직접 바꿀 수 있는
             값이 아니라, 관리자가 전체 사용자에게 적용하는 설정입니다.
           </div>
         </div>
@@ -89,7 +89,7 @@ export function NotificationSettingsPage() {
       <div className="hgadm-grid-2">
         <div className="hgadm-card">
           <div className="hgadm-card__head">
-            <div className="hgadm-card__title">일일 학습 리마인더</div>
+            <div className="hgadm-card__title">일일 학습 알림</div>
           </div>
           <div className="hgadm-card__body">
             {query.isPending ? (
@@ -119,7 +119,7 @@ export function NotificationSettingsPage() {
                     style={{ flexShrink: 0, marginTop: 2, color: "var(--ink-3)" }}
                   />
                   <div style={{ fontSize: 13, color: "var(--ink-2)", lineHeight: 1.6 }}>
-                    <strong>전체 공통 설정입니다.</strong> 여기서 바꾼 시각은 학습 리마인더를
+                    <strong>전체 공통 설정입니다.</strong> 여기서 바꾼 시각은 학습 알림을
                     켜 둔 모든 사용자에게 즉시 적용됩니다. 사용자별로 다른 시각을 지정할 수는
                     없습니다.
                   </div>
@@ -228,7 +228,7 @@ export function NotificationSettingsPage() {
               발송 시각은 바뀌지 않습니다.
             </NoteRow>
             <p className="hgadm-muted" style={{ fontSize: 12.5, marginBottom: 0 }}>
-              학습 리마인더를 끈 사용자와 그날 학습 목표를 이미 채운 사용자에게는 발송되지
+              학습 알림을 끈 사용자와 그날 학습 목표를 이미 채운 사용자에게는 발송되지
               않습니다.
             </p>
           </div>

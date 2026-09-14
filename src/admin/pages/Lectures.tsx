@@ -164,7 +164,7 @@ export function LecturesPage() {
     },
     {
       key: "track",
-      header: "트랙/레벨",
+      header: "학습 분야/레벨",
       render: (l) => (
         <div>
           <Badge tone="brand">{TRACK_LABEL[l.track_id] ?? l.track_id}</Badge>
@@ -281,7 +281,7 @@ export function LecturesPage() {
             onChange={(e) => filters.patch({ track_id: e.target.value, page: null })}
             style={{ width: 130 }}
           >
-            <option value="">트랙: 전체</option>
+            <option value="">학습 분야: 전체</option>
             {TRACKS.map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
@@ -355,7 +355,7 @@ export function LecturesPage() {
       >
         {draft && (
           <div className="hgadm-form-grid">
-            <Field label="트랙" required hint={editingId ? "트랙은 변경할 수 없습니다." : undefined}>
+            <Field label="학습 분야" required hint={editingId ? "학습 분야는 변경할 수 없습니다." : undefined}>
               <Select
                 value={draft.track_id}
                 disabled={editingId !== null}
@@ -390,7 +390,7 @@ export function LecturesPage() {
                 onChange={(e) => setDraft({ ...draft, title: e.target.value })}
               />
             </Field>
-            <Field label="소속 코스" hint="같은 트랙의 코스만 선택 가능">
+            <Field label="소속 코스" hint="같은 학습 분야의 코스만 선택 가능">
               <Select
                 value={draft.course_id}
                 onChange={(e) => setDraft({ ...draft, course_id: e.target.value })}

@@ -24,13 +24,13 @@ export function LoginPage() {
     clearingRef.current = true;
     void logout().then(() => {
       setNotice(
-        "관리자 권한이 없는 기존 세션을 정리했어요. 관리자 계정으로 로그인해 주세요.",
+        "관리자 권한이 없는 기존 로그인 정보를 정리했어요. 관리자 계정으로 로그인해 주세요.",
       );
     });
   }, [status, logout]);
 
   if (status === "booting" || status === "denied")
-    return <LoadingState label="세션 확인 중…" />;
+    return <LoadingState label="로그인 확인 중…" />;
   if (status === "signed-in") return <Navigate to="/" replace />;
 
   async function onSubmit(e: FormEvent) {

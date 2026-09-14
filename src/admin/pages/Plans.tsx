@@ -276,7 +276,7 @@ export function PlansPage() {
         {draft && (
           <div className="hgadm-form-grid">
             {!editingId && (
-              <Field label="요금제 ID" required hint="영문/숫자/언더스코어, 3자 이상. 생성 후 변경 불가.">
+              <Field label="요금제 ID" required hint="영문/숫자/밑줄(_), 3자 이상. 생성 후 변경 불가.">
                 <Input
                   value={draft.plan_id}
                   onChange={(e) => setDraft({ ...draft, plan_id: e.target.value })}

@@ -36,7 +36,7 @@ import { AiContentPage } from "./pages/AiContent";
 
 function RequireAdmin({ children }: { children: ReactNode }) {
   const { status } = useAdminAuth();
-  if (status === "booting") return <LoadingState label="관리자 세션 확인 중…" />;
+  if (status === "booting") return <LoadingState label="로그인 확인 중…" />;
   if (status === "denied") return <AccessDenied />;
   if (status === "signed-out") return <Navigate to="/login" replace />;
   return <>{children}</>;
