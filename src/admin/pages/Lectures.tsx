@@ -277,18 +277,6 @@ export function LecturesPage() {
             onSearch={(next) => filters.patch({ q: next, page: null })}
           />
           <Select
-            value={track}
-            onChange={(e) => filters.patch({ track_id: e.target.value, page: null })}
-            style={{ width: 130 }}
-          >
-            <option value="">학습 분야: 전체</option>
-            {TRACKS.map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </Select>
-          <Select
             value={courseId}
             onChange={(e) => filters.patch({ course_id: e.target.value, page: null })}
             style={{ minWidth: 180 }}
@@ -297,6 +285,22 @@ export function LecturesPage() {
             {courses.data?.items.map((c) => (
               <option key={c.course_id} value={c.course_id}>
                 {c.title}
+              </option>
+            ))}
+          </Select>
+          {/* Sized to its own widest label: "학습 분야: 전체" measures 132px
+              in this trigger, so the 130 it inherited from the shorter "트랙:
+              전체" clipped it by two pixels. 150 matches the same filter on
+              the 코스 page rather than inventing a second number. */}
+          <Select
+            value={track}
+            onChange={(e) => filters.patch({ track_id: e.target.value, page: null })}
+            style={{ width: 150 }}
+          >
+            <option value="">학습 분야: 전체</option>
+            {TRACKS.map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
               </option>
             ))}
           </Select>
