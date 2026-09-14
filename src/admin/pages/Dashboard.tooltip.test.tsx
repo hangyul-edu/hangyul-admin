@@ -17,6 +17,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TimeseriesChart } from "./Dashboard";
 
+
 const VIEWPORT = { width: 1280, height: 800 };
 const TIP = { width: 220, height: 32 };
 

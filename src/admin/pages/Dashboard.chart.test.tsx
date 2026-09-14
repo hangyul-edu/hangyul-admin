@@ -13,6 +13,7 @@ import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
 import { TimeseriesChart } from "./Dashboard";
 
+
 /** The tick labels, in DOM order — ascending, so bottom to top on screen. */
 function axisLabels(container: HTMLElement): string[] {
   return Array.from(container.querySelectorAll("text[text-anchor='end']")).map(

@@ -47,6 +47,15 @@ export function BannersPage() {
   const toastError = useToastError();
   const { can } = useAdminAuth();
   const canWrite = can("ops:write");
+  /* The image goes through POST /admin/media, which the backend gates on
+     `content:write` — a different scope from the rest of this page. A support
+     agent holds ops:write and not content:write, so they could open the
+     editor, click the dropzone and collect a 403; and since an image is
+     required, they could never finish a banner they had been invited to
+     start. Creating needs both scopes; everything that does not touch an
+     image (reorder, visibility, delete, editing the text of a banner that
+     already has one) still needs only ops:write. */
+  const canUploadImage = can("content:write");
   const [draft, setDraft] = useState<BannerDraft | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<AdminBanner | null>(null);
@@ -140,7 +149,7 @@ export function BannersPage() {
             기간을 지정하면 그 기간에만 표시됩니다.
           </div>
         </div>
-        {canWrite && (
+        {canWrite && canUploadImage && (
           <div className="hgadm-page-head__actions">
             <Button
               variant="primary"
@@ -293,29 +302,36 @@ export function BannersPage() {
                     style={{ marginBottom: 8 }}
                   />
                 ) : null}
-                <div
-                  className="hgadm-dropzone"
-                  onClick={() => fileRef.current?.click()}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    void onFileChosen(e.dataTransfer.files?.[0]);
-                  }}
-                >
-                  {uploading ? (
-                    <span>업로드 중…</span>
-                  ) : (
-                    <span>
-                      클릭하거나 파일을 끌어다 놓아 {draft.image_url ? "교체" : "업로드"}
-                    </span>
-                  )}
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    onChange={(e) => void onFileChosen(e.target.files?.[0])}
-                  />
-                </div>
+                {canUploadImage ? (
+                  <div
+                    className="hgadm-dropzone"
+                    onClick={() => fileRef.current?.click()}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      void onFileChosen(e.dataTransfer.files?.[0]);
+                    }}
+                  >
+                    {uploading ? (
+                      <span>업로드 중…</span>
+                    ) : (
+                      <span>
+                        클릭하거나 파일을 끌어다 놓아 {draft.image_url ? "교체" : "업로드"}
+                      </span>
+                    )}
+                    <input
+                      ref={fileRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={(e) => void onFileChosen(e.target.files?.[0])}
+                    />
+                  </div>
+                ) : (
+                  <p className="hgadm-cell-sub" style={{ margin: 0 }}>
+                    이미지 변경은 콘텐츠 편집 권한이 필요합니다. 나머지 항목은 그대로
+                    수정할 수 있어요.
+                  </p>
+                )}
               </div>
             </Field>
             <Field label="대체 텍스트" hint="스크린 리더가 읽는 설명">

@@ -20,6 +20,7 @@ import { render } from "@testing-library/react";
 import { AdminActivityRow } from "./Dashboard";
 import type { RecentAdminActionRow } from "../api";
 
+
 function entry(overrides: Partial<RecentAdminActionRow> = {}): RecentAdminActionRow {
   return {
     id: 1,

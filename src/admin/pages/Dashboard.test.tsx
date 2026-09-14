@@ -8,6 +8,20 @@ import { DashboardPage, monthLabel } from "./Dashboard";
 import { adminApi } from "../api";
 import type { MetricsOverview, MonthlyRevenueResponse } from "../api";
 
+vi.mock("../auth", () => ({
+  useAdminAuth: () => ({
+    status: "signed-in",
+    me: { user_id: "usr_admin", admin_role: "super_admin", scopes: ["users:read"] },
+    login: vi.fn(),
+    logout: vi.fn(),
+    // A super admin, so every alert's destination is reachable and these tests
+    // see the dashboard whole. Scope-dependent behaviour is covered in
+    // Dashboard.alerts.test.tsx.
+    can: () => true,
+  }),
+}));
+
+
 vi.mock("../api", async () => {
   const actual = await vi.importActual<typeof import("../api")>("../api");
   return {

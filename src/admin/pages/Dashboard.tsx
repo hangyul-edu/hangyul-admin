@@ -8,6 +8,7 @@ import { personName } from "../lib/adminIdentity";
 import { describeAuditAction } from "../lib/auditActions";
 import type { MonthlyRevenueResponse } from "../api";
 import { errorMessage } from "../../lib/http";
+import { useAdminAuth } from "../auth";
 import {
   Badge,
   ErrorState,
@@ -44,16 +45,27 @@ export function monthLabel(month: string): string {
   return `${year}년 ${Number(m)}월`;
 }
 
-const ALERT_ROUTES: Record<string, string> = {
-  lecture_videos_failed: "/lectures",
-  webhook_dlq: "/payments",
-  outbox_stuck: "/payments",
-  payments_failed_24h: "/payments",
-  invoices_unpaid: "/payments",
-  generated_pending_review: "/ai-content",
+/**
+ * Where each alert leads, and the scope that page is gated on.
+ *
+ * The dashboard opens on `users:read`, which every tier has, but these
+ * destinations do not. A content manager holds no `commerce:read`, so the
+ * payment alerts were offering them a card into 접근 권한이 없습니다— a page
+ * the sidebar already hides from them. An alert you cannot open is not a
+ * shortcut, so it is not shown at all: scoping the menu and then routing
+ * around it through the dashboard is the same leak twice.
+ */
+const ALERT_ROUTES: Record<string, { to: string; scope: string }> = {
+  lecture_videos_failed: { to: "/lectures", scope: "content:read" },
+  webhook_dlq: { to: "/payments", scope: "commerce:read" },
+  outbox_stuck: { to: "/payments", scope: "commerce:read" },
+  payments_failed_24h: { to: "/payments", scope: "commerce:read" },
+  invoices_unpaid: { to: "/payments", scope: "commerce:read" },
+  generated_pending_review: { to: "/ai-content", scope: "content:read" },
 };
 
 export function DashboardPage() {
+  const { can } = useAdminAuth();
   const overview = useQuery({
     queryKey: ["admin", "metrics", "overview"],
     queryFn: adminApi.metricsOverview,
@@ -79,6 +91,10 @@ export function DashboardPage() {
       />
     );
   const data = overview.data;
+  // Only the alerts whose destination this admin can actually open.
+  const visibleAlerts = (data?.alerts ?? []).filter(
+    (alert) => can(ALERT_ROUTES[alert.code]?.scope ?? "users:read"),
+  );
   const currency = data.revenue.currency;
 
   return (
@@ -92,12 +108,12 @@ export function DashboardPage() {
           </div>
         </div>
       </div>
-      {data.alerts.length > 0 && (
+      {visibleAlerts.length > 0 && (
         <div className="hgadm-section" style={{ display: "grid", gap: 8 }}>
-          {data.alerts.map((alert) => (
+          {visibleAlerts.map((alert) => (
             <Link
               key={alert.code}
-              to={ALERT_ROUTES[alert.code] ?? "/"}
+              to={ALERT_ROUTES[alert.code]?.to ?? "/"}
               className="hgadm-card"
               style={{
                 display: "flex",

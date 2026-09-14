@@ -522,6 +522,16 @@ function ThumbnailField({
   );
 }
 
+/**
+ * Upload, refresh and delete a lecture's video.
+ *
+ * Every action in here is `content:write` and none is checked locally — the
+ * gate is the mount site, the 영상 관리 button inside this page's `canWrite`
+ * column. That is correct while this is the only place it opens from, and it
+ * quietly stops being correct the moment it is mounted anywhere else. Same
+ * arrangement `ContentCleanupButton` documents on itself; render it only from
+ * behind `can("content:write")`.
+ */
 function VideoManagerModal({
   lecture,
   onClose,
