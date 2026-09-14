@@ -267,7 +267,8 @@ describe("the two clocks on the unassigned page", () => {
       never_studied: false,
       days_since_signup: 250,
       idle_days: 3,
-      lapsed: false,
+      state: "DORMANT",
+      studied_last_week: true,
       last_tier: "yellow",
       last_season_points: 420,
     };
@@ -276,7 +277,8 @@ describe("the two clocks on the unassigned page", () => {
   function renderUnassigned(season: AdminLeagueSeasonContext = SUMMER) {
     listUnassignedMembers.mockResolvedValue({
       items: [member()], total: 1, page: 1, page_size: 25,
-      lapsed_total: 0, lapse_after_days: 30, seasons: [season],
+      dormant_total: 1, waiting_total: 0, idle_last_week_total: 0,
+      previous_season_id: "2026-W27", seasons: [season],
     });
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     return render(

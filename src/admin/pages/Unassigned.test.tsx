@@ -59,7 +59,8 @@ function waiting(overrides: Partial<AdminUnassignedMember> = {}): AdminUnassigne
     never_studied: false,
     days_since_signup: 250,
     idle_days: 3,
-    lapsed: false,
+    state: "DORMANT",
+    studied_last_week: true,
     last_tier: "yellow",
     last_season_points: 420,
     ...overrides,
@@ -72,8 +73,10 @@ function renderPage(items: AdminUnassignedMember[], overrides = {}) {
     total: items.length,
     page: 1,
     page_size: 25,
-    lapsed_total: items.filter((m) => m.lapsed).length,
-    lapse_after_days: 30,
+    dormant_total: items.filter((m) => m.state === "DORMANT").length,
+    waiting_total: items.filter((m) => m.state === "WAITING_FOR_ALLOCATION").length,
+    idle_last_week_total: items.filter((m) => !m.studied_last_week).length,
+    previous_season_id: "2026-W27",
     seasons: [SEASON],
     ...overrides,
   });
@@ -114,19 +117,41 @@ describe("the waiting list", () => {
     expect(screen.getByText("3일째 학습 없음")).toBeInTheDocument();
   });
 
-  it("marks a lapsed account so it stands out from one merely waiting", async () => {
+  it("tells someone owed a league apart from someone who has not studied", async () => {
+    // The distinction the page exists to make: only one of these two is
+    // anybody's to act on.
     renderPage([
       waiting(),
-      waiting({ user_id: "usr_2", name: "박서준", days_since_activity: 61, idle_days: 61, lapsed: true }),
+      waiting({
+        user_id: "usr_2",
+        name: "박서준",
+        state: "WAITING_FOR_ALLOCATION",
+        days_since_activity: 0,
+        idle_days: 0,
+      }),
     ]);
     await screen.findByText("김하늘");
 
-    // "장기 미학습" is also a header label, so read the table body's badges.
-    const badges = Array.from(document.querySelectorAll("tbody .hgadm-badge"));
-    const labels = badges.map((b) => b.textContent);
-    expect(labels).toContain("대기");
-    const lapsed = badges.find((b) => b.textContent === "장기 미학습")!;
-    expect(lapsed).toHaveClass("hgadm-badge--danger");
+    const labels = Array.from(document.querySelectorAll("tbody .hgadm-badge")).map(
+      (b) => b.textContent,
+    );
+    expect(labels).toContain("휴면");
+    expect(labels).toContain("배정 대기");
+    expect(screen.getByText("학습했으나 배정 가능한 리그 없음")).toBeInTheDocument();
+  });
+
+  it("marks who sat out last week, separately from why they are unplaced", async () => {
+    renderPage([
+      waiting({ state: "WAITING_FOR_ALLOCATION", studied_last_week: false }),
+    ]);
+    await screen.findByText("김하늘");
+
+    const labels = Array.from(document.querySelectorAll("tbody .hgadm-badge")).map(
+      (b) => b.textContent,
+    );
+    // Both facts, on one row: they studied this week and not last.
+    expect(labels).toContain("배정 대기");
+    expect(labels).toContain("미학습");
   });
 
   it("says plainly when an account has never studied at all", async () => {
@@ -134,7 +159,7 @@ describe("the waiting list", () => {
     renderPage([
       waiting({
         last_activity_at: null, days_since_activity: null,
-        never_studied: true, days_since_signup: 3, idle_days: 3, lapsed: false,
+        never_studied: true, days_since_signup: 3, idle_days: 3,
       }),
     ]);
     await screen.findByText("김하늘");
@@ -142,39 +167,22 @@ describe("the waiting list", () => {
     expect(screen.getByText("학습 기록 없음")).toBeInTheDocument();
   });
 
-  it("does not call a brand-new account lapsed", async () => {
-    // The reported bug: a tester created days ago showed as dormant, because
-    // "never studied" was being read as infinitely idle.
+  it("measures a brand-new account from signup, not from never", async () => {
+    // The reported bug: a tester created days ago looked maximally idle,
+    // because "never studied" was being read as infinitely idle.
     renderPage([
       waiting({
         last_activity_at: null, days_since_activity: null,
-        never_studied: true, days_since_signup: 2, idle_days: 2, lapsed: false,
+        never_studied: true, days_since_signup: 2, idle_days: 2,
       }),
     ]);
     await screen.findByText("김하늘");
 
-    const badge = document.querySelector("tbody .hgadm-badge")!;
-    expect(badge.textContent).toBe("신규 가입");
-    expect(badge).not.toHaveClass("hgadm-badge--danger");
-    // And it says which clock the number came from.
     expect(screen.getByText("가입 후 2일")).toBeInTheDocument();
   });
 
-  it("does call an old account that never started lapsed", async () => {
-    renderPage([
-      waiting({
-        last_activity_at: null, days_since_activity: null,
-        never_studied: true, days_since_signup: 200, idle_days: 200, lapsed: true,
-      }),
-    ]);
-    await screen.findByText("김하늘");
-
-    expect(document.querySelector("tbody .hgadm-badge")!.textContent).toBe("장기 미학습");
-    expect(screen.getByText("가입 후 200일")).toBeInTheDocument();
-  });
-
-  it("says how long a lapsed studier has been idle", async () => {
-    renderPage([waiting({ days_since_activity: 61, idle_days: 61, lapsed: true })]);
+  it("says how long a dormant studier has been idle", async () => {
+    renderPage([waiting({ days_since_activity: 61, idle_days: 61 })]);
     await screen.findByText("김하늘");
 
     expect(screen.getByText("61일째 학습 없음")).toBeInTheDocument();
@@ -195,30 +203,51 @@ describe("the waiting list", () => {
     expect(screen.getByText("첫 참가 대기")).toBeInTheDocument();
   });
 
-  it("reports the size of the queue and how much of it is dormant", async () => {
+  it("counts the two reasons apart, and last week apart from both", async () => {
     renderPage([
       waiting(),
-      waiting({ user_id: "usr_2", name: "박서준", idle_days: 40, lapsed: true }),
-      waiting({ user_id: "usr_3", name: "이도현", idle_days: 40, lapsed: true }),
+      waiting({ user_id: "usr_2", name: "박서준", state: "WAITING_FOR_ALLOCATION" }),
+      waiting({
+        user_id: "usr_3", name: "이도현",
+        state: "WAITING_FOR_ALLOCATION", studied_last_week: false,
+      }),
     ]);
     await screen.findByText("이도현");
 
     const facts = document.querySelector(".hgadm-page-head__facts")!;
-    expect(facts.textContent).toContain("3명");
-    expect(facts.textContent).toContain("2명");
+    expect(facts.textContent).toContain("휴면1명");
+    expect(facts.textContent).toContain("배정 대기2명");
+    expect(facts.textContent).toContain("전 주 미학습1명");
+    // Which week "last week" was, so the number is not a floating claim.
+    expect(facts.textContent).toContain("2026-W27");
   });
 
-  it("filters to the lapsed ones on request", async () => {
+  it("filters to each state on its own", async () => {
     const user = userEvent.setup();
     renderPage([waiting()]);
     await screen.findByText("김하늘");
 
     await user.click(screen.getByText("전체 미배정 회원"));
-    await user.click(await screen.findByRole("option", { name: "장기 미학습만" }));
+    await user.click(await screen.findByRole("option", { name: "배정 대기만" }));
 
     await waitFor(() =>
       expect(listUnassignedMembers).toHaveBeenCalledWith(
-        expect.objectContaining({ lapsed: "true" }),
+        expect.objectContaining({ state: "WAITING_FOR_ALLOCATION" }),
+      ),
+    );
+  });
+
+  it("filters on last week separately from the state", async () => {
+    const user = userEvent.setup();
+    renderPage([waiting()]);
+    await screen.findByText("김하늘");
+
+    await user.click(screen.getByText("전 주 학습 여부 전체"));
+    await user.click(await screen.findByRole("option", { name: "전 주 미학습만" }));
+
+    await waitFor(() =>
+      expect(listUnassignedMembers).toHaveBeenCalledWith(
+        expect.objectContaining({ idle_last_week: "true" }),
       ),
     );
   });
@@ -235,7 +264,9 @@ describe("the waiting list", () => {
     await screen.findByText("김하늘");
 
     listUnassignedMembers.mockResolvedValue({
-      items: [], total: 0, page: 1, page_size: 25, lapsed_total: 0, lapse_after_days: 30, seasons: [SEASON],
+      items: [], total: 0, page: 1, page_size: 25,
+      dormant_total: 0, waiting_total: 0, idle_last_week_total: 0,
+      previous_season_id: "2026-W27", seasons: [SEASON],
     });
     await user.type(screen.getByPlaceholderText("이름·닉네임·이메일 검색"), "zzz{Enter}");
 
@@ -268,13 +299,14 @@ describe("opening a member from the waiting list", () => {
     const user = userEvent.setup();
     listUnassignedMembers.mockResolvedValue({
       items: [waiting()], total: 1, page: 1, page_size: 25,
-      lapsed_total: 0, lapse_after_days: 30, seasons: [SEASON],
+      dormant_total: 1, waiting_total: 0, idle_last_week_total: 0,
+      previous_season_id: "2026-W27", seasons: [SEASON],
     });
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={qc}>
         <ToastProvider>
-          <MemoryRouter initialEntries={["/leagues/unassigned?q=haneul&lapsed=1"]}>
+          <MemoryRouter initialEntries={["/leagues/unassigned?q=haneul&state=DORMANT"]}>
             <Routes>
               <Route path="/leagues/unassigned" element={<UnassignedMembersPage />} />
               <Route path="/users/:userId" element={<Probe />} />
@@ -286,7 +318,7 @@ describe("opening a member from the waiting list", () => {
     await user.click(await screen.findByText("김하늘"));
 
     expect(screen.getByTestId("back").textContent).toBe(
-      "리그 미배정 회원|/leagues/unassigned?q=haneul&lapsed=1",
+      "리그 미배정 회원|/leagues/unassigned?q=haneul&state=DORMANT",
     );
   });
 });

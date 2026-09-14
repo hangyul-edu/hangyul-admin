@@ -741,12 +741,18 @@ function PeriodInBothZones({ season }: { season: AdminLeagueSeasonContext }) {
 }
 
 /**
- * League Unassigned Members — those not placed in a league this week.
+ * League Unassigned Members — those with no league this week.
  *
- * A member joins on their first qualifying study activity, so this list is
- * everyone who has not studied yet — what the app calls *dormant*. It is a
- * work queue rather than a report: the accounts idle longest come first, and
- * the ones idle longest are marked so they can be picked out at a glance.
+ * Two different situations share this list and must not share a number:
+ * **휴면** is a member who has not studied, which fixes itself the moment they
+ * do; **배정 대기** is a member who *has* studied and still has nowhere to
+ * play, because every league in their tier is full and fewer than five are
+ * waiting to open another. Only the second is anybody's to act on, so it is
+ * counted and filterable on its own rather than buried in a total.
+ *
+ * The 전 주 미학습 count is a separate question from either: who sat out the
+ * week that just ended, which is exactly who a new season's leagues are not
+ * built from.
  */
 export function UnassignedMembersPage() {
   const filters = useUrlFilters();
@@ -754,15 +760,18 @@ export function UnassignedMembersPage() {
   const location = useLocation();
 
   const q = filters.value("q");
-  const lapsedOnly = filters.value("lapsed") === "1";
+  const state = filters.value("state");
+  const idleLastWeek = filters.value("idle_last_week") === "1";
   const page = filters.number("page", 1);
+  const filtered = Boolean(q || state || idleLastWeek);
 
   const query = useQuery({
-    queryKey: ["admin", "leagues", "unassigned", { q, lapsedOnly, page }],
+    queryKey: ["admin", "leagues", "unassigned", { q, state, idleLastWeek, page }],
     queryFn: () =>
       adminApi.listUnassignedMembers({
         q: q || undefined,
-        lapsed: lapsedOnly ? "true" : undefined,
+        state: state || undefined,
+        idle_last_week: idleLastWeek ? "true" : undefined,
         page,
         page_size: 25,
       }),
@@ -806,24 +815,39 @@ export function UnassignedMembersPage() {
     },
     {
       key: "state",
-      header: "상태",
-      // Not "dormant": every account on this page is dormant in the app's
-      // sense — that is what the page IS, and it is said once above. What
-      // differs per row is how long they have been idle and which clock that
-      // was measured on, so the badge names that instead.
+      header: "미배정 사유",
+      // The badge names *why* they have no league, which is the one thing that
+      // separates the two populations on this page. The line beneath it is how
+      // long they have gone without studying — related, but not the same fact:
+      // somebody can be 배정 대기 with 0일째.
       render: (m) => (
         <div className="hgadm-nowrap">
-          <Badge tone={m.lapsed ? "danger" : m.never_studied ? "info" : "neutral"} dot>
-            {m.lapsed ? "장기 미학습" : m.never_studied ? "신규 가입" : "대기"}
+          <Badge tone={m.state === "WAITING_FOR_ALLOCATION" ? "warning" : "neutral"} dot>
+            {m.state === "WAITING_FOR_ALLOCATION" ? "배정 대기" : "휴면"}
           </Badge>
           <div className="hgadm-cell-sub">
-            {m.never_studied
-              ? `가입 후 ${m.days_since_signup.toLocaleString()}일`
-              : `${m.idle_days.toLocaleString()}일째 학습 없음`}
+            {m.state === "WAITING_FOR_ALLOCATION"
+              ? "학습했으나 배정 가능한 리그 없음"
+              : m.never_studied
+                ? `가입 후 ${m.days_since_signup.toLocaleString()}일`
+                : `${m.idle_days.toLocaleString()}일째 학습 없음`}
           </div>
         </div>
       ),
-      width: 170,
+      width: 210,
+    },
+    {
+      key: "last-week",
+      header: "전 주 학습",
+      render: (m) =>
+        m.studied_last_week ? (
+          <span className="hgadm-muted hgadm-nowrap">학습함</span>
+        ) : (
+          <Badge tone="danger" dot>
+            미학습
+          </Badge>
+        ),
+      width: 110,
     },
     {
       key: "last-league",
@@ -871,26 +895,41 @@ export function UnassignedMembersPage() {
           {query.data && (
             <div className="hgadm-page-head__facts">
               <span className="hgadm-fact">
-                <span className="hgadm-fact__label">미배정</span>
+                <span className="hgadm-fact__label">휴면</span>
                 <span className="hgadm-fact__value">
-                  {query.data.total.toLocaleString()}명
+                  {query.data.dormant_total.toLocaleString()}명
                 </span>
+                <span className="hgadm-fact__note">이번 주 학습 없음</span>
+              </span>
+              {/* Deliberately the emphasised one: it is the only number on
+                  this page that represents something the service owes. */}
+              <span className="hgadm-fact hgadm-fact--promote">
+                <span className="hgadm-fact__label">배정 대기</span>
+                <span className="hgadm-fact__value">
+                  {query.data.waiting_total.toLocaleString()}명
+                </span>
+                <span className="hgadm-fact__note">리그 자리 부족</span>
               </span>
               <span className="hgadm-fact hgadm-fact--demote">
-                <span className="hgadm-fact__label">장기 미학습</span>
+                <span className="hgadm-fact__label">전 주 미학습</span>
                 <span className="hgadm-fact__value">
-                  {query.data.lapsed_total.toLocaleString()}명
+                  {query.data.idle_last_week_total.toLocaleString()}명
                 </span>
-                <span className="hgadm-fact__note">
-                  {query.data.lapse_after_days}일 이상
-                </span>
+                {query.data.previous_season_id && (
+                  <span className="hgadm-fact__note">
+                    {query.data.previous_season_id}
+                  </span>
+                )}
               </span>
             </div>
           )}
           <div className="hgadm-page-head__desc">
-            이번 주 학습 기록이 없어 아직 리그에 배정되지 않은 회원입니다. 학습을
-            시작하면 자동으로 배정됩니다. 경과 일수는 마지막 학습일 기준이며, 학습
-            기록이 없는 계정은 가입일 기준입니다.
+            아직 리그에 배정되지 않은 회원입니다. <strong>휴면</strong>은 이번 주
+            학습 기록이 없는 회원으로, 학습을 시작하면 곧바로 배정됩니다.{" "}
+            <strong>배정 대기</strong>는 학습을 했지만 같은 티어의 리그가 모두
+            가득 차 있고 새 리그를 만들 인원(5명)도 모이지 않은 회원으로, 회원이
+            할 수 있는 일은 없습니다. <strong>전 주 미학습</strong>은 지난 주에
+            학습 기록이 없어 이번 주 리그 생성 대상에서 빠진 회원입니다.
           </div>
           {/* 3 — what a click does, on a line of its own. */}
           <div className="hgadm-page-head__hint">
@@ -906,13 +945,30 @@ export function UnassignedMembersPage() {
             placeholder="이름·닉네임·이메일 검색"
             onSearch={(next) => filters.patch({ q: next, page: null })}
           />
+          {/* Two controls because they are two questions: why they have no
+              league, and whether they sat out last week. A member can be
+              배정 대기 and 전 주 미학습 at the same time. */}
           <Select
-            value={lapsedOnly ? "1" : ""}
-            onChange={(e) => filters.patch({ lapsed: e.target.value, page: null })}
+            value={state}
+            onChange={(e) => filters.patch({ state: e.target.value, page: null })}
             style={{ width: 190 }}
           >
             <option value="">전체 미배정 회원</option>
-            <option value="1">장기 미학습만</option>
+            <option value="DORMANT">휴면만</option>
+            <option value="WAITING_FOR_ALLOCATION">배정 대기만</option>
+          </Select>
+          <Select
+            value={idleLastWeek ? "1" : ""}
+            onChange={(e) =>
+              filters.patch({ idle_last_week: e.target.value, page: null })
+            }
+            // Matches the sibling: "전 주 학습 여부 전체" measures 113px, and
+            // 170 left only a few pixels once the select's own chrome is
+            // counted — the margin that clipped the 학습 분야 filter.
+            style={{ width: 190 }}
+          >
+            <option value="">전 주 학습 여부 전체</option>
+            <option value="1">전 주 미학습만</option>
           </Select>
         </div>
 
@@ -941,14 +997,14 @@ export function UnassignedMembersPage() {
                 <EmptyState
                   icon={<Trophy size={28} strokeWidth={1.75} />}
                   title={
-                    q || lapsedOnly
+                    filtered
                       ? "조건에 맞는 회원이 없습니다"
                       : "모든 회원이 리그에 배정되었습니다"
                   }
                   desc={
-                    q || lapsedOnly
+                    filtered
                       ? "검색어나 필터를 지워보세요."
-                      : "이번 주 학습을 시작하지 않은 회원이 아직 없습니다."
+                      : "배정을 기다리는 회원이 없습니다."
                   }
                 />
               }

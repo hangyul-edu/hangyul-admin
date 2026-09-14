@@ -342,7 +342,19 @@ export interface AdminMemberLookupPage {
   seasons: AdminLeagueSeasonContext[];
 }
 
-/** One member waiting to be placed in a league. */
+/**
+ * Why a member has no league. Two different problems, never one number.
+ *
+ * `DORMANT` — they have not studied this week. It resolves itself: allocation
+ * runs on qualifying activity, so they are seated the moment they start.
+ *
+ * `WAITING_FOR_ALLOCATION` — they have studied and there is still nowhere to
+ * put them, because every league in their tier is full and fewer than five are
+ * waiting to open another. Nothing the member does changes that.
+ */
+export type AdminUnassignedState = "DORMANT" | "WAITING_FOR_ALLOCATION";
+
+/** One member with no league this week. */
 export interface AdminUnassignedMember {
   user_id: string;
   name: string | null;
@@ -355,16 +367,26 @@ export interface AdminUnassignedMember {
   days_since_activity: number | null;
   never_studied: boolean;
   days_since_signup: number;
-  /** Days since the last session, or since signup for an account that never studied. */
+  /**
+   * Days since the last session, or since signup for an account that never
+   * studied. Informational — it does not decide `state`: somebody who studied
+   * on Monday and found every league full is waiting with an `idle_days` of 0.
+   */
   idle_days: number;
-  lapsed: boolean;
+  state: AdminUnassignedState;
+  /** They had qualifying learning activity in the previous weekly season. */
+  studied_last_week: boolean;
   last_tier: string | null;
   last_season_points: number | null;
 }
 
 export interface AdminUnassignedMembersPage extends Page<AdminUnassignedMember> {
-  lapsed_total: number;
-  lapse_after_days: number;
+  dormant_total: number;
+  /** Studied and still unplaced. Growing week on week means leagues are not opening. */
+  waiting_total: number;
+  idle_last_week_total: number;
+  /** The weekly season `studied_last_week` was measured against. */
+  previous_season_id: string | null;
   seasons: AdminLeagueSeasonContext[];
 }
 
