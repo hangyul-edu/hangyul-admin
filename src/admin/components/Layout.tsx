@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { Link, Outlet, useLocation } from "react-router-dom";
 import {
   Bell,
   BookOpen,
@@ -42,6 +42,33 @@ interface NavItem {
 interface NavGroup {
   label: string;
   items: NavItem[];
+}
+
+/**
+ * Which nav item the current URL belongs to: the most specific one that matches.
+ *
+ * `/leagues` and `/leagues/unassigned` are both menu items, and the second
+ * lives under the first. Plain prefix matching — what `NavLink` does without
+ * `end` — lit both of them on the unassigned page. `end` everywhere is not the
+ * answer either: `/leagues/:seasonId/:groupId` is a league's detail page and
+ * *should* keep 진행 중인 리그 selected, as `/users/:id` keeps 사용자 관리.
+ *
+ * So: collect every item the path matches and take the longest. A section
+ * stays lit for its own sub-pages, and loses to a sibling that owns the URL
+ * more specifically. Adding a nested item later needs no change here.
+ */
+function matchesPath(to: string, pathname: string): boolean {
+  if (to === "/") return pathname === "/";
+  return pathname === to || pathname.startsWith(`${to}/`);
+}
+
+export function activeNavTarget(pathname: string, targets: string[]): string | null {
+  let best: string | null = null;
+  for (const to of targets) {
+    if (!matchesPath(to, pathname)) continue;
+    if (best === null || to.length > best.length) best = to;
+  }
+  return best;
 }
 
 const NAV: NavGroup[] = [
@@ -112,6 +139,13 @@ export function AdminLayout() {
   const [collapsed, setCollapsed] = useState(loadSidebarCollapsed);
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const { pathname } = useLocation();
+  // Resolved once against every target, not per link: "most specific wins"
+  // is a decision about the whole menu, and a link cannot make it alone.
+  const activeTo = useMemo(
+    () => activeNavTarget(pathname, NAV.flatMap((group) => group.items.map((i) => i.to))),
+    [pathname],
+  );
 
   return (
     <div className="hgadm-frame">
@@ -165,14 +199,17 @@ export function AdminLayout() {
                 <div className="hgadm-nav__group">{group.label}</div>
                 {visible.map((item) => {
                   const Icon = item.icon;
+                  const isActive = item.to === activeTo;
                   return (
-                    <NavLink
+                    <Link
                       key={item.to}
                       to={item.to}
-                      end={item.to === "/"}
-                      className={({ isActive }) =>
-                        `hgadm-nav__link ${isActive ? "active" : ""}`
-                      }
+                      className={`hgadm-nav__link ${isActive ? "active" : ""}`}
+                      // Set here rather than left to NavLink, which derives it
+                      // from its own prefix match — the same match that lit two
+                      // items at once, so the accessibility tree announced two
+                      // current pages.
+                      aria-current={isActive ? "page" : undefined}
                       // The label is display:none when collapsed, which also
                       // removes it from the accessibility tree — so the link
                       // carries its own name, and `title` gives sighted users
@@ -186,7 +223,7 @@ export function AdminLayout() {
                         <Icon size={18} strokeWidth={1.75} />
                       </span>
                       <span className="hgadm-nav__label">{item.label}</span>
-                    </NavLink>
+                    </Link>
                   );
                 })}
               </div>

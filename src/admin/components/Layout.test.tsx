@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { AdminLayout } from "./Layout";
+import { AdminLayout, activeNavTarget } from "./Layout";
 
 vi.mock("../auth", () => ({
   useAdminAuth: () => ({
@@ -15,13 +15,17 @@ vi.mock("../auth", () => ({
   }),
 }));
 
-function renderLayout() {
+function renderLayout(at = "/users") {
   return render(
-    <MemoryRouter initialEntries={["/users"]}>
+    <MemoryRouter initialEntries={[at]}>
       <Routes>
         <Route element={<AdminLayout />}>
           <Route path="/" element={<div>DASHBOARD PAGE</div>} />
           <Route path="/users" element={<div>USERS PAGE</div>} />
+          <Route path="/users/:userId" element={<div>USER DETAIL</div>} />
+          <Route path="/leagues" element={<div>LEAGUES PAGE</div>} />
+          <Route path="/leagues/unassigned" element={<div>UNASSIGNED PAGE</div>} />
+          <Route path="/leagues/:seasonId/:groupId" element={<div>LEAGUE DETAIL</div>} />
         </Route>
       </Routes>
     </MemoryRouter>,
@@ -87,6 +91,45 @@ describe("admin sidebar", () => {
     // current page stays identifiable with no text on screen.
     expect(within(sidebar()).getByRole("link", { name: "사용자 관리" }).className)
       .toContain("active");
+  });
+
+  it("lights one item only, when a menu item sits under another", () => {
+    /* 리그 미배정 회원 (/leagues/unassigned) lives under 진행 중인 리그
+       (/leagues). Prefix matching lit both — the sidebar claimed two current
+       pages at once, and so did the accessibility tree. */
+    renderLayout("/leagues/unassigned");
+    const nav = within(sidebar());
+
+    expect(nav.getByRole("link", { name: "리그 미배정 회원" }).className).toContain("active");
+    expect(nav.getByRole("link", { name: "진행 중인 리그" }).className).not.toContain("active");
+    expect(nav.getAllByRole("link").filter((l) => l.getAttribute("aria-current") === "page"))
+      .toHaveLength(1);
+  });
+
+  it("keeps a section lit for its own sub-pages", () => {
+    /* Why `end` on every link is not the fix: a league's detail page belongs
+       to 진행 중인 리그 and has no menu item of its own. */
+    renderLayout("/leagues/2026-W37/grp_1");
+    const nav = within(sidebar());
+
+    expect(nav.getByRole("link", { name: "진행 중인 리그" }).className).toContain("active");
+    expect(nav.getByRole("link", { name: "리그 미배정 회원" }).className).not.toContain("active");
+  });
+
+  it("marks the section itself when it is the page", () => {
+    renderLayout("/leagues");
+    const nav = within(sidebar());
+
+    expect(nav.getByRole("link", { name: "진행 중인 리그" }).className).toContain("active");
+    expect(nav.getByRole("link", { name: "리그 미배정 회원" }).className).not.toContain("active");
+  });
+
+  it("does not let the dashboard claim every page", () => {
+    renderLayout("/users/usr_1");
+    const nav = within(sidebar());
+
+    expect(nav.getByRole("link", { name: "사용자 관리" }).className).toContain("active");
+    expect(nav.getByRole("link", { name: "대시보드" }).className).not.toContain("active");
   });
 
   it("does not disturb the page content", async () => {
@@ -196,5 +239,28 @@ describe("content nav labels", () => {
 
     await user.click(toggle());
     expect(within(sidebar()).getByRole("link", { name: "문장(회화)" })).toBeInTheDocument();
+  });
+});
+
+describe("activeNavTarget", () => {
+  const TARGETS = ["/", "/users", "/leagues", "/leagues/unassigned"];
+
+  it("prefers the most specific match", () => {
+    expect(activeNavTarget("/leagues/unassigned", TARGETS)).toBe("/leagues/unassigned");
+  });
+
+  it("falls back to the section for a sub-page with no item of its own", () => {
+    expect(activeNavTarget("/leagues/2026-W37/grp_1", TARGETS)).toBe("/leagues");
+    expect(activeNavTarget("/users/usr_1", TARGETS)).toBe("/users");
+  });
+
+  it("matches the root only exactly", () => {
+    expect(activeNavTarget("/", TARGETS)).toBe("/");
+    expect(activeNavTarget("/anything", TARGETS)).toBeNull();
+  });
+
+  it("does not treat a shared prefix as containment", () => {
+    // `/leagues-archive` is not inside `/leagues`, however it sorts.
+    expect(activeNavTarget("/leagues-archive", TARGETS)).toBeNull();
   });
 });
