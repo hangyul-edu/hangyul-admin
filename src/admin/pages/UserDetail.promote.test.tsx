@@ -225,3 +225,51 @@ describe("performing the promotion", () => {
     await waitFor(() => expect(promoteButton()).not.toBeInTheDocument());
   });
 });
+
+/**
+ * The shortcut to 관리자 계정 관리, shown on an administrator's detail page.
+ *
+ * `/admins` is gated on `admins:manage`, which only super_admin holds — so an
+ * operator, content manager, support agent or viewer following this link
+ * landed on 접근 권한이 없습니다. The sidebar already hid the same destination
+ * from them; this was the one place that did not.
+ */
+describe("the 관리자 계정 관리 shortcut", () => {
+  const shortcut = () => screen.queryByRole("link", { name: "관리자 계정 관리에서 변경" });
+
+  beforeEach(() => {
+    userDetail.mockReset();
+    grantAdmin.mockReset();
+    userDetail.mockResolvedValue(member({ role: "admin", admin_role: "operator" }));
+  });
+
+  it("is offered to someone who can open that page", async () => {
+    scopes = ["users:read", "users:write", "admins:manage"];
+    renderPage();
+    await loaded();
+    expect(shortcut()).toBeInTheDocument();
+  });
+
+  it("is hidden from a viewer", async () => {
+    // Every read scope in the portal, and not admins:manage.
+    scopes = ["users:read", "content:read", "commerce:read", "ops:read", "audit:read"];
+    renderPage();
+    await loaded();
+    expect(shortcut()).not.toBeInTheDocument();
+  });
+
+  it("is hidden from an operator, who can edit members but not admins", async () => {
+    scopes = ["users:read", "users:write", "content:read", "ops:read", "audit:read"];
+    renderPage();
+    await loaded();
+    expect(shortcut()).not.toBeInTheDocument();
+  });
+
+  it("is not shown at all for a member who is not an administrator", async () => {
+    scopes = ["users:read", "users:write", "admins:manage"];
+    userDetail.mockResolvedValue(member());
+    renderPage();
+    await loaded();
+    expect(shortcut()).not.toBeInTheDocument();
+  });
+});

@@ -288,7 +288,12 @@ export function UserDetailPage() {
               관리자로 승격
             </Button>
           )}
-          {isAdminAccount && (
+          {/* Only for someone who can actually open that page. `admins:manage`
+              is super_admin's alone, so an operator, content manager, support
+              agent or viewer was being offered a door into 접근 권한이 없습니다.
+              The sidebar already hides the same destination from them; this is
+              the one place that did not. */}
+          {isAdminAccount && can("admins:manage") && (
             <Link to="/admins" className="hgadm-btn hgadm-btn--secondary">
               관리자 계정 관리에서 변경
             </Link>
