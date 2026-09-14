@@ -95,8 +95,28 @@ const USER = {
   onboarding: null,
   subscription: null,
   invoices: [],
-  learning: null,
-  gamification: null,
+  /* Both are non-optional on AdminUserDetail. They were null here because the
+     overview did not read them; it shows the learner's current state now, so
+     the fixture has to describe a whole user. */
+  learning: {
+    current_streak: 3,
+    best_streak: 9,
+    last_active_date: "2026-09-12",
+    total_minutes: 120,
+    sessions_30d: 7,
+    tracks: [],
+    daily_sentence_goal: 5,
+    daily_question_goal: 5,
+    effective_daily_sentence_goal: 5,
+    effective_daily_question_goal: 5,
+  },
+  gamification: {
+    points_balance: 250,
+    season_points: 40,
+    league_tier: "green",
+    league_season_id: "2026-W37",
+    attendance_days_30d: 5,
+  },
   coupons: [],
   devices: [],
   friend_count: 0,

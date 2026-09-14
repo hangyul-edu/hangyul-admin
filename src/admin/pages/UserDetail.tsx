@@ -91,7 +91,7 @@ export function UserDetailPage() {
   const toastError = useToastError();
   const { can, me } = useAdminAuth();
   const back = useBackTarget({ to: "/users", label: "사용자 목록" });
-  const [tab, setTab] = useState<"overview" | "billing" | "learning" | "misc">("overview");
+  const [tab, setTab] = useState<"overview" | "billing" | "learning" | "onboarding" | "misc">("overview");
   const [confirm, setConfirm] = useState<null | {
     title: string;
     message: string;
@@ -301,6 +301,7 @@ export function UserDetailPage() {
             ["overview", "개요"],
             ["billing", "구독·결제"],
             ["learning", "학습·게임"],
+            ["onboarding", "온보딩"],
             ["misc", "쿠폰·기기"],
           ] as const
         ).map(([key, label]) => (
@@ -366,12 +367,57 @@ export function UserDetailPage() {
               />
             </div>
           </div>
+          {/* The overview answers "how is this account doing right now", so the
+              second card is the learner's current state. The 학습·게임 tab
+              keeps the full detail; these are the few figures worth reading
+              before deciding whether to open it. */}
           <div className="hgadm-card">
             <div className="hgadm-card__head">
-              <div className="hgadm-card__title">온보딩 응답</div>
+              <div className="hgadm-card__title">현재 학습·게임 현황</div>
             </div>
             <div className="hgadm-card__body">
-              {user.onboarding ? (
+              <Dl
+                items={[
+                  ["마지막 학습일", user.learning.last_active_date ?? "학습 기록 없음"],
+                  [
+                    "스트릭",
+                    `${user.learning.current_streak}일 (최고 ${user.learning.best_streak}일)`,
+                  ],
+                  ["최근 30일 세션", `${user.learning.sessions_30d}회`],
+                  ["누적 학습", formatDuration(user.learning.total_minutes * 60)],
+                  [
+                    "일일 목표",
+                    <DailyGoals key="goals" learning={user.learning} />,
+                  ],
+                  [
+                    "리그",
+                    <div key="league" className="hgadm-row">
+                      <Badge tone="brand">{user.gamification.league_tier}</Badge>
+                      <span style={{ fontSize: 13.5 }}>
+                        {user.gamification.season_points.toLocaleString()}P
+                      </span>
+                    </div>,
+                  ],
+                  [
+                    "보유 포인트",
+                    `${user.gamification.points_balance.toLocaleString()}P`,
+                  ],
+                  ["최근 30일 출석", `${user.gamification.attendance_days_30d}일`],
+                ]}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab === "onboarding" && (
+        <div className="hgadm-card">
+          <div className="hgadm-card__head">
+            <div className="hgadm-card__title">온보딩 응답</div>
+          </div>
+          <div className="hgadm-card__body">
+            {user.onboarding ? (
+              <>
                 <Dl
                   items={[
                     ["학습 목적", String(user.onboarding.purpose ?? "—")],
@@ -383,10 +429,17 @@ export function UserDetailPage() {
                     ],
                   ]}
                 />
-              ) : (
-                <span className="hgadm-muted">온보딩을 완료하지 않았습니다.</span>
-              )}
-            </div>
+                {/* These are the answers given at signup, kept as a record.
+                    What the learner is actually held to now is on 학습·게임 —
+                    the two drift apart as soon as they change a setting. */}
+                <p className="hgadm-cell-sub" style={{ marginTop: 14 }}>
+                  가입 시 응답한 내용입니다. 현재 적용 중인 값은 학습·게임 탭에서
+                  확인하세요.
+                </p>
+              </>
+            ) : (
+              <span className="hgadm-muted">온보딩을 완료하지 않았습니다.</span>
+            )}
           </div>
         </div>
       )}
