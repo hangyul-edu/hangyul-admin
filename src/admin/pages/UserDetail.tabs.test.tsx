@@ -115,6 +115,29 @@ describe("개요", () => {
     expect(await screen.findByText("리그 미배정")).toBeInTheDocument();
   });
 
+  it("states the status once, without explaining it", async () => {
+    /* The badge beside the name is the whole statement. A 상태 row repeating
+       it with a paragraph of what 활성 means was the same fact three times;
+       what each state means lives on the user list's 계정 상태 안내. */
+    renderPage();
+    await screen.findByText("계정 정보");
+
+    expect(screen.getAllByText("활성")).toHaveLength(1);
+    expect(screen.queryByText(/정상적으로 로그인하고/)).not.toBeInTheDocument();
+    expect(screen.queryByText("상태")).not.toBeInTheDocument();
+  });
+
+  it("does not put the internal user id on screen", async () => {
+    // A developer handle. It stays in the URL, which is where support copies
+    // one from — the rule the league screens already follow.
+    renderPage();
+    await screen.findByText("계정 정보");
+
+    expect(document.body.textContent).not.toContain("usr_t");
+    // …while the things that identify the account to a person remain.
+    expect(screen.getAllByText(/t@talkhangyul\.co\.kr/).length).toBeGreaterThan(0);
+  });
+
   it("says so plainly when the member has never studied", async () => {
     userDetail.mockResolvedValue(
       member({

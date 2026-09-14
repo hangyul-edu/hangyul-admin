@@ -28,11 +28,7 @@ import {
   formatDuration,
   formatMoney,
 } from "../lib/format";
-import {
-  accountStatusDescription,
-  accountStatusLabel,
-  accountStatusTone,
-} from "../lib/accountStatus";
+import { accountStatusLabel, accountStatusTone } from "../lib/accountStatus";
 import {
   ADMIN_TIERS,
   ADMIN_TIER_LABEL,
@@ -212,9 +208,13 @@ export function UserDetailPage() {
               </Badge>
             )}
           </h1>
+          {/* Nickname and email identify the account to a person; the
+              user_id is a developer handle and stays in the URL, which is
+              where support copies one from — the same rule the league screens
+              follow. */}
           <div className="hgadm-page-head__desc">
             {user.nickname ? `${user.nickname} · ` : ""}
-            {user.email} · <span className="hgadm-cell-mono">{user.user_id}</span>
+            {user.email}
           </div>
         </div>
         <div className="hgadm-page-head__actions">
@@ -330,20 +330,9 @@ export function UserDetailPage() {
             <div className="hgadm-card__body">
               <Dl
                 items={[
-                  /* The badge in the header says which state this is; here is
-                     what it means, where an admin deciding what to do about
-                     the account is already looking. */
-                  [
-                    "상태",
-                    <div key="status">
-                      <Badge tone={accountStatusTone(user.status)} dot>
-                        {accountStatusLabel(user.status)}
-                      </Badge>
-                      <div className="hgadm-cell-sub" style={{ lineHeight: 1.6 }}>
-                        {accountStatusDescription(user.status)}
-                      </div>
-                    </div>,
-                  ],
+                  /* No 상태 row: the badge beside the name already states it,
+                     and what each state means is on the user list's
+                     계정 상태 안내 rather than repeated per account. */
                   ["이름", user.name],
                   ["닉네임", user.nickname],
                   ["이메일", user.email],
