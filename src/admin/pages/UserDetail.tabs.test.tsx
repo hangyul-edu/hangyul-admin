@@ -52,7 +52,7 @@ function member(overrides: Record<string, unknown> = {}) {
       effective_daily_sentence_goal: 5, effective_daily_question_goal: 5,
     },
     gamification: {
-      points_balance: 250, season_points: 40, league_tier: "green",
+      points_total: 250, season_points: 40, league_tier: "green",
       league_season_id: "2026-W37", attendance_days_30d: 5,
     },
     ...overrides,
@@ -88,6 +88,10 @@ describe("개요", () => {
     // Current state: when they last studied, their streak, their standing.
     expect(screen.getByText("2026-09-12")).toBeInTheDocument();
     expect(screen.getByText("4일 (최고 11일)")).toBeInTheDocument();
+    // All-time, and labelled as such: 보유 포인트 read as a spendable wallet
+    // for a number that only ever grows.
+    expect(screen.getByText("누적 포인트")).toBeInTheDocument();
+    expect(screen.queryByText("보유 포인트")).not.toBeInTheDocument();
     expect(screen.getByText("250P")).toBeInTheDocument();
     // The tier reads as the app names it, not as the server stores it.
     expect(screen.getByText("Green")).toBeInTheDocument();
@@ -102,7 +106,7 @@ describe("개요", () => {
     userDetail.mockResolvedValue(
       member({
         gamification: {
-          points_balance: 0, season_points: 0, league_tier: null,
+          points_total: 0, season_points: 0, league_tier: null,
           league_season_id: null, attendance_days_30d: 0,
         },
       }),

@@ -217,7 +217,8 @@ export interface AdminUserDetail {
     effective_daily_question_goal: number | null;
   };
   gamification: {
-    points_balance: number;
+    /** Earned all time, across every season. Only ever grows. */
+    points_total: number;
     season_points: number;
     league_tier: string | null;
     league_season_id: string | null;

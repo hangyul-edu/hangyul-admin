@@ -409,8 +409,8 @@ export function UserDetailPage() {
                     ),
                   ],
                   [
-                    "보유 포인트",
-                    `${user.gamification.points_balance.toLocaleString()}P`,
+                    "누적 포인트",
+                    `${user.gamification.points_total.toLocaleString()}P`,
                   ],
                   ["최근 30일 출석", `${user.gamification.attendance_days_30d}일`],
                 ]}
@@ -583,9 +583,9 @@ export function UserDetailPage() {
             <div className="hgadm-card__body">
               <Dl
                 items={[
-                  ["보유 포인트", user.gamification.points_balance.toLocaleString()],
+                  ["누적 포인트", user.gamification.points_total.toLocaleString()],
                   [
-                    "시즌 포인트",
+                    "이번 시즌 포인트",
                     user.gamification.season_points.toLocaleString(),
                   ],
                   [

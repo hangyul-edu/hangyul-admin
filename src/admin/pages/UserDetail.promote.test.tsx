@@ -61,7 +61,7 @@ function member(overrides: Record<string, unknown> = {}) {
       daily_sentence_goal: null, daily_question_goal: null,
     },
     gamification: {
-      points_balance: 0, season_points: 0, league_tier: null,
+      points_total: 0, season_points: 0, league_tier: null,
       league_season_id: null, attendance_days_30d: 0,
     },
     coupons: [],

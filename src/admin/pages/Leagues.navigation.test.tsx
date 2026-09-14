@@ -111,7 +111,7 @@ const USER = {
     effective_daily_question_goal: 5,
   },
   gamification: {
-    points_balance: 250,
+    points_total: 250,
     season_points: 40,
     league_tier: "green",
     league_season_id: "2026-W37",
