@@ -40,6 +40,7 @@ import {
   ROLE_LABELS,
 } from "../lib/adminTiers";
 import { personName, personNameWithEmail } from "../lib/adminIdentity";
+import { TierChip } from "../components/TierChip";
 
 /**
  * The member's daily goals: what they chose, and what is actually in force.
@@ -391,12 +392,21 @@ export function UserDetailPage() {
                   ],
                   [
                     "리그",
-                    <div key="league" className="hgadm-row">
-                      <Badge tone="brand">{user.gamification.league_tier}</Badge>
-                      <span style={{ fontSize: 13.5 }}>
-                        {user.gamification.season_points.toLocaleString()}P
+                    /* The same chip the league screens use — the tier's proper
+                       name in the app's own colour, rather than the raw
+                       `green` this was printing. */
+                    user.gamification.league_tier ? (
+                      <div key="league" className="hgadm-row">
+                        <TierChip tier={user.gamification.league_tier} />
+                        <span style={{ fontSize: 13.5 }}>
+                          {user.gamification.season_points.toLocaleString()}P
+                        </span>
+                      </div>
+                    ) : (
+                      <span key="league" className="hgadm-muted">
+                        리그 미배정
                       </span>
-                    </div>,
+                    ),
                   ],
                   [
                     "보유 포인트",
@@ -578,8 +588,15 @@ export function UserDetailPage() {
                     "시즌 포인트",
                     user.gamification.season_points.toLocaleString(),
                   ],
-                  ["리그 티어", user.gamification.league_tier],
-                  ["시즌", user.gamification.league_season_id],
+                  [
+                    "리그 티어",
+                    user.gamification.league_tier ? (
+                      <TierChip key="tier" tier={user.gamification.league_tier} />
+                    ) : (
+                      <span key="tier" className="hgadm-muted">리그 미배정</span>
+                    ),
+                  ],
+                  ["시즌", user.gamification.league_season_id ?? "—"],
                   [
                     "최근 30일 출석",
                     `${user.gamification.attendance_days_30d}일`,

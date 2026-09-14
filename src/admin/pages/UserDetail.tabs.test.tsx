@@ -89,10 +89,26 @@ describe("개요", () => {
     expect(screen.getByText("2026-09-12")).toBeInTheDocument();
     expect(screen.getByText("4일 (최고 11일)")).toBeInTheDocument();
     expect(screen.getByText("250P")).toBeInTheDocument();
+    // The tier reads as the app names it, not as the server stores it.
+    expect(screen.getByText("Green")).toBeInTheDocument();
+    expect(screen.queryByText("green")).not.toBeInTheDocument();
 
     // The signup answers are not here.
     expect(screen.queryByText("온보딩 응답")).not.toBeInTheDocument();
     expect(screen.queryByText("학습 목적")).not.toBeInTheDocument();
+  });
+
+  it("says 리그 미배정 rather than an empty chip for a member with no standing", async () => {
+    userDetail.mockResolvedValue(
+      member({
+        gamification: {
+          points_balance: 0, season_points: 0, league_tier: null,
+          league_season_id: null, attendance_days_30d: 0,
+        },
+      }),
+    );
+    renderPage();
+    expect(await screen.findByText("리그 미배정")).toBeInTheDocument();
   });
 
   it("says so plainly when the member has never studied", async () => {

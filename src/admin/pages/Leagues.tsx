@@ -25,7 +25,8 @@ import {
 } from "../components/kit";
 import type { Column } from "../components/kit";
 import { personName } from "../lib/adminIdentity";
-import { leagueName, leaguePeriod, tierColor, tierName } from "../lib/leagueNames";
+import { leagueName, leaguePeriod, tierName } from "../lib/leagueNames";
+import { TierChip } from "../components/TierChip";
 import { accountStatusLabel, accountStatusTone } from "../lib/accountStatus";
 import {
   KST_ZONE,
@@ -45,32 +46,6 @@ import { originFrom, useRestoreScroll } from "../lib/navigation";
  * holds many groups across five tiers — so a league is identified by its
  * season *and* its group, which is why the detail route carries both.
  */
-/**
- * The tier, in the tier's own colour.
- *
- * The badge palette could only approximate the ladder — two of the five came
- * out the same "warning" amber — which defeats the point of a colour that is
- * meant to be recognised at a glance. This borrows the app's colour directly
- * and puts the text on a tint of it, so the five tiers are five colours here
- * exactly as they are in the app.
- */
-function TierChip({ tier }: { tier: string }) {
-  const color = tierColor(tier);
-  return (
-    <span
-      className="hgadm-tier"
-      style={
-        color
-          ? { color, background: `${color}1f`, borderColor: `${color}59` }
-          : undefined
-      }
-    >
-      <span className="hgadm-tier__dot" style={color ? { background: color } : undefined} />
-      {tierName(tier)}
-    </span>
-  );
-}
-
 const BAND_LABEL: Record<string, string> = {
   promote: "승급권",
   maintain: "유지",
