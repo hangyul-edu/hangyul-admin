@@ -209,8 +209,12 @@ export interface AdminUserDetail {
       level_progress: number;
       cumulative_seconds: number;
     }[];
+    /** What the member chose. */
     daily_sentence_goal: number | null;
     daily_question_goal: number | null;
+    /** What their tier allows — capped to 5 for regular members. */
+    effective_daily_sentence_goal: number | null;
+    effective_daily_question_goal: number | null;
   };
   gamification: {
     points_balance: number;

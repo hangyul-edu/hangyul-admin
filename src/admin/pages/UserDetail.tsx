@@ -41,6 +41,49 @@ import {
 } from "../lib/adminTiers";
 import { personName, personNameWithEmail } from "../lib/adminIdentity";
 
+/**
+ * The member's daily goals: what they chose, and what is actually in force.
+ *
+ * Regular members are capped at 5 however high they set it, so one number
+ * cannot distinguish "chose 20, capped to 5" from "chose 5" — and support was
+ * reading the capped number as the member's choice. The cap is only shown when
+ * it actually bites; for a premium member the two are equal and a "(적용: 20)"
+ * beside a 20 would be noise.
+ */
+function DailyGoals({
+  learning,
+}: {
+  learning: {
+    daily_sentence_goal: number | null;
+    daily_question_goal: number | null;
+    effective_daily_sentence_goal: number | null;
+    effective_daily_question_goal: number | null;
+  };
+}) {
+  const part = (chosen: number | null, effective: number | null) => {
+    if (chosen === null) return "—";
+    if (effective === null || effective === chosen) return String(chosen);
+    return `${chosen} (적용: ${effective})`;
+  };
+  const capped =
+    learning.effective_daily_sentence_goal !== null &&
+    learning.effective_daily_sentence_goal !== learning.daily_sentence_goal;
+  return (
+    <div>
+      <div>
+        문장 {part(learning.daily_sentence_goal, learning.effective_daily_sentence_goal)}
+        {" · "}
+        문제 {part(learning.daily_question_goal, learning.effective_daily_question_goal)}
+      </div>
+      {capped && (
+        <div className="hgadm-cell-sub">
+          일반 회원은 목표가 5로 제한됩니다. 구독 시 선택값이 그대로 적용됩니다.
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function UserDetailPage() {
   const { userId = "" } = useParams();
   const qc = useQueryClient();
@@ -335,7 +378,7 @@ export function UserDetailPage() {
                     ["말하기 수준", String(user.onboarding.speaking_level ?? "—")],
                     ["TOPIK 목표", String(user.onboarding.topik_target ?? "—")],
                     [
-                      "일일 목표",
+                      "일일 목표 (선택값)",
                       `문장 ${user.onboarding.daily_sentence_goal ?? "—"} · 문제 ${user.onboarding.daily_question_goal ?? "—"}`,
                     ],
                   ]}
@@ -448,7 +491,7 @@ export function UserDetailPage() {
                   ["최근 30일 세션", `${user.learning.sessions_30d}회`],
                   [
                     "일일 목표",
-                    `문장 ${user.learning.daily_sentence_goal ?? "—"} · 문제 ${user.learning.daily_question_goal ?? "—"}`,
+                    <DailyGoals key="goals" learning={user.learning} />,
                   ],
                 ]}
               />
