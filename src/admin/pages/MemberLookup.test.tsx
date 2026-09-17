@@ -178,8 +178,11 @@ describe("looking a member up", () => {
     renderLeagues();
 
     expect(await screen.findByText("미배정")).toBeInTheDocument();
+    // Both reasons, because the lookup does not know which one applies —
+    // naming only "이번 주 학습 기록이 없어" would be wrong for a member who
+    // has studied and is waiting for a seat.
     expect(
-      screen.getByText("이번 주 학습 기록이 없어 아직 리그에 배정되지 않았습니다."),
+      screen.getByText(/학습은\s*했지만 같은 티어에 자리가 없어 대기 중일 수 있습니다/),
     ).toBeInTheDocument();
 
     await user.click(screen.getByRole("link", { name: /미배정 회원 보기/ }));

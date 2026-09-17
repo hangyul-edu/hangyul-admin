@@ -41,7 +41,7 @@ import { LEAGUE_TIERS } from "../../lib/league";
 import { originFrom, useRestoreScroll } from "../lib/navigation";
 
 /**
- * A "league" in the portal is what a member competes in: a group of up to 30
+ * A "league" in the portal is what a member competes in: 5 to 30 members
  * inside one tier of one weekly season. A season is not itself rankable — it
  * holds many groups across five tiers — so a league is identified by its
  * season *and* its group, which is why the detail route carries both.
@@ -115,8 +115,9 @@ function SeasonHeader({ seasons }: { seasons: AdminLeagueSeasonContext[] }) {
                 {season.participant_count.toLocaleString()}
               </span>
             </div>
-            {/* Not a statistic but a queue: the people who have not studied
-                yet this week, and a way straight to them. */}
+            {/* Not a statistic but a queue: everybody without a league, and
+                a way straight to them. Both reasons are pooled here — the
+                page behind the link is what splits 휴면 from 배정 대기. */}
             <Link to="/leagues/unassigned" className="hgadm-season__waiting">
               <span className="hgadm-season__stat-label">리그 미배정</span>
               <span className="hgadm-season__stat-value">
@@ -310,7 +311,8 @@ function LookupResult({ result }: { result: AdminMemberLookupResult }) {
             미배정
           </Badge>
           <span className="hgadm-lookup__none-text">
-            이번 주 학습 기록이 없어 아직 리그에 배정되지 않았습니다.
+            아직 리그에 배정되지 않았습니다. 이번 주 학습 기록이 없거나, 학습은
+            했지만 같은 티어에 자리가 없어 대기 중일 수 있습니다.
           </span>
           <Link to="/leagues/unassigned" className="hgadm-lookup__link">
             리그 미배정 회원 보기
@@ -409,7 +411,7 @@ export function LeaguesPage() {
         <div>
           <h1>진행 중인 리그</h1>
           <div className="hgadm-page-head__desc">
-            지금 진행 중인 리그 목록입니다. 리그는 한 시즌·한 등급 안의 그룹(최대 30명)
+            지금 진행 중인 리그 목록입니다. 리그는 한 시즌·한 등급 안의 그룹(5~30명)
             단위이며, 종료되었거나 아직 시작하지 않은 시즌은 표시되지 않습니다. 행을
             클릭하면 참가자 순위를 볼 수 있습니다.
           </div>
@@ -628,10 +630,12 @@ export function LeagueDetailPage() {
               </span>
             </span>
             {/* The zones are a fifth of THIS league's participants, never
-                fewer than one each way, so they shrink with the league but do
-                not vanish. They are empty only where the ladder ends — Golden
-                cannot promote, Green cannot relegate — and "상위 0위" would be
-                nonsense there, so the reason is named instead. */}
+                fewer than one each way, so they shrink with the league. They
+                are empty where the ladder ends — Golden cannot promote, Green
+                cannot relegate — and "상위 0위" would be nonsense there, so the
+                reason is named instead. 인원 부족 covers the one remaining
+                case: a single-member league, which allocation no longer builds
+                but which older rows can still be. */}
             <span className="hgadm-fact hgadm-fact--promote">
               <span className="hgadm-fact__label">승급권</span>
               <span className="hgadm-fact__value">{promoteCount.toLocaleString()}명</span>
@@ -962,9 +966,8 @@ export function UnassignedMembersPage() {
             onChange={(e) =>
               filters.patch({ idle_last_week: e.target.value, page: null })
             }
-            // Matches the sibling: "전 주 학습 여부 전체" measures 113px, and
-            // 170 left only a few pixels once the select's own chrome is
-            // counted — the margin that clipped the 학습 분야 filter.
+            // Matches the sibling; its longest option measures 113px, which
+            // needs more than 170 once the select's own chrome is counted.
             style={{ width: 190 }}
           >
             <option value="">전 주 학습 여부 전체</option>
