@@ -199,6 +199,18 @@ const ACTION_COPY: Record<string, ActionCopy> = {
     ko: "기존 콘텐츠 버전 일괄 생성",
     en: "Ran the legacy content-version backfill",
   },
+  "POST /admin/content-catalog/generation-jobs": {
+    ko: "콘텐츠 생성 작업 등록",
+    en: "Queued a content-generation job",
+  },
+  "POST /admin/content-catalog/generation-jobs/{job_id}/cancel": {
+    ko: "콘텐츠 생성 작업 취소",
+    en: "Cancelled a content-generation job",
+  },
+  "POST /admin/content-catalog/generation-jobs/{job_id}/retry": {
+    ko: "콘텐츠 생성 작업 재시도",
+    en: "Retried a content-generation job",
+  },
   "PATCH /admin/content-catalog/issues/{issue_id}": {
     ko: "콘텐츠 문제 신고 처리",
     en: "Triaged a content issue",
