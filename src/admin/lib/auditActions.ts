@@ -203,6 +203,10 @@ const ACTION_COPY: Record<string, ActionCopy> = {
     ko: "콘텐츠 문제 신고 처리",
     en: "Triaged a content issue",
   },
+  "PUT /admin/ai/features/{feature}": {
+    ko: "AI 기능 사용 여부·예산 변경",
+    en: "Changed an AI feature's switch or budget",
+  },
 };
 
 /** Every action string this module knows — the completeness test reads it. */
