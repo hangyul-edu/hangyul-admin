@@ -207,6 +207,10 @@ const ACTION_COPY: Record<string, ActionCopy> = {
     ko: "AI 기능 사용 여부·예산 변경",
     en: "Changed an AI feature's switch or budget",
   },
+  "POST /admin/ai/tutor/turns/{turn_id}/reviews": {
+    ko: "튜터 응답 품질 검수",
+    en: "Reviewed a tutor reply",
+  },
 };
 
 /** Every action string this module knows — the completeness test reads it. */
@@ -223,6 +227,10 @@ const SENSITIVE_READ_COPY: Record<string, ActionCopy> = {
     en: "Viewed a content version including its answer key",
   },
   "READ /admin/learning-analytics/learners": { ko: "학습자 목록 조회", en: "Viewed the learner directory" },
+  "READ /admin/ai/tutor/turns": {
+    ko: "튜터 대화 원문 조회",
+    en: "Viewed tutor transcripts",
+  },
   "READ /admin/learning-analytics/learners/{user_id}": {
     ko: "학습자 상세 조회",
     en: "Viewed a learner's record",
