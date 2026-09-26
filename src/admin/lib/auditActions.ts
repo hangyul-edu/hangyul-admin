@@ -218,6 +218,27 @@ const SENSITIVE_READ_COPY: Record<string, ActionCopy> = {
     ko: "콘텐츠 버전 정답 포함 조회",
     en: "Viewed a content version including its answer key",
   },
+  "READ /admin/learning-analytics/learners": { ko: "학습자 목록 조회", en: "Viewed the learner directory" },
+  "READ /admin/learning-analytics/learners/{user_id}": {
+    ko: "학습자 상세 조회",
+    en: "Viewed a learner's record",
+  },
+  "READ /admin/learning-analytics/learners/{user_id}/growth": {
+    ko: "학습자 성장 분석 조회",
+    en: "Viewed a learner's growth",
+  },
+  "READ /admin/learning-analytics/learners/{user_id}/evidence": {
+    ko: "학습자 학습 증거 조회",
+    en: "Viewed a learner's evidence",
+  },
+  "READ /admin/learning-analytics/learners/{user_id}/timeline": {
+    ko: "학습자 학습 타임라인 조회",
+    en: "Viewed a learner's timeline",
+  },
+  "READ /admin/learning-analytics/learners/{user_id}/sessions/{session_id}": {
+    ko: "학습자 세션 추천 근거 조회",
+    en: "Viewed why a learner's session contained what it did",
+  },
 };
 
 const ROLE_KO: Record<string, string> = {
