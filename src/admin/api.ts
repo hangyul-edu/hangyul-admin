@@ -273,7 +273,10 @@ export type AdminTier =
   | "operator"
   | "content_manager"
   | "support_agent"
-  | "viewer";
+  | "viewer"
+  | "analyst"
+  | "educator"
+  | "content_publisher";
 
 // ---- Audit -----------------------------------------------------------------
 
