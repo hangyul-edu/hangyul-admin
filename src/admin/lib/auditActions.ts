@@ -211,6 +211,18 @@ const ACTION_COPY: Record<string, ActionCopy> = {
     ko: "튜터 응답 품질 검수",
     en: "Reviewed a tutor reply",
   },
+  "POST /admin/learning-analytics/simulate": {
+    ko: "학습자 세션 구성 시뮬레이션",
+    en: "Simulated a learner's session assembly",
+  },
+  "POST /admin/learning-analytics/exports": {
+    ko: "학습 통계 CSV 내보내기 생성",
+    en: "Created a learning-analytics CSV export",
+  },
+  "POST /admin/learning-analytics/erasures": {
+    ko: "학습자 학습 데이터 삭제",
+    en: "Erased a learner's learning data",
+  },
 };
 
 /** Every action string this module knows — the completeness test reads it. */
@@ -227,6 +239,14 @@ const SENSITIVE_READ_COPY: Record<string, ActionCopy> = {
     en: "Viewed a content version including its answer key",
   },
   "READ /admin/learning-analytics/learners": { ko: "학습자 목록 조회", en: "Viewed the learner directory" },
+  "READ /admin/learning-analytics/simulate": {
+    ko: "학습자 상태 조회(시뮬레이션)",
+    en: "Viewed a learner's state for a simulation",
+  },
+  "READ /admin/learning-analytics/exports/{export_id}": {
+    ko: "학습 통계 CSV 다운로드",
+    en: "Downloaded a learning-analytics export",
+  },
   "READ /admin/ai/tutor/turns": {
     ko: "튜터 대화 원문 조회",
     en: "Viewed tutor transcripts",
