@@ -1,4 +1,4 @@
-import { Navigate, Route, createBrowserRouter, createRoutesFromElements, RouterProvider } from "react-router-dom";
+import { Navigate, Outlet, Route, createBrowserRouter, createRoutesFromElements, RouterProvider } from "react-router-dom";
 import type { ReactNode } from "react";
 import { Compass, Lock } from "lucide-react";
 import { useAdminAuth } from "./auth";
@@ -33,6 +33,14 @@ import { LecturesPage } from "./pages/Lectures";
 import { SentencesPage } from "./pages/Sentences";
 import { QuizzesPage } from "./pages/Quizzes";
 import { AiContentPage } from "./pages/AiContent";
+import { LearningOverviewPage } from "./pages/learning/Overview";
+import { LearnersPage } from "./pages/learning/Learners";
+import { LearnerDetailPage } from "./pages/learning/LearnerDetail";
+import { CohortsPage } from "./pages/learning/Cohorts";
+import { ContentQualityPage } from "./pages/learning/ContentQuality";
+import { RecommendationsPage } from "./pages/learning/Recommendations";
+import { AiOpsPage } from "./pages/learning/AiOps";
+import { DataHealthPage } from "./pages/learning/DataHealth";
 
 function RequireAdmin({ children }: { children: ReactNode }) {
   const { status } = useAdminAuth();
@@ -107,6 +115,17 @@ const router = createBrowserRouter(
             seeing for anyone who can read ops, and the form itself is what
             gates on ops:write. */}
         <Route path="/notification-settings" element={<RequireScope scope="ops:read"><NotificationSettingsPage /></RequireScope>} />
+        {/* Learning-analytics pages share one scoped wrapper for their card spacing. */}
+        <Route element={<div className="hgadm-la"><Outlet /></div>}>
+        <Route path="/learning" element={<RequireScope scope="analytics:read"><LearningOverviewPage /></RequireScope>} />
+        <Route path="/learning/learners" element={<RequireScope scope="learners:read"><LearnersPage /></RequireScope>} />
+        <Route path="/learning/learners/:userId" element={<RequireScope scope="learners:read"><LearnerDetailPage /></RequireScope>} />
+        <Route path="/learning/cohorts" element={<RequireScope scope="analytics:read"><CohortsPage /></RequireScope>} />
+        <Route path="/learning/content" element={<RequireScope scope="content:read"><ContentQualityPage /></RequireScope>} />
+        <Route path="/learning/recommendations" element={<RequireScope scope="analytics:read"><RecommendationsPage /></RequireScope>} />
+        <Route path="/learning/ai" element={<RequireScope scope="ai:read"><AiOpsPage /></RequireScope>} />
+        <Route path="/learning/data-health" element={<RequireScope scope="ops:read"><DataHealthPage /></RequireScope>} />
+        </Route>
         <Route path="/audit-logs" element={<RequireScope scope="audit:read"><AuditLogsPage /></RequireScope>} />
         <Route path="/admins" element={<RequireScope scope="admins:manage"><AdminsPage /></RequireScope>} />
         <Route path="*" element={<EmptyState icon={<Compass size={28} strokeWidth={1.75} />} title="페이지를 찾을 수 없습니다" />} />

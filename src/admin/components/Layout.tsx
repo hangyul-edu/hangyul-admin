@@ -1,9 +1,16 @@
 import { useMemo, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import {
+  Activity,
   Bell,
   BookOpen,
   Bot,
+  CalendarRange,
+  Cpu,
+  GraduationCap,
+  LineChart,
+  ListChecks,
+  Route as RouteIcon,
   Clapperboard,
   Clock,
   CreditCard,
@@ -97,6 +104,18 @@ const NAV: NavGroup[] = [
     ],
   },
   {
+    label: "학습 분석",
+    items: [
+      { to: "/learning", icon: LineChart, label: "학습 개요", scopes: ["analytics:read"] },
+      { to: "/learning/learners", icon: GraduationCap, label: "학습자 성장", scopes: ["learners:read"] },
+      { to: "/learning/cohorts", icon: CalendarRange, label: "코호트·재방문", scopes: ["analytics:read"] },
+      { to: "/learning/content", icon: ListChecks, label: "콘텐츠 품질·검수", scopes: ["content:read"] },
+      { to: "/learning/recommendations", icon: RouteIcon, label: "추천·맞춤화 진단", scopes: ["analytics:read"] },
+      { to: "/learning/ai", icon: Cpu, label: "AI 운영·튜터 품질", scopes: ["ai:read"] },
+      { to: "/learning/data-health", icon: Activity, label: "데이터 상태", scopes: ["ops:read"] },
+    ],
+  },
+  {
     label: "결제·구독",
     items: [
       { to: "/plans", icon: CreditCard, label: "요금제", scopes: ["commerce:read"] },
@@ -130,6 +149,9 @@ const TIER_LABELS: Record<string, string> = {
   content_manager: "콘텐츠 관리자",
   support_agent: "고객지원",
   viewer: "조회 전용",
+  analyst: "분석가",
+  educator: "교육 검수자",
+  content_publisher: "콘텐츠 게시 담당",
 };
 
 export function AdminLayout() {

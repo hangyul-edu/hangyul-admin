@@ -2200,3 +2200,99 @@ a.hgadm-recent--link:hover {
     transition: none;
   }
 }
+
+/* ---------- Learning analytics ---------- */
+/* These pages put content straight into .hgadm-card (no __head/__body), so the
+   wrapper gives such cards their own padding and vertical rhythm. */
+.hgadm-la .hgadm-card {
+  padding: 18px 20px;
+  margin-bottom: 16px;
+}
+.hgadm-la .hgadm-card > h3,
+.hgadm-la .hgadm-card > h4 {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 800;
+}
+.hgadm-la .hgadm-card > .hgadm-table-wrap,
+.hgadm-la .hgadm-card > table {
+  margin-top: 8px;
+}
+.hgadm-la .hgadm-grid-2 > .hgadm-card {
+  margin-bottom: 0;
+}
+.hgadm-la .hgadm-grid-2 {
+  margin-bottom: 16px;
+}
+.hgadm-metric-def summary {
+  cursor: pointer;
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink-2);
+  font-weight: 600;
+}
+.hgadm-metric-def summary::-webkit-details-marker {
+  display: none;
+}
+.hgadm-metric-def[open] {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm, 8px);
+  padding: 8px 10px;
+}
+.hgadm-metric-def summary:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: 4px;
+}
+.hgadm-window-field {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.hgadm-barlist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.hgadm-barlist li {
+  display: grid;
+  grid-template-columns: minmax(120px, 34%) 1fr auto;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+.hgadm-barlist__label {
+  color: var(--ink-2);
+  overflow-wrap: break-word;
+}
+.hgadm-barlist__track {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  height: 10px;
+  overflow: hidden;
+}
+.hgadm-barlist__bar {
+  display: block;
+  height: 100%;
+  background: var(--brand-500);
+}
+.hgadm-barlist__value {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  min-width: 48px;
+  text-align: right;
+}
+.hgadm-heat {
+  display: inline-block;
+  min-width: 56px;
+  padding: 3px 6px;
+  border-radius: 6px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
