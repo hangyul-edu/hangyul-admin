@@ -169,10 +169,56 @@ const ACTION_COPY: Record<string, ActionCopy> = {
   // Starlette keeps the `:path` converter in the template, so the audit row
   // stores it verbatim — this key must match that, not the tidier form.
   "DELETE /admin/media/{key:path}": { ko: "이미지 삭제", en: "Deleted an image" },
+
+  // ---- Versioned content catalogue ---------------------------------------
+  "POST /admin/content-catalog/versions/{version_id}/submit": {
+    ko: "콘텐츠 버전 검수 요청",
+    en: "Submitted a content version for review",
+  },
+  "POST /admin/content-catalog/versions/{version_id}/blind-solve": {
+    ko: "블라인드 풀이 제출",
+    en: "Submitted a blind solve",
+  },
+  "POST /admin/content-catalog/versions/{version_id}/reviews": {
+    ko: "교육 검수 결과 기록",
+    en: "Recorded an educational review",
+  },
+  "POST /admin/content-catalog/versions/{version_id}/publish": {
+    ko: "콘텐츠 버전 게시",
+    en: "Published a content version",
+  },
+  "POST /admin/content-catalog/versions/{version_id}/retire": {
+    ko: "콘텐츠 버전 회수",
+    en: "Retired a content version",
+  },
+  "POST /admin/content-catalog/sync": {
+    ko: "콘텐츠 새 버전 초안 생성",
+    en: "Snapshotted a catalogue row into a draft version",
+  },
+  "POST /admin/content-catalog/backfill": {
+    ko: "기존 콘텐츠 버전 일괄 생성",
+    en: "Ran the legacy content-version backfill",
+  },
+  "PATCH /admin/content-catalog/issues/{issue_id}": {
+    ko: "콘텐츠 문제 신고 처리",
+    en: "Triaged a content issue",
+  },
 };
 
 /** Every action string this module knows — the completeness test reads it. */
 export const KNOWN_AUDIT_ACTIONS: readonly string[] = Object.keys(ACTION_COPY);
+
+/**
+ * Audited reads of restricted data. The server writes these rows explicitly
+ * (`record_sensitive_read`) with the action `READ /route/template`, so they are
+ * not derivable from the mutating routes and live apart from ACTION_COPY.
+ */
+const SENSITIVE_READ_COPY: Record<string, ActionCopy> = {
+  "READ /admin/content-catalog/versions/{version_id}": {
+    ko: "콘텐츠 버전 정답 포함 조회",
+    en: "Viewed a content version including its answer key",
+  },
+};
 
 const ROLE_KO: Record<string, string> = {
   member: "일반",
@@ -308,7 +354,8 @@ export type DescribedAction = {
 };
 
 export function describeAuditAction(entry: AuditLogEntry): DescribedAction {
-  const copy = refine(entry) ?? ACTION_COPY[entry.action] ?? null;
+  const copy =
+    refine(entry) ?? ACTION_COPY[entry.action] ?? SENSITIVE_READ_COPY[entry.action] ?? null;
   return {
     // An unmapped action shows its route rather than a label that would be a
     // guess; the completeness test exists so this stays hypothetical.
