@@ -27,6 +27,7 @@ import {
   Repeat,
   ScrollText,
   ShieldCheck,
+  SlidersHorizontal,
   Ticket,
   Trophy,
   UserRound,
@@ -137,6 +138,7 @@ const NAV: NavGroup[] = [
   {
     label: "시스템",
     items: [
+      { to: "/settings", icon: SlidersHorizontal, label: "연동·환경 설정", scopes: ["settings:read"] },
       { to: "/audit-logs", icon: ScrollText, label: "관리자 활동 내역", scopes: ["audit:read"] },
       { to: "/admins", icon: ShieldCheck, label: "관리자 계정", scopes: ["admins:manage"] },
     ],

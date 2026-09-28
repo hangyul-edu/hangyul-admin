@@ -772,6 +772,90 @@ export interface DailyReminderSettings {
 
 type Query = Record<string, string | number | boolean | undefined | null>;
 
+/* ---- Settings page (/admin/system-settings) ---- */
+export type SettingSource = "admin" | "env" | "default" | "unreadable";
+export type IntegrationStatus = "active" | "incomplete" | "off" | "not_configured" | "settings";
+export type SettingFieldKind =
+  | "secret"
+  | "multiline_secret"
+  | "text"
+  | "url"
+  | "email"
+  | "bool"
+  | "number"
+  | "integer"
+  | "choice";
+export interface SettingField {
+  key: string;
+  label: string;
+  help: string;
+  kind: SettingFieldKind;
+  required: boolean;
+  restart_required: boolean;
+  placeholder: string;
+  choices: { value: string; label: string }[];
+  env_var: string;
+  source: SettingSource;
+  cleared: boolean;
+  /** Always null for secrets. */
+  value: string | number | boolean | null;
+  secret: { is_set: boolean; hint: string | null } | null;
+  updated_at: string | null;
+  updated_by: string | null;
+}
+export interface IntegrationCheck {
+  ok: boolean;
+  message: string;
+  latency_ms: number | null;
+  checked_at: string;
+  checked_by: string | null;
+  used_unsaved_values: boolean;
+  details?: { provider: string; ok: boolean; message: string }[] | null;
+}
+export interface IntegrationSettings {
+  id: string;
+  group: string;
+  name: string;
+  description: string;
+  note: string;
+  kind: "integration" | "settings";
+  status: IntegrationStatus;
+  status_label: string;
+  toggle: { enabled: boolean; source: "admin" | "env" } | null;
+  testable: boolean;
+  restart_pending: string[];
+  last_check: IntegrationCheck | null;
+  fields: SettingField[];
+}
+export interface SettingsGroup {
+  id: string;
+  label: string;
+  description: string;
+  integrations: IntegrationSettings[];
+}
+export interface SettingsPageData {
+  groups: SettingsGroup[];
+  restart_pending: { key: string; label: string }[];
+  encryption_key_source: "env" | "derived";
+  environment: { app_env: string; database: string };
+  revision: number;
+}
+export type SettingChange =
+  | { key: string; action: "set"; value?: unknown; secret?: string }
+  | { key: string; action: "clear" | "reset" };
+export interface SettingsSaveResult {
+  integration: IntegrationSettings;
+  applied: Record<string, "live" | "restart">;
+  message: string;
+}
+export interface ConnectionTestResult {
+  ok: boolean;
+  message: string;
+  latency_ms: number;
+  details: { provider: string; ok: boolean; message: string }[];
+  used_unsaved_values: boolean;
+}
+
 export const adminApi = {
   // Dashboard
   metricsOverview: () => http.get<MetricsOverview>("/admin/metrics/overview"),
@@ -1057,4 +1141,14 @@ export const adminApi = {
     http.get<DailyReminderSettings>("/admin/notifications/daily-reminder"),
   updateDailyReminder: (body: { daily_reminder_time: string }) =>
     http.put<DailyReminderSettings>("/admin/notifications/daily-reminder", body),
+
+  // Settings page: integrations and server settings. Secrets travel only
+  // under `secret` / `secrets`, which the audit trail redacts.
+  systemSettings: () => http.get<SettingsPageData>("/admin/system-settings"),
+  saveIntegration: (integrationId: string, body: { changes: SettingChange[]; enabled?: boolean }) =>
+    http.put<SettingsSaveResult>(`/admin/system-settings/integrations/${integrationId}`, body),
+  testIntegration: (
+    integrationId: string,
+    body: { values?: Record<string, unknown>; secrets?: Record<string, string> } = {},
+  ) => http.post<ConnectionTestResult>(`/admin/system-settings/integrations/${integrationId}/test`, body),
 };

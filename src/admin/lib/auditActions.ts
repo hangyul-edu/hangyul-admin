@@ -219,6 +219,14 @@ const ACTION_COPY: Record<string, ActionCopy> = {
     ko: "AI 기능 사용 여부·예산 변경",
     en: "Changed an AI feature's switch or budget",
   },
+  "PUT /admin/system-settings/integrations/{integration_id}": {
+    ko: "외부 연동·서버 설정 변경",
+    en: "Changed an integration or server setting",
+  },
+  "POST /admin/system-settings/integrations/{integration_id}/test": {
+    ko: "외부 연동 연결 테스트",
+    en: "Tested an integration's connection",
+  },
   "POST /admin/ai/tutor/turns/{turn_id}/reviews": {
     ko: "튜터 응답 품질 검수",
     en: "Reviewed a tutor reply",
