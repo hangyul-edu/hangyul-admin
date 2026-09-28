@@ -260,8 +260,14 @@ export function AdminLayout() {
           {/* The portal renders and accepts every time on Seoul's clock, no
               matter where the admin is sitting. Saying so once here means no
               screen has to caveat its own timestamps. */}
-          <span className="hgadm-muted" style={{ fontSize: 12.5 }}>
-            모든 시각은 한국 시간(KST) 기준
+          {/* One line at every width: it used to wrap into a tall column on a
+              phone and spill out of the fixed-height bar over the page. */}
+          <span className="hgadm-topbar__tz" title="모든 시각은 한국 시간(KST) 기준">
+            <Clock size={13} strokeWidth={2} aria-hidden />
+            <span className="hgadm-topbar__tz-long">모든 시각은 한국 시간(KST) 기준</span>
+            <span className="hgadm-topbar__tz-short" aria-hidden>
+              KST
+            </span>
           </span>
           <div className="hgadm-topbar__right">
             <div className="hgadm-topbar__user">
@@ -277,9 +283,9 @@ export function AdminLayout() {
                 </div>
               </div>
             </div>
-            <Button size="sm" variant="ghost" onClick={() => setConfirmLogout(true)}>
-              <LogOut size={15} strokeWidth={2} />
-              로그아웃
+            <Button size="sm" variant="ghost" aria-label="로그아웃" title="로그아웃" onClick={() => setConfirmLogout(true)}>
+              <LogOut size={15} strokeWidth={2} aria-hidden />
+              <span className="hgadm-topbar__logout-label">로그아웃</span>
             </Button>
           </div>
         </header>

@@ -1,12 +1,16 @@
-import { useState } from "react";
-import type { ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { FormEvent, ReactNode } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
+  ArrowLeft,
   CheckCircle2,
+  ChevronRight,
   Eye,
   EyeOff,
   Info,
+  LayoutGrid,
   PlugZap,
   RotateCcw,
   ShieldCheck,
@@ -15,6 +19,7 @@ import {
 import {
   adminApi,
   type ConnectionTestResult,
+  type IntegrationCheck,
   type IntegrationSettings,
   type SettingChange,
   type SettingField,
@@ -22,19 +27,7 @@ import {
 } from "../api";
 import { useAdminAuth } from "../auth";
 import { ApiError, errorMessage } from "../../lib/http";
-import { useToast } from "../../hooks/toast";
-import {
-  Badge,
-  type BadgeTone,
-  Button,
-  ConfirmDialog,
-  ErrorState,
-  Input,
-  LoadingState,
-  Select,
-  Switch,
-  Textarea,
-} from "../components/kit";
+import { Button, ConfirmDialog, ErrorState, Input, LoadingState, Select, Switch, Textarea } from "../components/kit";
 import { formatDateTime } from "../lib/format";
 
 const QUERY_KEY = ["admin", "system-settings"];
@@ -46,23 +39,14 @@ type Edit =
   | { kind: "clear" }
   | { kind: "reset" };
 
-const STATUS_TONE: Record<IntegrationSettings["status"], BadgeTone> = {
-  active: "success",
-  incomplete: "warning",
-  off: "neutral",
-  not_configured: "neutral",
-  settings: "neutral",
-};
+type Status = IntegrationSettings["status"];
 
-const SOURCE_LABEL: Record<SettingField["source"], { label: string; tone: BadgeTone; title: string }> = {
-  admin: { label: "이 화면에서 저장", tone: "brand", title: "관리자가 이 화면에서 저장한 값입니다. .env보다 우선합니다." },
-  env: { label: ".env", tone: "neutral", title: "서버의 .env 파일 또는 환경 변수에서 온 값입니다." },
-  default: { label: "기본값", tone: "neutral", title: "따로 설정하지 않아 기본값을 씁니다." },
-  unreadable: {
-    label: "읽을 수 없음",
-    tone: "danger",
-    title: "저장된 값을 복호화하지 못했습니다(암호화 키 변경). .env 값을 대신 씁니다. 다시 입력하세요.",
-  },
+const STATUS_TEXT: Record<Status, string> = {
+  active: "사용 중",
+  incomplete: "설정 필요",
+  off: "꺼짐",
+  not_configured: "미설정",
+  settings: "",
 };
 
 /** The request a set of edits turns into. Secrets go under `secret` (redacted in the audit log). */
@@ -92,23 +76,72 @@ function toTrial(fields: SettingField[], edits: Record<string, Edit>) {
 
 function fieldErrors(error: unknown): Record<string, string> {
   if (!(error instanceof ApiError)) return {};
-  const fields = (error.details as { fields?: Record<string, string> } | undefined)?.fields;
-  return fields ?? {};
+  return (error.details as { fields?: Record<string, string> } | undefined)?.fields ?? {};
 }
+
+/** An empty secret input means "keep the saved one", so it is not a change. */
+function effectiveEdits(edits: Record<string, Edit>): Record<string, Edit> {
+  return Object.fromEntries(Object.entries(edits).filter(([, e]) => !(e.kind === "secret" && e.value.trim() === "")));
+}
+
+function StatusDot({ status }: { status: Status }) {
+  return <span className={`hgadm-cfg__dot hgadm-cfg__dot--${status}`} aria-hidden />;
+}
+
+function StatusPill({ status, label }: { status: Status; label?: string }) {
+  if (status === "settings") return null;
+  return (
+    <span className={`hgadm-cfg__pill hgadm-cfg__pill--${status}`}>
+      <StatusDot status={status} />
+      {label || STATUS_TEXT[status]}
+    </span>
+  );
+}
+
+/* ================================================================== */
 
 export function SystemSettingsPage() {
   const { can } = useAdminAuth();
   const canEdit = can("settings:write");
   const query = useQuery({ queryKey: QUERY_KEY, queryFn: adminApi.systemSettings });
+  const [params, setParams] = useSearchParams();
+  const selectedId = params.get("item");
+  // Unsaved edits in the open item: leaving it asks first.
+  const dirtyRef = useRef(false);
+  const [pendingNav, setPendingNav] = useState<string | null | undefined>(undefined);
+
+  useEffect(() => {
+    const warn = (e: BeforeUnloadEvent) => {
+      if (dirtyRef.current) e.preventDefault();
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, []);
+
+  const go = (id: string | null) => {
+    const next = new URLSearchParams(params);
+    if (id) next.set("item", id);
+    else next.delete("item");
+    dirtyRef.current = false;
+    setParams(next);
+    window.scrollTo({ top: 0 });
+  };
+  const requestNav = (id: string | null) => {
+    if (id === selectedId) return;
+    if (dirtyRef.current) setPendingNav(id);
+    else go(id);
+  };
+
+  const all = useMemo(() => query.data?.groups.flatMap((g) => g.integrations) ?? [], [query.data]);
+  const selected = all.find((i) => i.id === selectedId) ?? null;
 
   return (
-    <div className="hgadm-settings">
+    <div className="hgadm-cfg">
       <div className="hgadm-page-head">
         <div>
           <h1>연동·환경 설정</h1>
           <div className="hgadm-page-head__desc">
-            외부 서비스의 API 키와 토큰을 입력하고, 연동을 켜고 끄고, 연결을 바로 확인합니다. 저장한 값은
-            데이터베이스에 보관되며 서버의 .env 값보다 우선합니다. 대부분 저장하는 즉시 적용됩니다.
+            외부 서비스의 키를 입력하고, 켜고 끄고, 연결을 확인합니다. 대부분 저장하는 즉시 적용됩니다.
           </div>
         </div>
       </div>
@@ -118,96 +151,206 @@ export function SystemSettingsPage() {
       ) : query.isError ? (
         <ErrorState message={errorMessage(query.error)} onRetry={() => void query.refetch()} />
       ) : (
-        <SettingsBody data={query.data} canEdit={canEdit} />
+        <>
+          {query.data.restart_pending.length > 0 && (
+            <div className="hgadm-cfg__restart" role="status">
+              <AlertTriangle size={18} strokeWidth={2} aria-hidden />
+              <div>
+                <strong>서버를 다시 시작해야 적용되는 변경이 있습니다</strong>
+                <span>{query.data.restart_pending.map((p) => p.label).join(", ")} — 저장은 되었고, 재시작하면 적용됩니다.</span>
+              </div>
+            </div>
+          )}
+          <div className={`hgadm-cfg__layout ${selected ? "has-selection" : ""}`}>
+            <IntegrationList data={query.data} selectedId={selected?.id ?? null} onSelect={requestNav} />
+            <div className="hgadm-cfg__detail">
+              {selected ? (
+                <IntegrationDetail
+                  key={selected.id}
+                  integration={selected}
+                  canEdit={canEdit}
+                  onBack={() => requestNav(null)}
+                  onDirtyChange={(dirty) => {
+                    dirtyRef.current = dirty;
+                  }}
+                />
+              ) : (
+                <Overview data={query.data} canEdit={canEdit} onSelect={requestNav} />
+              )}
+            </div>
+          </div>
+        </>
       )}
+
+      <ConfirmDialog
+        open={pendingNav !== undefined}
+        title="저장하지 않은 변경이 있습니다"
+        message="이동하면 입력한 내용이 사라집니다. 저장하려면 '취소'를 누른 뒤 '저장'을 누르세요."
+        confirmLabel="변경 버리고 이동"
+        danger
+        onCancel={() => setPendingNav(undefined)}
+        onConfirm={() => {
+          const target = pendingNav;
+          setPendingNav(undefined);
+          go(target ?? null);
+        }}
+      />
     </div>
   );
 }
 
-function SettingsBody({ data, canEdit }: { data: SettingsPageData; canEdit: boolean }) {
+/* ---------------- Left: the list ---------------- */
+
+function IntegrationList({
+  data,
+  selectedId,
+  onSelect,
+}: {
+  data: SettingsPageData;
+  selectedId: string | null;
+  onSelect: (id: string | null) => void;
+}) {
   return (
-    <>
-      {data.restart_pending.length > 0 && (
-        <div className="hgadm-settings__banner hgadm-settings__banner--warning" role="status">
-          <AlertTriangle size={18} strokeWidth={2} aria-hidden />
-          <div>
-            <strong>서버를 다시 시작해야 적용되는 변경이 있습니다.</strong>
-            <div>저장은 되었지만 아직 적용되지 않았습니다: {data.restart_pending.map((p) => p.label).join(", ")}</div>
-          </div>
-        </div>
-      )}
-      <div className="hgadm-settings__banner" role="note">
-        <Info size={18} strokeWidth={2} aria-hidden />
-        <div>
-          <strong>값을 고르는 순서:</strong> 이 화면에서 저장한 값 → 서버의 .env → 기본값. 비밀 값(API 키, 토큰)은
-          암호화해 저장하고 화면에는 끝 네 자리만 보여 줍니다. 비워 두고 저장하면 기존 값이 그대로 유지됩니다.
-          {data.encryption_key_source === "derived" && (
-            <div className="hgadm-settings__sub">
-              <ShieldCheck size={14} strokeWidth={2} aria-hidden /> 암호화 키는 JWT_SECRET에서 만들어집니다.
-              JWT_SECRET을 바꾸면 저장한 비밀 값을 다시 입력해야 하니, 운영 서버에서는 SETTINGS_ENCRYPTION_KEY를
-              따로 설정하세요.
-            </div>
-          )}
-        </div>
-      </div>
-      {!canEdit && (
-        <p className="hgadm-muted hgadm-settings__readonly">
-          조회 전용입니다. 값을 바꾸거나 연결 테스트를 하려면 <code>settings:write</code> 권한(최고 관리자)이 필요합니다.
-        </p>
-      )}
-
-      <nav className="hgadm-settings__jump" aria-label="설정 분류">
-        {data.groups.map((group) => (
-          <a key={group.id} href={`#settings-${group.id}`} className="hgadm-settings__jump-link">
-            {group.label}
-          </a>
-        ))}
-      </nav>
-
+    <nav className="hgadm-cfg__list" aria-label="설정 항목">
+      <button
+        type="button"
+        className={`hgadm-cfg__item hgadm-cfg__item--overview ${selectedId === null ? "is-active" : ""}`}
+        aria-current={selectedId === null ? "page" : undefined}
+        onClick={() => onSelect(null)}
+      >
+        <LayoutGrid size={16} strokeWidth={2} aria-hidden />
+        <span className="hgadm-cfg__item-name">개요</span>
+      </button>
       {data.groups.map((group) => (
-        <section key={group.id} id={`settings-${group.id}`} className="hgadm-settings__group" aria-labelledby={`settings-${group.id}-title`}>
-          <div className="hgadm-settings__group-head">
-            <h2 id={`settings-${group.id}-title`}>{group.label}</h2>
-            <p className="hgadm-muted">{group.description}</p>
+        <div key={group.id} className="hgadm-cfg__list-group" role="group" aria-labelledby={`cfg-group-${group.id}`}>
+          <div id={`cfg-group-${group.id}`} className="hgadm-cfg__list-label">
+            {group.label}
           </div>
-          {group.integrations.map((integration) => (
-            <IntegrationCard key={integration.id} integration={integration} canEdit={canEdit} />
+          {group.integrations.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className={`hgadm-cfg__item ${item.id === selectedId ? "is-active" : ""}`}
+              aria-current={item.id === selectedId ? "page" : undefined}
+              onClick={() => onSelect(item.id)}
+            >
+              {item.status === "settings" ? <span className="hgadm-cfg__dot hgadm-cfg__dot--settings" aria-hidden /> : <StatusDot status={item.status} />}
+              <span className="hgadm-cfg__item-name">{item.name}</span>
+              {item.status !== "settings" && <span className="hgadm-cfg__item-status">{item.status_label}</span>}
+              {item.restart_pending.length > 0 && <span className="hgadm-cfg__item-flag">재시작</span>}
+              <ChevronRight className="hgadm-cfg__item-chevron" size={16} strokeWidth={2} aria-hidden />
+            </button>
           ))}
-        </section>
+        </div>
       ))}
-
-      <div className="hgadm-card hgadm-settings__env">
-        <div className="hgadm-card__head">
-          <div className="hgadm-card__title">서버 정보 (여기서 바꿀 수 없음)</div>
-        </div>
-        <div className="hgadm-card__body">
-          <dl className="hgadm-settings__facts">
-            <dt>실행 환경</dt>
-            <dd>{data.environment.app_env}</dd>
-            <dt>데이터베이스</dt>
-            <dd className="hgadm-cell-mono">{data.environment.database}</dd>
-          </dl>
-          <p className="hgadm-muted">
-            데이터베이스 주소, JWT_SECRET, SETTINGS_ENCRYPTION_KEY는 서버 환경 변수로만 바꿀 수 있습니다. AI 기능별
-            켜기/끄기와 예산은 &lsquo;AI 운영·튜터 품질&rsquo;, 학습 알림 시각은 &lsquo;알림 설정&rsquo; 페이지에서 관리합니다.
-          </p>
-        </div>
-      </div>
-    </>
+    </nav>
   );
 }
 
-type Outcome = { tone: "success" | "warning" | "danger"; text: string };
+/* ---------------- Right: overview ---------------- */
 
-function IntegrationCard({ integration, canEdit }: { integration: IntegrationSettings; canEdit: boolean }) {
+function Overview({
+  data,
+  canEdit,
+  onSelect,
+}: {
+  data: SettingsPageData;
+  canEdit: boolean;
+  onSelect: (id: string) => void;
+}) {
+  const all = data.groups.flatMap((g) => g.integrations).filter((i) => i.status !== "settings");
+  const count = (s: Status) => all.filter((i) => i.status === s).length;
+  const needsAttention = all.filter((i) => i.status === "incomplete");
+  return (
+    <div className="hgadm-cfg__panel hgadm-cfg__overview">
+      <h2 className="hgadm-cfg__panel-title">한눈에 보기</h2>
+      <div className="hgadm-cfg__stats">
+        {(["active", "incomplete", "off", "not_configured"] as Status[]).map((s) => (
+          <div key={s} className={`hgadm-cfg__stat hgadm-cfg__stat--${s}`}>
+            <span className="hgadm-cfg__stat-num">{count(s)}</span>
+            <span className="hgadm-cfg__stat-label">
+              <StatusDot status={s} /> {STATUS_TEXT[s]}
+            </span>
+          </div>
+        ))}
+      </div>
+      {needsAttention.length > 0 && (
+        <div className="hgadm-cfg__attention">
+          <strong>확인이 필요한 연동</strong>
+          {needsAttention.map((i) => (
+            <button key={i.id} type="button" className="hgadm-cfg__link" onClick={() => onSelect(i.id)}>
+              {i.name} — 켜져 있지만 필수 값이 비어 있습니다 <ChevronRight size={14} aria-hidden />
+            </button>
+          ))}
+        </div>
+      )}
+      <p className="hgadm-cfg__hint-line">
+        <span className="hgadm-cfg__only-wide">왼쪽 목록</span>
+        <span className="hgadm-cfg__only-narrow">위 목록</span>에서 항목을 고르면 키를 입력하고 연결을 테스트할 수 있습니다.
+        {!canEdit && " 현재 계정은 조회만 할 수 있습니다 (settings:write 필요)."}
+      </p>
+
+      <h3 className="hgadm-cfg__subhead">알아 두기</h3>
+      <ul className="hgadm-cfg__facts-list">
+        <li>
+          <strong>우선순위</strong> — 이 화면에서 저장한 값이 서버의 .env보다 우선하고, 둘 다 없으면 기본값을 씁니다.
+        </li>
+        <li>
+          <strong>비밀 값</strong> — API 키와 토큰은 암호화해 저장하고 끝 네 자리만 보여 줍니다. 입력칸을 비워 두면 기존 값이
+          그대로 유지됩니다.
+        </li>
+        <li>
+          <strong>켜기/끄기</strong> — 꺼도 입력한 키는 지워지지 않습니다. 끄면 모의 동작이나 대체 수단으로 바뀝니다.
+        </li>
+        <li>
+          <ShieldCheck size={14} strokeWidth={2} aria-hidden />{" "}
+          {data.encryption_key_source === "env"
+            ? "암호화 키: 서버의 SETTINGS_ENCRYPTION_KEY를 사용합니다."
+            : "암호화 키가 JWT_SECRET에서 만들어집니다. 운영 서버에서는 SETTINGS_ENCRYPTION_KEY를 따로 설정하세요 (JWT_SECRET을 바꾸면 비밀 값을 다시 입력해야 합니다)."}
+        </li>
+      </ul>
+
+      <h3 className="hgadm-cfg__subhead">서버 정보 (여기서 바꿀 수 없음)</h3>
+      <dl className="hgadm-cfg__facts">
+        <dt>실행 환경</dt>
+        <dd>{data.environment.app_env}</dd>
+        <dt>데이터베이스</dt>
+        <dd className="hgadm-cell-mono">{data.environment.database}</dd>
+      </dl>
+      <p className="hgadm-cfg__muted-small">
+        데이터베이스 주소, JWT_SECRET, SETTINGS_ENCRYPTION_KEY는 서버 환경 변수로만 바꿀 수 있습니다. AI 기능별 켜기/끄기와 예산은
+        &lsquo;AI 운영·튜터 품질&rsquo;, 학습 알림 시각은 &lsquo;알림 설정&rsquo;에서 관리합니다.
+      </p>
+    </div>
+  );
+}
+
+/* ---------------- Right: one integration ---------------- */
+
+type Outcome = { tone: "success" | "warning" | "danger"; text: string; at: Date };
+
+function IntegrationDetail({
+  integration,
+  canEdit,
+  onBack,
+  onDirtyChange,
+}: {
+  integration: IntegrationSettings;
+  canEdit: boolean;
+  onBack: () => void;
+  onDirtyChange: (dirty: boolean) => void;
+}) {
   const qc = useQueryClient();
-  const toast = useToast();
   const [edits, setEdits] = useState<Record<string, Edit>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [outcome, setOutcome] = useState<Outcome | null>(null);
-  const [testResult, setTestResult] = useState<ConnectionTestResult | null>(null);
+  const [testResult, setTestResult] = useState<(ConnectionTestResult & { at: Date }) | null>(null);
   const [confirmOff, setConfirmOff] = useState(false);
-  const dirty = Object.keys(edits).length > 0;
+  const changes = effectiveEdits(edits);
+  const changeCount = Object.keys(changes).length;
+  const dirty = changeCount > 0;
+
+  useEffect(() => onDirtyChange(dirty), [dirty, onDirtyChange]);
 
   const replace = (next: IntegrationSettings) => {
     qc.setQueryData<SettingsPageData>(QUERY_KEY, (page) =>
@@ -228,36 +371,36 @@ function IntegrationCard({ integration, canEdit }: { integration: IntegrationSet
   const save = useMutation({
     mutationFn: (enabled?: boolean) =>
       adminApi.saveIntegration(integration.id, {
-        changes: toChanges(integration.fields, edits),
+        changes: toChanges(integration.fields, changes),
         ...(enabled === undefined ? {} : { enabled }),
       }),
     onSuccess: (result) => {
       const restart = Object.values(result.applied).includes("restart");
       setEdits({});
       setErrors({});
-      // A result from before the save described unsaved values; the card's
-      // "마지막 테스트" line keeps the record.
+      // A result from before the save described unsaved values.
       setTestResult(null);
-      setOutcome({ tone: restart ? "warning" : "success", text: result.message });
-      toast.success(`${integration.name}: ${result.message}`);
+      // Shown in the sticky save bar, right where the admin pressed 저장 (a
+      // toast would cover that bar and repeat it).
+      setOutcome({ tone: restart ? "warning" : "success", text: result.message, at: new Date() });
       replace(result.integration);
     },
     onError: (error) => {
       setErrors(fieldErrors(error));
-      setOutcome({ tone: "danger", text: `저장하지 못했습니다. ${errorMessage(error)}` });
+      setOutcome({ tone: "danger", text: `저장하지 못했습니다. ${errorMessage(error)}`, at: new Date() });
     },
   });
 
   const test = useMutation({
-    mutationFn: () => adminApi.testIntegration(integration.id, toTrial(integration.fields, edits)),
+    mutationFn: () => adminApi.testIntegration(integration.id, toTrial(integration.fields, changes)),
     onSuccess: (result) => {
-      setTestResult(result);
+      setTestResult({ ...result, at: new Date() });
       setErrors({});
       void qc.invalidateQueries({ queryKey: QUERY_KEY });
     },
     onError: (error) => {
       setErrors(fieldErrors(error));
-      setTestResult({ ok: false, message: errorMessage(error), latency_ms: 0, details: [], used_unsaved_values: dirty });
+      setTestResult({ ok: false, message: errorMessage(error), latency_ms: 0, details: [], used_unsaved_values: dirty, at: new Date() });
     },
   });
 
@@ -276,160 +419,258 @@ function IntegrationCard({ integration, canEdit }: { integration: IntegrationSet
     });
   };
 
+  const discard = () => {
+    setEdits({});
+    setErrors({});
+    setOutcome(null);
+  };
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    if (canEdit && dirty && !save.isPending) save.mutate(undefined);
+  };
+
   const toggle = integration.toggle;
   const busy = save.isPending || test.isPending;
-  const last = integration.last_check;
+  const errorCount = Object.keys(errors).length;
 
   return (
-    <article className="hgadm-card hgadm-settings__card" aria-labelledby={`integration-${integration.id}`}>
-      <div className="hgadm-settings__card-head">
-        <div className="hgadm-settings__card-title">
-          <h3 id={`integration-${integration.id}`}>{integration.name}</h3>
-          {integration.status !== "settings" && (
-            <Badge tone={STATUS_TONE[integration.status]} dot>
-              {integration.status_label}
-            </Badge>
-          )}
+    <form className="hgadm-cfg__panel hgadm-cfg__form" onSubmit={submit} aria-labelledby="cfg-detail-title" noValidate>
+      <button type="button" className="hgadm-cfg__back" onClick={onBack}>
+        <ArrowLeft size={16} strokeWidth={2} aria-hidden /> 목록
+      </button>
+
+      <header className="hgadm-cfg__head">
+        <div className="hgadm-cfg__head-main">
+          <div className="hgadm-cfg__head-title">
+            <h2 id="cfg-detail-title">{integration.name}</h2>
+            <StatusPill status={integration.status} label={integration.status_label} />
+          </div>
+          <p className="hgadm-cfg__desc">{integration.description}</p>
         </div>
         {toggle && (
-          <label className="hgadm-settings__toggle">
-            <span>사용</span>
+          <label className="hgadm-cfg__toggle">
             <Switch
               checked={toggle.enabled}
               disabled={!canEdit || busy}
               label={`${integration.name} 사용`}
               onChange={(next) => (next ? save.mutate(true) : setConfirmOff(true))}
             />
+            <span>{toggle.enabled ? "켜짐" : "꺼짐"}</span>
           </label>
         )}
+      </header>
+
+      {integration.status === "incomplete" && (
+        <p className="hgadm-cfg__notice hgadm-cfg__notice--warning">
+          <AlertTriangle size={15} strokeWidth={2} aria-hidden /> 켜져 있지만 필수 값이 비어 있어 실제 서비스 대신 대체 동작
+          중입니다.
+        </p>
+      )}
+      {!canEdit && (
+        <p className="hgadm-cfg__notice">
+          <Info size={15} strokeWidth={2} aria-hidden /> 조회 전용입니다. 값을 바꾸거나 연결을 테스트하려면 최고 관리자 권한(settings:write)이
+          필요합니다.
+        </p>
+      )}
+
+      {integration.testable && (
+        <ConnectionBox
+          last={integration.last_check}
+          result={testResult}
+          canTest={canEdit}
+          dirty={dirty}
+          loading={test.isPending}
+          disabled={save.isPending}
+          onTest={() => test.mutate()}
+        />
+      )}
+
+      <div className="hgadm-cfg__fields">
+        {integration.fields.map((field) => (
+          <FieldRow
+            key={field.key}
+            field={field}
+            edit={edits[field.key]}
+            error={errors[field.key]}
+            disabled={!canEdit || busy}
+            restartPending={integration.restart_pending.includes(field.key)}
+            onEdit={(edit) => setEdit(field.key, edit)}
+          />
+        ))}
       </div>
-      <div className="hgadm-card__body">
-        <p className="hgadm-settings__desc">{integration.description}</p>
-        {integration.status === "incomplete" && (
-          <p className="hgadm-settings__warn">
-            <AlertTriangle size={14} strokeWidth={2} aria-hidden /> 켜져 있지만 필수 항목이 비어 있어 실제 서비스 대신
-            대체 동작 중입니다.
-          </p>
-        )}
-        {toggle && dirty && (
-          <p className="hgadm-muted hgadm-settings__small">스위치를 누르면 아래 입력한 값도 함께 저장됩니다.</p>
-        )}
 
-        <div className="hgadm-settings__fields">
-          {integration.fields.map((field) => (
-            <FieldRow
-              key={field.key}
-              field={field}
-              edit={edits[field.key]}
-              error={errors[field.key]}
-              disabled={!canEdit || busy}
-              restartPending={integration.restart_pending.includes(field.key)}
-              onEdit={(edit) => setEdit(field.key, edit)}
-            />
-          ))}
-        </div>
+      {integration.note && (
+        <p className="hgadm-cfg__muted-small">
+          <Info size={13} strokeWidth={2} aria-hidden /> {integration.note}
+        </p>
+      )}
 
-        {integration.note && (
-          <p className="hgadm-muted hgadm-settings__small">
-            <Info size={13} strokeWidth={2} aria-hidden /> {integration.note}
-          </p>
-        )}
-
-        {outcome && (
-          <div className={`hgadm-settings__outcome hgadm-settings__outcome--${outcome.tone}`} role="status">
-            {outcome.tone === "danger" ? (
-              <XCircle size={16} strokeWidth={2} aria-hidden />
-            ) : outcome.tone === "warning" ? (
-              <AlertTriangle size={16} strokeWidth={2} aria-hidden />
+      {canEdit && (
+        <div
+          className={`hgadm-cfg__bar ${dirty && outcome?.tone !== "danger" ? "is-dirty" : ""} ${outcome ? `is-${outcome.tone}` : ""}`}
+          aria-live="polite"
+        >
+          <div className="hgadm-cfg__bar-status">
+            {dirty && outcome?.tone !== "danger" ? (
+              <>
+                <span className="hgadm-cfg__bar-dot" aria-hidden />
+                저장하지 않은 변경 {changeCount}개
+                {toggle && <span className="hgadm-cfg__bar-sub"> · 스위치를 누르면 함께 저장됩니다</span>}
+              </>
+            ) : outcome ? (
+              <span role="status" className="hgadm-cfg__bar-outcome">
+                {outcome.tone === "danger" ? (
+                  <XCircle size={16} strokeWidth={2} aria-hidden />
+                ) : outcome.tone === "warning" ? (
+                  <AlertTriangle size={16} strokeWidth={2} aria-hidden />
+                ) : (
+                  <CheckCircle2 size={16} strokeWidth={2} aria-hidden />
+                )}
+                {outcome.text}
+                {errorCount > 0 && ` (${errorCount}개 항목 확인)`}
+                <span className="hgadm-cfg__bar-time">
+                  {outcome.at.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Seoul" })}
+                </span>
+              </span>
             ) : (
-              <CheckCircle2 size={16} strokeWidth={2} aria-hidden />
+              <span className="hgadm-cfg__bar-idle">변경 사항 없음</span>
             )}
-            <span>{outcome.text}</span>
           </div>
-        )}
-
-        {testResult && <TestResultBox result={testResult} />}
-
-        {canEdit && (
-          <div className="hgadm-settings__actions">
-            <Button variant="primary" disabled={!dirty} loading={save.isPending} onClick={() => save.mutate(undefined)}>
-              변경사항 저장
-            </Button>
+          <div className="hgadm-cfg__bar-actions">
             {dirty && (
-              <Button
-                variant="ghost"
-                disabled={busy}
-                onClick={() => {
-                  setEdits({});
-                  setErrors({});
-                  setOutcome(null);
-                }}
-              >
+              <Button type="button" variant="ghost" disabled={busy} onClick={discard}>
                 취소
               </Button>
             )}
-            {integration.testable && (
-              <Button variant="secondary" loading={test.isPending} disabled={save.isPending} onClick={() => test.mutate()}>
-                <PlugZap size={15} strokeWidth={2} aria-hidden />
-                {dirty ? "입력한 값으로 연결 테스트" : "연결 테스트"}
-              </Button>
-            )}
-            {dirty && <span className="hgadm-muted hgadm-settings__small">저장하지 않은 변경사항이 있습니다.</span>}
+            <Button type="submit" variant="primary" disabled={!dirty} loading={save.isPending}>
+              저장
+            </Button>
           </div>
-        )}
-
-        {integration.testable && last && !testResult && (
-          <p className="hgadm-muted hgadm-settings__small hgadm-settings__last">
-            마지막 테스트: {last.ok ? "성공" : "실패"} · {formatDateTime(last.checked_at)}
-            {last.checked_by ? ` · ${last.checked_by}` : ""}
-            {last.used_unsaved_values ? " · 저장 전 값으로 테스트" : ""} — {last.message}
-          </p>
-        )}
-      </div>
+        </div>
+      )}
 
       <ConfirmDialog
         open={confirmOff}
         title={`${integration.name}을(를) 끌까요?`}
-        message={
-          <>
-            끄면 바로 대체 동작(모의 응답·기록만 남김 등)으로 바뀝니다. 입력해 둔 키와 값은 지워지지 않으니 다시 켜면 그대로
-            씁니다.
-          </>
-        }
+        message="끄면 바로 대체 동작(모의 응답·기록만 남김 등)으로 바뀝니다. 입력해 둔 키와 값은 지워지지 않으니 다시 켜면 그대로 씁니다."
         confirmLabel="끄기"
         danger
         loading={save.isPending}
         onCancel={() => setConfirmOff(false)}
-        onConfirm={() => {
-          save.mutate(false, { onSettled: () => setConfirmOff(false) });
-        }}
+        onConfirm={() => save.mutate(false, { onSettled: () => setConfirmOff(false) })}
       />
-    </article>
+    </form>
   );
 }
 
-function TestResultBox({ result }: { result: ConnectionTestResult }) {
+function ConnectionBox({
+  last,
+  result,
+  canTest,
+  dirty,
+  loading,
+  disabled,
+  onTest,
+}: {
+  last: IntegrationCheck | null;
+  result: (ConnectionTestResult & { at: Date }) | null;
+  canTest: boolean;
+  dirty: boolean;
+  loading: boolean;
+  disabled: boolean;
+  onTest: () => void;
+}) {
+  const shown = result
+    ? { ok: result.ok, message: result.message, latency: result.latency_ms, at: result.at.toISOString(), unsaved: result.used_unsaved_values, details: result.details, by: null as string | null }
+    : last
+      ? { ok: last.ok, message: last.message, latency: last.latency_ms ?? 0, at: last.checked_at, unsaved: last.used_unsaved_values, details: last.details ?? [], by: last.checked_by }
+      : null;
+  // A stored result from values that were never saved says nothing about the
+  // saved configuration, so it is shown neutrally rather than red or green.
+  const aboutUnsaved = !result && !!shown?.unsaved;
+  const tone = !shown || aboutUnsaved ? "" : shown.ok ? "is-ok" : "is-fail";
+  const title = !shown
+    ? ""
+    : result
+      ? shown.ok
+        ? "연결 성공"
+        : "연결 실패"
+      : aboutUnsaved
+        ? `마지막 테스트 (저장하지 않은 값): ${shown.ok ? "성공" : "실패"}`
+        : `마지막 테스트: ${shown.ok ? "성공" : "실패"}`;
   return (
-    <div className={`hgadm-settings__outcome hgadm-settings__outcome--${result.ok ? "success" : "danger"}`} role="status">
-      {result.ok ? <CheckCircle2 size={16} strokeWidth={2} aria-hidden /> : <XCircle size={16} strokeWidth={2} aria-hidden />}
-      <div>
-        <strong>{result.ok ? "연결 성공" : "연결 실패"}</strong>
-        {result.latency_ms > 0 && <span className="hgadm-settings__latency"> · {result.latency_ms}ms</span>}
-        {result.used_unsaved_values && <span className="hgadm-settings__latency"> · 저장 전 값으로 테스트</span>}
-        {result.details.length > 0 ? (
-          <ul className="hgadm-settings__details">
-            {result.details.map((d) => (
-              <li key={d.provider}>
-                {d.ok ? "✓" : "✕"} {d.provider}: {d.message}
-              </li>
-            ))}
-          </ul>
+    <section className={`hgadm-cfg__conn ${tone}`} aria-label="연결 확인">
+      <div className="hgadm-cfg__conn-body">
+        {shown ? (
+          <>
+            <div className="hgadm-cfg__conn-title">
+              {aboutUnsaved ? (
+                <Info size={16} strokeWidth={2} aria-hidden />
+              ) : shown.ok ? (
+                <CheckCircle2 size={16} strokeWidth={2} aria-hidden />
+              ) : (
+                <XCircle size={16} strokeWidth={2} aria-hidden />
+              )}
+              {title}
+            </div>
+            {shown.details.length > 0 ? (
+              <ul className="hgadm-cfg__conn-details">
+                {shown.details.map((d) => (
+                  <li key={d.provider}>
+                    {d.ok ? "✓" : "✕"} {d.provider}: {d.message}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="hgadm-cfg__conn-msg">{shown.message}</div>
+            )}
+            <div className="hgadm-cfg__conn-meta">
+              {formatDateTime(shown.at)}
+              {shown.latency > 0 && ` · ${shown.latency}ms`}
+              {shown.by && ` · ${shown.by}`}
+              {shown.unsaved && " · 저장 전 값으로 테스트"}
+            </div>
+          </>
         ) : (
-          <div>{result.message}</div>
+          <>
+            <div className="hgadm-cfg__conn-title">
+              <PlugZap size={16} strokeWidth={2} aria-hidden /> 연결 테스트
+            </div>
+            <div className="hgadm-cfg__conn-msg">
+              아직 테스트하지 않았습니다. 실제 서비스에 읽기 전용 요청을 한 번 보내 키가 맞는지 확인합니다 (메일·문자·푸시는 보내지
+              않습니다).
+            </div>
+          </>
         )}
       </div>
-    </div>
+      {canTest && (
+        <Button type="button" variant="secondary" loading={loading} disabled={disabled} onClick={onTest}>
+          <PlugZap size={15} strokeWidth={2} aria-hidden />
+          {dirty ? "입력한 값으로 테스트" : shown ? "다시 테스트" : "연결 테스트"}
+        </Button>
+      )}
+    </section>
   );
+}
+
+/* ---------------- Fields ---------------- */
+
+function SourceTag({ field, restartPending }: { field: SettingField; restartPending: boolean }) {
+  const tags: ReactNode[] = [];
+  if (field.cleared) tags.push(<span key="c" className="hgadm-cfg__tag hgadm-cfg__tag--danger" title="이 화면에서 비워 두어 .env 값도 쓰지 않습니다.">비워 둠</span>);
+  else if (field.source === "admin") tags.push(<span key="a" className="hgadm-cfg__tag hgadm-cfg__tag--brand" title="이 화면에서 저장한 값입니다. .env보다 우선합니다.">직접 저장</span>);
+  else if (field.source === "unreadable")
+    tags.push(<span key="u" className="hgadm-cfg__tag hgadm-cfg__tag--danger" title="저장된 값을 복호화하지 못했습니다(암호화 키 변경). .env 값을 대신 씁니다. 다시 입력하세요.">다시 입력 필요</span>);
+  else if (field.source === "env") tags.push(<span key="e" className="hgadm-cfg__tag" title="서버의 .env 파일 또는 환경 변수에서 온 값입니다.">.env</span>);
+  else tags.push(<span key="d" className="hgadm-cfg__tag" title="따로 설정하지 않아 기본값을 씁니다.">기본값</span>);
+  if (field.restart_required)
+    tags.push(
+      <span key="r" className={`hgadm-cfg__tag hgadm-cfg__tag--restart ${restartPending ? "is-pending" : ""}`} title="저장해도 서버를 다시 시작해야 적용됩니다.">
+        {restartPending ? "재시작 대기 중" : "재시작 후 적용"}
+      </span>,
+    );
+  return <>{tags}</>;
 }
 
 function FieldRow({
@@ -447,43 +688,40 @@ function FieldRow({
   restartPending: boolean;
   onEdit: (edit: Edit | null) => void;
 }) {
-  const source = SOURCE_LABEL[field.source];
   const inputId = `setting-${field.key.replace(/[^a-z0-9]/gi, "-")}`;
+  const hintId = `${inputId}-hint`;
   const secret = field.kind === "secret" || field.kind === "multiline_secret";
+  const changed = !!edit && !(edit.kind === "secret" && edit.value.trim() === "");
   return (
-    <div className={`hgadm-settings__field ${edit ? "is-edited" : ""}`}>
-      <div className="hgadm-settings__field-label">
+    <div className={`hgadm-cfg__field ${changed ? "is-changed" : ""} ${error ? "has-error" : ""}`}>
+      <div className="hgadm-cfg__field-label">
         <label htmlFor={inputId}>
           {field.label}
-          {field.required && <span className="req">*</span>}
+          {field.required && (
+            <span className="hgadm-cfg__req" aria-hidden>
+              *
+            </span>
+          )}
         </label>
-        <span title={source.title}>
-          <Badge tone={source.tone}>{field.cleared ? "삭제됨" : source.label}</Badge>
-        </span>
-        {field.restart_required && (
-          <span title="저장해도 서버를 다시 시작해야 적용됩니다.">
-            <Badge tone={restartPending ? "warning" : "neutral"}>{restartPending ? "재시작 대기" : "재시작 필요"}</Badge>
-          </span>
-        )}
+        <SourceTag field={field} restartPending={restartPending} />
+        {changed && <span className="hgadm-cfg__tag hgadm-cfg__tag--changed">변경됨</span>}
       </div>
-      <div className="hgadm-settings__field-control">
-        {secret ? (
-          <SecretControl field={field} inputId={inputId} edit={edit} disabled={disabled} onEdit={onEdit} />
-        ) : (
-          <ValueControl field={field} inputId={inputId} edit={edit} disabled={disabled} onEdit={onEdit} />
-        )}
-      </div>
+      {secret ? (
+        <SecretControl field={field} inputId={inputId} hintId={hintId} edit={edit} disabled={disabled} onEdit={onEdit} />
+      ) : (
+        <ValueControl field={field} inputId={inputId} hintId={hintId} edit={edit} disabled={disabled} onEdit={onEdit} />
+      )}
       {error ? (
-        <div className="hgadm-field__error" role="alert">
+        <div className="hgadm-cfg__error" role="alert">
           {error}
         </div>
       ) : (
-        (field.help || field.env_var) && (
-          <div className="hgadm-field__hint">
-            {field.help}
-            <span className="hgadm-settings__env-var"> {field.env_var}</span>
-          </div>
-        )
+        <div className="hgadm-cfg__hint" id={hintId}>
+          {field.help}
+          <span className="hgadm-cfg__env" title="이 값을 대신하는 서버 환경 변수">
+            {field.env_var}
+          </span>
+        </div>
       )}
     </div>
   );
@@ -492,97 +730,94 @@ function FieldRow({
 function SecretControl({
   field,
   inputId,
+  hintId,
   edit,
   disabled,
   onEdit,
 }: {
   field: SettingField;
   inputId: string;
+  hintId: string;
   edit: Edit | undefined;
   disabled: boolean;
   onEdit: (edit: Edit | null) => void;
 }) {
   const [visible, setVisible] = useState(false);
-  const isSet = !!field.secret?.is_set;
   const [confirmRemove, setConfirmRemove] = useState(false);
+  const isSet = !!field.secret?.is_set;
+  const saved = isSet ? `${field.secret?.hint ?? "••••"} 저장됨` : "저장된 값 없음";
 
-  if (edit?.kind === "secret") {
-    const common = {
-      id: inputId,
-      value: edit.value,
-      autoComplete: "off",
-      spellCheck: false,
-      placeholder: field.placeholder || "새 값을 입력하세요",
-      disabled,
-      "aria-invalid": undefined,
-    } as const;
+  if (edit?.kind === "clear" || edit?.kind === "reset") {
     return (
-      <div className="hgadm-settings__secret-edit">
-        {field.kind === "multiline_secret" ? (
-          <Textarea
-            {...common}
-            rows={4}
-            className={visible ? "" : "hgadm-settings__masked"}
-            onChange={(e) => onEdit({ kind: "secret", value: e.target.value })}
-          />
-        ) : (
-          <Input
-            {...common}
-            type={visible ? "text" : "password"}
-            onChange={(e) => onEdit({ kind: "secret", value: e.target.value })}
-          />
-        )}
-        <Button
-          variant="ghost"
-          size="sm"
-          aria-label={visible ? "입력값 숨기기" : "입력값 보기"}
-          onClick={() => setVisible((v) => !v)}
-        >
-          {visible ? <EyeOff size={15} strokeWidth={2} /> : <Eye size={15} strokeWidth={2} />}
-        </Button>
-        <Button variant="ghost" size="sm" onClick={() => onEdit(null)}>
+      <div className="hgadm-cfg__pending" id={inputId}>
+        <span>{edit.kind === "clear" ? "저장하면 이 값을 삭제합니다" : "저장하면 .env 값으로 되돌립니다"}</span>
+        <button type="button" className="hgadm-cfg__textbtn" disabled={disabled} onClick={() => onEdit(null)}>
           취소
-        </Button>
+        </button>
       </div>
     );
   }
 
+  const value = edit?.kind === "secret" ? edit.value : "";
+  const placeholder = isSet ? "비워 두면 저장된 값 유지" : field.placeholder || "값을 입력하세요";
+  const change = (v: string) => onEdit(v === "" ? null : { kind: "secret", value: v });
   return (
-    <div className="hgadm-settings__secret">
-      <span id={inputId} className={`hgadm-settings__secret-value ${isSet ? "" : "is-empty"}`}>
-        {edit?.kind === "clear"
-          ? "저장하면 삭제됩니다"
-          : edit?.kind === "reset"
-            ? "저장하면 .env 값으로 돌아갑니다"
-            : isSet
-              ? `${field.secret?.hint ?? "••••"} (설정됨)`
-              : "설정 안 됨"}
-      </span>
-      {edit ? (
-        <Button variant="ghost" size="sm" disabled={disabled} onClick={() => onEdit(null)}>
-          되돌리기
-        </Button>
-      ) : (
-        <>
-          <Button variant="secondary" size="sm" disabled={disabled} onClick={() => onEdit({ kind: "secret", value: "" })}>
-            {isSet ? "변경" : "입력"}
-          </Button>
-          {isSet && (
-            <Button variant="danger-soft" size="sm" disabled={disabled} onClick={() => setConfirmRemove(true)}>
-              삭제
-            </Button>
-          )}
-          {field.source === "admin" && (
-            <Button variant="ghost" size="sm" disabled={disabled} onClick={() => onEdit({ kind: "reset" })}>
-              <RotateCcw size={13} strokeWidth={2} aria-hidden /> .env 값으로
-            </Button>
-          )}
-        </>
-      )}
+    <div className="hgadm-cfg__secret">
+      <div className="hgadm-cfg__secret-input">
+        {field.kind === "multiline_secret" ? (
+          <Textarea
+            id={inputId}
+            rows={value ? 4 : 2}
+            value={value}
+            placeholder={placeholder}
+            autoComplete="off"
+            spellCheck={false}
+            disabled={disabled}
+            aria-describedby={hintId}
+            className={visible ? "" : "hgadm-cfg__masked"}
+            onChange={(e) => change(e.target.value)}
+          />
+        ) : (
+          <Input
+            id={inputId}
+            type={visible ? "text" : "password"}
+            value={value}
+            placeholder={placeholder}
+            autoComplete="new-password"
+            spellCheck={false}
+            disabled={disabled}
+            aria-describedby={hintId}
+            onChange={(e) => change(e.target.value)}
+          />
+        )}
+        <button
+          type="button"
+          className="hgadm-cfg__eye"
+          aria-label={visible ? "입력값 숨기기" : "입력값 보기"}
+          title={visible ? "입력값 숨기기" : "입력값 보기"}
+          disabled={!value}
+          onClick={() => setVisible((v) => !v)}
+        >
+          {visible ? <EyeOff size={16} strokeWidth={2} /> : <Eye size={16} strokeWidth={2} />}
+        </button>
+      </div>
+      <div className="hgadm-cfg__secret-meta">
+        <span className={isSet ? "hgadm-cfg__saved" : "hgadm-cfg__unset"}>{saved}</span>
+        {isSet && !value && (
+          <button type="button" className="hgadm-cfg__textbtn hgadm-cfg__textbtn--danger" disabled={disabled} onClick={() => setConfirmRemove(true)}>
+            삭제
+          </button>
+        )}
+        {field.source === "admin" && !value && (
+          <button type="button" className="hgadm-cfg__textbtn" disabled={disabled} onClick={() => onEdit({ kind: "reset" })}>
+            <RotateCcw size={12} strokeWidth={2} aria-hidden /> .env 값으로 되돌리기
+          </button>
+        )}
+      </div>
       <ConfirmDialog
         open={confirmRemove}
         title={`${field.label}을(를) 삭제할까요?`}
-        message=".env에 값이 있어도 쓰지 않게 됩니다. '변경사항 저장'을 눌러야 실제로 삭제됩니다."
+        message=".env에 값이 있어도 쓰지 않게 됩니다. '저장'을 눌러야 실제로 삭제됩니다."
         confirmLabel="삭제 표시"
         danger
         onCancel={() => setConfirmRemove(false)}
@@ -598,43 +833,46 @@ function SecretControl({
 function ValueControl({
   field,
   inputId,
+  hintId,
   edit,
   disabled,
   onEdit,
 }: {
   field: SettingField;
   inputId: string;
+  hintId: string;
   edit: Edit | undefined;
   disabled: boolean;
   onEdit: (edit: Edit | null) => void;
 }) {
   const saved = field.value;
-  const current = edit?.kind === "value" ? edit.value : edit?.kind === "clear" ? "" : saved;
+  const current = edit?.kind === "value" ? edit.value : saved;
   // Typing back the saved value is not a change (inputs hand numbers back as text).
   const change = (next: string | boolean) =>
     onEdit(String(next) === String(saved ?? "") ? null : { kind: "value", value: next });
-  const resetButton = field.source === "admin" && !edit && (
-    <Button variant="ghost" size="sm" disabled={disabled} onClick={() => onEdit({ kind: "reset" })}>
-      <RotateCcw size={13} strokeWidth={2} aria-hidden /> 기본값으로
-    </Button>
-  );
-  const pendingReset = edit?.kind === "reset" && (
-    <span className="hgadm-muted hgadm-settings__small">
-      저장하면 .env·기본값으로 돌아갑니다{" "}
-      <Button variant="ghost" size="sm" onClick={() => onEdit(null)}>
-        되돌리기
-      </Button>
-    </span>
-  );
+
+  if (edit?.kind === "reset") {
+    return (
+      <div className="hgadm-cfg__pending" id={inputId}>
+        <span>저장하면 .env·기본값으로 되돌립니다</span>
+        <button type="button" className="hgadm-cfg__textbtn" onClick={() => onEdit(null)}>
+          취소
+        </button>
+      </div>
+    );
+  }
 
   let control: ReactNode;
   if (field.kind === "bool") {
     control = (
-      <Switch checked={Boolean(current)} disabled={disabled || edit?.kind === "reset"} label={field.label} onChange={(next) => change(next)} />
+      <label className="hgadm-cfg__bool">
+        <Switch checked={Boolean(current)} disabled={disabled} label={field.label} onChange={(next) => change(next)} />
+        <span>{current ? "켜짐" : "꺼짐"}</span>
+      </label>
     );
   } else if (field.kind === "choice") {
     control = (
-      <Select id={inputId} value={String(current ?? "")} disabled={disabled || edit?.kind === "reset"} aria-label={field.label} onChange={(e) => change(e.target.value)}>
+      <Select id={inputId} value={String(current ?? "")} disabled={disabled} aria-label={field.label} onChange={(e) => change(e.target.value)}>
         {field.choices.map((c) => (
           <option key={c.value} value={c.value}>
             {c.label}
@@ -643,26 +881,31 @@ function ValueControl({
       </Select>
     );
   } else {
+    const numeric = field.kind === "number" || field.kind === "integer";
     control = (
       <Input
         id={inputId}
         value={current === null || current === undefined ? "" : String(current)}
-        type={field.kind === "number" || field.kind === "integer" ? "number" : field.kind === "email" ? "email" : "text"}
-        step={field.kind === "number" ? "any" : undefined}
-        inputMode={field.kind === "number" || field.kind === "integer" ? "decimal" : undefined}
+        type={field.kind === "email" ? "email" : "text"}
+        inputMode={numeric ? "decimal" : field.kind === "url" ? "url" : field.kind === "email" ? "email" : undefined}
         placeholder={field.placeholder}
-        disabled={disabled || edit?.kind === "reset"}
+        disabled={disabled}
         autoComplete="off"
         spellCheck={false}
+        aria-describedby={hintId}
+        className={numeric ? "hgadm-cfg__num" : ""}
         onChange={(e) => change(e.target.value)}
       />
     );
   }
   return (
-    <div className="hgadm-settings__value">
+    <div className="hgadm-cfg__value">
       {control}
-      {resetButton}
-      {pendingReset}
+      {field.source === "admin" && !edit && (
+        <button type="button" className="hgadm-cfg__textbtn" disabled={disabled} onClick={() => onEdit({ kind: "reset" })}>
+          <RotateCcw size={12} strokeWidth={2} aria-hidden /> 기본값으로
+        </button>
+      )}
     </div>
   );
 }

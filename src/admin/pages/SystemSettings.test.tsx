@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, useLocation } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ToastProvider } from "../../hooks/toast";
 import { SystemSettingsPage, toChanges } from "./SystemSettings";
@@ -77,9 +77,19 @@ function sendgrid(over: Partial<IntegrationSettings> = {}): IntegrationSettings 
   };
 }
 
+const smtp: IntegrationSettings = {
+  ...sendgrid(),
+  id: "smtp",
+  name: "SMTP 이메일",
+  status: "not_configured",
+  status_label: "미설정",
+  toggle: { enabled: false, source: "env" },
+  fields: [field({ key: "email.host", label: "메일 서버 주소", kind: "text", secret: null, value: "", env_var: "SMTP_HOST" })],
+};
+
 function page(integration = sendgrid(), over: Partial<SettingsPageData> = {}): SettingsPageData {
   return {
-    groups: [{ id: "messaging", label: "이메일·문자", description: "", integrations: [integration] }],
+    groups: [{ id: "messaging", label: "이메일·문자", description: "", integrations: [integration, smtp] }],
     restart_pending: [],
     encryption_key_source: "env",
     environment: { app_env: "local", database: "localhost:5432/hangyul" },
@@ -88,20 +98,27 @@ function page(integration = sendgrid(), over: Partial<SettingsPageData> = {}): S
   };
 }
 
-function renderPage() {
+function Where() {
+  const loc = useLocation();
+  return <div data-testid="where">{loc.search}</div>;
+}
+
+function renderPage(entry = "/settings?item=sendgrid") {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
       <ToastProvider>
-        <MemoryRouter>
+        <MemoryRouter initialEntries={[entry]}>
           <SystemSettingsPage />
+          <Where />
         </MemoryRouter>
       </ToastProvider>
     </QueryClientProvider>,
   );
 }
 
-const card = async () => screen.findByRole("article", { name: "SendGrid 이메일" });
+const detail = async () => screen.findByRole("form", { name: "SendGrid 이메일" });
+const saveButton = (d: HTMLElement) => within(d).getByRole("button", { name: "저장" });
 
 describe("SystemSettingsPage", () => {
   beforeEach(() => {
@@ -110,59 +127,84 @@ describe("SystemSettingsPage", () => {
     api.systemSettings.mockResolvedValue(page());
   });
 
-  it("shows a masked secret, where each value comes from, and the status", async () => {
-    renderPage();
-    const c = await card();
-    expect(within(c).getByText("••••9876 (설정됨)")).toBeInTheDocument();
-    expect(within(c).getByText("사용 중")).toBeInTheDocument();
-    expect(within(c).getAllByText(".env").length).toBe(2);
-    expect(within(c).getByDisplayValue("Hangyul")).toBeInTheDocument();
-    // Nothing to save yet.
-    expect(within(c).getByRole("button", { name: "변경사항 저장" })).toBeDisabled();
+  it("opens on an overview and a list; picking an item shows only that item", async () => {
+    renderPage("/settings");
+    expect(await screen.findByRole("heading", { name: "한눈에 보기" })).toBeInTheDocument();
+    const list = screen.getByRole("navigation", { name: "설정 항목" });
+    expect(within(list).getByRole("button", { name: /SendGrid 이메일.*사용 중/ })).toBeInTheDocument();
+    await userEvent.click(within(list).getByRole("button", { name: /SMTP 이메일/ }));
+    expect(await screen.findByRole("form", { name: "SMTP 이메일" })).toBeInTheDocument();
+    expect(screen.getByTestId("where")).toHaveTextContent("?item=smtp");
+    expect(screen.queryByRole("form", { name: "SendGrid 이메일" })).toBeNull();
   });
 
-  it("replacing a key sends it as a secret and leaves untouched fields out", async () => {
-    const before = sendgrid();
-    const after = { ...before, fields: [field({ source: "admin", secret: { is_set: true, hint: "••••ABCD" } }), before.fields[1]] };
-    api.saveIntegration.mockResolvedValue({
-      integration: after,
-      applied: { "sendgrid.api_key": "live" },
-      message: "저장했습니다. 바로 적용되었습니다.",
-    });
+  it("shows a saved secret only masked, and an empty input keeps it", async () => {
     renderPage();
-    const c = await card();
+    const d = await detail();
+    expect(within(d).getByText("••••9876 저장됨")).toBeInTheDocument();
+    expect(within(d).getByLabelText(/^API 키/)).toHaveValue("");
+    expect(within(d).getByText("변경 사항 없음")).toBeInTheDocument();
+    expect(saveButton(d)).toBeDisabled();
+  });
+
+  it("typing a new key and saving sends it as a secret, and says it was applied", async () => {
+    const after = { ...sendgrid(), fields: [field({ source: "admin", secret: { is_set: true, hint: "••••ABCD" } }), sendgrid().fields[1]] };
+    api.saveIntegration.mockResolvedValue({ integration: after, applied: { "sendgrid.api_key": "live" }, message: "저장했습니다. 바로 적용되었습니다." });
+    renderPage();
+    const d = await detail();
     api.systemSettings.mockResolvedValue(page(after));
-    await userEvent.click(within(c).getByRole("button", { name: "변경" }));
-    await userEvent.type(within(c).getByLabelText(/^API 키/), "SG.new-key-ABCD");
-    await userEvent.click(within(c).getByRole("button", { name: "변경사항 저장" }));
+    await userEvent.type(within(d).getByLabelText(/^API 키/), "SG.new-key-ABCD");
+    expect(within(d).getByText(/저장하지 않은 변경 1개/)).toBeInTheDocument();
+    await userEvent.click(saveButton(d));
     await waitFor(() =>
       expect(api.saveIntegration).toHaveBeenCalledWith("sendgrid", {
         changes: [{ key: "sendgrid.api_key", action: "set", secret: "SG.new-key-ABCD" }],
       }),
     );
-    expect(await within(c).findByText("저장했습니다. 바로 적용되었습니다.")).toBeInTheDocument();
-    expect(within(c).getByText("••••ABCD (설정됨)")).toBeInTheDocument();
+    expect(await within(d).findByText("저장했습니다. 바로 적용되었습니다.")).toBeInTheDocument();
+    expect(await within(d).findByText("••••ABCD 저장됨")).toBeInTheDocument();
+    expect(within(d).getByLabelText(/^API 키/)).toHaveValue("");
+  });
+
+  it("Enter in a field saves", async () => {
+    api.saveIntegration.mockResolvedValue({ integration: sendgrid(), applied: { "sendgrid.from_name": "live" }, message: "저장했습니다. 바로 적용되었습니다." });
+    renderPage();
+    const d = await detail();
+    const name = within(d).getByLabelText("보내는 이름");
+    await userEvent.clear(name);
+    await userEvent.type(name, "한귤{Enter}");
+    await waitFor(() =>
+      expect(api.saveIntegration).toHaveBeenCalledWith("sendgrid", { changes: [{ key: "sendgrid.from_name", action: "set", value: "한귤" }] }),
+    );
+  });
+
+  it("a restart-only save says it applies after a restart", async () => {
+    api.saveIntegration.mockResolvedValue({ integration: sendgrid(), applied: { "sendgrid.from_name": "restart" }, message: "저장했습니다. 서버를 다시 시작하면 적용됩니다." });
+    renderPage();
+    const d = await detail();
+    await userEvent.type(within(d).getByLabelText("보내는 이름"), "!{Enter}");
+    expect(await within(d).findByText("저장했습니다. 서버를 다시 시작하면 적용됩니다.")).toBeInTheDocument();
   });
 
   it("the typed secret is hidden until asked for", async () => {
     renderPage();
-    const c = await card();
-    await userEvent.click(within(c).getByRole("button", { name: "변경" }));
-    const input = within(c).getByLabelText(/^API 키/);
+    const d = await detail();
+    const input = within(d).getByLabelText(/^API 키/);
     expect(input).toHaveAttribute("type", "password");
-    await userEvent.click(within(c).getByRole("button", { name: "입력값 보기" }));
+    await userEvent.type(input, "abc");
+    await userEvent.click(within(d).getByRole("button", { name: "입력값 보기" }));
     expect(input).toHaveAttribute("type", "text");
   });
 
   it("removing a key needs a confirmation and then a save", async () => {
     api.saveIntegration.mockResolvedValue({ integration: sendgrid(), applied: {}, message: "저장했습니다. 바로 적용되었습니다." });
     renderPage();
-    const c = await card();
-    await userEvent.click(within(c).getByRole("button", { name: "삭제" }));
+    const d = await detail();
+    await userEvent.click(within(d).getByRole("button", { name: "삭제" }));
     await userEvent.click(await screen.findByRole("button", { name: "삭제 표시" }));
-    expect(within(c).getByText("저장하면 삭제됩니다")).toBeInTheDocument();
+    expect(within(d).getByText("저장하면 이 값을 삭제합니다")).toBeInTheDocument();
     expect(api.saveIntegration).not.toHaveBeenCalled();
-    await userEvent.click(within(c).getByRole("button", { name: "변경사항 저장" }));
+    await userEvent.click(saveButton(d));
     await waitFor(() =>
       expect(api.saveIntegration).toHaveBeenCalledWith("sendgrid", { changes: [{ key: "sendgrid.api_key", action: "clear" }] }),
     );
@@ -173,33 +215,28 @@ describe("SystemSettingsPage", () => {
       new ApiError(422, "settings.invalid", "입력값을 확인하세요.", { fields: { "sendgrid.from_name": "너무 깁니다." } }),
     );
     renderPage();
-    const c = await card();
-    const name = within(c).getByLabelText("보내는 이름");
+    const d = await detail();
+    const name = within(d).getByLabelText("보내는 이름");
     await userEvent.clear(name);
     await userEvent.type(name, "새 이름");
-    await userEvent.click(within(c).getByRole("button", { name: "변경사항 저장" }));
-    expect(await within(c).findByRole("alert")).toHaveTextContent("너무 깁니다.");
-    expect(within(c).getByText(/저장하지 못했습니다/)).toBeInTheDocument();
-    expect(within(c).getByDisplayValue("새 이름")).toBeInTheDocument();
+    await userEvent.click(saveButton(d));
+    expect(await within(d).findByRole("alert")).toHaveTextContent("너무 깁니다.");
+    expect(within(d).getByText(/저장하지 못했습니다/)).toBeInTheDocument();
+    expect(within(d).getByDisplayValue("새 이름")).toBeInTheDocument();
   });
 
   it("turning off asks first and says the key is kept", async () => {
     const off = sendgrid({ status: "off", status_label: "꺼짐", toggle: { enabled: false, source: "admin" } });
-    api.saveIntegration.mockResolvedValue({
-      integration: off,
-      applied: { "toggle:sendgrid": "live" },
-      message: "저장했습니다. 바로 적용되었습니다.",
-    });
+    api.saveIntegration.mockResolvedValue({ integration: off, applied: { "toggle:sendgrid": "live" }, message: "저장했습니다. 바로 적용되었습니다." });
     renderPage();
-    const c = await card();
-    // What the server returns from now on (the page refetches after a save).
+    const d = await detail();
     api.systemSettings.mockResolvedValue(page(off));
-    await userEvent.click(within(c).getByRole("checkbox", { name: "SendGrid 이메일 사용" }));
+    await userEvent.click(within(d).getByRole("checkbox", { name: "SendGrid 이메일 사용" }));
     const dialog = await screen.findByRole("dialog");
     expect(dialog).toHaveTextContent("지워지지 않으니");
     await userEvent.click(within(dialog).getByRole("button", { name: "끄기" }));
     await waitFor(() => expect(api.saveIntegration).toHaveBeenCalledWith("sendgrid", { changes: [], enabled: false }));
-    expect(await within(c).findByText("꺼짐", { selector: ".hgadm-badge" })).toBeInTheDocument();
+    expect(await within(d).findByText("꺼짐", { selector: ".hgadm-cfg__pill" })).toBeInTheDocument();
   });
 
   it("tests the connection with the values typed so far, without saving them", async () => {
@@ -211,16 +248,42 @@ describe("SystemSettingsPage", () => {
       used_unsaved_values: true,
     });
     renderPage();
-    const c = await card();
-    await userEvent.click(within(c).getByRole("button", { name: "변경" }));
-    await userEvent.type(within(c).getByLabelText(/^API 키/), "SG.try-this");
-    await userEvent.click(within(c).getByRole("button", { name: /입력한 값으로 연결 테스트/ }));
+    const d = await detail();
+    await userEvent.type(within(d).getByLabelText(/^API 키/), "SG.try-this");
+    await userEvent.click(within(d).getByRole("button", { name: /입력한 값으로 테스트/ }));
     await waitFor(() =>
       expect(api.testIntegration).toHaveBeenCalledWith("sendgrid", { values: {}, secrets: { "sendgrid.api_key": "SG.try-this" } }),
     );
-    expect(await within(c).findByText("연결 실패")).toBeInTheDocument();
-    expect(within(c).getByText(/거부했습니다/)).toBeInTheDocument();
+    expect(await within(d).findByText("연결 실패")).toBeInTheDocument();
+    expect(within(d).getByText(/거부했습니다/)).toBeInTheDocument();
     expect(api.saveIntegration).not.toHaveBeenCalled();
+  });
+
+  it("a stored test of unsaved values does not paint the saved setup as failing", async () => {
+    api.systemSettings.mockResolvedValue(
+      page(
+        sendgrid({
+          last_check: { ok: false, message: "거부", latency_ms: 300, checked_at: "2026-09-29T00:00:00Z", checked_by: "관리자", used_unsaved_values: true },
+        }),
+      ),
+    );
+    renderPage();
+    const d = await detail();
+    const box = within(d).getByRole("region", { name: "연결 확인" });
+    expect(box).toHaveTextContent("마지막 테스트 (저장하지 않은 값): 실패");
+    expect(box).not.toHaveClass("is-fail");
+  });
+
+  it("asks before leaving an item with unsaved changes", async () => {
+    renderPage();
+    const d = await detail();
+    await userEvent.type(within(d).getByLabelText("보내는 이름"), "x");
+    await userEvent.click(within(screen.getByRole("navigation", { name: "설정 항목" })).getByRole("button", { name: /SMTP 이메일/ }));
+    const dialog = await screen.findByRole("dialog");
+    expect(dialog).toHaveTextContent("저장하지 않은 변경이 있습니다");
+    await userEvent.click(within(dialog).getByRole("button", { name: "취소" }));
+    expect(screen.getByTestId("where")).toHaveTextContent("?item=sendgrid");
+    expect(within(d).getByDisplayValue("Hangyulx")).toBeInTheDocument();
   });
 
   it("flags settings that wait for a restart", async () => {
@@ -235,11 +298,12 @@ describe("SystemSettingsPage", () => {
   it("is read-only without settings:write", async () => {
     scopes = ["settings:read"];
     renderPage();
-    const c = await card();
-    expect(within(c).queryByRole("button", { name: "변경사항 저장" })).toBeNull();
-    expect(within(c).getByRole("button", { name: "변경" })).toBeDisabled();
-    expect(within(c).getByRole("checkbox", { name: "SendGrid 이메일 사용" })).toBeDisabled();
-    expect(screen.getByText(/조회 전용입니다/)).toBeInTheDocument();
+    const d = await detail();
+    expect(within(d).queryByRole("button", { name: "저장" })).toBeNull();
+    expect(within(d).queryByRole("button", { name: /테스트/ })).toBeNull();
+    expect(within(d).getByLabelText(/^API 키/)).toBeDisabled();
+    expect(within(d).getByRole("checkbox", { name: "SendGrid 이메일 사용" })).toBeDisabled();
+    expect(within(d).getByText(/조회 전용입니다/)).toBeInTheDocument();
   });
 });
 
