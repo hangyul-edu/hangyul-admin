@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { adminApi } from "../api";
-import type { Plan } from "../api";
+import { adminApi, ENTITLEMENTS } from "../api";
+import type { Entitlement, Plan } from "../api";
 import { errorMessage } from "../../lib/http";
 import { useToast, useToastError } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
@@ -36,10 +36,28 @@ interface PlanDraft {
   trial_days: string;
   promo_price_cents: string;
   features: string;
+  entitlements: Entitlement[];
   audience: string;
   is_public: boolean;
   priority: string;
 }
+
+/** Korean names for what a plan unlocks (access checks read these values). */
+export const ENTITLEMENT_LABELS: Record<Entitlement, { label: string; hint: string }> = {
+  premium_courses: { label: "프리미엄 강의", hint: "모든 레슨·강의" },
+  ai_tutor: { label: "AI 한귤 튜터", hint: "튜터 대화와 오답 설명" },
+  offline_download: { label: "오프라인 저장", hint: "강의·음성 내려받기" },
+  ad_free: { label: "광고 없음", hint: "앱 안 광고 숨김" },
+  premium_content: { label: "프리미엄 콘텐츠", hint: "프리미엄 전용 학습 자료" },
+};
+
+const AUDIENCE_LABELS: Record<string, string> = {
+  default: "모두 (기본)",
+  new_user: "신규 가입자",
+  retention_offer: "해지 방어 제안",
+  winback: "재가입 유도",
+  b2b: "B2B 전용",
+};
 
 const EMPTY_DRAFT: PlanDraft = {
   plan_id: "",
@@ -51,10 +69,25 @@ const EMPTY_DRAFT: PlanDraft = {
   trial_days: "0",
   promo_price_cents: "",
   features: "",
+  // Same default as the API: a new plan unlocks everything until narrowed.
+  entitlements: [...ENTITLEMENTS],
   audience: "default",
   is_public: true,
   priority: "0",
 };
+
+function EntitlementList({ values }: { values: Entitlement[] }) {
+  if (values.length === 0) return <span className="hgadm-muted">없음</span>;
+  return (
+    <div className="hgadm-row hgadm-row--wrap" style={{ gap: 4 }}>
+      {values.map((value) => (
+        <Badge key={value} tone="info">
+          {ENTITLEMENT_LABELS[value]?.label ?? value}
+        </Badge>
+      ))}
+    </div>
+  );
+}
 
 export function PlansPage() {
   const qc = useQueryClient();
@@ -84,6 +117,8 @@ export function PlansPage() {
           .split("\n")
           .map((s) => s.trim())
           .filter(Boolean),
+        // In the canonical order, whatever order they were ticked in.
+        entitlements: ENTITLEMENTS.filter((e) => d.entitlements.includes(e)),
         audience: d.audience,
         is_public: d.is_public,
         priority: Number(d.priority),
@@ -127,6 +162,7 @@ export function PlansPage() {
       trial_days: String(plan.trial_days),
       promo_price_cents: plan.promo_price_cents === null ? "" : String(plan.promo_price_cents),
       features: plan.features.join("\n"),
+      entitlements: [...(plan.entitlements ?? [])],
       audience: plan.audience,
       is_public: plan.is_public,
       priority: String(plan.priority),
@@ -167,7 +203,12 @@ export function PlansPage() {
       header: "체험",
       render: (p) => (p.trial_days ? `${p.trial_days}일` : "—"),
     },
-    { key: "audience", header: "대상", render: (p) => p.audience },
+    {
+      key: "entitlements",
+      header: "이용 권한",
+      render: (p) => <EntitlementList values={p.entitlements ?? []} />,
+    },
+    { key: "audience", header: "대상", render: (p) => AUDIENCE_LABELS[p.audience] ?? p.audience },
     {
       key: "visibility",
       header: "노출",
@@ -265,7 +306,12 @@ export function PlansPage() {
             <Button
               variant="primary"
               loading={save.isPending}
-              disabled={!draft || !draft.name || (!editingId && draft.plan_id.length < 3)}
+              disabled={
+                !draft ||
+                !draft.name ||
+                draft.entitlements.length === 0 ||
+                (!editingId && draft.plan_id.length < 3)
+              }
               onClick={() => draft && save.mutate(draft)}
             >
               저장
@@ -352,9 +398,11 @@ export function PlansPage() {
                 value={draft.audience}
                 onChange={(e) => setDraft({ ...draft, audience: e.target.value })}
               >
-                <option value="default">default</option>
-                <option value="new_user">new_user</option>
-                <option value="retention">retention</option>
+                {Object.entries(AUDIENCE_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
               </Select>
             </Field>
             <Field label="우선순위" hint="클수록 목록 위쪽">
@@ -377,6 +425,40 @@ export function PlansPage() {
               </div>
             </Field>
             <div className="span-2">
+              <fieldset className="hgadm-field" style={{ border: 0, padding: 0, margin: "0 0 14px" }}>
+                <legend className="hgadm-field__label">
+                  이용 권한<span className="req">*</span>
+                </legend>
+                <div className="hgadm-row hgadm-row--wrap" style={{ gap: "8px 22px" }}>
+                  {ENTITLEMENTS.map((value) => (
+                    <label key={value} className="hgadm-checkbox" title={ENTITLEMENT_LABELS[value].hint}>
+                      <input
+                        type="checkbox"
+                        checked={draft.entitlements.includes(value)}
+                        onChange={(e) =>
+                          setDraft({
+                            ...draft,
+                            entitlements: e.target.checked
+                              ? [...draft.entitlements, value]
+                              : draft.entitlements.filter((x) => x !== value),
+                          })
+                        }
+                      />
+                      {ENTITLEMENT_LABELS[value].label}
+                    </label>
+                  ))}
+                </div>
+                {draft.entitlements.length === 0 ? (
+                  <span className="hgadm-field__error" role="alert">
+                    이용 권한을 하나 이상 고르세요.
+                  </span>
+                ) : (
+                  <span className="hgadm-field__hint">
+                    구독자가 실제로 쓸 수 있는 기능입니다. 아래 '기능 목록'은 요금제 카드에 보이는 문구일 뿐 권한을 바꾸지
+                    않습니다. 기존 구독자에게는 다음 갱신·요금제 변경 때부터 적용됩니다.
+                  </span>
+                )}
+              </fieldset>
               <Field label="설명">
                 <Textarea
                   value={draft.description}
@@ -384,7 +466,7 @@ export function PlansPage() {
                   rows={2}
                 />
               </Field>
-              <Field label="기능 목록" hint="한 줄에 하나씩">
+              <Field label="기능 목록 (표시 문구)" hint="요금제 카드에 보이는 문구, 한 줄에 하나씩">
                 <Textarea
                   value={draft.features}
                   onChange={(e) => setDraft({ ...draft, features: e.target.value })}

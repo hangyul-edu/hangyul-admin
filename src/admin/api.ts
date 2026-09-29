@@ -492,6 +492,12 @@ export interface AdminPaymentRow {
 
 // ---- Plans -----------------------------------------------------------------
 
+/** What a plan's subscribers may use — the values access checks compare
+ *  against (access_control `Entitlement`). Separate from `features`, which is
+ *  only paywall copy. */
+export const ENTITLEMENTS = ["premium_courses", "ai_tutor", "offline_download", "ad_free", "premium_content"] as const;
+export type Entitlement = (typeof ENTITLEMENTS)[number];
+
 export interface Plan {
   plan_id: string;
   name: string;
@@ -502,6 +508,7 @@ export interface Plan {
   trial_days: number;
   promo_price_cents: number | null;
   features: string[];
+  entitlements: Entitlement[];
   audience: string;
   status: string;
   is_public: boolean;

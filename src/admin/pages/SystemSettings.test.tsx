@@ -434,3 +434,76 @@ describe("toChanges", () => {
     ]);
   });
 });
+
+describe("payment provider cards", () => {
+  const tossCard = (over: Partial<IntegrationSettings> = {}): IntegrationSettings => ({
+    ...sendgrid(),
+    id: "toss_card",
+    group: "payments",
+    name: "토스페이먼츠 카드 자동결제",
+    description: "카드를 등록해 빌링키를 발급받고 매 주기 자동으로 결제합니다.",
+    note: "연결 테스트는 조회만 하며 결제는 일어나지 않습니다.",
+    fields: [
+      field({ key: "toss_payments.card_secret_key", label: "시크릿 키", env_var: "TOSS_CARD_SECRET_KEY", secret: { is_set: true, hint: "••••G5Rk" } }),
+    ],
+    ...over,
+  });
+  const paymentsPage = (integration: IntegrationSettings): SettingsPageData => ({
+    ...page(),
+    groups: [{ id: "payments", label: "결제", description: "", integrations: [integration] }],
+  });
+  const tossDetail = () => screen.findByRole("form", { name: "토스페이먼츠 카드 자동결제" });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    scopes = ["settings:read", "settings:write"];
+  });
+
+  it("saves a new secret key under `secret` and shows only the masked hint", async () => {
+    api.systemSettings.mockResolvedValue(paymentsPage(tossCard()));
+    api.saveIntegration.mockResolvedValue({
+      integration: tossCard(),
+      applied: { "toss_payments.card_secret_key": "live" },
+      message: "저장했습니다. 바로 적용되었습니다.",
+    });
+    renderPage("/settings?item=toss_card");
+    const d = await tossDetail();
+    expect(within(d).getByText("••••G5Rk 저장됨")).toBeInTheDocument();
+    expect(within(d).getByText("TOSS_CARD_SECRET_KEY")).toBeInTheDocument();
+    await userEvent.type(within(d).getByLabelText(/^시크릿 키/), "live_sk_new");
+    await userEvent.click(saveButton(d));
+    await waitFor(() =>
+      expect(api.saveIntegration).toHaveBeenCalledWith("toss_card", {
+        changes: [{ key: "toss_payments.card_secret_key", action: "set", secret: "live_sk_new" }],
+      }),
+    );
+    expect(await within(d).findByText(/바로 적용되었습니다/)).toBeInTheDocument();
+  });
+
+  it("warns that switching a payment method off refuses payments, not fakes them", async () => {
+    api.systemSettings.mockResolvedValue(paymentsPage(tossCard()));
+    renderPage("/settings?item=toss_card");
+    const d = await tossDetail();
+    await userEvent.click(within(d).getByRole("checkbox", { name: "토스페이먼츠 카드 자동결제 사용" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(dialog).toHaveTextContent("갱신 결제도 실패합니다");
+    expect(dialog).not.toHaveTextContent("모의 응답");
+  });
+
+  it("says an incomplete payment card is refused in production", async () => {
+    api.systemSettings.mockResolvedValue(paymentsPage(tossCard({ status: "incomplete", status_label: "설정 필요" })));
+    renderPage("/settings?item=toss_card");
+    const d = await tossDetail();
+    expect(within(d).getByText(/등록과 결제를 모두 거부합니다/)).toBeInTheDocument();
+  });
+
+  it("is read-only without settings:write (super admin only)", async () => {
+    scopes = ["settings:read"];
+    api.systemSettings.mockResolvedValue(paymentsPage(tossCard()));
+    renderPage("/settings?item=toss_card");
+    const d = await tossDetail();
+    expect(within(d).getByText(/조회 전용입니다/)).toBeInTheDocument();
+    expect(within(d).getByRole("checkbox", { name: "토스페이먼츠 카드 자동결제 사용" })).toBeDisabled();
+    expect(within(d).queryByRole("button", { name: /연결 테스트/ })).toBeNull();
+  });
+});

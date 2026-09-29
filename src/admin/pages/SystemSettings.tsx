@@ -355,6 +355,8 @@ function IntegrationDetail({
 }) {
   const qc = useQueryClient();
   const isAi = integration.id === "ai";
+  // A payment method without credentials is refused, not faked (outside local dev).
+  const isPayment = integration.group === "payments";
   // The AI card also shows the models configured now and what can be chosen.
   const models = useQuery({ queryKey: MODELS_KEY, queryFn: () => adminApi.aiModels(), enabled: isAi, staleTime: 60_000 });
   const refreshModels = useMutation({
@@ -515,7 +517,9 @@ function IntegrationDetail({
             ? "AI가 켜져 있지만 아래 '현재 사용 중인 모델'의 문제 때문에 해당 용도의 AI 호출은 오류로 멈춥니다."
             : integration.group === "ai"
               ? "켜져 있지만 API 키가 없어, 이 제공사를 고른 용도의 AI 호출은 오류로 멈춥니다. 키를 입력하세요."
-              : "켜져 있지만 필수 값이 비어 있어 실제 서비스 대신 대체 동작 중입니다."}
+              : isPayment
+                ? "켜져 있지만 필수 값이 비어 있어 운영 서버에서는 이 결제 수단의 등록과 결제를 모두 거부합니다."
+                : "켜져 있지만 필수 값이 비어 있어 실제 서비스 대신 대체 동작 중입니다."}
         </p>
       )}
       {!canEdit && (
@@ -618,7 +622,11 @@ function IntegrationDetail({
       <ConfirmDialog
         open={confirmOff}
         title={`${integration.name}을(를) 끌까요?`}
-        message="끄면 바로 대체 동작(모의 응답·기록만 남김 등)으로 바뀝니다. 입력해 둔 키와 값은 지워지지 않으니 다시 켜면 그대로 씁니다."
+        message={
+          isPayment
+            ? "끄면 바로 이 결제 수단의 새 등록과 결제가 거부되고, 이 수단으로 구독 중인 회원의 갱신 결제도 실패합니다. 입력해 둔 키는 지워지지 않으니 다시 켜면 그대로 씁니다."
+            : "끄면 바로 대체 동작(모의 응답·기록만 남김 등)으로 바뀝니다. 입력해 둔 키와 값은 지워지지 않으니 다시 켜면 그대로 씁니다."
+        }
         confirmLabel="끄기"
         danger
         loading={save.isPending}
@@ -704,7 +712,7 @@ function ConnectionBox({
             </div>
             <div className="hgadm-cfg__conn-msg">
               아직 테스트하지 않았습니다. 실제 서비스에 읽기 전용 요청을 한 번 보내 키가 맞는지 확인합니다 (메일·문자·푸시는 보내지
-              않습니다).
+              않고, 결제도 일어나지 않습니다).
             </div>
           </>
         )}
