@@ -96,6 +96,7 @@ function BatchesTab() {
       setCreated({ generated: result.generated, sample: result.sample_codes });
       setName("");
       void qc.invalidateQueries({ queryKey: ["admin", "coupon-batches"] });
+      void qc.invalidateQueries({ queryKey: ["admin", "coupons"] });
     },
     onError: toastError,
   });
@@ -106,6 +107,8 @@ function BatchesTab() {
       toast.success("발행 묶음을 회수했어요.");
       setRevoking(null);
       void qc.invalidateQueries({ queryKey: ["admin", "coupon-batches"] });
+      // Its unused codes are now revoked; the search tab caches them.
+      void qc.invalidateQueries({ queryKey: ["admin", "coupons"] });
     },
     onError: toastError,
   });
@@ -258,7 +261,7 @@ function BatchesTab() {
             </p>
             <pre className="hgadm-json">{created.sample.join("\n")}</pre>
             <p className="hgadm-muted" style={{ fontSize: 12.5 }}>
-              전체 코드는 '쿠폰 검색' 탭에서 발행 묶음으로 필터해 확인하거나 내보낼 수 있습니다.
+              전체 코드는 '쿠폰 검색' 탭에서 발행 묶음으로 필터해 확인할 수 있습니다.
             </p>
           </div>
         )}

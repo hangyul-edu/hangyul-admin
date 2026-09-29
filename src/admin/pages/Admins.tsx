@@ -22,7 +22,11 @@ import {
   formatDateTime,
 } from "../lib/format";
 import type { Column } from "../components/kit";
-import { ADMIN_TIERS as TIERS, ADMIN_TIER_LABEL as TIER_LABEL } from "../lib/adminTiers";
+import {
+  ADMIN_TIERS as TIERS,
+  ADMIN_TIER_LABEL as TIER_LABEL,
+  DEFAULT_GRANT_TIER,
+} from "../lib/adminTiers";
 import { personName, personNameWithEmail } from "../lib/adminIdentity";
 
 
@@ -33,10 +37,10 @@ export function AdminsPage() {
   const { me } = useAdminAuth();
   const [grantOpen, setGrantOpen] = useState(false);
   const [email, setEmail] = useState("");
-  const [tier, setTier] = useState<AdminTier>("viewer");
+  const [tier, setTier] = useState<AdminTier>(DEFAULT_GRANT_TIER);
   const [note, setNote] = useState("");
   const [editing, setEditing] = useState<AdminAccount | null>(null);
-  const [editTier, setEditTier] = useState<AdminTier>("viewer");
+  const [editTier, setEditTier] = useState<AdminTier>(DEFAULT_GRANT_TIER);
   const [revoking, setRevoking] = useState<AdminAccount | null>(null);
   const [search, setSearch] = useState("");
 
@@ -58,6 +62,10 @@ export function AdminsPage() {
 
   function refresh() {
     void qc.invalidateQueries({ queryKey: ["admin", "admins"] });
+    // Granting or revoking flips the member's role, and a tier change shows
+    // on their detail page — both are cached by the user screens.
+    void qc.invalidateQueries({ queryKey: ["admin", "users"] });
+    void qc.invalidateQueries({ queryKey: ["admin", "user"] });
   }
 
   const grant = useMutation({
