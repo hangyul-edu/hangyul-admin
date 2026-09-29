@@ -119,7 +119,7 @@ export function SubscriptionsPage() {
             <option value="">상태: 전체</option>
             {STATUSES.map((s) => (
               <option key={s} value={s}>
-                {s}
+                {statusLabel(s)}
               </option>
             ))}
           </Select>

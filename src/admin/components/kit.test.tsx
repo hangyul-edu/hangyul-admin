@@ -181,6 +181,15 @@ describe("statusLabel", () => {
     expect(new Set(labels).size).toBe(labels.length);
   });
 
+  it("labels every coupon code status the API returns", () => {
+    // CouponStatus = unused | redeemed | revoked. The coupon table printed the
+    // first two raw while its own filter offered them in Korean.
+    for (const status of ["unused", "redeemed", "revoked"]) {
+      expect(statusLabel(status)).not.toBe(status);
+    }
+    expect(statusLabel("unused")).not.toBe(statusLabel("redeemed"));
+  });
+
   it("falls through to the raw value for a status it does not know", () => {
     // A state added on the server should still show, not vanish.
     expect(statusLabel("some_new_state")).toBe("some_new_state");

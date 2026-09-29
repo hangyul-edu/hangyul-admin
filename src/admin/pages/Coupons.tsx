@@ -386,9 +386,11 @@ function CouponSearchTab() {
           style={{ width: 140 }}
         >
           <option value="">상태: 전체</option>
-          <option value="unused">미사용</option>
-          <option value="redeemed">사용됨</option>
-          <option value="revoked">무효화</option>
+          {["unused", "redeemed", "revoked"].map((s) => (
+            <option key={s} value={s}>
+              {statusLabel(s)}
+            </option>
+          ))}
         </Select>
         <Select
           value={batchId}

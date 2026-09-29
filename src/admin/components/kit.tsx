@@ -126,7 +126,9 @@ const STATUS_LABELS: Record<string, string> = {
   processing: "변환 중",
   ready: "재생 가능",
   deleted: "삭제됨",
-  // 쿠폰
+  // 쿠폰 코드(unused/redeemed/revoked)와 지급 이용권(queued/active/consumed)
+  unused: "미사용",
+  redeemed: "사용됨",
   consumed: "사용 완료",
   revoked: "회수됨",
   queued: "사용 대기",
@@ -155,6 +157,8 @@ export function statusTone(status: string | null | undefined): BadgeTone {
     case "approved":
     case "trial":
       return "success";
+    case "unused":
+      return "info";
     case "pending":
     case "processing":
     case "uploading":
@@ -171,12 +175,8 @@ export function statusTone(status: string | null | undefined): BadgeTone {
     case "payment_failed":
     case "expired":
       return "danger";
-    case "cancelled":
-    case "void":
-    case "archived":
-    case "deleted":
-      return "neutral";
     default:
+      // cancelled, void, archived, deleted, redeemed, consumed and anything new.
       return "neutral";
   }
 }

@@ -132,9 +132,11 @@ function PaymentsTab() {
           style={{ width: 140 }}
         >
           <option value="">상태: 전체</option>
-          <option value="succeeded">성공</option>
-          <option value="failed">실패</option>
-          <option value="refunded">환불</option>
+          {["succeeded", "failed", "refunded"].map((s) => (
+            <option key={s} value={s}>
+              {statusLabel(s)}
+            </option>
+          ))}
         </Select>
       </div>
       {query.isPending ? (
@@ -239,7 +241,7 @@ function InvoicesTab() {
           <option value="">상태: 전체</option>
           {["open", "paid", "unpaid", "refunded", "void"].map((s) => (
             <option key={s} value={s}>
-              {s}
+              {statusLabel(s)}
             </option>
           ))}
         </Select>
