@@ -785,7 +785,8 @@ export type SettingFieldKind =
   | "number"
   | "integer"
   | "choice"
-  | "model";
+  | "model"
+  | "provider";
 export interface SettingField {
   key: string;
   label: string;
@@ -849,36 +850,49 @@ export interface SettingsSaveResult {
   applied: Record<string, "live" | "restart">;
   message: string;
 }
+export type AiPurpose = "generation" | "reasoning";
 export interface AiModelOption {
   id: string;
   display_name: string;
   provider: string;
   provider_name: string;
-  /** A rate is known, so the model's cost counts toward AI budgets. */
+  /** On the rate card; otherwise charged at the (high) fallback rate. */
   priced: boolean;
   /** `live`: from the provider's own list; `suggested`: from the rate card. */
   source: "live" | "suggested";
+  /** Can generate text through the app's adapters. */
+  compatible: boolean;
+  incompatible_reason: string | null;
+  /** Purposes it suits (fast/cheap → generation, strong → reasoning). */
+  recommended_for: AiPurpose[];
 }
 export interface AiModelProvider {
   id: string;
   name: string;
   supported: boolean;
+  enabled: boolean;
   key_configured: boolean;
-  listing: "live" | "suggested" | "no_key" | "error" | "unsupported";
+  listing: "live" | "suggested" | "no_key" | "disabled" | "error" | "unsupported";
   message: string;
 }
 export interface AiTierModel {
   key: string;
+  provider_key: string;
   label: string;
   purpose: string;
   model: string;
   provider: string;
   provider_name: string;
   supported: boolean;
+  provider_enabled: boolean;
   key_configured: boolean;
   priced: boolean;
+  /** Price per 1M tokens used for this model (card or fallback). */
+  rate: string;
   /** Found in the provider's live list; null when no live list was available. */
   listed: boolean | null;
+  /** Why this model cannot be used with this provider, if it cannot. */
+  problem: string | null;
 }
 export interface AiModelsData {
   tiers: AiTierModel[];
@@ -889,7 +903,7 @@ export interface ConnectionTestResult {
   ok: boolean;
   message: string;
   latency_ms: number;
-  details: { provider: string; ok: boolean; message: string }[];
+  details: { provider: string; ok: boolean; message: string; error_code?: string }[];
   used_unsaved_values: boolean;
 }
 

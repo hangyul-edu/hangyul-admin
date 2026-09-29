@@ -312,12 +312,37 @@ describe("SystemSettingsPage — AI models", () => {
   const ai: IntegrationSettings = {
     ...sendgrid(),
     id: "ai",
-    name: "AI 모델 공급자",
+    name: "AI 사용·모델 선택",
     toggle: { enabled: true, source: "admin" },
     fields: [
+      field({
+        key: "ai.reasoning_provider",
+        label: "추론용 제공사",
+        kind: "provider",
+        secret: null,
+        value: "anthropic",
+        env_var: "AI_REASONING_PROVIDER",
+        choices: [
+          { value: "openai", label: "OpenAI" },
+          { value: "anthropic", label: "Anthropic" },
+          { value: "google", label: "Google Gemini" },
+        ],
+      }),
       field({ key: "ai.reasoning_model", label: "추론용 모델", kind: "model", secret: null, value: "claude-sonnet-5", env_var: "AI_REASONING_MODEL" }),
     ],
   };
+
+  const model = (id: string, provider: string, recommended_for: ("generation" | "reasoning")[] = []) => ({
+    id,
+    display_name: id,
+    provider,
+    provider_name: provider,
+    priced: true,
+    source: "live" as const,
+    compatible: true,
+    incompatible_reason: null,
+    recommended_for,
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -327,32 +352,60 @@ describe("SystemSettingsPage — AI models", () => {
       tiers: [
         {
           key: "ai.reasoning_model",
+          provider_key: "ai.reasoning_provider",
           label: "추론용",
           purpose: "튜터 설명",
           model: "claude-sonnet-5",
           provider: "anthropic",
           provider_name: "Anthropic",
           supported: true,
+          provider_enabled: true,
           key_configured: true,
           priced: true,
+          rate: "입력 $2 · 출력 $10 (100만 토큰당)",
           listed: true,
+          problem: null,
         },
       ],
-      providers: [{ id: "anthropic", name: "Anthropic", supported: true, key_configured: true, listing: "live", message: "" }],
+      providers: [
+        { id: "anthropic", name: "Anthropic", supported: true, enabled: true, key_configured: true, listing: "live", message: "" },
+        { id: "openai", name: "OpenAI", supported: true, enabled: true, key_configured: true, listing: "live", message: "" },
+      ],
       models: [
-        { id: "claude-sonnet-5", display_name: "Claude Sonnet 5", provider: "anthropic", provider_name: "Anthropic", priced: true, source: "live" },
-        { id: "claude-opus-5-5", display_name: "Claude Opus 5.5", provider: "anthropic", provider_name: "Anthropic", priced: true, source: "live" },
+        model("claude-sonnet-5", "anthropic", ["reasoning"]),
+        model("claude-opus-5-5", "anthropic", ["reasoning"]),
+        model("gpt-4o-mini", "openai", ["generation"]),
+        model("gpt-4.1", "openai", ["reasoning"]),
       ],
     });
+  });
+
+  it("switching the provider moves the model to that provider's pick and saves both", async () => {
+    api.saveIntegration.mockResolvedValue({ integration: ai, applied: {}, message: "저장했습니다. 바로 적용되었습니다." });
+    renderPage("/settings?item=ai");
+    const d = await screen.findByRole("form", { name: "AI 사용·모델 선택" });
+    await within(d).findByRole("region", { name: "현재 사용 중인 모델" });
+    await within(d).findByRole("radio", { name: /OpenAI/ });
+    await userEvent.click(within(d).getByRole("radio", { name: /OpenAI/ }));
+    expect(within(d).getByRole("combobox", { name: /^추론용 모델/ })).toHaveValue("gpt-4.1");
+    await userEvent.click(saveButton(d));
+    await waitFor(() =>
+      expect(api.saveIntegration).toHaveBeenCalledWith("ai", {
+        changes: [
+          { key: "ai.reasoning_provider", action: "set", value: "openai" },
+          { key: "ai.reasoning_model", action: "set", value: "gpt-4.1" },
+        ],
+      }),
+    );
   });
 
   it("shows the configured model per purpose and saves a model picked from the list", async () => {
     api.saveIntegration.mockResolvedValue({ integration: ai, applied: { "ai.reasoning_model": "live" }, message: "저장했습니다. 바로 적용되었습니다." });
     renderPage("/settings?item=ai");
-    const d = await screen.findByRole("form", { name: "AI 모델 공급자" });
+    const d = await screen.findByRole("form", { name: "AI 사용·모델 선택" });
     const summary = await within(d).findByRole("region", { name: "현재 사용 중인 모델" });
     await within(summary).findByText("claude-sonnet-5");
-    expect(summary).toHaveTextContent("제공사 목록에서 확인됨");
+    expect(summary).toHaveTextContent("이 계정의 모델 목록에서 확인됨");
 
     await userEvent.click(within(d).getByRole("combobox", { name: /^추론용 모델/ }));
     await userEvent.type(within(d).getByRole("combobox", { name: /^추론용 모델/ }), "opus{Enter}");

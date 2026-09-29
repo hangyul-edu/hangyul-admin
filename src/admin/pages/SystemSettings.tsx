@@ -20,6 +20,7 @@ import {
   adminApi,
   type ConnectionTestResult,
   type AiModelsData,
+  type AiPurpose,
   type IntegrationCheck,
   type IntegrationSettings,
   type SettingChange,
@@ -29,7 +30,14 @@ import {
 import { useAdminAuth } from "../auth";
 import { ApiError, errorMessage } from "../../lib/http";
 import { Button, ConfirmDialog, ErrorState, Input, LoadingState, Select, Switch, Textarea } from "../components/kit";
-import { ModelOverview, ModelPicker, modelWarnings } from "../components/ModelPicker";
+import {
+  ModelOverview,
+  ModelPicker,
+  ProviderChoice,
+  guessProvider,
+  modelWarnings,
+  suggestedModel,
+} from "../components/ModelPicker";
 import { formatDateTime } from "../lib/format";
 
 const QUERY_KEY = ["admin", "system-settings"];
@@ -434,6 +442,30 @@ function IntegrationDetail({
     });
   };
 
+  // The value a field has in the form: its pending edit, else the saved one.
+  const valueOf = (key: string): string => {
+    const edit = edits[key];
+    if (edit?.kind === "value") return String(edit.value);
+    return String(integration.fields.find((f) => f.key === key)?.value ?? "");
+  };
+
+  // Changing a purpose's provider also moves its model to that provider's
+  // best fit, so the pair never ends up mismatched (the admin can still pick
+  // another model).
+  const setProvider = (providerKey: string, next: string) => {
+    const saved = String(integration.fields.find((f) => f.key === providerKey)?.value ?? "");
+    setEdit(providerKey, next === saved ? null : { kind: "value", value: next });
+    const modelKey = providerKey.replace(/_provider$/, "_model");
+    const purpose: AiPurpose = modelKey.includes("generation") ? "generation" : "reasoning";
+    const current = valueOf(modelKey);
+    const fits = (current && guessProvider(current) === next) || (models.data?.models ?? []).some((m) => m.provider === next && m.id === current && m.compatible);
+    if (!fits) {
+      const suggestion = suggestedModel(next, purpose, models.data);
+      const savedModel = String(integration.fields.find((f) => f.key === modelKey)?.value ?? "");
+      if (suggestion) setEdit(modelKey, suggestion === savedModel ? null : { kind: "value", value: suggestion });
+    }
+  };
+
   const discard = () => {
     setEdits({});
     setErrors({});
@@ -478,8 +510,12 @@ function IntegrationDetail({
 
       {integration.status === "incomplete" && (
         <p className="hgadm-cfg__notice hgadm-cfg__notice--warning">
-          <AlertTriangle size={15} strokeWidth={2} aria-hidden /> 켜져 있지만 필수 값이 비어 있어 실제 서비스 대신 대체 동작
-          중입니다.
+          <AlertTriangle size={15} strokeWidth={2} aria-hidden />{" "}
+          {integration.id === "ai"
+            ? "AI가 켜져 있지만 아래 '현재 사용 중인 모델'의 문제 때문에 해당 용도의 AI 호출은 오류로 멈춥니다."
+            : integration.group === "ai"
+              ? "켜져 있지만 API 키가 없어, 이 제공사를 고른 용도의 AI 호출은 오류로 멈춥니다. 키를 입력하세요."
+              : "켜져 있지만 필수 값이 비어 있어 실제 서비스 대신 대체 동작 중입니다."}
         </p>
       )}
       {!canEdit && (
@@ -522,6 +558,8 @@ function IntegrationDetail({
             disabled={!canEdit || busy}
             restartPending={integration.restart_pending.includes(field.key)}
             models={modelsState}
+            provider={field.kind === "model" ? valueOf(field.key.replace(/_model$/, "_provider")) : ""}
+            onProvider={(next) => setProvider(field.key, next)}
             onEdit={(edit) => setEdit(field.key, edit)}
           />
         ))}
@@ -707,6 +745,8 @@ function FieldRow({
   disabled,
   restartPending,
   models,
+  provider,
+  onProvider,
   onEdit,
 }: {
   field: SettingField;
@@ -715,6 +755,10 @@ function FieldRow({
   disabled: boolean;
   restartPending: boolean;
   models: ModelsState;
+  /** For a model field: the provider selected for its purpose (pending or saved). */
+  provider: string;
+  /** For a provider field: change it (and move the model along). */
+  onProvider: (next: string) => void;
   onEdit: (edit: Edit | null) => void;
 }) {
   const inputId = `setting-${field.key.replace(/[^a-z0-9]/gi, "-")}`;
@@ -722,10 +766,11 @@ function FieldRow({
   const secret = field.kind === "secret" || field.kind === "multiline_secret";
   const changed = !!edit && !(edit.kind === "secret" && edit.value.trim() === "");
   const saved = String(field.value ?? "");
-  const modelValue = edit?.kind === "value" ? String(edit.value) : saved;
+  const current = edit?.kind === "value" ? String(edit.value) : saved;
+  const purpose: AiPurpose = field.key.includes("generation") ? "generation" : "reasoning";
   // Warnings follow the name being chosen; the saved one is summarised above.
   const warnings =
-    field.kind === "model" && edit?.kind !== "reset" ? modelWarnings(modelValue, models.data, modelValue !== saved) : [];
+    field.kind === "model" && edit?.kind !== "reset" ? modelWarnings(current, provider, models.data, current !== saved) : [];
   return (
     <div className={`hgadm-cfg__field ${changed ? "is-changed" : ""} ${error ? "has-error" : ""}`}>
       <div className="hgadm-cfg__field-label">
@@ -742,13 +787,31 @@ function FieldRow({
       </div>
       {secret ? (
         <SecretControl field={field} inputId={inputId} hintId={hintId} edit={edit} disabled={disabled} onEdit={onEdit} />
+      ) : field.kind === "provider" && edit?.kind !== "reset" ? (
+        <div className="hgadm-cfg__value">
+          <ProviderChoice
+            inputId={inputId}
+            label={field.label}
+            value={current}
+            data={models.data}
+            disabled={disabled}
+            onChange={onProvider}
+          />
+          {field.source === "admin" && !edit && (
+            <button type="button" className="hgadm-cfg__textbtn" disabled={disabled} onClick={() => onEdit({ kind: "reset" })}>
+              <RotateCcw size={12} strokeWidth={2} aria-hidden /> 기본값으로
+            </button>
+          )}
+        </div>
       ) : field.kind === "model" && edit?.kind !== "reset" ? (
         <div className="hgadm-cfg__value">
           <ModelPicker
             inputId={inputId}
             hintId={hintId}
-            value={modelValue}
+            value={current}
             savedValue={saved}
+            provider={provider}
+            purpose={purpose}
             data={models.data}
             loading={models.loading}
             disabled={disabled}
