@@ -246,6 +246,51 @@ const ACTION_COPY: Record<string, ActionCopy> = {
   },
 };
 
+/**
+ * The `object_type` values audit rows are actually written with, for the
+ * activity page's 대상 filter (the API matches it exactly).
+ *
+ * A row gets its type one of two ways: a handler names it through
+ * `enrich_audit` (`user`, `lecture`, `plan`, …), or `admin_audit` falls back to
+ * the first path segment after `/admin` (`users`, `lectures`, `subscriptions`,
+ * …). Some resources therefore appear under both — a lecture created is
+ * `lecture`, a lecture edited is `lectures` — and both are listed. System
+ * rows (billing) and audited reads (`record_sensitive_read`) add the rest.
+ */
+export const AUDIT_OBJECT_TYPES: readonly [value: string, label: string][] = [
+  ["user", "회원 정보 변경"],
+  ["users", "회원 (테스터 생성 등)"],
+  ["admin", "관리자 권한"],
+  ["courses", "코스"],
+  ["lecture", "강의 생성·삭제"],
+  ["lectures", "강의·영상"],
+  ["sentences", "문장"],
+  ["sentence_batch", "문장 일괄 추가"],
+  ["quizzes", "문제"],
+  ["quiz_batch", "문제 일괄 추가"],
+  ["content_cleanup", "콘텐츠 일괄 정리"],
+  ["generated_content", "AI 생성 검수"],
+  ["generated-content", "AI 생성 삭제"],
+  ["content_version", "콘텐츠 버전 검수·게시"],
+  ["content-catalog", "콘텐츠 카탈로그"],
+  ["media", "이미지"],
+  ["banners", "배너"],
+  ["support", "공지·FAQ"],
+  ["notifications", "알림"],
+  ["plan", "요금제 생성·수정"],
+  ["subscriptions", "요금제 보관"],
+  ["coupons", "쿠폰"],
+  ["invoice", "청구서 (시스템)"],
+  ["payment", "결제"],
+  ["integration_settings", "연동 설정"],
+  ["ai_feature", "AI 기능 설정"],
+  ["ai", "AI 튜터 검수"],
+  ["learner", "학습자 기록 조회"],
+  ["tutor_turns", "튜터 대화 조회"],
+  ["analytics_export", "학습 통계 내보내기"],
+  ["learning-analytics", "학습 분석"],
+];
+
 /** Every action string this module knows — the completeness test reads it. */
 export const KNOWN_AUDIT_ACTIONS: readonly string[] = Object.keys(ACTION_COPY);
 

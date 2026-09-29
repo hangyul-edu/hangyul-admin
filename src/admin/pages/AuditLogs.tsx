@@ -16,7 +16,7 @@ import {
   Timestamp,
 } from "../components/kit";
 import type { Column } from "../components/kit";
-import { describeAuditAction } from "../lib/auditActions";
+import { AUDIT_OBJECT_TYPES, describeAuditAction } from "../lib/auditActions";
 import { personName, personNameWithEmail } from "../lib/adminIdentity";
 
 export function AuditLogsPage() {
@@ -136,13 +136,11 @@ export function AuditLogsPage() {
             style={{ width: 170 }}
           >
             <option value="">대상: 전체</option>
-            {["user", "admin", "banners", "coupons", "quizzes", "lectures", "courses", "sentences", "support", "notifications", "subscriptions", "generated_content", "media", "subscription", "invoice", "payment"].map(
-              (t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ),
-            )}
+            {AUDIT_OBJECT_TYPES.map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
           </Select>
         </div>
 
