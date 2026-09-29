@@ -11,7 +11,7 @@ import type { AdminTier } from "../api";
  */
 export const ADMIN_TIERS: { value: AdminTier; label: string; desc: string }[] = [
   { value: "super_admin", label: "최고 관리자", desc: "모든 권한 + 관리자 계정 관리" },
-  { value: "operator", label: "운영자", desc: "관리자 관리를 제외한 모든 권한" },
+  { value: "operator", label: "운영자", desc: "관리자 관리·연동 설정 변경을 제외한 모든 권한" },
   { value: "content_manager", label: "콘텐츠 관리자", desc: "콘텐츠 편집 + 사용자 조회" },
   { value: "support_agent", label: "고객지원", desc: "사용자 조회 + 운영 콘텐츠 + 커머스 조회" },
   { value: "content_publisher", label: "콘텐츠 게시 담당", desc: "콘텐츠 검수·게시·회수 + 학습 통계" },

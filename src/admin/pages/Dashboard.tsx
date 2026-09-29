@@ -48,8 +48,8 @@ export function monthLabel(month: string): string {
 /**
  * Where each alert leads, and the scope that page is gated on.
  *
- * The dashboard opens on `users:read`, which every tier has, but these
- * destinations do not. A content manager holds no `commerce:read`, so the
+ * The dashboard opens on `users:read`, but these destinations are gated on
+ * other scopes. A content manager holds no `commerce:read`, so the
  * payment alerts were offering them a card into 접근 권한이 없습니다— a page
  * the sidebar already hides from them. An alert you cannot open is not a
  * shortcut, so it is not shown at all: scoping the menu and then routing

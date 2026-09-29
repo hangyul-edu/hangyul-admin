@@ -26,7 +26,7 @@ export function ContentCleanupButton<T>({
   label: string;
   preview: () => Promise<T>;
   clear: () => Promise<{ deleted: T }>;
-  /** [key, Korean label] pairs for rows that are deleted, headline first. */
+  /** [key, Korean label] pairs for rows that are archived or deleted, headline first. */
   countLabels: [keyof T & string, string][];
   /** [key, Korean label] pairs for learning records that are KEPT. Shown in
       their own section so the dialog cannot read as if they were deleted. */

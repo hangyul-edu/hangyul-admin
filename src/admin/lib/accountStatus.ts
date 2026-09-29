@@ -65,25 +65,26 @@ const META: Record<AccountStatus, AccountStatusMeta> = {
     label: "탈퇴",
     tone: "neutral",
     /* "회원이 직접": the only writer is DELETE /auth/account
-       (auth/application/services.py:441). No admin action and no scheduled job
-       ever sets it — the admin PATCH schema does not even accept the value
-       (admin/presentation/schemas.py:347), and any status change on such a row
-       is refused with 409 (member_administration.py:128).
+       (`AuthService.delete_account` in auth/application/services.py). No admin
+       action and no scheduled job ever sets it — the admin PATCH schema does
+       not even accept the value (admin/presentation/schemas.py), and any
+       status change on such a row is refused with 409
+       (member_administration.py).
 
-       It deliberately does NOT claim the member's data is deleted. The
-       endpoint's own OpenAPI text says personal data is removed and the
-       subscription cancelled; no such code exists — `delete_account` flips the
-       status and revokes tokens, nothing more. Email and phone keep their
-       unique slots, which is what stops the same person re-registering
-       (tests/integration/test_account_deletion_safety.py:335). Repeating the
-       endpoint's claim here would tell an admin that a member's records are
-       gone while they are still in the database. */
+       It deliberately does NOT claim the member's data is deleted.
+       `delete_account` flips the status, revokes every session and cancels the
+       subscription at period end; the row, payment records and learning
+       records are all kept. Email and phone keep their unique slots, which is
+       what stops the same person re-registering
+       (tests/integration/test_account_deletion_safety.py). Saying the data was
+       removed would tell an admin that a member's records are gone while they
+       are still in the database. */
     description:
       "회원이 직접 탈퇴한 상태입니다. 모든 기기에서 로그아웃되고 다시 로그인할 수 없습니다. 관리자는 이 상태를 되돌릴 수 없으며, 이메일과 전화번호는 그대로 남아 있어 같은 정보로 다시 가입할 수 없습니다.",
     documented: true,
   },
   pending_verification: {
-    /* Declared in the enum (auth/domain/entities.py:29) and never assigned
+    /* Declared in the enum (auth/domain/entities.py) and never assigned
        anywhere in src/ or apps/. It is carried here so that a value the server
        one day starts sending renders as Korean instead of as the bare string
        `pending_verification`, but it is not offered as a filter and not listed
