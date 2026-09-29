@@ -273,3 +273,21 @@ describe("the 관리자 계정 관리 shortcut", () => {
     expect(shortcut()).not.toBeInTheDocument();
   });
 });
+
+describe("nickname change", () => {
+  it("sends the nickname without surrounding whitespace", async () => {
+    // The server stores it as sent and checks uniqueness by exact match.
+    scopes = ["users:read", "users:write"];
+    userDetail.mockResolvedValue(member());
+    const updateUser = vi.mocked(adminApi.updateUser);
+    updateUser.mockResolvedValue({} as never);
+    renderPage();
+    await loaded();
+    await userEvent.click(screen.getByRole("button", { name: "닉네임 변경" }));
+    const input = screen.getByLabelText(/새 닉네임/);
+    await userEvent.clear(input);
+    await userEvent.type(input, "  하늘  ");
+    await userEvent.click(screen.getByRole("button", { name: "저장" }));
+    await waitFor(() => expect(updateUser).toHaveBeenCalledWith("usr_target", { nickname: "하늘" }));
+  });
+});

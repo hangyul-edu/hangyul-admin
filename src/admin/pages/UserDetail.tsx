@@ -706,7 +706,9 @@ export function UserDetailPage() {
             <Button
               variant="primary"
               loading={update.isPending}
-              onClick={() => update.mutate({ nickname })}
+              // Trimmed: the server stores the value as sent and checks
+              // uniqueness by exact match, so " kim" would sit beside "kim".
+              onClick={() => update.mutate({ nickname: nickname.trim() })}
               disabled={nickname.trim().length < 2}
             >
               저장
@@ -715,7 +717,7 @@ export function UserDetailPage() {
         }
       >
         <Field label="새 닉네임" required hint="2~40자, 중복 불가">
-          <Input value={nickname} onChange={(e) => setNickname(e.target.value)} />
+          <Input value={nickname} maxLength={40} onChange={(e) => setNickname(e.target.value)} />
         </Field>
       </Modal>
 
@@ -754,6 +756,7 @@ export function UserDetailPage() {
           <Input
             value={promoteNote}
             onChange={(e) => setPromoteNote(e.target.value)}
+            maxLength={200}
             placeholder="예: 2026-09 고객지원 온보딩"
           />
         </Field>
