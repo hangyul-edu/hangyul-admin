@@ -837,6 +837,15 @@ export function SearchBox({
   const [draft, setDraft] = useState(value);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => setDraft(value), [value]);
+  // A search still pending when the box unmounts must not fire: the list
+  // pages route it into the URL, so it would navigate an admin who had just
+  // opened a row's detail page straight back to the list.
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    [],
+  );
   return (
     <span className="hgadm-search">
       <span className="hgadm-search__icon" aria-hidden>

@@ -1,11 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   Badge,
   ConfirmDialog,
   DataTable,
   Pagination,
+  SearchBox,
   statusLabel,
   statusTone,
 } from "./kit";
@@ -126,6 +127,38 @@ describe("helpers", () => {
   });
 });
 
+
+describe("SearchBox", () => {
+  it("searches after the debounce", () => {
+    vi.useFakeTimers();
+    try {
+      const onSearch = vi.fn();
+      render(<SearchBox value="" onSearch={onSearch} />);
+      fireEvent.change(screen.getByRole("textbox"), { target: { value: "kim" } });
+      vi.advanceTimersByTime(400);
+      expect(onSearch).toHaveBeenCalledWith("kim");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("drops a pending search when it unmounts", () => {
+    // The list pages write the search into the URL. Firing after the page
+    // was left (e.g. a row was clicked mid-typing) would navigate the admin
+    // back from the detail page to the list.
+    vi.useFakeTimers();
+    try {
+      const onSearch = vi.fn();
+      const { unmount } = render(<SearchBox value="" onSearch={onSearch} />);
+      fireEvent.change(screen.getByRole("textbox"), { target: { value: "kim" } });
+      unmount();
+      vi.advanceTimersByTime(400);
+      expect(onSearch).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
 
 describe("statusLabel", () => {
   it("renders backend enums as Korean, not raw values", () => {
