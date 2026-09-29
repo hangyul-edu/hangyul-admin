@@ -72,7 +72,7 @@ const BATCH_TEMPLATE = JSON.stringify(
   2,
 );
 
-interface QuizDraft {
+export interface QuizDraft {
   answer_format: string;
   material_kind: string;
   topik_section: string;
@@ -87,7 +87,9 @@ interface QuizDraft {
   hint: string;
   explanation: string;
   audio_duration_ms: string;
+  image_url: string;
   answer_max_length: string;
+  answer_min_length: string;
   scoring_criteria: string;
   max_score: string;
 }
@@ -112,12 +114,29 @@ const EMPTY: QuizDraft = {
   hint: "",
   explanation: "",
   audio_duration_ms: "0",
+  image_url: "",
   answer_max_length: "",
+  answer_min_length: "",
   scoring_criteria: "",
   max_score: "",
 };
 
-function draftFromQuiz(quiz: AdminQuiz): QuizDraft {
+/**
+ * Whether the draft is scored against a rubric, so the criteria / max-score
+ * fields must be offered: free response always, and a short answer as soon as
+ * one blank has no fixed answer ("정답을 비우면 기준 채점") — the server then
+ * requires scoring_criteria and a positive max_score.
+ */
+export function criteriaGraded(d: QuizDraft): boolean {
+  if (d.answer_format === "free_response") return true;
+  if (d.scoring_criteria.trim() !== "") return true;
+  return (
+    d.answer_format === "short_answer" &&
+    d.blanks.some((b) => b.label.trim() !== "" && b.answer.trim() === "")
+  );
+}
+
+export function draftFromQuiz(quiz: AdminQuiz): QuizDraft {
   return {
     answer_format: quiz.answer_format,
     material_kind: quiz.material_kind,
@@ -137,13 +156,21 @@ function draftFromQuiz(quiz: AdminQuiz): QuizDraft {
     hint: quiz.hint ?? "",
     explanation: quiz.explanation ?? "",
     audio_duration_ms: String(quiz.audio_duration_ms),
+    image_url: quiz.image_url ?? "",
     answer_max_length: quiz.answer_max_length === null ? "" : String(quiz.answer_max_length),
+    answer_min_length: quiz.answer_min_length === null ? "" : String(quiz.answer_min_length),
     scoring_criteria: quiz.scoring_criteria.join("\n"),
     max_score: quiz.max_score === null ? "" : String(quiz.max_score),
   };
 }
 
-function draftToBody(d: QuizDraft): Record<string, unknown> {
+/**
+ * The request body for POST/PUT /admin/quizzes. PUT replaces the question
+ * wholesale — anything omitted is cleared — so every field the admin view
+ * carries has to round-trip through the draft, including ones the form only
+ * shows for some formats.
+ */
+export function draftToBody(d: QuizDraft): Record<string, unknown> {
   const isChoice = d.answer_format === "single_choice";
   const isShort = d.answer_format === "short_answer";
   const criteria = d.scoring_criteria
@@ -169,7 +196,9 @@ function draftToBody(d: QuizDraft): Record<string, unknown> {
     hint: d.hint || null,
     explanation: d.explanation || null,
     audio_duration_ms: Number(d.audio_duration_ms) || 0,
+    image_url: d.material_kind === "image" ? d.image_url.trim() || null : null,
     answer_max_length: d.answer_max_length === "" ? null : Number(d.answer_max_length),
+    answer_min_length: d.answer_min_length === "" ? null : Number(d.answer_min_length),
     scoring_criteria: criteria.length ? criteria : null,
     max_score: d.max_score === "" ? null : Number(d.max_score),
   };
@@ -549,6 +578,7 @@ export function QuizzesPage() {
                   <option value="text">텍스트</option>
                   <option value="table">표 (HTML)</option>
                   <option value="audio">듣기</option>
+                  <option value="image">이미지</option>
                 </Select>
               </Field>
               <Field label="TOPIK 영역">
@@ -593,6 +623,15 @@ export function QuizzesPage() {
                     onChange={(e) =>
                       setDraft({ ...draft, audio_duration_ms: e.target.value })
                     }
+                  />
+                </Field>
+              )}
+              {draft.material_kind === "image" && (
+                <Field label="이미지 URL" required>
+                  <Input
+                    value={draft.image_url}
+                    maxLength={500}
+                    onChange={(e) => setDraft({ ...draft, image_url: e.target.value })}
                   />
                 </Field>
               )}
@@ -706,8 +745,7 @@ export function QuizzesPage() {
               </div>
             )}
 
-            {(draft.answer_format === "free_response" ||
-              draft.scoring_criteria.trim() !== "") && (
+            {criteriaGraded(draft) && (
               <div className="hgadm-form-grid" style={{ marginTop: 10 }}>
                 <Field label="최대 글자 수" required={draft.answer_format === "free_response"}>
                   <Input
@@ -719,6 +757,18 @@ export function QuizzesPage() {
                     }
                   />
                 </Field>
+                {draft.answer_format === "free_response" && (
+                  <Field label="최소 글자 수">
+                    <Input
+                      type="number"
+                      min={0}
+                      value={draft.answer_min_length}
+                      onChange={(e) =>
+                        setDraft({ ...draft, answer_min_length: e.target.value })
+                      }
+                    />
+                  </Field>
+                )}
                 <Field label="만점">
                   <Input
                     type="number"

@@ -4,8 +4,9 @@ import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { ToastProvider } from "../../hooks/toast";
-import { QuizzesPage } from "./Quizzes";
+import { QuizzesPage, criteriaGraded, draftFromQuiz, draftToBody } from "./Quizzes";
 import { adminApi } from "../api";
+import type { AdminQuiz } from "../api";
 
 vi.mock("../api", async () => {
   const actual = await vi.importActual<typeof import("../api")>("../api");
@@ -138,5 +139,57 @@ describe("QuizzesPage source filter", () => {
     // gap and wrapping as the rest.
     expect(toolbar().querySelectorAll(".hgadm-select").length).toBe(4);
     expect(toolbar().querySelector(".hgadm-search")).not.toBeNull();
+  });
+});
+
+describe("quiz editor body (PUT replaces the question wholesale)", () => {
+  const base: AdminQuiz = {
+    quiz_id: "q1",
+    answer_format: "free_response",
+    material_kind: "image",
+    topik_section: "writing",
+    topik_question_type: "writing_53",
+    is_ai_generated: false,
+    image_url: "https://cdn.example/chart.png",
+    prompt: "그래프를 보고 쓰십시오.",
+    prompt_translation: null,
+    content_html: null,
+    level: 4,
+    correct_choice: null,
+    choices: [],
+    blanks: [],
+    hint: null,
+    explanation: null,
+    has_listening_audio: false,
+    audio_duration_ms: 0,
+    answer_max_length: 300,
+    answer_min_length: 200,
+    scoring_criteria: ["내용", "구성"],
+    max_score: 30,
+  };
+
+  it("round-trips image_url and answer_min_length, which an edit used to clear", () => {
+    const body = draftToBody(draftFromQuiz(base));
+    expect(body.image_url).toBe("https://cdn.example/chart.png");
+    expect(body.answer_min_length).toBe(200);
+    expect(body.answer_max_length).toBe(300);
+    expect(body.material_kind).toBe("image");
+  });
+
+  it("offers the rubric fields for a short answer with an open blank", () => {
+    const short = draftFromQuiz({
+      ...base,
+      answer_format: "short_answer",
+      material_kind: "text",
+      image_url: null,
+      answer_max_length: null,
+      answer_min_length: null,
+      scoring_criteria: [],
+      max_score: null,
+      blanks: [{ label: "ㄱ", answer: "있으면" }],
+    });
+    expect(criteriaGraded(short)).toBe(false);
+    const open = { ...short, blanks: [{ label: "ㄱ", answer: "" }] };
+    expect(criteriaGraded(open)).toBe(true);
   });
 });
