@@ -10,6 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Info } from "lucide-react";
 import { learningApi } from "../learningApi";
 import type { Change, MetricDefinition, Ratio } from "../learningApi";
+import { useAdminAuth } from "../auth";
 import { useUrlFilters } from "../lib/urlFilters";
 import { Badge, Input } from "./kit";
 
@@ -78,11 +79,16 @@ export function ChangeView({ change }: { change: Change | undefined }) {
   );
 }
 
-export function useMetricDefinitions() {
+function useMetricDefinitions() {
+  // The dictionary is `analytics:read`, but labels also appear on pages other
+  // tiers can open (a learner's growth tab is `learners:read`), so it is only
+  // requested by those who may read it.
+  const { can } = useAdminAuth();
   return useQuery({
     queryKey: ["admin", "learning", "metric-definitions"],
     queryFn: learningApi.metricDefinitions,
     staleTime: 60 * 60 * 1000,
+    enabled: can("analytics:read"),
   });
 }
 
@@ -126,7 +132,13 @@ export function MetricLabel({ metric, children }: { metric: string; children?: R
           <dd>{def.limitations}</dd>
         </dl>
       ) : (
-        <div className="hgadm-cell-sub">정의를 불러오는 중…</div>
+        <div className="hgadm-cell-sub">
+          {defs.isFetching
+            ? "정의를 불러오는 중…"
+            : defs.isError
+              ? "정의를 불러오지 못했습니다."
+              : "지표 정의는 학습 통계 조회 권한이 있어야 볼 수 있습니다."}
+        </div>
       )}
     </details>
   );
