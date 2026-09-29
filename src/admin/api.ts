@@ -1175,6 +1175,8 @@ export const adminApi = {
   ) => http.patch<AdminNotice>(`/admin/support/notices/${noticeId}`, body),
   deleteNotice: (noticeId: string) =>
     http.del<void>(`/admin/support/notices/${noticeId}`),
+  deleteNoticeTranslation: (noticeId: string, locale: string) =>
+    http.del<AdminNotice>(`/admin/support/notices/${noticeId}/translations/${locale}`),
 
   // Notifications
   sendMarketingPush: (body: {

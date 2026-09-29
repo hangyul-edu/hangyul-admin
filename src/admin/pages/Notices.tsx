@@ -48,6 +48,23 @@ function pick(notice: AdminNotice, locale: string): NoticeTranslation | undefine
   return notice.translations.find((t) => t.locale === locale);
 }
 
+/**
+ * The languages the draft actually authors, trimmed.
+ *
+ * A language counts only when BOTH its title and body pass the API's 2-char
+ * minimum: a half-filled language would be rejected by the server and fail
+ * the whole save, so it is treated as not authored instead.
+ */
+function draftTranslations(d: NoticeDraft): NoticeTranslation[] {
+  const pairs: [string, string, string][] = [
+    ["ko", d.ko_title, d.ko_body],
+    ["en", d.en_title, d.en_body],
+  ];
+  return pairs
+    .map(([locale, title, body]) => ({ locale, title: title.trim(), body: body.trim() }))
+    .filter((t) => t.title.length >= 2 && t.body.length >= 2);
+}
+
 export function NoticesPage() {
   const qc = useQueryClient();
   const toast = useToast();
@@ -65,17 +82,30 @@ export function NoticesPage() {
   }
 
   const save = useMutation({
-    mutationFn: (d: NoticeDraft) => {
-      const translations: NoticeTranslation[] = [];
-      if (d.ko_title.trim()) translations.push({ locale: "ko", title: d.ko_title, body: d.ko_body });
-      if (d.en_title.trim()) translations.push({ locale: "en", title: d.en_title, body: d.en_body });
+    mutationFn: async (d: NoticeDraft) => {
+      const translations = draftTranslations(d);
       const body = {
         translations,
         pinned: d.pinned,
         published: d.published,
         display_order: Number(d.display_order),
       };
-      return editingId ? adminApi.updateNotice(editingId, body) : adminApi.createNotice(body);
+      if (!editingId) return adminApi.createNotice(body);
+
+      const saved = await adminApi.updateNotice(editingId, body);
+      // PATCH only upserts, so a ko/en language the admin cleared has to be
+      // removed explicitly — otherwise the old text stays live. Never the last
+      // one: `translations` is non-empty to get here. Locales this editor has
+      // no fields for are left alone.
+      const kept = new Set(translations.map((t) => t.locale));
+      const removed = saved.translations
+        .map((t) => t.locale)
+        .filter((locale) => (locale === "ko" || locale === "en") && !kept.has(locale));
+      let latest = saved;
+      for (const locale of removed) {
+        latest = await adminApi.deleteNoticeTranslation(editingId, locale);
+      }
+      return latest;
     },
     onSuccess: () => {
       toast.success("공지를 저장했어요.");
@@ -182,10 +212,7 @@ export function NoticesPage() {
     },
   ];
 
-  const draftValid =
-    draft !== null &&
-    ((draft.ko_title.trim().length >= 2 && draft.ko_body.trim().length >= 2) ||
-      (draft.en_title.trim().length >= 2 && draft.en_body.trim().length >= 2));
+  const draftValid = draft !== null && draftTranslations(draft).length > 0;
 
   return (
     <div>
