@@ -42,6 +42,7 @@ import { RecommendationsPage } from "./pages/learning/Recommendations";
 import { AiOpsPage } from "./pages/learning/AiOps";
 import { DataHealthPage } from "./pages/learning/DataHealth";
 import { SystemSettingsPage } from "./pages/SystemSettings";
+import { homeFallback } from "./lib/homeFallback";
 
 function RequireAdmin({ children }: { children: ReactNode }) {
   const { status } = useAdminAuth();
@@ -72,6 +73,15 @@ export function RequireScope({
   return <>{children}</>;
 }
 
+/** The portal's landing page: the dashboard, or the first area this tier can use. */
+function HomeRoute() {
+  const { can } = useAdminAuth();
+  if (can("users:read")) return <DashboardPage />;
+  const fallback = homeFallback(can);
+  if (fallback) return <Navigate to={fallback} replace />;
+  return <RequireScope scope="users:read"><DashboardPage /></RequireScope>;
+}
+
 // The router uses basename "/admin", but on hosts without a /admin →
 // /admin.html rewrite the page is reached AS /admin.html (directly, or via
 // the member app's redirect carrying the original deep link in ?path=).
@@ -93,7 +103,7 @@ const router = createBrowserRouter(
           </RequireAdmin>
         }
       >
-        <Route path="/" element={<RequireScope scope="users:read"><DashboardPage /></RequireScope>} />
+        <Route path="/" element={<HomeRoute />} />
         <Route path="/users" element={<RequireScope scope="users:read"><UsersPage /></RequireScope>} />
         <Route path="/users/:userId" element={<RequireScope scope="users:read"><UserDetailPage /></RequireScope>} />
         <Route path="/leagues" element={<RequireScope scope="users:read"><LeaguesPage /></RequireScope>} />
