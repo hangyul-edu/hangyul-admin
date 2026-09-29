@@ -179,6 +179,23 @@ describe("LearnerDetailPage", () => {
     expect(screen.getByText("새 증거 1")).toBeInTheDocument();
   });
 
+  it("starts evidence from the newest rows again when the track changes", async () => {
+    api.evidence.mockReset();
+    api.evidence.mockResolvedValue({ items: [], next_before: "2026-08-15T00:00:00Z" });
+    wrap(<LearnerDetailPage />, "/learning/learners/usr_1");
+    await userEvent.click(await screen.findByRole("tab", { name: "학습 증거" }));
+    await userEvent.click(await screen.findByRole("button", { name: "이전 기록 더 보기" }));
+    await waitFor(() =>
+      expect(api.evidence).toHaveBeenLastCalledWith("usr_1", expect.objectContaining({ before: "2026-08-15T00:00:00Z" })),
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "트랙" }));
+    await userEvent.click(await screen.findByRole("option", { name: "TOPIK" }));
+    await waitFor(() =>
+      expect(api.evidence).toHaveBeenLastCalledWith("usr_1", expect.objectContaining({ track: "topik", before: undefined })),
+    );
+  });
+
   it("labels excluded and invalidated evidence and hides raw answers without transcripts access", async () => {
     api.evidence.mockResolvedValue({
       items: [{

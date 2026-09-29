@@ -201,7 +201,11 @@ export function LearnerDetailPage() {
         ))}
 
       {tab === "growth" && <GrowthPanel userId={userId} track={track} onSkill={(s) => { setSkillFilter(s); setTab("evidence"); }} />}
-      {tab === "evidence" && <EvidencePanel userId={userId} track={track} skillId={skillFilter} onSkillChange={setSkillFilter} />}
+      {/* Keyed by track: the paging cursor is a timestamp from one track's
+          evidence and means nothing for the other. */}
+      {tab === "evidence" && (
+        <EvidencePanel key={track} userId={userId} track={track} skillId={skillFilter} onSkillChange={setSkillFilter} />
+      )}
       {tab === "timeline" && <TimelinePanel userId={userId} />}
       {tab === "sessions" && (
         <div className="hgadm-card">
