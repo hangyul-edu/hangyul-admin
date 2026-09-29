@@ -142,6 +142,35 @@ describe("QuizzesPage source filter", () => {
   });
 });
 
+describe("quiz preview", () => {
+  it("renders the passage HTML sanitized, never as live markup", async () => {
+    // content_html is often LLM-generated and is previewed in an admin session.
+    listQuizzes.mockReset();
+    listQuizzes.mockResolvedValue({
+      items: [
+        {
+          quiz_id: "q_x", answer_format: "single_choice", material_kind: "table",
+          topik_section: "reading", topik_question_type: null, is_ai_generated: true,
+          image_url: null, prompt: "표를 보고 고르십시오.", prompt_translation: null,
+          content_html:
+            '<table><tr><td>가격</td></tr></table><img src=x onerror="window.__pwned=1"><script>window.__pwned=2</script>',
+          level: 2, correct_choice: "1", choices: [{ key: "1", text: "하나" }, { key: "2", text: "둘" }],
+          blanks: [], hint: null, explanation: null, has_listening_audio: false, audio_duration_ms: 0,
+          answer_max_length: null, answer_min_length: null, scoring_criteria: [], max_score: null,
+        },
+      ],
+      total: 1, limit: 25, offset: 0,
+    } as never);
+    renderPage();
+    await userEvent.click(await screen.findByText("표를 보고 고르십시오."));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("가격")).toBeInTheDocument();
+    expect(dialog.querySelector("img")).toBeNull();
+    expect(dialog.querySelector("script")).toBeNull();
+    expect(dialog.innerHTML).not.toContain("onerror");
+  });
+});
+
 describe("quiz editor body (PUT replaces the question wholesale)", () => {
   const base: AdminQuiz = {
     quiz_id: "q1",

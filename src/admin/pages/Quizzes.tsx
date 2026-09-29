@@ -6,6 +6,7 @@ import { adminApi } from "../api";
 import type { AdminQuiz } from "../api";
 import { errorMessage } from "../../lib/http";
 import { TOPIK_GRADES } from "../../lib/levels";
+import { sanitizeHtml } from "../../lib/sanitizeHtml";
 import { useToast, useToastError } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
 import { BatchAddButton } from "../components/BatchAddButton";
@@ -492,7 +493,9 @@ export function QuizzesPage() {
               <div
                 className="hgadm-json"
                 style={{ fontFamily: "inherit" }}
-                dangerouslySetInnerHTML={{ __html: viewing.content_html }}
+                // Often LLM-generated; sanitized so a hostile passage cannot
+                // run script in an admin's session.
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(viewing.content_html) }}
               />
             )}
             {viewing.choices.length > 0 && (
