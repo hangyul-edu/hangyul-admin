@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUrlFilters } from "../lib/urlFilters";
 import { adminApi } from "../api";
@@ -532,7 +532,7 @@ function ThumbnailField({
  * arrangement `ContentCleanupButton` documents on itself; render it only from
  * behind `can("content:write")`.
  */
-function VideoManagerModal({
+export function VideoManagerModal({
   lecture,
   onClose,
 }: {
@@ -546,6 +546,10 @@ function VideoManagerModal({
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [deleting, setDeleting] = useState<AdminLectureVideo | null>(null);
+  // The running tus upload, so closing the modal stops it instead of leaving
+  // it streaming in the background with nothing on screen to show it.
+  const abortRef = useRef<(() => void) | null>(null);
+  useEffect(() => () => abortRef.current?.(), []);
 
   const query = useQuery({
     queryKey: ["admin", "lecture-videos", lecture.lecture_id],
@@ -563,9 +567,12 @@ function VideoManagerModal({
   }
 
   async function upload(file: File | undefined) {
-    if (!file) return;
+    // One upload at a time: a second drop would share the progress bar and
+    // race the first.
+    if (!file || uploading) return;
     setUploading(true);
     setProgress(0);
+    let videoId: string | null = null;
     try {
       // Direct resumable upload: the backend provisions a one-time session, then
       // the browser streams the bytes straight to Cloudflare via tus (never
@@ -576,12 +583,23 @@ function VideoManagerModal({
         file_size_bytes: file.size,
         content_type: file.type || "video/mp4",
       });
-      await tusUploadToUrl(session.upload_url, file, setProgress).promise;
+      videoId = session.video_id;
+      const transfer = tusUploadToUrl(session.upload_url, file, setProgress);
+      abortRef.current = transfer.abort;
+      await transfer.promise;
+      videoId = null;
       toast.success("업로드 완료. 인코딩이 끝나면 자동으로 준비됩니다.");
       refresh();
     } catch (e) {
       toast.error(errorMessage(e));
+      // The session created the video row as `uploading` before any bytes
+      // were sent; without this it stays "업로드 중" forever.
+      if (videoId) {
+        await adminApi.deleteLectureVideo(videoId).catch(() => undefined);
+        refresh();
+      }
     } finally {
+      abortRef.current = null;
       setUploading(false);
       setProgress(0);
       if (fileRef.current) fileRef.current.value = "";
