@@ -73,12 +73,12 @@ export function BannersPage() {
       const body = {
         image_url: d.image_url,
         alt_text: d.alt_text,
-        action_url: d.action_url || undefined,
-        clear_action_url: editingId !== null && d.action_url === "",
+        // null (not omitted) so emptying a field on edit clears it — either
+        // end of the window can be removed on its own.
+        action_url: d.action_url || null,
         is_active: d.is_active,
-        starts_at: fromAdminInputValue(d.starts_at) ?? undefined,
-        ends_at: fromAdminInputValue(d.ends_at) ?? undefined,
-        clear_window: editingId !== null && !d.starts_at && !d.ends_at,
+        starts_at: fromAdminInputValue(d.starts_at),
+        ends_at: fromAdminInputValue(d.ends_at),
       };
       return editingId
         ? adminApi.updateBanner(editingId, body)
