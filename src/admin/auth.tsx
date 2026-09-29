@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ApiError, http, setAuthHandlers } from "../lib/http";
+import { ApiError, NetworkError, http, setAuthHandlers } from "../lib/http";
+import { sessionIdOf } from "../hooks/auth";
 import {
   clearAdminSession,
   loadAdminSession,
@@ -36,10 +37,27 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [me, setMe] = useState<AdminMe | null>(null);
   const sessionRef = useRef<AdminStoredSession | null>(loadAdminSession());
 
+  // The stored session is shared by every open portal tab, and refresh tokens
+  // are single-use: once another tab rotates the pair, the copy held here is
+  // dead. Adopt the stored pair when it is a newer pair of the SAME server
+  // session (same `sid`), so this tab neither sends a revoked refresh token nor
+  // signs every tab out after losing that race. A different session (another
+  // admin signed in elsewhere) is never adopted. Mirrors the member app.
+  function currentSession(): AdminStoredSession | null {
+    const held = sessionRef.current;
+    if (!held) return null;
+    const stored = loadAdminSession();
+    if (stored && stored.refreshToken !== held.refreshToken) {
+      const sid = sessionIdOf(held.refreshToken);
+      if (sid !== null && sid === sessionIdOf(stored.refreshToken)) sessionRef.current = stored;
+    }
+    return sessionRef.current;
+  }
+
   useEffect(() => {
     setAuthHandlers({
-      getAccessToken: () => sessionRef.current?.accessToken ?? null,
-      getRefreshToken: () => sessionRef.current?.refreshToken ?? null,
+      getAccessToken: () => currentSession()?.accessToken ?? null,
+      getRefreshToken: () => currentSession()?.refreshToken ?? null,
       onRefreshed: (access, refresh, expiresIn) => {
         sessionRef.current = {
           accessToken: access,
@@ -124,7 +142,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         const profile = await Promise.race([
           http.get<AdminMe>("/admin/me"),
           new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error("session check timed out")), 10_000),
+            setTimeout(() => reject(new SessionCheckTimeout("session check timed out")), 10_000),
           ),
         ]);
         if (!cancelled) {
@@ -138,9 +156,15 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
           // access-denied screen so the user can log out from there. (The
           // /login route instead clears such a session and shows the form.)
           setStatus("denied");
+        } else if (isTransient(e)) {
+          // Offline, API down, or the check timed out: nothing is known to be
+          // wrong with the stored session, so it is kept for the next load
+          // (and for other open tabs) — the login form still appears now.
+          sessionRef.current = null;
+          setStatus("signed-out");
         } else {
-          // Expired/invalid tokens, timeouts, network failures: drop the
-          // session so the login form always appears.
+          // The server rejected the session (401, or it could not be
+          // refreshed): drop it everywhere.
           hardSignOut();
         }
       }
@@ -164,6 +188,14 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
+
+/** A failure that says nothing about the session itself: no answer, a 5xx, or the time-box. */
+function isTransient(e: unknown): boolean {
+  if (e instanceof ApiError) return e.status >= 500;
+  return e instanceof NetworkError || e instanceof SessionCheckTimeout;
+}
+
+class SessionCheckTimeout extends Error {}
 
 export function useAdminAuth(): AdminAuthCtx {
   const c = useContext(Ctx);
