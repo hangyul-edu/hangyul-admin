@@ -20,7 +20,7 @@ function consumerProblems(c: Consumer, now: number): string[] {
 }
 
 /** Everything that makes the figures untrustworthy right now, in plain words. */
-export function healthProblems(d: DataHealth, now: number = Date.now()): string[] {
+function healthProblems(d: DataHealth, now: number = Date.now()): string[] {
   const problems: string[] = [];
   for (const c of d.consumers) {
     const p = consumerProblems(c, now);

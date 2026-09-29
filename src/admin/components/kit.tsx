@@ -87,7 +87,6 @@ export function Badge({
   );
 }
 
-/** Canonical tone mapping for the platform's status strings. */
 /**
  * Korean label for a backend status value.
  *
@@ -148,6 +147,7 @@ export function statusLabel(status: string | null | undefined): string {
   return STATUS_LABELS[status] ?? status;
 }
 
+/** Canonical tone mapping for the platform's status strings. */
 export function statusTone(status: string | null | undefined): BadgeTone {
   switch (status) {
     case "active":
@@ -921,5 +921,3 @@ function FragmentRow({ label, value }: { label: ReactNode; value: ReactNode }) {
     </>
   );
 }
-
-/* ---------- Formatting helpers ---------- */

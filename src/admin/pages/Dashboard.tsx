@@ -365,7 +365,7 @@ export function AdminActivityRow({ entry }: { entry: RecentAdminActionRow }) {
  * line runs out of room. An account with no name is labelled by its email, and
  * then the email is not repeated underneath itself.
  */
-export function SignupRow({ user }: { user: MetricsOverview["recent_signups"][number] }) {
+function SignupRow({ user }: { user: MetricsOverview["recent_signups"][number] }) {
   const label = personName(user);
   const email = user.email === label ? null : user.email;
   return (
@@ -399,7 +399,7 @@ export function SignupRow({ user }: { user: MetricsOverview["recent_signups"][nu
  * behind it, so both halves of the detail line are optional and the row
  * degrades to the money rather than disappearing.
  */
-export function PaymentRow({ payment }: { payment: MetricsOverview["recent_payments"][number] }) {
+function PaymentRow({ payment }: { payment: MetricsOverview["recent_payments"][number] }) {
   const payer = personName({
     name: payment.user_name,
     email: payment.user_email,

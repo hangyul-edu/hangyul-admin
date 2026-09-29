@@ -24,7 +24,7 @@ import type { AiModelOption, AiModelsData, AiPurpose, AiTierModel } from "../api
  * own" row, rather than a closed select.
  */
 
-export const PROVIDER_NAME: Record<string, string> = { openai: "OpenAI", anthropic: "Anthropic", google: "Google Gemini" };
+const PROVIDER_NAME: Record<string, string> = { openai: "OpenAI", anthropic: "Anthropic", google: "Google Gemini" };
 
 /** Which provider a model *name* looks like (mirrors guess_provider in router.py). Hint only. */
 export function guessProvider(model: string): "anthropic" | "google" | "openai" | null {
@@ -35,7 +35,7 @@ export function guessProvider(model: string): "anthropic" | "google" | "openai" 
   return null;
 }
 
-export type ModelWarning = { tone: "danger" | "warning"; text: string };
+type ModelWarning ={ tone: "danger" | "warning"; text: string };
 
 /** What an admin should know about a model for a provider before saving it. */
 export function modelWarnings(

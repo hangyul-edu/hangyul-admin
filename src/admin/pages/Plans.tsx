@@ -43,7 +43,7 @@ interface PlanDraft {
 }
 
 /** Korean names for what a plan unlocks (access checks read these values). */
-export const ENTITLEMENT_LABELS: Record<Entitlement, { label: string; hint: string }> = {
+const ENTITLEMENT_LABELS:Record<Entitlement, { label: string; hint: string }> = {
   premium_courses: { label: "프리미엄 강의", hint: "모든 레슨·강의" },
   ai_tutor: { label: "AI 한귤 튜터", hint: "튜터 대화와 오답 설명" },
   offline_download: { label: "오프라인 저장", hint: "강의·음성 내려받기" },

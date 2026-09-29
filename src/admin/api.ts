@@ -1,6 +1,6 @@
 // Typed client for every /admin/* backend endpoint the portal uses.
 // All requests go through src/lib/http.ts (Bearer auth + auto refresh).
-import { apiFetch, http } from "../lib/http";
+import { http } from "../lib/http";
 
 export interface TokenPair {
   access_token: string;
@@ -1059,14 +1059,6 @@ export const adminApi = {
     http.get<{ lecture_id: string; items: AdminLectureVideo[] }>(
       `/admin/lectures/${lectureId}/videos`,
     ),
-  uploadLectureVideo: (lectureId: string, file: File) => {
-    const form = new FormData();
-    form.append("file", file);
-    return http.upload<AdminLectureVideo>(
-      `/admin/lectures/${lectureId}/videos`,
-      form,
-    );
-  },
   // Provision a direct (browser → Cloudflare) resumable upload session. The
   // backend returns a one-time upload URL; our Cloudflare token never leaves it.
   createVideoUploadSession: (
@@ -1077,15 +1069,6 @@ export const adminApi = {
       `/admin/lectures/${lectureId}/video/upload-session`,
       body,
     ),
-  replaceLectureVideo: (lectureId: string, file: File) => {
-    const form = new FormData();
-    form.append("file", file);
-    // http.upload always POSTs; the replace endpoint is a PUT.
-    return apiFetch<AdminLectureVideo>(`/admin/lectures/${lectureId}/video`, {
-      method: "PUT",
-      form,
-    });
-  },
   refreshLectureVideo: (videoId: string) =>
     http.post<AdminLectureVideo>(`/admin/lectures/videos/${videoId}/refresh`),
   deleteLectureVideo: (videoId: string) =>

@@ -43,7 +43,7 @@ const REVIEW_STATUS_LABEL: Record<string, string> = {
   rejected: "반려됨",
 };
 
-export const BLOCKER_LABEL: Record<string, string> = {
+const BLOCKER_LABEL: Record<string, string> = {
   validation_failed: "자동 검증 실패",
   media_not_ready: "필수 미디어 없음",
   educational_approval_missing: "교육 검수 승인 없음",
