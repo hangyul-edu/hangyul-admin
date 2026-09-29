@@ -618,6 +618,7 @@ export function ConfirmDialog({
   danger,
   icon,
   loading,
+  confirmDisabled,
   onConfirm,
   onCancel,
 }: {
@@ -629,6 +630,8 @@ export function ConfirmDialog({
   /** Contextual glyph shown in the badge; defaults to a heads-up icon. */
   icon?: ReactNode;
   loading?: boolean;
+  /** Keep the confirm button off, e.g. until what it acts on is known. */
+  confirmDisabled?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }) {
@@ -648,6 +651,7 @@ export function ConfirmDialog({
             variant={danger ? "danger" : "primary"}
             onClick={onConfirm}
             loading={loading}
+            disabled={confirmDisabled}
             block
           >
             {confirmLabel}

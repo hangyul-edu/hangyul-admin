@@ -60,6 +60,13 @@ export function ContentCleanupButton<T>({
     onError: toastError,
   });
 
+  // A failed preview has no counts: saying "0건" would read as "nothing will
+  // be affected", so it shows a dash and the action stays unavailable.
+  const count = (key: keyof T & string): string => {
+    if (previewQuery.data) return `${Number(previewQuery.data[key] ?? 0).toLocaleString()}건`;
+    return previewQuery.isPending ? "…" : "—";
+  };
+
   return (
     <>
       <Button variant="danger-soft" size="sm" onClick={() => setOpen(true)}>
@@ -73,6 +80,7 @@ export function ContentCleanupButton<T>({
         icon={<Trash2 size={24} strokeWidth={2} />}
         confirmLabel="학습 대상에서 제외"
         loading={mutation.isPending}
+        confirmDisabled={!previewQuery.isSuccess}
         onConfirm={() => mutation.mutate()}
         onCancel={() => setOpen(false)}
         message={
@@ -83,11 +91,7 @@ export function ContentCleanupButton<T>({
             </p>
             <dl className="hgadm-dl" style={{ gridTemplateColumns: "1fr auto", rowGap: 6 }}>
               {countLabels.map(([key, lbl]) => (
-                <FragmentRow
-                  key={key}
-                  label={lbl}
-                  value={previewQuery.isPending ? "…" : `${Number(previewQuery.data?.[key] ?? 0).toLocaleString()}건`}
-                />
+                <FragmentRow key={key} label={lbl} value={count(key)} />
               ))}
             </dl>
             {preservedLabels.length > 0 && (
@@ -101,15 +105,7 @@ export function ContentCleanupButton<T>({
                   style={{ gridTemplateColumns: "1fr auto", rowGap: 6 }}
                 >
                   {preservedLabels.map(([key, lbl]) => (
-                    <FragmentRow
-                      key={key}
-                      label={lbl}
-                      value={
-                        previewQuery.isPending
-                          ? "…"
-                          : `${Number(previewQuery.data?.[key] ?? 0).toLocaleString()}건`
-                      }
-                    />
+                    <FragmentRow key={key} label={lbl} value={count(key)} />
                   ))}
                 </dl>
               </>
