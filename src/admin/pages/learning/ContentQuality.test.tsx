@@ -162,11 +162,25 @@ describe("ContentQualityPage", () => {
 
   it("publishes with content:publish", async () => {
     scopes = ["content:read", "content:publish"];
+    api.version.mockResolvedValue({
+      ...DETAIL,
+      publication_check: { policy: "pub-v1", allowed: true, blockers: [] },
+    });
     api.publishVersion.mockResolvedValue({ ...DETAIL, lifecycle: "published" });
     renderAt("/learning/content?tab=queue");
     await userEvent.click(await screen.findByText(SUMMARY.preview));
     await userEvent.click(await screen.findByRole("button", { name: "게시" }));
     await waitFor(() => expect(api.publishVersion).toHaveBeenCalledWith("cv_1"));
+  });
+
+  it("does not offer to publish a version the publication check blocks", async () => {
+    // The server answers 409 content.publication_blocked; the reasons are
+    // already listed, so the button is simply unavailable.
+    scopes = ["content:read", "content:publish"];
+    renderAt("/learning/content?tab=queue");
+    await userEvent.click(await screen.findByText(SUMMARY.preview));
+    expect(await screen.findByText("블라인드 풀이 없음")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "게시" })).toBeDisabled();
   });
 
   it("blind solve never loads the version detail (with its key)", async () => {
@@ -186,5 +200,7 @@ describe("ContentQualityPage", () => {
     await userEvent.click(screen.getByRole("button", { name: "제출" }));
     await waitFor(() => expect(api.blindSolve).toHaveBeenCalledWith("cv_1", { answer: "1" }));
     expect(api.version).not.toHaveBeenCalled();
+    // A solve can open an issue, so the queue is re-read rather than left stale.
+    await waitFor(() => expect(api.versions).toHaveBeenCalledTimes(2));
   });
 });

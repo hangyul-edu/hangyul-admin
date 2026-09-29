@@ -401,6 +401,7 @@ function renderPayload(p: Record<string, unknown>) {
 }
 
 function BlindSolveModal({ versionId, onClose }: { versionId: string; onClose: () => void }) {
+  const qc = useQueryClient();
   const toast = useToast();
   const toastError = useToastError();
   const [answer, setAnswer] = useState("");
@@ -409,6 +410,9 @@ function BlindSolveModal({ versionId, onClose }: { versionId: string; onClose: (
     mutationFn: () => learningApi.blindSolve(versionId, { answer }),
     onSuccess: (r) => {
       toast.success(r.agrees_with_key ? "정답 키와 일치합니다." : "정답 키와 달라 검토 이슈가 열렸습니다.");
+      // A disagreeing solve opens an issue, which changes the open-issue count
+      // and the version's publication check.
+      void qc.invalidateQueries({ queryKey: ["admin", "learning"] });
       onClose();
     },
     onError: toastError,
@@ -573,7 +577,13 @@ function VersionModal({ versionId, onClose }: { versionId: string; onClose: () =
               </Button>
             )}
             {can("content:publish") && v.lifecycle === "in_review" && (
-              <Button variant="primary" loading={publish.isPending} onClick={() => publish.mutate()}>
+              // The server refuses a blocked publish (409); the reasons are listed above.
+              <Button
+                variant="primary"
+                loading={publish.isPending}
+                disabled={!v.publication_check.allowed}
+                onClick={() => publish.mutate()}
+              >
                 게시
               </Button>
             )}
