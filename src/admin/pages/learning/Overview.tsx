@@ -35,16 +35,17 @@ const CUSTOM_LABEL: Record<string, string> = {
   processing: "처리 중",
 };
 
-// Each summary links to the page that explains it.
-const RATIO_ROWS: { key: keyof OverviewSide; link: string }[] = [
-  { key: "session_completion_rate", link: "/learning/recommendations" },
-  { key: "independent_accuracy", link: "/learning/content" },
-  { key: "assistance_rate", link: "/learning/content" },
-  { key: "review_success_rate", link: "/learning/learners?review_overdue=true" },
-  { key: "delayed_retention_rate", link: "/learning/cohorts" },
-  { key: "customization_success_rate", link: "/learning/recommendations" },
-  { key: "retrieval_fulfillment_rate", link: "/learning/recommendations" },
-  { key: "content_defect_rate", link: "/learning/content" },
+// Each summary links to the page that explains it, with the scope that page is
+// gated on (App.tsx): a link this tier cannot open is not shown.
+const RATIO_ROWS: { key: keyof OverviewSide; link: string; scope: string }[] = [
+  { key: "session_completion_rate", link: "/learning/recommendations", scope: "analytics:read" },
+  { key: "independent_accuracy", link: "/learning/content", scope: "content:read" },
+  { key: "assistance_rate", link: "/learning/content", scope: "content:read" },
+  { key: "review_success_rate", link: "/learning/learners?review_overdue=true", scope: "learners:read" },
+  { key: "delayed_retention_rate", link: "/learning/cohorts", scope: "analytics:read" },
+  { key: "customization_success_rate", link: "/learning/recommendations", scope: "analytics:read" },
+  { key: "retrieval_fulfillment_rate", link: "/learning/recommendations", scope: "analytics:read" },
+  { key: "content_defect_rate", link: "/learning/content", scope: "content:read" },
 ];
 
 function usd(cents: number | null): string {
@@ -129,18 +130,20 @@ export function LearningOverviewPage() {
                 </tr>
               </thead>
               <tbody>
-                {RATIO_ROWS.map(({ key, link }) => {
+                {RATIO_ROWS.map(({ key, link, scope }) => {
                   const cur = query.data.current[key] as Ratio;
                   const cmp = query.data.comparison[key] as Ratio;
                   return (
                     <tr key={key}>
                       <th scope="row" style={{ fontWeight: 500 }}>
                         <MetricLabel metric={cur.metric} />
-                        <div>
-                          <Link to={link} className="hgadm-cell-sub">
-                            자세히 보기
-                          </Link>
-                        </div>
+                        {can(scope) && (
+                          <div>
+                            <Link to={link} className="hgadm-cell-sub">
+                              자세히 보기
+                            </Link>
+                          </div>
+                        )}
                       </th>
                       <td>
                         <RatioView ratio={cur} />
