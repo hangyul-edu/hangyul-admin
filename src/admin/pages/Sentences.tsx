@@ -33,6 +33,10 @@ interface SentenceDraft {
   topic: string;
   level: string;
   grammar_points: string;
+  /** Editing a sentence with blanks: its blanks are character offsets into
+   *  the Korean text, which the server does not re-anchor when the text
+   *  changes, so the text is shown but not editable here. */
+  blanked?: boolean;
 }
 
 const BATCH_TEMPLATE = JSON.stringify(
@@ -119,9 +123,13 @@ export function SentencesPage() {
           .map((s) => s.trim())
           .filter(Boolean),
       };
-      return editingId
-        ? adminApi.updateSentence(editingId, body)
-        : adminApi.createSentence(body);
+      if (!editingId) return adminApi.createSentence(body);
+      // The Korean text of a blanked sentence is not editable here; leave it
+      // out rather than re-sending it.
+      return adminApi.updateSentence(
+        editingId,
+        d.blanked ? { ...body, korean: undefined } : body,
+      );
     },
     onSuccess: () => {
       toast.success("문장을 저장했어요.");
@@ -190,6 +198,7 @@ export function SentencesPage() {
                   topic: s.topic ?? "",
                   level: String(s.level),
                   grammar_points: s.grammar_points.join(", "),
+                  blanked: Boolean(s.blanks_json?.length || s.display_text),
                 });
               }}
             >
@@ -338,10 +347,19 @@ export function SentencesPage() {
       >
         {draft && (
           <div>
-            <Field label="한국어 문장" required>
+            <Field
+              label="한국어 문장"
+              required
+              hint={
+                draft.blanked
+                  ? "빈칸이 있는 문장은 원문을 바꾸면 빈칸 위치가 어긋나므로 여기서 수정할 수 없습니다."
+                  : undefined
+              }
+            >
               <Textarea
                 rows={2}
                 value={draft.korean}
+                readOnly={draft.blanked}
                 onChange={(e) => setDraft({ ...draft, korean: e.target.value })}
               />
             </Field>

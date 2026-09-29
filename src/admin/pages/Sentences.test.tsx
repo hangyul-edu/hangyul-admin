@@ -117,3 +117,42 @@ describe("SentencesPage filters", () => {
     );
   });
 });
+
+describe("SentencesPage editor", () => {
+  const blanked = {
+    sentence_id: "sen_1",
+    korean: "비가 와서 집에 있었어요.",
+    display_text: "비가 ___ 집에 있었어요.",
+    translation: "It rained, so I stayed home.",
+    translation_language: "en",
+    romanization: null,
+    topic: "날씨",
+    level: 3,
+    grammar_points: ["-아서"],
+    blanks_json: [{ start: 3, end: 5, answer: "와서" }],
+    has_audio: false,
+    audio_voice: "ko-KR",
+    is_ai_generated: false,
+  };
+
+  beforeEach(() => {
+    listSentences.mockReset();
+    sentenceTopics.mockReset();
+    listSentences.mockResolvedValue({ items: [blanked], total: 1, page: 1, page_size: 25 } as never);
+    sentenceTopics.mockResolvedValue({ topics: ["날씨"] } as never);
+  });
+
+  it("does not let the Korean text of a blanked sentence drift from its blanks", async () => {
+    // The blanks are offsets into the Korean text and the server does not
+    // re-anchor them when the text changes.
+    const update = vi.spyOn(adminApi, "updateSentence").mockResolvedValue(blanked as never);
+    renderPage();
+    await userEvent.click(await screen.findByRole("button", { name: "수정" }));
+    const korean = screen.getByLabelText(/^한국어 문장/);
+    expect(korean).toHaveAttribute("readonly");
+    await userEvent.click(screen.getByRole("button", { name: "저장" }));
+    await waitFor(() => expect(update).toHaveBeenCalledTimes(1));
+    expect(update.mock.calls[0][1].korean).toBeUndefined();
+    expect(update.mock.calls[0][1].translation).toBe(blanked.translation);
+  });
+});
