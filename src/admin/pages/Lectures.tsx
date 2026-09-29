@@ -164,7 +164,7 @@ export function LecturesPage() {
     },
     {
       key: "track",
-      header: "학습 분야/레벨",
+      header: "학습 분야/순서",
       render: (l) => (
         <div>
           <Badge tone="brand">{TRACK_LABEL[l.track_id] ?? l.track_id}</Badge>
@@ -250,7 +250,7 @@ export function LecturesPage() {
         <div>
           <h1>강의·영상 관리</h1>
           <div className="hgadm-page-head__desc">
-            강의 기본 정보(제목·레벨·코스·공개 범위)와 호스팅 영상 업로드를 관리합니다.
+            강의 기본 정보(제목·코스·순서·공개 범위)와 호스팅 영상 업로드를 관리합니다.
             영상은 업로드 후 인코딩이 끝나면 자동으로 ‘재생 가능’ 상태가 됩니다.
           </div>
         </div>
@@ -424,7 +424,7 @@ export function LecturesPage() {
                 <option value="premium">프리미엄</option>
               </Select>
             </Field>
-            <Field label="길이 (초)" hint="영상 업로드 시 자동 갱신됩니다.">
+            <Field label="길이 (초)" hint="영상을 올려도 자동으로 바뀌지 않으니 직접 입력하세요.">
               <Input
                 type="number"
                 min={0}
