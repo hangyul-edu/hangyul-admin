@@ -418,6 +418,42 @@ describe("SystemSettingsPage — AI models", () => {
     );
     expect(api.aiModels).toHaveBeenCalled();
   });
+
+  it("says so when refreshing the model list fails instead of silently keeping the old one", async () => {
+    renderPage("/settings?item=ai");
+    const d = await screen.findByRole("form", { name: "AI 사용·모델 선택" });
+    const summary = await within(d).findByRole("region", { name: "현재 사용 중인 모델" });
+    await within(summary).findByText("claude-sonnet-5");
+    api.aiModels.mockRejectedValueOnce(new ApiError(502, "upstream", "제공사 응답 없음"));
+    await userEvent.click(within(summary).getByRole("button", { name: /모델 목록 새로고침/ }));
+    expect(await within(summary).findByText(/모델 정보를 불러오지 못했습니다: .*제공사 응답 없음/)).toBeInTheDocument();
+    expect(api.aiModels).toHaveBeenLastCalledWith(true);
+  });
+});
+
+describe("SystemSettingsPage — unreadable secret", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    scopes = ["settings:read", "settings:write"];
+  });
+
+  it("offers to fall back to .env for a saved secret that can no longer be decrypted", async () => {
+    // `unreadable` is an admin-saved row the server cannot decrypt; `reset`
+    // drops it, so the admin must be offered that way out.
+    api.systemSettings.mockResolvedValue(
+      page(sendgrid({ fields: [field({ source: "unreadable" }), sendgrid().fields[1]] })),
+    );
+    api.saveIntegration.mockResolvedValue({ integration: sendgrid(), applied: {}, message: "저장했습니다." });
+    renderPage();
+    const d = await detail();
+    await userEvent.click(within(d).getByRole("button", { name: /\.env 값으로 되돌리기/ }));
+    await userEvent.click(saveButton(d));
+    await waitFor(() =>
+      expect(api.saveIntegration).toHaveBeenCalledWith("sendgrid", {
+        changes: [{ key: "sendgrid.api_key", action: "reset" }],
+      }),
+    );
+  });
 });
 
 describe("toChanges", () => {

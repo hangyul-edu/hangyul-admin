@@ -387,7 +387,10 @@ function IntegrationDetail({
           }
         : page,
     );
-    // The page-wide restart notice may have changed too.
+    // The page-wide restart notice may have changed too. MODELS_KEY sits under
+    // QUERY_KEY, so this also refetches the AI model summary — which is what
+    // keeps it current after a provider's key is saved on that provider's own
+    // card.
     void qc.invalidateQueries({ queryKey: QUERY_KEY });
   };
 
@@ -407,8 +410,6 @@ function IntegrationDetail({
       // toast would cover that bar and repeat it).
       setOutcome({ tone: restart ? "warning" : "success", text: result.message, at: new Date() });
       replace(result.integration);
-      // New keys or models change what the model summary reports.
-      if (isAi) void qc.invalidateQueries({ queryKey: MODELS_KEY });
     },
     onError: (error) => {
       setErrors(fieldErrors(error));
@@ -533,7 +534,13 @@ function IntegrationDetail({
         <ModelOverview
           data={models.data}
           loading={models.isPending}
-          error={models.isError ? errorMessage(models.error) : null}
+          error={
+            refreshModels.isError
+              ? errorMessage(refreshModels.error)
+              : models.isError
+                ? errorMessage(models.error)
+                : null
+          }
           aiEnabled={!!integration.toggle?.enabled}
           refreshing={refreshModels.isPending}
           onRefresh={() => refreshModels.mutate()}
@@ -941,7 +948,9 @@ function SecretControl({
             삭제
           </button>
         )}
-        {field.source === "admin" && !value && (
+        {/* An `unreadable` secret is a saved row that can no longer be
+            decrypted; resetting drops it back to .env like any saved one. */}
+        {(field.source === "admin" || field.source === "unreadable") && !value && (
           <button type="button" className="hgadm-cfg__textbtn" disabled={disabled} onClick={() => onEdit({ kind: "reset" })}>
             <RotateCcw size={12} strokeWidth={2} aria-hidden /> .env 값으로 되돌리기
           </button>
