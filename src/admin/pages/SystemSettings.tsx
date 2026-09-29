@@ -19,6 +19,7 @@ import {
 import {
   adminApi,
   type ConnectionTestResult,
+  type AiModelsData,
   type IntegrationCheck,
   type IntegrationSettings,
   type SettingChange,
@@ -28,9 +29,13 @@ import {
 import { useAdminAuth } from "../auth";
 import { ApiError, errorMessage } from "../../lib/http";
 import { Button, ConfirmDialog, ErrorState, Input, LoadingState, Select, Switch, Textarea } from "../components/kit";
+import { ModelOverview, ModelPicker, modelWarnings } from "../components/ModelPicker";
 import { formatDateTime } from "../lib/format";
 
 const QUERY_KEY = ["admin", "system-settings"];
+const MODELS_KEY = ["admin", "system-settings", "ai-models"];
+
+type ModelsState = { data: AiModelsData | undefined; loading: boolean };
 
 /** A pending change to one field, before it is saved. */
 type Edit =
@@ -341,6 +346,14 @@ function IntegrationDetail({
   onDirtyChange: (dirty: boolean) => void;
 }) {
   const qc = useQueryClient();
+  const isAi = integration.id === "ai";
+  // The AI card also shows the models configured now and what can be chosen.
+  const models = useQuery({ queryKey: MODELS_KEY, queryFn: () => adminApi.aiModels(), enabled: isAi, staleTime: 60_000 });
+  const refreshModels = useMutation({
+    mutationFn: () => adminApi.aiModels(true),
+    onSuccess: (data) => qc.setQueryData(MODELS_KEY, data),
+  });
+  const modelsState: ModelsState = { data: models.data, loading: models.isPending };
   const [edits, setEdits] = useState<Record<string, Edit>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [outcome, setOutcome] = useState<Outcome | null>(null);
@@ -384,6 +397,8 @@ function IntegrationDetail({
       // toast would cover that bar and repeat it).
       setOutcome({ tone: restart ? "warning" : "success", text: result.message, at: new Date() });
       replace(result.integration);
+      // New keys or models change what the model summary reports.
+      if (isAi) void qc.invalidateQueries({ queryKey: MODELS_KEY });
     },
     onError: (error) => {
       setErrors(fieldErrors(error));
@@ -474,6 +489,17 @@ function IntegrationDetail({
         </p>
       )}
 
+      {isAi && (
+        <ModelOverview
+          data={models.data}
+          loading={models.isPending}
+          error={models.isError ? errorMessage(models.error) : null}
+          aiEnabled={!!integration.toggle?.enabled}
+          refreshing={refreshModels.isPending}
+          onRefresh={() => refreshModels.mutate()}
+        />
+      )}
+
       {integration.testable && (
         <ConnectionBox
           last={integration.last_check}
@@ -495,6 +521,7 @@ function IntegrationDetail({
             error={errors[field.key]}
             disabled={!canEdit || busy}
             restartPending={integration.restart_pending.includes(field.key)}
+            models={modelsState}
             onEdit={(edit) => setEdit(field.key, edit)}
           />
         ))}
@@ -679,6 +706,7 @@ function FieldRow({
   error,
   disabled,
   restartPending,
+  models,
   onEdit,
 }: {
   field: SettingField;
@@ -686,12 +714,18 @@ function FieldRow({
   error?: string;
   disabled: boolean;
   restartPending: boolean;
+  models: ModelsState;
   onEdit: (edit: Edit | null) => void;
 }) {
   const inputId = `setting-${field.key.replace(/[^a-z0-9]/gi, "-")}`;
   const hintId = `${inputId}-hint`;
   const secret = field.kind === "secret" || field.kind === "multiline_secret";
   const changed = !!edit && !(edit.kind === "secret" && edit.value.trim() === "");
+  const saved = String(field.value ?? "");
+  const modelValue = edit?.kind === "value" ? String(edit.value) : saved;
+  // Warnings follow the name being chosen; the saved one is summarised above.
+  const warnings =
+    field.kind === "model" && edit?.kind !== "reset" ? modelWarnings(modelValue, models.data, modelValue !== saved) : [];
   return (
     <div className={`hgadm-cfg__field ${changed ? "is-changed" : ""} ${error ? "has-error" : ""}`}>
       <div className="hgadm-cfg__field-label">
@@ -708,8 +742,36 @@ function FieldRow({
       </div>
       {secret ? (
         <SecretControl field={field} inputId={inputId} hintId={hintId} edit={edit} disabled={disabled} onEdit={onEdit} />
+      ) : field.kind === "model" && edit?.kind !== "reset" ? (
+        <div className="hgadm-cfg__value">
+          <ModelPicker
+            inputId={inputId}
+            hintId={hintId}
+            value={modelValue}
+            savedValue={saved}
+            data={models.data}
+            loading={models.loading}
+            disabled={disabled}
+            label={field.label}
+            onChange={(next) => onEdit(next === saved ? null : { kind: "value", value: next })}
+          />
+          {field.source === "admin" && !edit && (
+            <button type="button" className="hgadm-cfg__textbtn" disabled={disabled} onClick={() => onEdit({ kind: "reset" })}>
+              <RotateCcw size={12} strokeWidth={2} aria-hidden /> 기본값으로
+            </button>
+          )}
+        </div>
       ) : (
         <ValueControl field={field} inputId={inputId} hintId={hintId} edit={edit} disabled={disabled} onEdit={onEdit} />
+      )}
+      {warnings.length > 0 && !error && (
+        <ul className="hgadm-cfg__warnings">
+          {warnings.map((w) => (
+            <li key={w.text} className={`is-${w.tone}`}>
+              <AlertTriangle size={13} strokeWidth={2} aria-hidden /> {w.text}
+            </li>
+          ))}
+        </ul>
       )}
       {error ? (
         <div className="hgadm-cfg__error" role="alert">

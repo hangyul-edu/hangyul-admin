@@ -784,7 +784,8 @@ export type SettingFieldKind =
   | "bool"
   | "number"
   | "integer"
-  | "choice";
+  | "choice"
+  | "model";
 export interface SettingField {
   key: string;
   label: string;
@@ -847,6 +848,42 @@ export interface SettingsSaveResult {
   integration: IntegrationSettings;
   applied: Record<string, "live" | "restart">;
   message: string;
+}
+export interface AiModelOption {
+  id: string;
+  display_name: string;
+  provider: string;
+  provider_name: string;
+  /** A rate is known, so the model's cost counts toward AI budgets. */
+  priced: boolean;
+  /** `live`: from the provider's own list; `suggested`: from the rate card. */
+  source: "live" | "suggested";
+}
+export interface AiModelProvider {
+  id: string;
+  name: string;
+  supported: boolean;
+  key_configured: boolean;
+  listing: "live" | "suggested" | "no_key" | "error" | "unsupported";
+  message: string;
+}
+export interface AiTierModel {
+  key: string;
+  label: string;
+  purpose: string;
+  model: string;
+  provider: string;
+  provider_name: string;
+  supported: boolean;
+  key_configured: boolean;
+  priced: boolean;
+  /** Found in the provider's live list; null when no live list was available. */
+  listed: boolean | null;
+}
+export interface AiModelsData {
+  tiers: AiTierModel[];
+  providers: AiModelProvider[];
+  models: AiModelOption[];
 }
 export interface ConnectionTestResult {
   ok: boolean;
@@ -1145,6 +1182,8 @@ export const adminApi = {
   // Settings page: integrations and server settings. Secrets travel only
   // under `secret` / `secrets`, which the audit trail redacts.
   systemSettings: () => http.get<SettingsPageData>("/admin/system-settings"),
+  aiModels: (refresh = false) =>
+    http.get<AiModelsData>("/admin/system-settings/models", refresh ? { refresh: "true" } : undefined),
   saveIntegration: (integrationId: string, body: { changes: SettingChange[]; enabled?: boolean }) =>
     http.put<SettingsSaveResult>(`/admin/system-settings/integrations/${integrationId}`, body),
   testIntegration: (

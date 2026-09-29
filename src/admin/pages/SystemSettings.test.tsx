@@ -17,6 +17,7 @@ vi.mock("../api", async () => {
       systemSettings: vi.fn(),
       saveIntegration: vi.fn(),
       testIntegration: vi.fn(),
+      aiModels: vi.fn(),
     },
   };
 });
@@ -304,6 +305,65 @@ describe("SystemSettingsPage", () => {
     expect(within(d).getByLabelText(/^API 키/)).toBeDisabled();
     expect(within(d).getByRole("checkbox", { name: "SendGrid 이메일 사용" })).toBeDisabled();
     expect(within(d).getByText(/조회 전용입니다/)).toBeInTheDocument();
+  });
+});
+
+describe("SystemSettingsPage — AI models", () => {
+  const ai: IntegrationSettings = {
+    ...sendgrid(),
+    id: "ai",
+    name: "AI 모델 공급자",
+    toggle: { enabled: true, source: "admin" },
+    fields: [
+      field({ key: "ai.reasoning_model", label: "추론용 모델", kind: "model", secret: null, value: "claude-sonnet-5", env_var: "AI_REASONING_MODEL" }),
+    ],
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    scopes = ["settings:read", "settings:write"];
+    api.systemSettings.mockResolvedValue(page(ai));
+    api.aiModels.mockResolvedValue({
+      tiers: [
+        {
+          key: "ai.reasoning_model",
+          label: "추론용",
+          purpose: "튜터 설명",
+          model: "claude-sonnet-5",
+          provider: "anthropic",
+          provider_name: "Anthropic",
+          supported: true,
+          key_configured: true,
+          priced: true,
+          listed: true,
+        },
+      ],
+      providers: [{ id: "anthropic", name: "Anthropic", supported: true, key_configured: true, listing: "live", message: "" }],
+      models: [
+        { id: "claude-sonnet-5", display_name: "Claude Sonnet 5", provider: "anthropic", provider_name: "Anthropic", priced: true, source: "live" },
+        { id: "claude-opus-5-5", display_name: "Claude Opus 5.5", provider: "anthropic", provider_name: "Anthropic", priced: true, source: "live" },
+      ],
+    });
+  });
+
+  it("shows the configured model per purpose and saves a model picked from the list", async () => {
+    api.saveIntegration.mockResolvedValue({ integration: ai, applied: { "ai.reasoning_model": "live" }, message: "저장했습니다. 바로 적용되었습니다." });
+    renderPage("/settings?item=ai");
+    const d = await screen.findByRole("form", { name: "AI 모델 공급자" });
+    const summary = await within(d).findByRole("region", { name: "현재 사용 중인 모델" });
+    await within(summary).findByText("claude-sonnet-5");
+    expect(summary).toHaveTextContent("제공사 목록에서 확인됨");
+
+    await userEvent.click(within(d).getByRole("combobox", { name: /^추론용 모델/ }));
+    await userEvent.type(within(d).getByRole("combobox", { name: /^추론용 모델/ }), "opus{Enter}");
+    expect(within(d).getByRole("combobox", { name: /^추론용 모델/ })).toHaveValue("claude-opus-5-5");
+    await userEvent.click(saveButton(d));
+    await waitFor(() =>
+      expect(api.saveIntegration).toHaveBeenCalledWith("ai", {
+        changes: [{ key: "ai.reasoning_model", action: "set", value: "claude-opus-5-5" }],
+      }),
+    );
+    expect(api.aiModels).toHaveBeenCalled();
   });
 });
 
