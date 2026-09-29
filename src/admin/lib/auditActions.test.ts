@@ -134,6 +134,19 @@ describe("context", () => {
     expect(d.context).toBe("뷰어 → 운영자");
   });
 
+  it("names the learning-era tiers too, not their raw keys", () => {
+    // analyst / educator / content_publisher were added to the tier ladder
+    // after this module kept its own copy of the tier names.
+    const d = describeAuditAction(
+      entry({
+        action: "PATCH /admin/admins/{user_id}",
+        before: { state: { admin_role: "analyst" } } as never,
+        after: { state: { admin_role: "content_publisher" } } as never,
+      }),
+    );
+    expect(d.context).toBe("분석가 → 콘텐츠 게시 담당");
+  });
+
   it("lists every member field that actually changed", () => {
     const d = describeAuditAction(
       entry({

@@ -36,6 +36,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useAdminAuth } from "../auth";
+import { ADMIN_TIER_LABEL } from "../lib/adminTiers";
 import { loadSidebarCollapsed, saveSidebarCollapsed } from "../lib/storage";
 import { Button, ConfirmDialog } from "./kit";
 
@@ -144,17 +145,6 @@ const NAV: NavGroup[] = [
     ],
   },
 ];
-
-const TIER_LABELS: Record<string, string> = {
-  super_admin: "최고 관리자",
-  operator: "운영자",
-  content_manager: "콘텐츠 관리자",
-  support_agent: "고객지원",
-  viewer: "조회 전용",
-  analyst: "분석가",
-  educator: "교육 검수자",
-  content_publisher: "콘텐츠 게시 담당",
-};
 
 export function AdminLayout() {
   const { me, can, logout } = useAdminAuth();
@@ -279,7 +269,7 @@ export function AdminLayout() {
                   {me?.nickname || me?.name || me?.email}
                 </div>
                 <div className="hgadm-topbar__who-role">
-                  {TIER_LABELS[me?.admin_role ?? ""] ?? me?.admin_role}
+                  {ADMIN_TIER_LABEL[me?.admin_role ?? ""] ?? me?.admin_role}
                 </div>
               </div>
             </div>

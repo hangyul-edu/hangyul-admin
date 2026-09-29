@@ -1,5 +1,6 @@
 import type { AuditLogEntry } from "../api";
 import { accountStatusLabel } from "./accountStatus";
+import { ADMIN_TIER_LABEL, ROLE_LABELS } from "./adminTiers";
 
 /**
  * Turning an audit row into a sentence an operator can read.
@@ -293,19 +294,10 @@ const SENSITIVE_READ_COPY: Record<string, ActionCopy> = {
   },
 };
 
-const ROLE_KO: Record<string, string> = {
-  member: "일반",
-  premium: "프리미엄",
-  tester: "테스터",
-  admin: "관리자",
-};
-const TIER_KO: Record<string, string> = {
-  super_admin: "최고 관리자",
-  operator: "운영자",
-  content_manager: "콘텐츠 관리자",
-  support_agent: "고객지원",
-  viewer: "뷰어",
-};
+// The portal's one vocabulary for roles and tiers, so a tier added there is
+// named here too.
+const ROLE_KO = ROLE_LABELS;
+const TIER_KO = ADMIN_TIER_LABEL;
 
 function state(side: Record<string, unknown> | null): Record<string, unknown> {
   const nested = side?.["state"];
