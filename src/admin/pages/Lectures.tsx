@@ -112,8 +112,9 @@ export function LecturesPage() {
         duration_seconds: Number(d.duration_seconds),
         access: d.access,
         sequence: Number(d.sequence),
-        thumbnail_url: d.thumbnail_url || undefined,
-        topik_question_type: d.topik_question_type || undefined,
+        // null (not omitted) so emptying a field on edit clears it.
+        thumbnail_url: d.thumbnail_url || null,
+        topik_question_type: d.topik_question_type || null,
       };
       if (editingId) {
         return adminApi.updateLecture(editingId, {
