@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUrlFilters } from "../lib/urlFilters";
 import { adminApi } from "../api";
@@ -29,10 +29,13 @@ import {
 } from "../lib/format";
 import type { Column } from "../components/kit";
 
+/** `GeneratedContentKind` on the backend — the values the list filters on. */
+const SENTENCE_KIND = "conversation_sentence";
+const QUESTION_KIND = "topik_question";
+
 const KIND_LABEL: Record<string, string> = {
-  sentence: "문장",
-  question: "문제",
-  quiz: "문제",
+  [SENTENCE_KIND]: "문장",
+  [QUESTION_KIND]: "문제",
 };
 
 export function AiContentPage() {
@@ -56,8 +59,8 @@ export function AiContentPage() {
   // so the level options follow whichever kind is filtered; with no kind
   // selected they span both scales.
   const levelOptions =
-    kind === "question" ? TOPIK_GRADES : CONVERSATION_LEVELS;
-  const levelLabel = kind === "question" ? "급수" : "레벨";
+    kind === QUESTION_KIND ? TOPIK_GRADES : CONVERSATION_LEVELS;
+  const levelLabel = kind === QUESTION_KIND ? "급수" : "레벨";
 
   const query = useQuery({
     queryKey: ["admin", "generated", { q, reviewStatus, kind, level, page }],
@@ -79,6 +82,14 @@ export function AiContentPage() {
     queryFn: () => adminApi.getGenerated(detailId!),
     enabled: detailId !== null,
   });
+
+  // The note belongs to the item on screen. A review always writes the note
+  // it is sent (an omitted one clears the saved note), so the box starts from
+  // what is saved rather than empty — and never carries text typed for a
+  // different item.
+  const shownId = detail.data?.content_id;
+  const savedNote = detail.data?.review_note ?? "";
+  useEffect(() => setNote(savedNote), [shownId, savedNote]);
 
   function refresh() {
     void qc.invalidateQueries({ queryKey: ["admin", "generated"] });
@@ -200,8 +211,8 @@ export function AiContentPage() {
             style={{ width: 140 }}
           >
             <option value="">종류: 전체</option>
-            <option value="sentence">문장</option>
-            <option value="question">문제</option>
+            <option value={SENTENCE_KIND}>문장</option>
+            <option value={QUESTION_KIND}>문제</option>
           </Select>
           <Select
             value={level}
@@ -292,7 +303,7 @@ export function AiContentPage() {
           <div style={{ fontSize: 13.5 }}>
             <div className="hgadm-row hgadm-row--wrap" style={{ marginBottom: 12 }}>
               <Badge tone={statusTone(detail.data.review_status)}>
-                {detail.data.review_status}
+                {statusLabel(detail.data.review_status)}
               </Badge>
               <Badge tone="info">
                 {KIND_LABEL[detail.data.content_kind] ?? detail.data.content_kind}
