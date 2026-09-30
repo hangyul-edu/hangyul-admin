@@ -388,8 +388,8 @@ body {
   font-size: 11.5px;
   color: var(--ink-3);
 }
-/* The time-zone note stays on one line at every width (it used to wrap into
-   a tall column on a phone and spill over the page below the fixed-height
+/* The time-zone note stays on one line at every width (wrapped, it becomes a
+   tall column on a phone and spills over the page below the fixed-height
    bar); narrow screens get the short form, the full sentence stays in the
    tooltip. */
 .hgadm-topbar__tz {
@@ -1784,15 +1784,6 @@ body {
   color: var(--ink);
   line-height: 1.3;
 }
-/* The period is the other half of the answer to "which league is running", so
-   it reads at nearly the same weight as the name rather than as a caption. */
-.hgadm-season__period {
-  margin-top: 4px;
-  font-size: 14px;
-  font-variant-numeric: tabular-nums;
-  color: var(--ink-2);
-  white-space: nowrap;
-}
 .hgadm-season__stats {
   display: flex;
   align-items: center;
@@ -1852,12 +1843,6 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-/* The identifier beside a detail page's title, sized down to sit under it. */
-.hgadm-page-head__id {
-  font-size: 0.7em;
-  font-weight: 500;
-  color: var(--ink-3);
 }
 
 /* ---------- Chart tooltip ----------
@@ -2086,11 +2071,6 @@ a.hgadm-recent--link:hover {
   grid-template-columns: 1fr 1fr;
   gap: 18px;
 }
-.hgadm-grid-3 {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
-}
 .hgadm-muted {
   color: var(--ink-3);
 }
@@ -2225,8 +2205,7 @@ a.hgadm-recent--link:hover {
     padding: 20px 16px 40px;
   }
   .hgadm-form-grid,
-  .hgadm-grid-2,
-  .hgadm-grid-3 {
+  .hgadm-grid-2 {
     grid-template-columns: 1fr;
   }
   .hgadm-form-grid .span-2 {
@@ -3403,13 +3382,6 @@ a.hgadm-recent--link:hover {
   .hgadm-model__list {
     max-height: 60vh;
   }
-}
-.hgadm-model__note--provider {
-  margin-top: 4px;
-  border-top: 1px solid var(--border);
-}
-.hgadm-model__note--provider strong {
-  color: var(--ink-2);
 }
 
 /* ---------- AI provider choice + picker additions ---------- */

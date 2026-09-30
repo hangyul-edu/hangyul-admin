@@ -42,13 +42,6 @@ export function formatDateTime(value: string | null | undefined): string {
   });
 }
 
-export function formatDate(value: string | null | undefined): string {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleDateString(ADMIN_LOCALE, { timeZone: ADMIN_TIME_ZONE });
-}
-
 /**
  * ISO instant → the `YYYY-MM-DDTHH:mm` a `<input type="datetime-local">` wants,
  * with the wall-clock reading taken in Seoul.

@@ -14,7 +14,6 @@ import {
   LEAGUE_ZONE,
   formatInZone,
   formatRemaining,
-  hoursBetweenZones,
   timeRemaining,
   zoneAbbreviation,
 } from "./leagueClock";
@@ -55,26 +54,6 @@ describe("reading an instant on each clock", () => {
 });
 
 describe("the offset is read, not assumed", () => {
-  it("is 13 hours in summer and 14 in winter", () => {
-    expect(hoursBetweenZones(SUMMER_START, LEAGUE_ZONE, KST_ZONE)).toBe(13);
-    expect(hoursBetweenZones(WINTER_START, LEAGUE_ZONE, KST_ZONE)).toBe(14);
-  });
-
-  it("changes across the spring transition, mid-league-week", () => {
-    // US DST began 2026-03-08. A week spanning it opens on EST and closes on
-    // EDT, so a single stored offset would be wrong at one end or the other.
-    const before = "2026-03-07T12:00:00Z";
-    const after = "2026-03-09T12:00:00Z";
-    expect(hoursBetweenZones(before, LEAGUE_ZONE, KST_ZONE)).toBe(14);
-    expect(hoursBetweenZones(after, LEAGUE_ZONE, KST_ZONE)).toBe(13);
-  });
-
-  it("changes back across the autumn transition", () => {
-    // DST ended 2026-11-01.
-    expect(hoursBetweenZones("2026-10-31T12:00:00Z", LEAGUE_ZONE, KST_ZONE)).toBe(13);
-    expect(hoursBetweenZones("2026-11-02T12:00:00Z", LEAGUE_ZONE, KST_ZONE)).toBe(14);
-  });
-
   it("names the zone as it actually stood at that instant", () => {
     expect(zoneAbbreviation(SUMMER_START, LEAGUE_ZONE)).toBe("EDT");
     expect(zoneAbbreviation(WINTER_START, LEAGUE_ZONE)).toBe("EST");

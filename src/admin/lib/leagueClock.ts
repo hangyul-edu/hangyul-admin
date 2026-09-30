@@ -55,35 +55,6 @@ export function zoneAbbreviation(value: string, timeZone: string): string {
   return parts.find((p) => p.type === "timeZoneName")?.value ?? "";
 }
 
-/** Whole hours between two zones at a given instant — 13 or 14 for ET→KST. */
-export function hoursBetweenZones(value: string, from: string, to: string): number {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 0;
-  return Math.round((zoneOffsetMs(date, to) - zoneOffsetMs(date, from)) / 3_600_000);
-}
-
-/** How far a zone is from UTC at an instant, in milliseconds. */
-function zoneOffsetMs(date: Date, timeZone: string): number {
-  // Formatting the instant as if it were UTC, then reading it back, yields the
-  // wall-clock time in that zone; the difference from the real instant is the
-  // offset. This is the standard trick and needs no offset table.
-  const wall = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  }).formatToParts(date);
-  const at = (type: Intl.DateTimeFormatPartTypes) =>
-    Number(wall.find((p) => p.type === type)?.value ?? 0);
-  const hour = at("hour") === 24 ? 0 : at("hour");
-  const asUtc = Date.UTC(at("year"), at("month") - 1, at("day"), hour, at("minute"), at("second"));
-  return asUtc - date.getTime();
-}
-
 /** A period on one clock: `"2026.09.07 (월) 00:00 ~ 2026.09.13 (일) 21:00"`. */
 export function periodInZone(startsAt: string, endsAt: string, timeZone: string): string {
   return `${formatInZone(startsAt, timeZone)} ~ ${formatInZone(endsAt, timeZone)}`;

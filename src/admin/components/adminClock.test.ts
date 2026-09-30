@@ -15,7 +15,6 @@ process.env.TZ = "America/New_York";
 import { beforeAll, describe, expect, it } from "vitest";
 import {
   ADMIN_TIME_ZONE,
-  formatDate,
   formatDateTime,
   fromAdminInputValue,
   toAdminInputValue,
@@ -66,18 +65,6 @@ describe("formatDateTime", () => {
     expect(formatDateTime(undefined)).toBe("—");
     expect(formatDateTime("")).toBe("—");
     expect(formatDateTime("not-a-date")).toBe("not-a-date");
-  });
-});
-
-describe("formatDate", () => {
-  it("uses the Seoul calendar day", () => {
-    expect(formatDate(SEAM)).toBe("2026. 9. 9.");
-    expect(formatDate("2026-09-08T14:59:00Z")).toBe("2026. 9. 8.");
-  });
-
-  it("renders a missing value without throwing", () => {
-    expect(formatDate(null)).toBe("—");
-    expect(formatDate("nope")).toBe("nope");
   });
 });
 
