@@ -1,12 +1,11 @@
 /**
  * Y-axis domains and ticks for the dashboard charts.
  *
- * The axis used to be four fixed fractions of the peak — 25%, 50%, 75%, 100% —
- * with each label rounded to an integer. That reads correctly at a few hundred
- * and falls apart underneath it: a peak of 1 printed `0 1 1 1`, and a peak of 2
- * printed `1 1 2 2`. Rounding was inventing the duplicates, so no amount of
- * de-duplicating labels afterwards could fix it — the *scale* has to land on
- * values worth printing.
+ * Four fixed fractions of the peak (25%, 50%, 75%, 100%) rounded to integers
+ * read correctly at a few hundred and fall apart underneath it: a peak of 1
+ * prints `0 1 1 1`, and a peak of 2 prints `1 1 2 2`. Rounding invents the
+ * duplicates, so de-duplicating labels afterwards cannot fix it — the *scale*
+ * has to land on values worth printing.
  *
  * So ticks are chosen first and the axis top follows from them. Every candidate
  * step of the form 1/2/2.5/5 × 10ⁿ is costed, and the cheapest wins:

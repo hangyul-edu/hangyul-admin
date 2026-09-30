@@ -90,8 +90,8 @@ export function Badge({
 /**
  * Korean label for a backend status value.
  *
- * The tables used to print the raw enum — an admin read "grace_period" and
- * "trial_ending" in English. Every label here is written from the state's
+ * Tables never print the raw enum ("grace_period", "trial_ending") to an
+ * admin. Every label here is written from the state's
  * documented meaning, and states that differ stay distinct: `open`(청구서 발행,
  * 아직 결제 전) is not `unpaid`(납부 기한이 지난 미납), and `cancelled`(이미 해지됨)
  * is not the `cancel_at_period_end` flag(기간 말 해지 예약), which the tables show

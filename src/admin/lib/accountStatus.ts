@@ -51,12 +51,9 @@ const META: Record<AccountStatus, AccountStatusMeta> = {
   suspended: {
     label: "정지",
     tone: "danger",
-    /* This used to read "이미 로그인되어 있는 기기에서는 계속 이용할 수
-       있습니다", which was true: suspension wrote the column and nothing else,
-       and the status is checked only where somebody logs in. Suspending now
-       ends every session and revokes every refresh token
-       (`MemberAdministration._end_every_session`), so the cut-off really is
-       immediate and the copy says so. */
+    /* Suspending ends every session and revokes every refresh token
+       (`MemberAdministration._end_every_session`), so the cut-off is
+       immediate on every device and the copy says so. */
     description:
       "관리자가 이용을 제한한 상태입니다. 로그인되어 있던 모든 기기에서 즉시 로그아웃되고 다시 로그인할 수 없습니다. 계정과 학습 기록은 그대로 남아 있으며, 관리자가 다시 활성으로 되돌리면 회원이 새로 로그인해 이용할 수 있습니다.",
     documented: true,

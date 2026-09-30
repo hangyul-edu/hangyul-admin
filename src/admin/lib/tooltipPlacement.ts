@@ -1,8 +1,8 @@
 /**
  * Where a chart tooltip goes so it is always fully readable.
  *
- * The tooltip used to be an absolutely-positioned child of the chart's scroll
- * container, centred on the bar with `translateX(-50%)`. That fails twice over:
+ * The tooltip is not an absolutely-positioned child of the chart's scroll
+ * container centred with `translateX(-50%)`, because that fails twice over:
  * a bar near either end pushes half the tooltip past the edge, and the
  * container scrolls on X, which makes it a clipping context — so whatever hung
  * outside was cut off rather than merely overlapping.

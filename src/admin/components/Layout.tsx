@@ -250,8 +250,8 @@ export function AdminLayout() {
           {/* The portal renders and accepts every time on Seoul's clock, no
               matter where the admin is sitting. Saying so once here means no
               screen has to caveat its own timestamps. */}
-          {/* One line at every width: it used to wrap into a tall column on a
-              phone and spill out of the fixed-height bar over the page. */}
+          {/* One line at every width, so it never wraps into a tall column on a
+              phone and spills out of the fixed-height bar over the page. */}
           <span className="hgadm-topbar__tz" title="모든 시각은 한국 시간(KST) 기준">
             <Clock size={13} strokeWidth={2} aria-hidden />
             <span className="hgadm-topbar__tz-long">모든 시각은 한국 시간(KST) 기준</span>
