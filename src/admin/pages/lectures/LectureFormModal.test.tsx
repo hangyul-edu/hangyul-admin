@@ -1,31 +1,32 @@
 /**
- * Editing a lecture: an emptied optional field is sent as null.
+ * A lecture's basic information.
  *
- * The PATCH leaves omitted fields alone, so a field the admin empties must
- * be sent as an explicit null or the save "succeeds" and nothing changes.
+ * - Editing: an emptied optional field is sent as null. The PATCH leaves
+ *   omitted fields alone, so a field the admin empties must be sent as an
+ *   explicit null or the save "succeeds" and nothing changes.
+ * - Creating: there is no type and no length to choose — every lecture is a
+ *   video and its length is read from the video — and neither is sent.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { MemoryRouter } from "react-router-dom";
-import { ToastProvider } from "../../hooks/toast";
-import { adminApi, type AdminLecture } from "../api";
-import { LecturesPage } from "./Lectures";
+import { ToastProvider } from "../../../hooks/toast";
+import { adminApi, type AdminLecture } from "../../api";
+import { LectureFormModal } from "./LectureFormModal";
 
-vi.mock("../api", async () => {
-  const actual = await vi.importActual<typeof import("../api")>("../api");
+vi.mock("../../api", async () => {
+  const actual = await vi.importActual<typeof import("../../api")>("../../api");
   return {
     ...actual,
     adminApi: {
       ...actual.adminApi,
       listCourses: vi.fn(),
-      listLectures: vi.fn(),
+      createLecture: vi.fn(),
       updateLecture: vi.fn(),
     },
   };
 });
-vi.mock("../auth", () => ({ useAdminAuth: () => ({ can: () => true }) }));
 
 const LECTURE: AdminLecture = {
   lecture_id: "lec_1",
@@ -42,34 +43,27 @@ const LECTURE: AdminLecture = {
   checkpoint_count: 0,
 };
 
-function renderPage() {
+function renderForm(lecture: AdminLecture | null, onSaved = vi.fn()) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
+  render(
     <QueryClientProvider client={qc}>
       <ToastProvider>
-        <MemoryRouter>
-          <LecturesPage />
-        </MemoryRouter>
+        <LectureFormModal lecture={lecture} onClose={() => {}} onSaved={onSaved} />
       </ToastProvider>
     </QueryClientProvider>,
   );
+  return onSaved;
 }
 
-describe("LecturesPage edit", () => {
+describe("LectureFormModal", () => {
   beforeEach(() => {
     vi.mocked(adminApi.listCourses).mockResolvedValue({ items: [] });
-    vi.mocked(adminApi.listLectures).mockResolvedValue({
-      items: [LECTURE],
-      total: 1,
-      page: 1,
-      page_size: 25,
-    } as never);
     vi.mocked(adminApi.updateLecture).mockReset().mockResolvedValue(LECTURE);
+    vi.mocked(adminApi.createLecture).mockReset().mockResolvedValue({ ...LECTURE, lecture_id: "lec_new" });
   });
 
   it("sends an emptied TOPIK question type as null so the server clears it", async () => {
-    renderPage();
-    await userEvent.click(await screen.findByRole("button", { name: "수정" }));
+    renderForm(LECTURE);
     await userEvent.clear(screen.getByLabelText(/TOPIK 문제 유형/));
     await userEvent.click(screen.getByRole("button", { name: "저장" }));
 
@@ -77,5 +71,20 @@ describe("LecturesPage edit", () => {
     const body = vi.mocked(adminApi.updateLecture).mock.calls[0][1];
     expect(body).toHaveProperty("topik_question_type", null);
     expect(body.thumbnail_url).toBe(LECTURE.thumbnail_url);
+  });
+
+  it("creates a video lecture without asking for a type or a length", async () => {
+    const onSaved = renderForm(null);
+    expect(screen.queryByLabelText(/유형/)).toBeNull();
+    expect(screen.queryByLabelText(/길이/)).toBeNull();
+
+    await userEvent.type(screen.getByLabelText(/제목/), "인사하기");
+    await userEvent.click(screen.getByRole("button", { name: "만들고 영상 올리기" }));
+
+    await waitFor(() => expect(adminApi.createLecture).toHaveBeenCalledTimes(1));
+    const body = vi.mocked(adminApi.createLecture).mock.calls[0][0];
+    expect(body).not.toHaveProperty("kind");
+    expect(body).not.toHaveProperty("duration_seconds");
+    expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({ lecture_id: "lec_new" }));
   });
 });

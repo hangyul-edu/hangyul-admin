@@ -1,10 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUrlFilters } from "../lib/urlFilters";
 import { adminApi } from "../api";
-import type { AdminLecture, AdminLectureVideo } from "../api";
-import { tusUploadToUrl } from "../lib/videoUpload";
-import { CheckpointsModal } from "./LectureCheckpoints";
+import type { AdminLecture } from "../api";
 import { errorMessage } from "../../lib/http";
 import { useToast, useToastError } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
@@ -14,69 +13,32 @@ import {
   ConfirmDialog,
   DataTable,
   ErrorState,
-  Field,
-  Input,
   LoadingState,
-  Modal,
   Pagination,
   SearchBox,
   Select,
   statusLabel,
   statusTone,
 } from "../components/kit";
-import {
-  formatDateTime,
-  formatDuration,
-} from "../lib/format";
 import type { Column } from "../components/kit";
+import { formatClock } from "../lib/videoFile";
+import { LectureFormModal, TRACKS, TRACK_LABEL } from "./lectures/LectureFormModal";
 
-const TRACKS = [
-  ["track_conversation", "회화"],
-  ["track_topik", "TOPIK"],
-] as const;
-const TRACK_LABEL = Object.fromEntries(TRACKS);
-const KINDS = [
-  ["video", "영상 강의"],
-  ["speak_practice", "말하기 연습"],
-  ["question_practice", "문제 연습"],
-] as const;
-
-interface LectureDraft {
-  track_id: string;
-  course_id: string;
-  title: string;
-  kind: string;
-  duration_seconds: string;
-  access: string;
-  sequence: string;
-  thumbnail_url: string;
-  topik_question_type: string;
-}
-
-const EMPTY: LectureDraft = {
-  track_id: "track_conversation",
-  course_id: "",
-  title: "",
-  kind: "video",
-  duration_seconds: "0",
-  access: "free",
-  sequence: "0",
-  thumbnail_url: "",
-  topik_question_type: "",
-};
-
+/**
+ * The lecture catalogue. A lecture is one video: adding one asks for its
+ * basic information and then opens its workspace, where the video is uploaded
+ * (its length is read from it) and checkpoints are placed on it.
+ */
 export function LecturesPage() {
   const qc = useQueryClient();
+  const nav = useNavigate();
   const toast = useToast();
   const toastError = useToastError();
   const { can } = useAdminAuth();
   const canWrite = can("content:write");
   const filters = useUrlFilters();
-  const [draft, setDraft] = useState<LectureDraft | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<AdminLecture | null>(null);
-  const [videoLecture, setVideoLecture] = useState<AdminLecture | null>(null);
-  const [checkpointLecture, setCheckpointLecture] = useState<AdminLecture | null>(null);
 
   const q = filters.value("q");
   const track = filters.value("track_id");
@@ -102,54 +64,18 @@ export function LecturesPage() {
       }),
   });
 
-  function refresh() {
-    void qc.invalidateQueries({ queryKey: ["admin", "lectures"] });
-    void qc.invalidateQueries({ queryKey: ["admin", "courses"] });
-  }
-
-  const save = useMutation({
-    mutationFn: (d: LectureDraft) => {
-      const base = {
-        title: d.title,
-        duration_seconds: Number(d.duration_seconds),
-        access: d.access,
-        sequence: Number(d.sequence),
-        // null (not omitted) so emptying a field on edit clears it.
-        thumbnail_url: d.thumbnail_url || null,
-        topik_question_type: d.topik_question_type || null,
-      };
-      if (editingId) {
-        return adminApi.updateLecture(editingId, {
-          ...base,
-          course_id: d.course_id || undefined,
-          clear_course: d.course_id === "",
-        });
-      }
-      return adminApi.createLecture({
-        ...base,
-        track_id: d.track_id,
-        course_id: d.course_id || undefined,
-        kind: d.kind,
-      });
-    },
-    onSuccess: () => {
-      toast.success("강의를 저장했어요.");
-      setDraft(null);
-      setEditingId(null);
-      refresh();
-    },
-    onError: toastError,
-  });
-
   const remove = useMutation({
     mutationFn: (lecture: AdminLecture) => adminApi.deleteLecture(lecture.lecture_id),
     onSuccess: () => {
       toast.success("강의를 삭제했어요.");
       setDeleting(null);
-      refresh();
+      void qc.invalidateQueries({ queryKey: ["admin", "lectures"] });
+      void qc.invalidateQueries({ queryKey: ["admin", "courses"] });
     },
     onError: toastError,
   });
+
+  const open = (l: AdminLecture) => nav(`/lectures/${l.lecture_id}`);
 
   const columns: Column<AdminLecture>[] = [
     {
@@ -176,11 +102,6 @@ export function LecturesPage() {
       ),
     },
     {
-      key: "kind",
-      header: "유형",
-      render: (l) => KINDS.find(([v]) => v === l.kind)?.[1] ?? l.kind,
-    },
-    {
       key: "access",
       header: "공개 범위",
       render: (l) => (
@@ -193,71 +114,39 @@ export function LecturesPage() {
       key: "video",
       header: "영상",
       render: (l) =>
-        l.kind !== "video" ? (
-          <span className="hgadm-muted">해당 없음</span>
-        ) : l.video_status ? (
-          <Badge tone={statusTone(l.video_status)}>{statusLabel(l.video_status)}</Badge>
+        l.video_status ? (
+          <div>
+            <Badge tone={statusTone(l.video_status)}>{statusLabel(l.video_status)}</Badge>
+            {l.video_status === "ready" && l.duration_seconds > 0 && (
+              <div className="hgadm-cell-sub">{formatClock(l.duration_seconds)}</div>
+            )}
+          </div>
         ) : (
           <Badge tone="danger">영상 없음</Badge>
         ),
     },
     {
-      key: "duration",
-      header: "길이",
-      render: (l) => (l.duration_seconds ? formatDuration(l.duration_seconds) : "—"),
-    },
-    {
       key: "checkpoints",
       header: "체크포인트",
-      render: (l) => (
-        <Button size="sm" variant="ghost" onClick={() => setCheckpointLecture(l)}>
-          {l.checkpoint_count ? `${l.checkpoint_count}개` : "없음"}
-        </Button>
-      ),
+      render: (l) => (l.checkpoint_count ? `${l.checkpoint_count}개` : <span className="hgadm-muted">없음</span>),
     },
     {
       key: "actions",
       header: "",
-      render: (l) =>
-        canWrite ? (
-          <div className="hgadm-row" onClick={(e) => e.stopPropagation()}>
-            {l.kind === "video" && (
-              <Button size="sm" onClick={() => setVideoLecture(l)}>
-                영상 관리
-              </Button>
-            )}
-            <Button size="sm" onClick={() => setCheckpointLecture(l)}>
-              체크포인트
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => {
-                setEditingId(l.lecture_id);
-                setDraft({
-                  track_id: l.track_id,
-                  course_id: l.course_id ?? "",
-                  title: l.title,
-                  kind: l.kind,
-                  duration_seconds: String(l.duration_seconds),
-                  access: l.access,
-                  sequence: String(l.sequence),
-                  thumbnail_url: l.thumbnail_url ?? "",
-                  topik_question_type: l.topik_question_type ?? "",
-                });
-              }}
-            >
-              수정
-            </Button>
+      render: (l) => (
+        <div className="hgadm-row" onClick={(e) => e.stopPropagation()}>
+          <Button size="sm" onClick={() => open(l)}>
+            {canWrite ? "편집" : "보기"}
+          </Button>
+          {canWrite && (
             <Button size="sm" variant="danger-soft" onClick={() => setDeleting(l)}>
               삭제
             </Button>
-          </div>
-        ) : null,
+          )}
+        </div>
+      ),
     },
   ];
-
-  const draftCourses =
-    courses.data?.items.filter((c) => !draft || c.track_id === draft.track_id) ?? [];
 
   return (
     <div>
@@ -265,20 +154,13 @@ export function LecturesPage() {
         <div>
           <h1>강의·영상 관리</h1>
           <div className="hgadm-page-head__desc">
-            강의 기본 정보(제목·코스·순서·공개 범위)와 호스팅 영상 업로드를 관리합니다.
-            영상은 업로드 후 인코딩이 끝나면 자동으로 ‘재생 가능’ 상태가 됩니다.
-            ‘체크포인트’에서 영상 중간에 띄울 회화(따라 말하기)·TOPIK 문제 모달을 시점별로 설정합니다.
+            강의는 영상 한 편입니다. 강의를 추가하면 영상을 올리고(길이는 영상에서 자동으로 읽어요), 그 영상을
+            보면서 회화·TOPIK 체크포인트를 원하는 지점에 붙일 수 있어요.
           </div>
         </div>
         {canWrite && (
           <div className="hgadm-page-head__actions">
-            <Button
-              variant="primary"
-              onClick={() => {
-                setEditingId(null);
-                setDraft({ ...EMPTY });
-              }}
-            >
+            <Button variant="primary" onClick={() => setCreating(true)}>
               + 강의 추가
             </Button>
           </div>
@@ -305,9 +187,7 @@ export function LecturesPage() {
             ))}
           </Select>
           {/* Sized to its own widest label: "학습 분야: 전체" measures 132px
-              in this trigger, so the 130 it inherited from the shorter "트랙:
-              전체" clipped it by two pixels. 150 matches the same filter on
-              the 코스 page rather than inventing a second number. */}
+              in this trigger. 150 matches the same filter on the 코스 page. */}
           <Select
             value={track}
             onChange={(e) => filters.patch({ track_id: e.target.value, page: null })}
@@ -340,6 +220,7 @@ export function LecturesPage() {
               columns={columns}
               rows={query.data.items}
               rowKey={(l) => l.lecture_id}
+              onRowClick={open}
               empty="조건에 맞는 강의가 없습니다."
             />
             <Pagination
@@ -352,414 +233,29 @@ export function LecturesPage() {
         )}
       </div>
 
-      <Modal
-        open={draft !== null}
-        title={editingId ? "강의 수정" : "강의 추가"}
-        size="lg"
-        onClose={() => setDraft(null)}
-        footer={
-          <>
-            <Button variant="ghost" onClick={() => setDraft(null)}>
-              취소
-            </Button>
-            <Button
-              variant="primary"
-              loading={save.isPending}
-              disabled={!draft?.title.trim()}
-              onClick={() => draft && save.mutate(draft)}
-            >
-              저장
-            </Button>
-          </>
-        }
-      >
-        {draft && (
-          <div className="hgadm-form-grid">
-            <Field label="학습 분야" required hint={editingId ? "학습 분야는 변경할 수 없습니다." : undefined}>
-              <Select
-                value={draft.track_id}
-                disabled={editingId !== null}
-                onChange={(e) =>
-                  setDraft({ ...draft, track_id: e.target.value, course_id: "" })
-                }
-              >
-                {TRACKS.map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            <Field label="유형" required hint={editingId ? "유형은 변경할 수 없습니다." : undefined}>
-              <Select
-                value={draft.kind}
-                disabled={editingId !== null}
-                onChange={(e) => setDraft({ ...draft, kind: e.target.value })}
-              >
-                {KINDS.map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            <Field label="제목" required>
-              <Input
-                value={draft.title}
-                maxLength={200}
-                onChange={(e) => setDraft({ ...draft, title: e.target.value })}
-              />
-            </Field>
-            <Field label="소속 코스" hint="같은 학습 분야의 코스만 선택 가능">
-              <Select
-                value={draft.course_id}
-                onChange={(e) => setDraft({ ...draft, course_id: e.target.value })}
-              >
-                <option value="">(코스 없음)</option>
-                {draftCourses.map((c) => (
-                  <option key={c.course_id} value={c.course_id}>
-                    {c.title}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            <Field label="정렬 순서">
-              <Input
-                type="number"
-                min={0}
-                value={draft.sequence}
-                onChange={(e) => setDraft({ ...draft, sequence: e.target.value })}
-              />
-            </Field>
-            <Field label="공개 범위" required>
-              <Select
-                value={draft.access}
-                onChange={(e) => setDraft({ ...draft, access: e.target.value })}
-              >
-                <option value="free">무료</option>
-                <option value="premium">프리미엄</option>
-              </Select>
-            </Field>
-            <Field label="길이 (초)" hint="영상을 올려도 자동으로 바뀌지 않으니 직접 입력하세요.">
-              <Input
-                type="number"
-                min={0}
-                value={draft.duration_seconds}
-                onChange={(e) => setDraft({ ...draft, duration_seconds: e.target.value })}
-              />
-            </Field>
-            <div className="span-2">
-              <ThumbnailField
-                value={draft.thumbnail_url}
-                onChange={(url) => setDraft({ ...draft, thumbnail_url: url })}
-              />
-            </div>
-            {draft.track_id === "track_topik" && (
-              <Field label="TOPIK 문제 유형" hint="예: reading_03 (문제 연습 강의에만 필요)">
-                <Input
-                  value={draft.topik_question_type}
-                  maxLength={24}
-                  onChange={(e) =>
-                    setDraft({ ...draft, topik_question_type: e.target.value })
-                  }
-                />
-              </Field>
-            )}
-          </div>
-        )}
-      </Modal>
+      {creating && (
+        <LectureFormModal
+          lecture={null}
+          onClose={() => setCreating(false)}
+          onSaved={(created) => {
+            setCreating(false);
+            void qc.invalidateQueries({ queryKey: ["admin", "lectures"] });
+            void qc.invalidateQueries({ queryKey: ["admin", "courses"] });
+            open(created);
+          }}
+        />
+      )}
 
       <ConfirmDialog
         open={deleting !== null}
         title="강의 삭제"
-        message={`'${deleting?.title ?? ""}' 강의를 영구 삭제할까요? 시청 기록과 영상 정보도 함께 삭제되며 되돌릴 수 없습니다.`}
+        message={`'${deleting?.title ?? ""}' 강의를 영구 삭제할까요? 체크포인트·시청 기록·영상 정보도 함께 삭제되며 되돌릴 수 없습니다.`}
         danger
         confirmLabel="삭제"
         loading={remove.isPending}
         onConfirm={() => deleting && remove.mutate(deleting)}
         onCancel={() => setDeleting(null)}
       />
-
-      {checkpointLecture && (
-        <CheckpointsModal
-          lecture={checkpointLecture}
-          canWrite={canWrite}
-          onClose={() => setCheckpointLecture(null)}
-        />
-      )}
-
-      {videoLecture && (
-        <VideoManagerModal
-          lecture={videoLecture}
-          onClose={() => {
-            setVideoLecture(null);
-            refresh();
-          }}
-        />
-      )}
     </div>
-  );
-}
-
-function ThumbnailField({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (url: string) => void;
-}) {
-  const toast = useToast();
-  const [uploading, setUploading] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
-  return (
-    <Field label="썸네일" hint="JPEG/PNG/WebP, 최대 5MB">
-      <div className="hgadm-row">
-        {value && <img src={value} alt="썸네일" className="hgadm-thumb" />}
-        <div
-          className="hgadm-dropzone"
-          style={{ flex: 1, padding: "14px 12px" }}
-          onClick={() => fileRef.current?.click()}
-        >
-          {uploading ? "업로드 중…" : value ? "클릭해서 교체" : "클릭해서 업로드"}
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            onChange={async (e) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-              setUploading(true);
-              try {
-                const result = await adminApi.uploadMedia(file);
-                onChange(result.url);
-              } catch (err) {
-                toast.error(errorMessage(err));
-              } finally {
-                setUploading(false);
-                if (fileRef.current) fileRef.current.value = "";
-              }
-            }}
-          />
-        </div>
-      </div>
-    </Field>
-  );
-}
-
-/**
- * Upload, refresh and delete a lecture's video.
- *
- * Every action in here is `content:write` and none is checked locally — the
- * gate is the mount site, the 영상 관리 button inside this page's `canWrite`
- * column. That is correct while this is the only place it opens from, and it
- * quietly stops being correct the moment it is mounted anywhere else. Same
- * arrangement `ContentCleanupButton` documents on itself; render it only from
- * behind `can("content:write")`.
- */
-export function VideoManagerModal({
-  lecture,
-  onClose,
-}: {
-  lecture: AdminLecture;
-  onClose: () => void;
-}) {
-  const toast = useToast();
-  const toastError = useToastError();
-  const qc = useQueryClient();
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [deleting, setDeleting] = useState<AdminLectureVideo | null>(null);
-  // The running tus upload, so closing the modal stops it instead of leaving
-  // it streaming in the background with nothing on screen to show it.
-  const abortRef = useRef<(() => void) | null>(null);
-  useEffect(() => () => abortRef.current?.(), []);
-
-  const query = useQuery({
-    queryKey: ["admin", "lecture-videos", lecture.lecture_id],
-    queryFn: () => adminApi.listLectureVideos(lecture.lecture_id),
-    refetchInterval: (q) =>
-      q.state.data?.items.some((v) =>
-        ["pending", "uploading", "processing"].includes(v.upload_status),
-      )
-        ? 5000
-        : false,
-  });
-
-  function refresh() {
-    void qc.invalidateQueries({ queryKey: ["admin", "lecture-videos", lecture.lecture_id] });
-  }
-
-  async function upload(file: File | undefined) {
-    // One upload at a time: a second drop would share the progress bar and
-    // race the first.
-    if (!file || uploading) return;
-    setUploading(true);
-    setProgress(0);
-    let videoId: string | null = null;
-    try {
-      // Direct resumable upload: the backend provisions a one-time session, then
-      // the browser streams the bytes straight to Cloudflare via tus (never
-      // through our API). The new video is promoted to primary only once it is
-      // fully processed, so a replace never interrupts the current video.
-      const session = await adminApi.createVideoUploadSession(lecture.lecture_id, {
-        filename: file.name,
-        file_size_bytes: file.size,
-        content_type: file.type || "video/mp4",
-      });
-      videoId = session.video_id;
-      const transfer = tusUploadToUrl(session.upload_url, file, setProgress);
-      abortRef.current = transfer.abort;
-      await transfer.promise;
-      videoId = null;
-      toast.success("업로드 완료. 인코딩이 끝나면 자동으로 준비됩니다.");
-      refresh();
-    } catch (e) {
-      toast.error(errorMessage(e));
-      // The session created the video row as `uploading` before any bytes
-      // were sent; without this it stays "업로드 중" forever.
-      if (videoId) {
-        await adminApi.deleteLectureVideo(videoId).catch(() => undefined);
-        refresh();
-      }
-    } finally {
-      abortRef.current = null;
-      setUploading(false);
-      setProgress(0);
-      if (fileRef.current) fileRef.current.value = "";
-    }
-  }
-
-  const refreshStatus = useMutation({
-    mutationFn: (video: AdminLectureVideo) => adminApi.refreshLectureVideo(video.video_id),
-    onSuccess: refresh,
-    onError: toastError,
-  });
-
-  const removeVideo = useMutation({
-    mutationFn: (video: AdminLectureVideo) => adminApi.deleteLectureVideo(video.video_id),
-    onSuccess: () => {
-      toast.success("영상을 삭제했어요.");
-      setDeleting(null);
-      refresh();
-    },
-    onError: toastError,
-  });
-
-  const hasPrimary = query.data?.items.some(
-    (v) => v.is_primary && v.deleted_at === null && v.upload_status !== "deleted",
-  );
-
-  return (
-    <Modal open title={`영상 관리 — ${lecture.title}`} size="xl" onClose={onClose}>
-      <div
-        className="hgadm-dropzone"
-        onClick={() => fileRef.current?.click()}
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => {
-          e.preventDefault();
-          void upload(e.dataTransfer.files?.[0]);
-        }}
-        style={{ marginBottom: 14 }}
-      >
-        {uploading ? (
-          <span>Cloudflare로 직접 업로드 중… {progress}%</span>
-        ) : (
-          <span>
-            {hasPrimary
-              ? "새 파일을 올리면 기존 대표 영상이 교체됩니다"
-              : "클릭하거나 영상 파일을 끌어다 놓아 업로드"}
-          </span>
-        )}
-        <input
-          ref={fileRef}
-          type="file"
-          accept="video/mp4,video/quicktime,video/webm"
-          onChange={(e) => void upload(e.target.files?.[0])}
-        />
-      </div>
-
-      {query.isPending ? (
-        <LoadingState />
-      ) : query.isError ? (
-        <ErrorState message={errorMessage(query.error)} onRetry={() => void query.refetch()} />
-      ) : query.data.items.length === 0 ? (
-        <div className="hgadm-state" style={{ padding: 24 }}>
-          <div className="hgadm-state__desc">아직 업로드된 영상이 없습니다.</div>
-        </div>
-      ) : (
-        <div className="hgadm-table-wrap">
-          <table className="hgadm-table">
-            <thead>
-              <tr>
-                <th>파일</th>
-                <th>상태</th>
-                <th>길이</th>
-                <th>업로드</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {query.data.items.map((v) => (
-                <tr key={v.video_id}>
-                  <td>
-                    <div className="hgadm-cell-main">
-                      {v.original_file_name ?? v.video_id}
-                      {v.is_primary && <Badge tone="brand"> 대표</Badge>}
-                    </div>
-                    <div className="hgadm-cell-sub">
-                      {v.provider} · {(v.file_size_bytes / 1024 / 1024).toFixed(1)}MB
-                    </div>
-                  </td>
-                  <td>
-                    <Badge tone={statusTone(v.upload_status)}>{statusLabel(v.upload_status)}</Badge>
-                    {v.failure_reason && (
-                      <div className="hgadm-cell-sub" style={{ color: "var(--danger)" }}>
-                        {v.failure_reason}
-                      </div>
-                    )}
-                  </td>
-                  <td>{v.duration_seconds ? formatDuration(v.duration_seconds) : "—"}</td>
-                  <td>{formatDateTime(v.uploaded_at)}</td>
-                  <td>
-                    <div className="hgadm-row">
-                      {["processing", "pending", "uploading"].includes(v.upload_status) && (
-                        <Button
-                          size="sm"
-                          loading={refreshStatus.isPending}
-                          onClick={() => refreshStatus.mutate(v)}
-                        >
-                          상태 새로고침
-                        </Button>
-                      )}
-                      {v.upload_status !== "deleted" && (
-                        <Button
-                          size="sm"
-                          variant="danger-soft"
-                          onClick={() => setDeleting(v)}
-                        >
-                          삭제
-                        </Button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      <ConfirmDialog
-        open={deleting !== null}
-        title="영상 삭제"
-        message="호스팅된 영상을 삭제할까요? 학습자는 이 강의를 더 이상 재생할 수 없게 됩니다."
-        danger
-        confirmLabel="삭제"
-        loading={removeVideo.isPending}
-        onConfirm={() => deleting && removeVideo.mutate(deleting)}
-        onCancel={() => setDeleting(null)}
-      />
-    </Modal>
   );
 }

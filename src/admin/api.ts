@@ -605,6 +605,11 @@ export interface AdminLecture {
   checkpoint_count: number;
 }
 
+/** The lecture fields an admin edits; kind and length come from the video. */
+export type AdminLectureFields = Partial<
+  Pick<AdminLecture, "course_id" | "title" | "thumbnail_url" | "access" | "sequence" | "topik_question_type">
+>;
+
 /** speaking_exercise → conversation modal; multiple_choice / short_answer → TOPIK modal. */
 export type CheckpointInteractionType = "speaking_exercise" | "multiple_choice" | "short_answer";
 
@@ -618,6 +623,18 @@ export interface AdminCheckpoint {
   content_label: string | null;
   content_detail: string | null;
   content_archived: boolean;
+  /** Placed on an earlier video; the lecture's video was replaced since. */
+  needs_review: boolean;
+  /** At or past the end of the current video, so it would never fire. */
+  out_of_range: boolean;
+}
+
+export interface AdminCheckpointList {
+  lecture_id: string;
+  /** The ready video checkpoints sit on; null until one is uploaded and ready. */
+  video_id: string | null;
+  duration_seconds: number;
+  items: AdminCheckpoint[];
 }
 
 /** Exactly one of sentence_id / quiz_id; the server derives interaction_type from it. */
@@ -1070,19 +1087,19 @@ export const adminApi = {
   deleteCourse: (courseId: string) => http.del<void>(`/admin/courses/${courseId}`),
   listLectures: (params: Query) =>
     http.get<Page<AdminLecture>>("/admin/lectures", params),
-  createLecture: (body: Partial<AdminLecture> & { track_id: string; title: string }) =>
+  // A lecture is always a video and its length is read from the video, so
+  // neither kind nor duration is ever sent (the server refuses both).
+  createLecture: (body: AdminLectureFields & { track_id: string; title: string }) =>
     http.post<AdminLecture>("/admin/lectures", body),
   updateLecture: (
     lectureId: string,
-    body: Partial<AdminLecture> & { clear_course?: boolean },
+    body: AdminLectureFields & { clear_course?: boolean },
   ) => http.patch<AdminLecture>(`/admin/lectures/${lectureId}`, body),
   deleteLecture: (lectureId: string) =>
     http.del<void>(`/admin/lectures/${lectureId}`),
   // Checkpoints: where the player pauses for a conversation / TOPIK modal.
   listCheckpoints: (lectureId: string) =>
-    http.get<{ lecture_id: string; duration_seconds: number; items: AdminCheckpoint[] }>(
-      `/admin/lectures/${lectureId}/checkpoints`,
-    ),
+    http.get<AdminCheckpointList>(`/admin/lectures/${lectureId}/checkpoints`),
   createCheckpoint: (lectureId: string, body: AdminCheckpointWrite) =>
     http.post<AdminCheckpoint>(`/admin/lectures/${lectureId}/checkpoints`, body),
   replaceCheckpoint: (lectureId: string, checkpointId: string, body: AdminCheckpointWrite) =>
@@ -1097,11 +1114,28 @@ export const adminApi = {
   // backend returns a one-time upload URL; our Cloudflare token never leaves it.
   createVideoUploadSession: (
     lectureId: string,
-    body: { filename: string; file_size_bytes: number; content_type: string },
+    body: {
+      filename: string;
+      file_size_bytes: number;
+      content_type: string;
+      /** Length the browser read from the file; the provider's measurement replaces it. */
+      duration_seconds?: number;
+    },
   ) =>
     http.post<UploadSession>(
       `/admin/lectures/${lectureId}/video/upload-session`,
       body,
+    ),
+  /** Send the file for an `api`-protocol session (the offline provider). */
+  sendOfflineVideoFile: (videoId: string, file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+    return http.upload<AdminLectureVideo>(`/admin/lectures/videos/${videoId}/file`, form, { method: "PUT" });
+  },
+  /** Signed URL to play the lecture's ready video in the checkpoint editor. */
+  previewLectureVideo: (lectureId: string) =>
+    http.get<{ video_id: string; url: string; duration_seconds: number; expires_at: string }>(
+      `/admin/lectures/${lectureId}/video/playback`,
     ),
   refreshLectureVideo: (videoId: string) =>
     http.post<AdminLectureVideo>(`/admin/lectures/videos/${videoId}/refresh`),

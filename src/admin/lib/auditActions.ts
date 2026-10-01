@@ -86,6 +86,22 @@ const ACTION_COPY: Record<string, ActionCopy> = {
     ko: "강의 영상 삭제",
     en: "Deleted a lecture video",
   },
+  "PUT /admin/lectures/videos/{video_id}/file": {
+    ko: "강의 영상 파일 업로드(로컬)",
+    en: "Uploaded a lecture video file (offline provider)",
+  },
+  "POST /admin/lectures/{lecture_id}/checkpoints": {
+    ko: "체크포인트 추가",
+    en: "Added a lecture checkpoint",
+  },
+  "PUT /admin/lectures/{lecture_id}/checkpoints/{checkpoint_id}": {
+    ko: "체크포인트 수정",
+    en: "Updated a lecture checkpoint",
+  },
+  "DELETE /admin/lectures/{lecture_id}/checkpoints/{checkpoint_id}": {
+    ko: "체크포인트 삭제",
+    en: "Deleted a lecture checkpoint",
+  },
 
   // ---- AI-generated content ----------------------------------------------
   "POST /admin/generated-content/{content_id}/review": {
@@ -264,6 +280,7 @@ export const AUDIT_OBJECT_TYPES: readonly [value: string, label: string][] = [
   ["courses", "코스"],
   ["lecture", "강의 생성·삭제"],
   ["lectures", "강의·영상"],
+  ["lecture_checkpoint", "강의 체크포인트"],
   ["sentences", "문장"],
   ["sentence_batch", "문장 일괄 추가"],
   ["quizzes", "문제"],

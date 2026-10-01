@@ -30,6 +30,7 @@ import { NotificationsPage } from "./pages/Notifications";
 import { NotificationSettingsPage } from "./pages/NotificationSettings";
 import { CoursesPage } from "./pages/Courses";
 import { LecturesPage } from "./pages/Lectures";
+import { LectureWorkspacePage } from "./pages/LectureWorkspace";
 import { SentencesPage } from "./pages/Sentences";
 import { QuizzesPage } from "./pages/Quizzes";
 import { AiContentPage } from "./pages/AiContent";
@@ -111,6 +112,7 @@ const router = createBrowserRouter(
         <Route path="/leagues/:seasonId/:groupId" element={<RequireScope scope="users:read"><LeagueDetailPage /></RequireScope>} />
         <Route path="/courses" element={<RequireScope scope="content:read"><CoursesPage /></RequireScope>} />
         <Route path="/lectures" element={<RequireScope scope="content:read"><LecturesPage /></RequireScope>} />
+        <Route path="/lectures/:lectureId" element={<RequireScope scope="content:read"><LectureWorkspacePage /></RequireScope>} />
         <Route path="/sentences" element={<RequireScope scope="content:read"><SentencesPage /></RequireScope>} />
         <Route path="/quizzes" element={<RequireScope scope="content:read"><QuizzesPage /></RequireScope>} />
         <Route path="/ai-content" element={<RequireScope scope="content:read"><AiContentPage /></RequireScope>} />

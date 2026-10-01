@@ -3484,32 +3484,371 @@ a.hgadm-recent--link:hover {
   }
 }
 
-/* ---------- Lecture checkpoints (in-lecture conversation / TOPIK modals) ---------- */
-.hgadm-cp__intro {
+/* ---------- Lecture workspace: info → video → checkpoints ---------- */
+.hgadm-lw__note {
   margin: 0 0 14px;
   color: var(--ink-3);
   font-size: 13px;
   line-height: 1.6;
 }
-.hgadm-cp__add {
-  margin-top: 14px;
+.hgadm-lw__steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
 }
-.hgadm-cp__editor {
-  margin-top: 16px;
+.hgadm-lw__steps li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--ad-radius);
+  background: var(--surface);
+  min-width: 0;
+}
+.hgadm-lw__steps li > span:last-child {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.hgadm-lw__steps li.is-active {
+  border-color: var(--ad-primary);
+  box-shadow: var(--focus-ring);
+}
+.hgadm-lw__steps li.is-waiting {
+  opacity: 0.6;
+}
+.hgadm-lw__step-no {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--surface-3);
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 700;
+}
+.hgadm-lw__steps li.is-done .hgadm-lw__step-no {
+  background: var(--ad-success-soft);
+  color: var(--ad-success);
+}
+.hgadm-lw__steps li.is-active .hgadm-lw__step-no {
+  background: var(--ad-primary);
+  color: #fff;
+}
+.hgadm-lw__card {
+  margin-bottom: 16px;
+}
+.hgadm-lw__drop {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 32px 20px;
+}
+.hgadm-lw__drop span {
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.hgadm-lw__current {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.hgadm-lw__transfer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.hgadm-lw__bar {
+  height: 6px;
+  margin-top: 6px;
+  border-radius: 3px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+.hgadm-lw__bar span {
+  display: block;
+  height: 100%;
+  background: var(--ad-primary);
+  transition: width 0.2s;
+}
+.hgadm-lw__bar span.is-indeterminate {
+  animation: hgadm-lw-pulse 1.2s ease-in-out infinite;
+}
+@keyframes hgadm-lw-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+.hgadm-lw__incoming {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: var(--ad-radius-sm);
+  background: var(--ad-info-soft);
+  font-size: 13px;
+}
+.hgadm-lw__history {
+  margin-top: 12px;
+  font-size: 13px;
+}
+.hgadm-lw__history ul {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.hgadm-lw__history li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.hgadm-lw__link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ad-primary);
+  font: inherit;
+  cursor: pointer;
+}
+.hgadm-lw__error {
+  color: var(--ad-danger);
+  font-size: 12.5px;
+}
+.hgadm-lw__locked {
+  padding: 28px 20px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--ad-radius);
+  color: var(--ink-3);
+  font-size: 13.5px;
+  text-align: center;
+}
+
+/* ---------- Checkpoint editor: place modals by watching the video ---------- */
+.hgadm-cpe__warn {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: var(--ad-radius-sm);
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 13px;
+}
+.hgadm-cpe__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(280px, 2fr);
+  gap: 16px;
+  align-items: start;
+}
+.hgadm-cpe__screen {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--ad-radius);
+  background: #0f172a;
+  overflow: hidden;
+}
+.hgadm-cpe__video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  cursor: pointer;
+}
+.hgadm-cpe__controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.hgadm-cpe__clock {
+  font-variant-numeric: tabular-nums;
+  font-size: 13.5px;
+  font-weight: 600;
+  min-width: 96px;
+}
+.hgadm-cpe__nudges {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+}
+.hgadm-cpe__timeline {
+  position: relative;
+  margin-top: 12px;
+  padding-bottom: 22px;
+}
+.hgadm-cpe__track {
+  position: relative;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--surface-3);
+  cursor: pointer;
+}
+.hgadm-cpe__track:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.hgadm-cpe__played {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 5px;
+  background: var(--brand-200);
+  pointer-events: none;
+}
+.hgadm-cpe__head {
+  position: absolute;
+  top: -4px;
+  width: 4px;
+  height: 18px;
+  margin-left: -2px;
+  border-radius: 2px;
+  background: var(--ad-primary);
+  pointer-events: none;
+}
+.hgadm-cpe__markers {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 14px;
+  height: 16px;
+}
+/* A marker per checkpoint under the track: teal for conversation, blue for TOPIK. */
+.hgadm-cpe__marker {
+  position: absolute;
+  top: 0;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  padding: 0;
+  border: 2px solid #fff;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(135deg);
+  background: var(--ad-primary);
+  box-shadow: var(--ad-shadow-sm);
+  cursor: pointer;
+}
+.hgadm-cpe__marker.is-speak {
+  background: #0d9488;
+}
+.hgadm-cpe__marker.is-flagged {
+  background: #ea580c;
+}
+.hgadm-cpe__marker.is-selected {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+.hgadm-cpe__marker.is-draft {
+  background: var(--ink-3);
+  cursor: default;
+}
+.hgadm-cpe__add {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.hgadm-cpe__side {
+  min-width: 0;
+}
+.hgadm-cpe__empty {
+  padding: 20px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--ad-radius);
+  color: var(--ink-3);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.hgadm-cpe__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 520px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--ad-radius);
+}
+.hgadm-cpe__item {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.hgadm-cpe__list li:last-child .hgadm-cpe__item {
+  border-bottom: 0;
+}
+.hgadm-cpe__item:hover {
+  background: var(--ad-primary-soft);
+}
+.hgadm-cpe__time {
+  flex: none;
+  min-width: 44px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+.hgadm-cpe__item-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+.hgadm-cpe__draft {
   padding: 16px;
   border: 1px solid var(--border);
   border-radius: var(--ad-radius);
   background: var(--surface-2);
 }
-.hgadm-cp__editor-title {
-  font-weight: 700;
+.hgadm-cpe__draft-title {
   margin-bottom: 12px;
+  font-weight: 700;
 }
-.hgadm-cp__editor-actions {
+.hgadm-cpe__at {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.hgadm-cpe__at strong {
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+}
+.hgadm-cpe__draft-actions {
+  display: flex;
+  align-items: center;
   gap: 8px;
 }
+.hgadm-cpe__spacer {
+  flex: 1;
+}
+@media (max-width: 1100px) {
+  .hgadm-cpe__layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hgadm-lw__steps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Shared by the checkpoint draft panel: kind toggle and content picker. */
 .hgadm-cp__kinds {
   display: flex;
   gap: 8px;
