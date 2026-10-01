@@ -602,6 +602,29 @@ export interface AdminLecture {
   sequence: number;
   topik_question_type: string | null;
   video_status: string | null;
+  checkpoint_count: number;
+}
+
+/** speaking_exercise → conversation modal; multiple_choice / short_answer → TOPIK modal. */
+export type CheckpointInteractionType = "speaking_exercise" | "multiple_choice" | "short_answer";
+
+export interface AdminCheckpoint {
+  checkpoint_id: string;
+  lecture_id: string;
+  interaction_type: CheckpointInteractionType;
+  at_second: number;
+  sentence_id: string | null;
+  quiz_id: string | null;
+  content_label: string | null;
+  content_detail: string | null;
+  content_archived: boolean;
+}
+
+/** Exactly one of sentence_id / quiz_id; the server derives interaction_type from it. */
+export interface AdminCheckpointWrite {
+  at_second: number;
+  sentence_id?: string;
+  quiz_id?: string;
 }
 
 export interface AdminLectureVideo {
@@ -1055,6 +1078,17 @@ export const adminApi = {
   ) => http.patch<AdminLecture>(`/admin/lectures/${lectureId}`, body),
   deleteLecture: (lectureId: string) =>
     http.del<void>(`/admin/lectures/${lectureId}`),
+  // Checkpoints: where the player pauses for a conversation / TOPIK modal.
+  listCheckpoints: (lectureId: string) =>
+    http.get<{ lecture_id: string; duration_seconds: number; items: AdminCheckpoint[] }>(
+      `/admin/lectures/${lectureId}/checkpoints`,
+    ),
+  createCheckpoint: (lectureId: string, body: AdminCheckpointWrite) =>
+    http.post<AdminCheckpoint>(`/admin/lectures/${lectureId}/checkpoints`, body),
+  replaceCheckpoint: (lectureId: string, checkpointId: string, body: AdminCheckpointWrite) =>
+    http.put<AdminCheckpoint>(`/admin/lectures/${lectureId}/checkpoints/${checkpointId}`, body),
+  deleteCheckpoint: (lectureId: string, checkpointId: string) =>
+    http.del<void>(`/admin/lectures/${lectureId}/checkpoints/${checkpointId}`),
   listLectureVideos: (lectureId: string) =>
     http.get<{ lecture_id: string; items: AdminLectureVideo[] }>(
       `/admin/lectures/${lectureId}/videos`,

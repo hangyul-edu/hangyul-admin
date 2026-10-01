@@ -48,6 +48,7 @@ const LECTURE: AdminLecture = {
   sequence: 1,
   topik_question_type: null,
   video_status: null,
+  checkpoint_count: 0,
 };
 
 function renderModal() {

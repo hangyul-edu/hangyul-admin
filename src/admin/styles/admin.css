@@ -3483,3 +3483,99 @@ a.hgadm-recent--link:hover {
     font-size: 12px;
   }
 }
+
+/* ---------- Lecture checkpoints (in-lecture conversation / TOPIK modals) ---------- */
+.hgadm-cp__intro {
+  margin: 0 0 14px;
+  color: var(--ink-3);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.hgadm-cp__add {
+  margin-top: 14px;
+}
+.hgadm-cp__editor {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--ad-radius);
+  background: var(--surface-2);
+}
+.hgadm-cp__editor-title {
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+.hgadm-cp__editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.hgadm-cp__kinds {
+  display: flex;
+  gap: 8px;
+}
+.hgadm-cp__kind {
+  flex: 1;
+  height: 38px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--ad-radius-sm);
+  background: var(--surface);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+.hgadm-cp__kind.is-on {
+  border-color: var(--ad-primary);
+  background: var(--ad-primary-soft);
+  color: var(--ad-primary);
+  font-weight: 600;
+}
+.hgadm-cp__picked {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--ad-radius-sm);
+  background: var(--surface);
+}
+.hgadm-cp__picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.hgadm-cp__options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--ad-radius-sm);
+  background: var(--surface);
+}
+.hgadm-cp__option {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.hgadm-cp__options li:last-child .hgadm-cp__option {
+  border-bottom: 0;
+}
+.hgadm-cp__option:hover {
+  background: var(--ad-primary-soft);
+}
+.hgadm-cp__none {
+  padding: 8px 2px;
+  font-size: 13px;
+}

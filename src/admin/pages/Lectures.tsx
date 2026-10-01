@@ -4,6 +4,7 @@ import { useUrlFilters } from "../lib/urlFilters";
 import { adminApi } from "../api";
 import type { AdminLecture, AdminLectureVideo } from "../api";
 import { tusUploadToUrl } from "../lib/videoUpload";
+import { CheckpointsModal } from "./LectureCheckpoints";
 import { errorMessage } from "../../lib/http";
 import { useToast, useToastError } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
@@ -75,6 +76,7 @@ export function LecturesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<AdminLecture | null>(null);
   const [videoLecture, setVideoLecture] = useState<AdminLecture | null>(null);
+  const [checkpointLecture, setCheckpointLecture] = useState<AdminLecture | null>(null);
 
   const q = filters.value("q");
   const track = filters.value("track_id");
@@ -205,6 +207,15 @@ export function LecturesPage() {
       render: (l) => (l.duration_seconds ? formatDuration(l.duration_seconds) : "—"),
     },
     {
+      key: "checkpoints",
+      header: "체크포인트",
+      render: (l) => (
+        <Button size="sm" variant="ghost" onClick={() => setCheckpointLecture(l)}>
+          {l.checkpoint_count ? `${l.checkpoint_count}개` : "없음"}
+        </Button>
+      ),
+    },
+    {
       key: "actions",
       header: "",
       render: (l) =>
@@ -215,6 +226,9 @@ export function LecturesPage() {
                 영상 관리
               </Button>
             )}
+            <Button size="sm" onClick={() => setCheckpointLecture(l)}>
+              체크포인트
+            </Button>
             <Button
               size="sm"
               onClick={() => {
@@ -253,6 +267,7 @@ export function LecturesPage() {
           <div className="hgadm-page-head__desc">
             강의 기본 정보(제목·코스·순서·공개 범위)와 호스팅 영상 업로드를 관리합니다.
             영상은 업로드 후 인코딩이 끝나면 자동으로 ‘재생 가능’ 상태가 됩니다.
+            ‘체크포인트’에서 영상 중간에 띄울 회화(따라 말하기)·TOPIK 문제 모달을 시점별로 설정합니다.
           </div>
         </div>
         {canWrite && (
@@ -464,6 +479,14 @@ export function LecturesPage() {
         onConfirm={() => deleting && remove.mutate(deleting)}
         onCancel={() => setDeleting(null)}
       />
+
+      {checkpointLecture && (
+        <CheckpointsModal
+          lecture={checkpointLecture}
+          canWrite={canWrite}
+          onClose={() => setCheckpointLecture(null)}
+        />
+      )}
 
       {videoLecture && (
         <VideoManagerModal

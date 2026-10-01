@@ -39,6 +39,7 @@ const LECTURE: AdminLecture = {
   sequence: 1,
   topik_question_type: "reading_03",
   video_status: null,
+  checkpoint_count: 0,
 };
 
 function renderPage() {
