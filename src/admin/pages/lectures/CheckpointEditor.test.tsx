@@ -1,9 +1,11 @@
 /**
  * Checkpoints are placed by watching the lecture's video, not by typing
- * seconds: the time always comes from the preview's playback position.
+ * seconds: the time comes from the preview's playback position, to the
+ * hundredth of a second, and the modal follows the kind of lecture — a
+ * sentence on a conversation lecture, a TOPIK question on a TOPIK one.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ToastProvider } from "../../../hooks/toast";
@@ -27,7 +29,7 @@ vi.mock("../../api", async () => {
   };
 });
 
-const LECTURE: AdminLecture = {
+const CONVERSATION: AdminLecture = {
   lecture_id: "lec_1",
   track_id: "track_conversation",
   course_id: null,
@@ -41,6 +43,7 @@ const LECTURE: AdminLecture = {
   video_status: "ready",
   checkpoint_count: 1,
 };
+const TOPIK: AdminLecture = { ...CONVERSATION, track_id: "track_topik", title: "TOPIK 듣기" };
 
 const SPEAKING: AdminCheckpoint = {
   checkpoint_id: "cp_1",
@@ -55,13 +58,22 @@ const SPEAKING: AdminCheckpoint = {
   needs_review: false,
   out_of_range: false,
 };
+const QUESTION: AdminCheckpoint = {
+  ...SPEAKING,
+  checkpoint_id: "cp_q",
+  interaction_type: "multiple_choice",
+  sentence_id: null,
+  quiz_id: "quz_hello_01",
+  content_label: "알맞은 인사말을 고르십시오.",
+  content_detail: null,
+};
 
-function renderEditor(canWrite = true) {
+function renderEditor(lecture: AdminLecture = CONVERSATION, canWrite = true) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
       <ToastProvider>
-        <CheckpointEditor lecture={LECTURE} canWrite={canWrite} />
+        <CheckpointEditor lecture={lecture} canWrite={canWrite} />
       </ToastProvider>
     </QueryClientProvider>,
   );
@@ -84,69 +96,143 @@ function playTo(el: HTMLVideoElement, seconds: number) {
   });
 }
 
+function withItems(items: AdminCheckpoint[]) {
+  vi.mocked(adminApi.listCheckpoints).mockResolvedValue({ lecture_id: "lec_1", video_id: "vid_1", duration_seconds: 300, items });
+}
+
 beforeEach(() => {
   vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
   vi.spyOn(HTMLMediaElement.prototype, "play").mockImplementation(() => Promise.resolve());
-  vi.mocked(adminApi.listCheckpoints).mockReset().mockResolvedValue({
-    lecture_id: "lec_1",
-    video_id: "vid_1",
-    duration_seconds: 300,
-    items: [SPEAKING],
-  });
+  vi.mocked(adminApi.listCheckpoints).mockReset();
+  withItems([SPEAKING]);
   vi.mocked(adminApi.previewLectureVideo).mockReset().mockResolvedValue({
     video_id: "vid_1",
     url: "http://127.0.0.1:8000/media/lecture-videos/v.mp4",
     duration_seconds: 300,
     expires_at: "2026-10-01T00:00:00Z",
   });
-  vi.mocked(adminApi.listQuizzes).mockResolvedValue({
-    items: [{ quiz_id: "quz_hello_01", prompt: "알맞은 인사말을 고르십시오.", answer_format: "single_choice", topik_question_type: null }],
+  vi.mocked(adminApi.listQuizzes).mockReset().mockResolvedValue({
+    items: [
+      {
+        quiz_id: "quz_hello_01",
+        prompt: "알맞은 인사말을 고르십시오.",
+        answer_format: "single_choice",
+        topik_question_type: null,
+        choices: [
+          { key: "1", text: "안녕하세요" },
+          { key: "2", text: "감사합니다" },
+        ],
+      },
+    ],
     total: 1,
     limit: 10,
     offset: 0,
   } as never);
-  vi.mocked(adminApi.listSentences).mockResolvedValue({ items: [], total: 0, page: 1, page_size: 10 } as never);
+  vi.mocked(adminApi.listSentences).mockReset().mockResolvedValue({
+    items: [{ sentence_id: "sen_thanks_01", korean: "감사합니다", translation: "Thank you." }],
+    total: 1,
+    page: 1,
+    page_size: 10,
+  } as never);
   vi.mocked(adminApi.createCheckpoint).mockReset().mockResolvedValue(SPEAKING);
   vi.mocked(adminApi.replaceCheckpoint).mockReset().mockResolvedValue(SPEAKING);
 });
 
 describe("CheckpointEditor", () => {
-  it("adds a checkpoint at the moment the preview is at", async () => {
-    renderEditor();
+  it("adds a conversation sentence on a conversation lecture, to the hundredth of a second", async () => {
+    renderEditor(CONVERSATION);
     const el = await video();
     playTo(el, 83.6);
-    expect(screen.getByText("1:23 / 5:00")).toBeInTheDocument();
+    expect(screen.getByText("1:23.60")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /TOPIK 문제 추가/ })).toBeNull();
 
-    await userEvent.click(screen.getByRole("button", { name: "+ TOPIK 문제" }));
-    await userEvent.click(await screen.findByRole("button", { name: /알맞은 인사말/ }));
+    await userEvent.click(screen.getByRole("button", { name: "+ 이 지점에 회화 문장 추가 (1:23.60)" }));
+    await userEvent.click(await screen.findByRole("button", { name: /감사합니다/ }));
+    expect(screen.getByText("Thank you.")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "저장" }));
 
     await waitFor(() => expect(adminApi.createCheckpoint).toHaveBeenCalledTimes(1));
-    expect(adminApi.createCheckpoint).toHaveBeenCalledWith("lec_1", { at_second: 83, quiz_id: "quz_hello_01" });
+    expect(adminApi.createCheckpoint).toHaveBeenCalledWith("lec_1", { at_second: 83.6, sentence_id: "sen_thanks_01" });
+    expect(adminApi.listQuizzes).not.toHaveBeenCalled();
   });
 
-  it("opens a checkpoint from its marker and moves it to where the preview is", async () => {
-    renderEditor();
+  it("adds a TOPIK question on a TOPIK lecture", async () => {
+    withItems([QUESTION]);
+    renderEditor(TOPIK);
     const el = await video();
-    await userEvent.click(screen.getByRole("button", { name: "1:15 회화 · 따라 말하기 체크포인트" }));
+    playTo(el, 120.257);
+
+    await userEvent.click(screen.getByRole("button", { name: "+ 이 지점에 TOPIK 문제 추가 (2:00.26)" }));
+    expect(await screen.findByText(/1\) 안녕하세요/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /알맞은 인사말/ }));
+    await userEvent.click(screen.getByRole("button", { name: "저장" }));
+
+    await waitFor(() => expect(adminApi.createCheckpoint).toHaveBeenCalledTimes(1));
+    expect(adminApi.createCheckpoint).toHaveBeenCalledWith("lec_1", { at_second: 120.26, quiz_id: "quz_hello_01" });
+    expect(adminApi.listSentences).not.toHaveBeenCalled();
+  });
+
+  it("fine-tunes a checkpoint by tenths of a second and saves it", async () => {
+    renderEditor();
+    await video();
+    await userEvent.click(screen.getByRole("button", { name: "1:15.00 회화 · 따라 말하기 체크포인트" }));
     expect(screen.getByText("체크포인트 편집")).toBeInTheDocument();
 
-    playTo(el, 90);
-    await userEvent.click(screen.getByRole("button", { name: "현재 재생 위치(1:30)로 옮기기" }));
+    const nudges = screen.getByRole("group", { name: "시점 조정" });
+    await userEvent.click(within(nudges).getByRole("button", { name: "+1초" }));
+    await userEvent.click(within(nudges).getByRole("button", { name: "+0.1초" }));
+    await userEvent.click(within(nudges).getByRole("button", { name: "+0.1초" }));
+    expect(within(screen.getByLabelText("체크포인트 편집")).getByText("1:16.20")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "저장" }));
 
     await waitFor(() => expect(adminApi.replaceCheckpoint).toHaveBeenCalledTimes(1));
-    expect(adminApi.replaceCheckpoint).toHaveBeenCalledWith("lec_1", "cp_1", { at_second: 90, sentence_id: "sen_hello_01" });
+    expect(adminApi.replaceCheckpoint).toHaveBeenCalledWith("lec_1", "cp_1", { at_second: 76.2, sentence_id: "sen_hello_01" });
   });
 
-  it("refuses a second checkpoint at a second that already has one", async () => {
+  it("moves an open checkpoint to where the preview is", async () => {
     renderEditor();
     const el = await video();
-    playTo(el, 75.2);
-    await userEvent.click(screen.getByRole("button", { name: "+ TOPIK 문제" }));
-    await userEvent.click(await screen.findByRole("button", { name: /알맞은 인사말/ }));
-    expect(screen.getByText(/1:15에는 이미 다른 체크포인트가 있어요/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "1:15.00 회화 · 따라 말하기 체크포인트" }));
+    playTo(el, 90.42);
+    await userEvent.click(screen.getByRole("button", { name: "현재 위치(1:30.42)로" }));
+    await userEvent.click(screen.getByRole("button", { name: "저장" }));
+
+    await waitFor(() => expect(adminApi.replaceCheckpoint).toHaveBeenCalledTimes(1));
+    expect(adminApi.replaceCheckpoint).toHaveBeenCalledWith("lec_1", "cp_1", { at_second: 90.42, sentence_id: "sen_hello_01" });
+  });
+
+  it("keeps checkpoints at least a second apart", async () => {
+    renderEditor();
+    const el = await video();
+    playTo(el, 75.6);
+    await userEvent.click(screen.getByRole("button", { name: /회화 문장 추가/ }));
+    await userEvent.click(await screen.findByRole("button", { name: /감사합니다/ }));
+    expect(screen.getByText("1:15.00의 체크포인트와 1초 이상 떨어져야 해요.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "저장" })).toBeDisabled();
+  });
+
+  it("flags a checkpoint whose content does not fit the lecture and has it replaced", async () => {
+    withItems([QUESTION]);
+    renderEditor(CONVERSATION);
+    expect(await screen.findByRole("alert")).toHaveTextContent("확인이 필요한 체크포인트가 1개");
+    expect(screen.getByText("강의 종류와 맞지 않음 — 교체 필요")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /알맞은 인사말/ }));
+    // The question cannot stay on a conversation lecture: the editor offers sentences.
+    expect(await screen.findByRole("button", { name: /감사합니다/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "저장" })).toBeDisabled();
+  });
+
+  it("previews the lead-up to a checkpoint and stops on it", async () => {
+    renderEditor();
+    const el = await video();
+    await userEvent.click(screen.getByRole("button", { name: "1:15.00 미리보기" }));
+    expect(el.currentTime).toBe(72);
+    expect(HTMLMediaElement.prototype.play).toHaveBeenCalled();
+
+    playTo(el, 75.3);
+    expect(HTMLMediaElement.prototype.pause).toHaveBeenCalled();
+    expect(el.currentTime).toBe(75);
   });
 
   it("waits for a ready video before checkpoints can be placed", async () => {
@@ -158,12 +244,6 @@ describe("CheckpointEditor", () => {
 
   it("flags checkpoints placed on a video that has since been replaced", async () => {
     vi.mocked(adminApi.listCheckpoints).mockResolvedValue({
-      lecture_id: "lec_1",
-      video_id: "vid_2",
-      duration_seconds: 60,
-      items: [SPEAKING, { ...SPEAKING, checkpoint_id: "cp_2", at_second: 20, needs_review: true }],
-    });
-    vi.mocked(adminApi.listCheckpoints).mockResolvedValueOnce({
       lecture_id: "lec_1",
       video_id: "vid_2",
       duration_seconds: 60,
@@ -179,8 +259,8 @@ describe("CheckpointEditor", () => {
   });
 
   it("is read-only without content:write", async () => {
-    renderEditor(false);
+    renderEditor(CONVERSATION, false);
     await video();
-    expect(screen.queryByRole("button", { name: "+ TOPIK 문제" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /회화 문장 추가/ })).toBeNull();
   });
 });

@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import type { ReactNode } from "react";
+import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { adminApi } from "../../api";
 import type { AdminCheckpoint, AdminCheckpointWrite, AdminLecture, CheckpointInteractionType } from "../../api";
 import { StreamVideo } from "../../../components/StreamVideo";
-import { formatClock } from "../../lib/videoFile";
+import { formatPrecise, roundTime } from "../../lib/videoFile";
 import { errorMessage } from "../../../lib/http";
 import { useToast, useToastError } from "../../../hooks/toast";
 import { Badge, Button, ConfirmDialog, ErrorState, LoadingState, SearchBox } from "../../components/kit";
@@ -13,43 +13,81 @@ import type { BadgeTone } from "../../components/kit";
 /** The two modals a lecture can pause for (COU-006 conversation, COU-011 TOPIK). */
 type ContentKind = "sentence" | "quiz";
 
+/** A conversation lecture pauses for sentences to repeat; a TOPIK lecture for questions. */
+const KIND_BY_TRACK: Record<string, ContentKind> = {
+  track_conversation: "sentence",
+  track_topik: "quiz",
+};
+
+const KIND_COPY: Record<ContentKind, { add: string; noun: string; picker: string; hint: string; search: string }> = {
+  sentence: {
+    add: "이 지점에 회화 문장 추가",
+    noun: "회화 문장",
+    picker: "따라 말할 문장",
+    hint: "학습자는 이 지점에서 문장을 듣고 따라 말합니다. 문장 콘텐츠에 등록한 문장 중에서 고르세요.",
+    search: "한국어·번역·문장 ID 검색",
+  },
+  quiz: {
+    add: "이 지점에 TOPIK 문제 추가",
+    noun: "TOPIK 문제",
+    picker: "풀 문제",
+    hint: "학습자는 이 지점에서 문제를 풉니다. 객관식은 선택형, 주관식·쓰기 문제는 답안 입력 모달로 열립니다.",
+    search: "문제 내용·문제 ID 검색",
+  },
+};
+
 export const TYPE_LABEL: Record<CheckpointInteractionType, [string, BadgeTone]> = {
   speaking_exercise: ["회화 · 따라 말하기", "info"],
   multiple_choice: ["TOPIK · 객관식", "brand"],
   short_answer: ["TOPIK · 주관식/쓰기", "warning"],
 };
 
+/** The closest two checkpoints may sit (the server refuses closer). */
+export const MIN_GAP_SECONDS = 1;
+/** "미리보기" plays the lead-up to a checkpoint and stops on it, as a learner meets it. */
+const LEAD_IN_SECONDS = 3;
+const SPEEDS = [1, 0.5] as const;
+
 interface Draft {
   checkpointId: string | null;
-  kind: ContentKind;
-  /** Whole seconds into the video — always taken from the preview, never typed. */
+  /** Seconds into the video, to the hundredth — taken from the preview, never typed. */
   at: number;
   contentId: string;
   contentLabel: string;
+  contentDetail: string;
 }
 
+const kindOf = (c: AdminCheckpoint): ContentKind => (c.sentence_id ? "sentence" : "quiz");
+
 /**
- * Step 3 of a lecture: where the video pauses for a conversation or TOPIK
- * modal.
+ * Step 3 of a lecture: where the video pauses for a modal — a sentence to
+ * repeat on a conversation lecture, a TOPIK question on a TOPIK lecture.
  *
- * Checkpoints are placed by watching the lecture's own video: play or scrub
- * the preview to the moment, then "이 지점에 추가". Every checkpoint is a
- * marker on the timeline; clicking one jumps the preview there. Times come
- * from the video, so they cannot fall outside it, and the server re-checks
- * that. When the video is replaced, checkpoints placed on the old one are
- * flagged until they are confirmed on the new one.
+ * Checkpoints are placed by watching the lecture's own video, shown whole
+ * (never cropped): play, drag the timeline, or step by 1s / 0.1s (also ←/→,
+ * Shift for 0.1s, Space to play) to the moment, then add one there. Times
+ * keep hundredths of a second. Every checkpoint is a marker on the timeline;
+ * opening one moves the preview to it, and "미리보기" plays the few seconds
+ * before it and stops on it, as the learner will meet it. Checkpoints must be
+ * at least 1s apart (checked here and by the server), inside the video, and
+ * are flagged when the video they were placed on has since been replaced.
  */
 export function CheckpointEditor({ lecture, canWrite }: { lecture: AdminLecture; canWrite: boolean }) {
   const qc = useQueryClient();
   const toast = useToast();
   const toastError = useToastError();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const stopAtRef = useRef<number | null>(null);
   const [now, setNow] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [speed, setSpeed] = useState<number>(SPEEDS[0]);
   const [videoError, setVideoError] = useState(false);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [deleting, setDeleting] = useState<AdminCheckpoint | null>(null);
   const key = ["admin", "lecture-checkpoints", lecture.lecture_id];
+  const kind = KIND_BY_TRACK[lecture.track_id] ?? "sentence";
+  const copy = KIND_COPY[kind];
 
   const list = useQuery({ queryKey: key, queryFn: () => adminApi.listCheckpoints(lecture.lecture_id) });
   const videoId = list.data?.video_id ?? null;
@@ -72,37 +110,94 @@ export function CheckpointEditor({ lecture, canWrite }: { lecture: AdminLecture;
   }
 
   function seek(seconds: number) {
-    const target = Math.max(0, Math.min(seconds, Math.max(0, duration - 1)));
+    const target = roundTime(Math.max(0, Math.min(seconds, Math.max(0, duration - 0.05))));
+    stopAtRef.current = null;
     setNow(target);
     if (videoRef.current) videoRef.current.currentTime = target;
+    return target;
   }
 
   function pause() {
     videoRef.current?.pause();
   }
 
-  function startAdd(kind: ContentKind) {
+  function togglePlay() {
+    const v = videoRef.current;
+    if (!v) return;
+    stopAtRef.current = null;
+    if (v.paused) void v.play();
+    else v.pause();
+  }
+
+  /** Play the lead-up to `at` and stop on it — what the learner sees before the modal. */
+  function previewTo(at: number) {
+    seek(at - LEAD_IN_SECONDS);
+    stopAtRef.current = at;
+    void videoRef.current?.play();
+  }
+
+  function cycleSpeed() {
+    const next = SPEEDS[(SPEEDS.indexOf(speed as (typeof SPEEDS)[number]) + 1) % SPEEDS.length];
+    setSpeed(next);
+    if (videoRef.current) videoRef.current.playbackRate = next;
+  }
+
+  function startAdd() {
     pause();
-    setDraft({ checkpointId: null, kind, at: Math.floor(now), contentId: "", contentLabel: "" });
+    setDraft({ checkpointId: null, at: roundTime(now), contentId: "", contentLabel: "", contentDetail: "" });
   }
 
   function select(checkpoint: AdminCheckpoint) {
     pause();
     seek(checkpoint.at_second);
+    const fits = kindOf(checkpoint) === kind;
     setDraft({
       checkpointId: checkpoint.checkpoint_id,
-      kind: checkpoint.sentence_id ? "sentence" : "quiz",
-      at: checkpoint.at_second,
-      contentId: checkpoint.sentence_id ?? checkpoint.quiz_id ?? "",
-      contentLabel: checkpoint.content_label ?? "",
+      at: roundTime(checkpoint.at_second),
+      // Content of the other kind (from before checkpoints followed the
+      // lecture) has to be replaced, so the editor starts it empty.
+      contentId: fits ? (checkpoint.sentence_id ?? checkpoint.quiz_id ?? "") : "",
+      contentLabel: fits ? (checkpoint.content_label ?? "") : "",
+      contentDetail: fits ? (checkpoint.content_detail ?? "") : "",
     });
   }
+
+  /** Move the draft's time, and the preview with it, so the frame is in view. */
+  function moveDraft(to: number) {
+    if (!draft) return;
+    pause();
+    setDraft({ ...draft, at: seek(to) });
+  }
+
+  // Keyboard: Space plays/pauses; ←/→ step 1s (Shift: 0.1s) — the draft's
+  // time while one is open, the preview's otherwise.
+  const keyState = useRef({ now, draft, duration });
+  keyState.current = { now, draft, duration };
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (el && (el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT", "BUTTON"].includes(el.tagName))) return;
+      const step = e.shiftKey ? 0.1 : 1;
+      const { now: at, draft: d } = keyState.current;
+      if (e.key === " ") {
+        e.preventDefault();
+        togglePlay();
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        e.preventDefault();
+        const delta = e.key === "ArrowLeft" ? -step : step;
+        if (d) moveDraft(d.at + delta);
+        else seek(at + delta);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
 
   const save = useMutation({
     mutationFn: (d: Draft) => {
       const body: AdminCheckpointWrite = {
         at_second: d.at,
-        ...(d.kind === "sentence" ? { sentence_id: d.contentId } : { quiz_id: d.contentId }),
+        ...(kind === "sentence" ? { sentence_id: d.contentId } : { quiz_id: d.contentId }),
       };
       return d.checkpointId
         ? adminApi.replaceCheckpoint(lecture.lecture_id, d.checkpointId, body)
@@ -127,8 +222,10 @@ export function CheckpointEditor({ lecture, canWrite }: { lecture: AdminLecture;
     onError: toastError,
   });
 
-  // Another checkpoint already fires at this second (the server refuses it too).
-  const clash = draft ? items.find((c) => c.at_second === draft.at && c.checkpoint_id !== draft.checkpointId) : undefined;
+  // Another checkpoint less than MIN_GAP_SECONDS away (the server refuses it too).
+  const clash = draft
+    ? items.find((c) => c.checkpoint_id !== draft.checkpointId && Math.abs(c.at_second - draft.at) < MIN_GAP_SECONDS)
+    : undefined;
   const inside = !!draft && draft.at >= 0 && draft.at < duration;
   const canSave = !!draft && inside && !clash && !!draft.contentId;
 
@@ -138,25 +235,27 @@ export function CheckpointEditor({ lecture, canWrite }: { lecture: AdminLecture;
   if (!videoId) {
     return (
       <div className="hgadm-lw__locked">
-        영상이 올라가고 재생 가능 상태가 되면, 영상을 보면서 원하는 지점에 체크포인트를 추가할 수 있어요.
+        영상이 올라가고 재생 가능 상태가 되면, 영상을 보면서 원하는 지점에 {copy.noun}를 추가할 수 있어요.
         {items.length > 0 && ` (기존 체크포인트 ${items.length}개는 영상이 준비되면 다시 표시됩니다.)`}
       </div>
     );
   }
 
-  const review = items.filter((c) => c.needs_review || c.out_of_range).length;
+  const review = items.filter((c) => c.needs_review || c.out_of_range || kindOf(c) !== kind).length;
 
   return (
     <div className="hgadm-cpe">
       {review > 0 && (
         <div className="hgadm-cpe__warn" role="alert">
-          영상이 바뀌어 확인이 필요한 체크포인트가 {review}개 있어요. 항목을 눌러 새 영상에서 시점을 확인하고
-          저장해 주세요.
+          확인이 필요한 체크포인트가 {review}개 있어요. 영상이 바뀌었거나 강의 종류와 맞지 않는 항목이에요 — 눌러서
+          시점과 내용을 확인하고 저장해 주세요.
         </div>
       )}
 
       <div className="hgadm-cpe__layout">
         <div className="hgadm-cpe__stage">
+          {/* The whole frame at its own aspect ratio — a portrait lecture is
+              shown tall, a landscape one wide; never cropped or stretched. */}
           <div className="hgadm-cpe__screen">
             {preview.isPending ? (
               <LoadingState />
@@ -174,9 +273,21 @@ export function CheckpointEditor({ lecture, canWrite }: { lecture: AdminLecture;
                 src={preview.data.url}
                 className="hgadm-cpe__video"
                 playsInline
-                preload="metadata"
-                onClick={() => (videoRef.current?.paused ? void videoRef.current.play() : pause())}
-                onTimeUpdate={(e) => setNow(e.currentTarget.currentTime)}
+                // "auto", so the first frame is on screen before anything is played.
+                preload="auto"
+                onClick={togglePlay}
+                onTimeUpdate={(e) => {
+                  const v = e.currentTarget;
+                  const stopAt = stopAtRef.current;
+                  if (stopAt !== null && v.currentTime >= stopAt) {
+                    stopAtRef.current = null;
+                    v.pause();
+                    v.currentTime = stopAt;
+                    setNow(stopAt);
+                    return;
+                  }
+                  setNow(v.currentTime);
+                }}
                 onSeeked={(e) => setNow(e.currentTarget.currentTime)}
                 onPlay={() => setPlaying(true)}
                 onPause={() => setPlaying(false)}
@@ -186,44 +297,46 @@ export function CheckpointEditor({ lecture, canWrite }: { lecture: AdminLecture;
           </div>
 
           <div className="hgadm-cpe__controls">
-            <Button
-              size="sm"
-              variant="primary"
-              onClick={() => (videoRef.current?.paused ? void videoRef.current.play() : pause())}
-              aria-label={playing ? "일시정지" : "재생"}
-            >
+            <Button size="sm" variant="primary" onClick={togglePlay} aria-label={playing ? "일시정지" : "재생"}>
               {playing ? "❚❚" : "▶"}
             </Button>
             <span className="hgadm-cpe__clock" aria-live="off">
-              {formatClock(now)} / {formatClock(duration)}
+              <strong>{formatPrecise(now)}</strong> / {formatPrecise(duration)}
             </span>
             <div className="hgadm-cpe__nudges" role="group" aria-label="미세 이동">
-              {[-5, -1, 1, 5].map((step) => (
-                <Button key={step} size="sm" variant="ghost" onClick={() => seek(Math.floor(now) + step)}>
+              {[-1, -0.1, 0.1, 1].map((step) => (
+                <Button key={step} size="sm" variant="ghost" onClick={() => seek(now + step)}>
                   {step > 0 ? `+${step}초` : `${step}초`}
                 </Button>
               ))}
             </div>
+            <Button size="sm" variant="ghost" onClick={cycleSpeed} aria-label={`재생 속도 ${speed}배`}>
+              {speed}x
+            </Button>
           </div>
 
           <Timeline
+            trackRef={trackRef}
             duration={duration}
             now={now}
             items={items}
+            kind={kind}
             selectedId={draft?.checkpointId ?? null}
-            draftAt={draft && !draft.checkpointId ? draft.at : null}
-            onSeek={seek}
+            draftAt={draft ? draft.at : null}
+            onSeek={(s) => {
+              pause();
+              seek(s);
+            }}
             onSelect={select}
           />
+          <p className="hgadm-cpe__keys">
+            Space 재생/정지 · ←/→ 1초 · Shift+←/→ 0.1초 · 마커를 누르면 그 체크포인트로 이동
+          </p>
 
           {canWrite && !draft && (
             <div className="hgadm-cpe__add">
-              <span className="hgadm-muted">{formatClock(now)} 지점에</span>
-              <Button size="sm" variant="primary" onClick={() => startAdd("sentence")}>
-                + 회화 (따라 말하기)
-              </Button>
-              <Button size="sm" variant="primary" onClick={() => startAdd("quiz")}>
-                + TOPIK 문제
+              <Button variant="primary" onClick={startAdd}>
+                + {copy.add} ({formatPrecise(now)})
               </Button>
             </div>
           )}
@@ -233,17 +346,16 @@ export function CheckpointEditor({ lecture, canWrite }: { lecture: AdminLecture;
           {draft ? (
             <DraftPanel
               draft={draft}
-              now={Math.floor(now)}
+              kind={kind}
+              now={roundTime(now)}
               duration={duration}
               clash={clash}
               canWrite={canWrite}
               saving={save.isPending}
               canSave={canSave}
               onChange={setDraft}
-              onPreview={() => {
-                seek(draft.at);
-                void videoRef.current?.play();
-              }}
+              onMove={moveDraft}
+              onPreview={() => previewTo(draft.at)}
               onSave={() => save.mutate(draft)}
               onCancel={() => setDraft(null)}
               onDelete={
@@ -253,7 +365,7 @@ export function CheckpointEditor({ lecture, canWrite }: { lecture: AdminLecture;
               }
             />
           ) : (
-            <CheckpointList items={items} onSelect={select} />
+            <CheckpointList items={items} kind={kind} copy={copy} onSelect={select} onPreview={(c) => previewTo(c.at_second)} />
           )}
         </aside>
       </div>
@@ -261,7 +373,7 @@ export function CheckpointEditor({ lecture, canWrite }: { lecture: AdminLecture;
       <ConfirmDialog
         open={deleting !== null}
         title="체크포인트 삭제"
-        message={`${deleting ? formatClock(deleting.at_second) : ""} 지점의 체크포인트를 삭제할까요? 연결된 문장·문제는 삭제되지 않습니다.`}
+        message={`${deleting ? formatPrecise(deleting.at_second) : ""} 지점의 체크포인트를 삭제할까요? 연결된 문장·문제는 삭제되지 않습니다.`}
         danger
         confirmLabel="삭제"
         loading={remove.isPending}
@@ -272,43 +384,54 @@ export function CheckpointEditor({ lecture, canWrite }: { lecture: AdminLecture;
   );
 }
 
-/** The scrub bar with a marker per checkpoint; click the bar to seek, a marker to open it. */
+/**
+ * The scrub bar with a marker per checkpoint. Press and drag anywhere on it
+ * to scrub; press a marker to open that checkpoint.
+ */
 function Timeline({
+  trackRef,
   duration,
   now,
   items,
+  kind,
   selectedId,
   draftAt,
   onSeek,
   onSelect,
 }: {
+  trackRef: React.RefObject<HTMLDivElement>;
   duration: number;
   now: number;
   items: AdminCheckpoint[];
+  kind: ContentKind;
   selectedId: string | null;
   draftAt: number | null;
   onSeek: (seconds: number) => void;
   onSelect: (checkpoint: AdminCheckpoint) => void;
 }) {
   const pct = (s: number) => `${duration ? Math.min(100, (s / duration) * 100) : 0}%`;
+  const at = (e: ReactPointerEvent) => {
+    const box = (trackRef.current as HTMLDivElement).getBoundingClientRect();
+    return ((e.clientX - box.left) / box.width) * duration;
+  };
   return (
     <div className="hgadm-cpe__timeline">
       <div
+        ref={trackRef}
         className="hgadm-cpe__track"
         role="slider"
         aria-label="재생 위치"
         aria-valuemin={0}
         aria-valuemax={duration}
-        aria-valuenow={Math.floor(now)}
-        aria-valuetext={formatClock(now)}
+        aria-valuenow={roundTime(now)}
+        aria-valuetext={formatPrecise(now)}
         tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === "ArrowLeft") onSeek(Math.floor(now) - 1);
-          if (e.key === "ArrowRight") onSeek(Math.floor(now) + 1);
+        onPointerDown={(e) => {
+          e.currentTarget.setPointerCapture?.(e.pointerId);
+          onSeek(at(e));
         }}
-        onClick={(e) => {
-          const box = e.currentTarget.getBoundingClientRect();
-          onSeek(Math.round(((e.clientX - box.left) / box.width) * duration));
+        onPointerMove={(e) => {
+          if (e.currentTarget.hasPointerCapture?.(e.pointerId)) onSeek(at(e));
         }}
       >
         <span className="hgadm-cpe__played" style={{ width: pct(now) }} />
@@ -323,26 +446,40 @@ function Timeline({
               "hgadm-cpe__marker",
               `is-${c.sentence_id ? "speak" : "topik"}`,
               c.checkpoint_id === selectedId ? "is-selected" : "",
-              c.needs_review || c.out_of_range ? "is-flagged" : "",
+              c.needs_review || c.out_of_range || kindOf(c) !== kind ? "is-flagged" : "",
             ].join(" ")}
             style={{ left: pct(c.out_of_range ? duration : c.at_second) }}
-            title={`${formatClock(c.at_second)} · ${TYPE_LABEL[c.interaction_type][0]}`}
-            aria-label={`${formatClock(c.at_second)} ${TYPE_LABEL[c.interaction_type][0]} 체크포인트`}
+            title={`${formatPrecise(c.at_second)} · ${TYPE_LABEL[c.interaction_type][0]}`}
+            aria-label={`${formatPrecise(c.at_second)} ${TYPE_LABEL[c.interaction_type][0]} 체크포인트`}
             onClick={() => onSelect(c)}
           />
         ))}
-        {draftAt !== null && <span className="hgadm-cpe__marker is-draft" style={{ left: pct(draftAt) }} aria-hidden />}
+        {draftAt !== null && selectedId === null && (
+          <span className="hgadm-cpe__marker is-draft" style={{ left: pct(draftAt) }} aria-hidden />
+        )}
       </div>
     </div>
   );
 }
 
-function CheckpointList({ items, onSelect }: { items: AdminCheckpoint[]; onSelect: (c: AdminCheckpoint) => void }) {
+function CheckpointList({
+  items,
+  kind,
+  copy,
+  onSelect,
+  onPreview,
+}: {
+  items: AdminCheckpoint[];
+  kind: ContentKind;
+  copy: (typeof KIND_COPY)[ContentKind];
+  onSelect: (c: AdminCheckpoint) => void;
+  onPreview: (c: AdminCheckpoint) => void;
+}) {
   if (items.length === 0) {
     return (
       <div className="hgadm-cpe__empty">
-        아직 체크포인트가 없어요. 영상을 재생하거나 타임라인을 눌러 원하는 지점으로 이동한 뒤, 아래 버튼으로
-        추가하세요.
+        아직 체크포인트가 없어요. 영상을 재생하거나 타임라인을 끌어 원하는 지점으로 이동한 뒤, ‘{copy.add}’를
+        누르세요. 이 강의는 {copy.noun}를 모달로 띄웁니다.
       </div>
     );
   }
@@ -351,13 +488,16 @@ function CheckpointList({ items, onSelect }: { items: AdminCheckpoint[]; onSelec
       {items.map((c) => {
         const [label, tone] = TYPE_LABEL[c.interaction_type];
         return (
-          <li key={c.checkpoint_id}>
+          <li key={c.checkpoint_id} className="hgadm-cpe__row">
             <button type="button" className="hgadm-cpe__item" onClick={() => onSelect(c)}>
-              <span className="hgadm-cpe__time">{formatClock(c.at_second)}</span>
+              <span className="hgadm-cpe__time">{formatPrecise(c.at_second)}</span>
               <span className="hgadm-cpe__item-body">
                 <Badge tone={tone}>{label}</Badge>
                 <span className="hgadm-cell-main">{c.content_label ?? "(삭제된 콘텐츠)"}</span>
-                {c.out_of_range ? (
+                {c.content_detail && <span className="hgadm-cell-sub">{c.content_detail}</span>}
+                {kindOf(c) !== kind ? (
+                  <Badge tone="danger">강의 종류와 맞지 않음 — 교체 필요</Badge>
+                ) : c.out_of_range ? (
                   <Badge tone="danger">영상 길이를 벗어남</Badge>
                 ) : c.needs_review ? (
                   <Badge tone="warning">영상 교체 후 확인 필요</Badge>
@@ -365,6 +505,9 @@ function CheckpointList({ items, onSelect }: { items: AdminCheckpoint[]; onSelec
                 {c.content_archived && <Badge tone="danger">보관된 콘텐츠 — 교체 필요</Badge>}
               </span>
             </button>
+            <Button size="sm" variant="ghost" onClick={() => onPreview(c)} aria-label={`${formatPrecise(c.at_second)} 미리보기`}>
+              미리보기
+            </Button>
           </li>
         );
       })}
@@ -374,6 +517,7 @@ function CheckpointList({ items, onSelect }: { items: AdminCheckpoint[]; onSelec
 
 function DraftPanel({
   draft,
+  kind,
   now,
   duration,
   clash,
@@ -381,12 +525,14 @@ function DraftPanel({
   saving,
   canSave,
   onChange,
+  onMove,
   onPreview,
   onSave,
   onCancel,
   onDelete,
 }: {
   draft: Draft;
+  kind: ContentKind;
   now: number;
   duration: number;
   clash: AdminCheckpoint | undefined;
@@ -394,76 +540,70 @@ function DraftPanel({
   saving: boolean;
   canSave: boolean;
   onChange: (draft: Draft) => void;
+  onMove: (to: number) => void;
   onPreview: () => void;
   onSave: () => void;
   onCancel: () => void;
   onDelete?: () => void;
 }) {
+  const copy = KIND_COPY[kind];
   return (
     <div className="hgadm-cpe__draft" aria-label="체크포인트 편집">
-      <div className="hgadm-cpe__draft-title">{draft.checkpointId ? "체크포인트 편집" : "새 체크포인트"}</div>
+      <div className="hgadm-cpe__draft-title">
+        {draft.checkpointId ? "체크포인트 편집" : `새 체크포인트 · ${copy.noun}`}
+      </div>
 
       <Group label="재생 시점">
         <div className="hgadm-cpe__at">
-          <strong>{formatClock(draft.at)}</strong>
+          <strong>{formatPrecise(draft.at)}</strong>
           <Button size="sm" variant="ghost" onClick={onPreview}>
-            이 지점부터 재생
+            앞 {LEAD_IN_SECONDS}초부터 미리보기
           </Button>
         </div>
-        {canWrite && now !== draft.at && (
-          <Button size="sm" onClick={() => onChange({ ...draft, at: now })}>
-            현재 재생 위치({formatClock(now)})로 옮기기
-          </Button>
+        {canWrite && (
+          <div className="hgadm-cpe__at-nudges" role="group" aria-label="시점 조정">
+            {[-1, -0.1, 0.1, 1].map((step) => (
+              <Button key={step} size="sm" variant="ghost" onClick={() => onMove(draft.at + step)}>
+                {step > 0 ? `+${step}초` : `${step}초`}
+              </Button>
+            ))}
+            {now !== draft.at && (
+              <Button size="sm" onClick={() => onChange({ ...draft, at: now })}>
+                현재 위치({formatPrecise(now)})로
+              </Button>
+            )}
+          </div>
         )}
-        {draft.at >= duration && <div className="hgadm-lw__error">영상 길이({formatClock(duration)}) 안의 지점을 골라 주세요.</div>}
-        {clash && <div className="hgadm-lw__error">{formatClock(draft.at)}에는 이미 다른 체크포인트가 있어요.</div>}
+        {draft.at >= duration && (
+          <div className="hgadm-lw__error">영상 길이({formatPrecise(duration)}) 안의 지점을 골라 주세요.</div>
+        )}
+        {clash && (
+          <div className="hgadm-lw__error">
+            {formatPrecise(clash.at_second)}의 체크포인트와 {MIN_GAP_SECONDS}초 이상 떨어져야 해요.
+          </div>
+        )}
       </Group>
 
-      <Group label="모달 종류">
-        <div className="hgadm-cp__kinds" role="radiogroup" aria-label="모달 종류">
-          {(
-            [
-              ["sentence", "회화 (따라 말하기)"],
-              ["quiz", "TOPIK 문제"],
-            ] as const
-          ).map(([kind, label]) => (
-            <button
-              key={kind}
-              type="button"
-              role="radio"
-              aria-checked={draft.kind === kind}
-              disabled={!canWrite}
-              className={`hgadm-cp__kind ${draft.kind === kind ? "is-on" : ""}`}
-              onClick={() => draft.kind !== kind && onChange({ ...draft, kind, contentId: "", contentLabel: "" })}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </Group>
-
-      <Group
-        label={draft.kind === "sentence" ? "따라 말할 문장" : "TOPIK 문제"}
-        hint={
-          draft.kind === "quiz"
-            ? "객관식은 선택형 모달, 주관식·쓰기 문제는 답안 입력 모달로 열립니다."
-            : "문장 콘텐츠에서 등록한 문장을 고르세요."
-        }
-      >
+      <Group label={copy.picker} hint={copy.hint}>
         {draft.contentId ? (
           <div className="hgadm-cp__picked">
             <div>
               <div className="hgadm-cell-main">{draft.contentLabel || draft.contentId}</div>
+              {draft.contentDetail && <div className="hgadm-cell-sub">{draft.contentDetail}</div>}
               <div className="hgadm-cell-sub hgadm-cell-mono">{draft.contentId}</div>
             </div>
             {canWrite && (
-              <Button size="sm" onClick={() => onChange({ ...draft, contentId: "", contentLabel: "" })}>
+              <Button size="sm" onClick={() => onChange({ ...draft, contentId: "", contentLabel: "", contentDetail: "" })}>
                 변경
               </Button>
             )}
           </div>
         ) : (
-          <ContentPicker kind={draft.kind} onPick={(id, label) => onChange({ ...draft, contentId: id, contentLabel: label })} />
+          <ContentPicker
+            kind={kind}
+            placeholder={copy.search}
+            onPick={(id, label, detail) => onChange({ ...draft, contentId: id, contentLabel: label, contentDetail: detail })}
+          />
         )}
       </Group>
 
@@ -502,9 +642,16 @@ function Group({ label, hint, children }: { label: string; hint?: string; childr
   );
 }
 
-function ContentPicker({ kind, onPick }: { kind: ContentKind; onPick: (id: string, label: string) => void }) {
+function ContentPicker({
+  kind,
+  placeholder,
+  onPick,
+}: {
+  kind: ContentKind;
+  placeholder: string;
+  onPick: (id: string, label: string, detail: string) => void;
+}) {
   const [q, setQ] = useState("");
-  useEffect(() => setQ(""), [kind]);
   const sentences = useQuery({
     queryKey: ["admin", "checkpoint-picker", "sentence", q],
     queryFn: () => adminApi.listSentences({ q: q || undefined, page: 1, page_size: 10 }),
@@ -522,13 +669,17 @@ function ContentPicker({ kind, onPick }: { kind: ContentKind; onPick: (id: strin
       : (quizzes.data?.items ?? []).map((quiz) => ({
           id: quiz.quiz_id,
           label: quiz.prompt,
-          detail: [quiz.topik_question_type, quiz.answer_format === "single_choice" ? "객관식" : "주관식/쓰기"]
+          detail: [
+            quiz.topik_question_type,
+            quiz.answer_format === "single_choice" ? "객관식" : "주관식/쓰기",
+            quiz.choices.length ? quiz.choices.map((c) => `${c.key}) ${c.text}`).join("  ") : null,
+          ]
             .filter(Boolean)
             .join(" · "),
         }));
   return (
     <div className="hgadm-cp__picker">
-      <SearchBox value={q} placeholder={kind === "sentence" ? "한국어·번역·문장 ID 검색" : "문제 내용·문제 ID 검색"} onSearch={setQ} />
+      <SearchBox value={q} placeholder={placeholder} onSearch={setQ} />
       {active.isPending ? (
         <LoadingState />
       ) : active.isError ? (
@@ -539,7 +690,7 @@ function ContentPicker({ kind, onPick }: { kind: ContentKind; onPick: (id: strin
         <ul className="hgadm-cp__options">
           {options.map((o) => (
             <li key={o.id}>
-              <button type="button" className="hgadm-cp__option" onClick={() => onPick(o.id, o.label)}>
+              <button type="button" className="hgadm-cp__option" onClick={() => onPick(o.id, o.label, o.detail)}>
                 <span className="hgadm-cell-main">{o.label}</span>
                 <span className="hgadm-cell-sub">
                   <span className="hgadm-cell-mono">{o.id}</span>

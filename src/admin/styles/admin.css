@@ -3652,18 +3652,26 @@ a.hgadm-recent--link:hover {
   gap: 16px;
   align-items: start;
 }
+/* A fixed-height stage the video fits inside at its own aspect ratio — a
+   portrait lecture is letterboxed left/right, a landscape one top/bottom,
+   and no part of the frame is ever cut off or stretched. */
 .hgadm-cpe__screen {
   position: relative;
-  display: grid;
-  place-items: center;
-  aspect-ratio: 16 / 9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: min(62vh, 560px);
+  min-height: 240px;
   border-radius: var(--ad-radius);
   background: #0f172a;
   overflow: hidden;
 }
 .hgadm-cpe__video {
-  width: 100%;
-  height: 100%;
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
   cursor: pointer;
 }
@@ -3754,6 +3762,28 @@ a.hgadm-recent--link:hover {
   background: var(--ink-3);
   cursor: default;
 }
+.hgadm-cpe__keys {
+  margin: 0 0 10px;
+  color: var(--ink-3);
+  font-size: 12px;
+}
+.hgadm-cpe__row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-right: 8px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+.hgadm-cpe__list li:last-child {
+  border-bottom: 0;
+}
+.hgadm-cpe__at-nudges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+}
 .hgadm-cpe__add {
   display: flex;
   align-items: center;
@@ -3784,23 +3814,21 @@ a.hgadm-recent--link:hover {
   display: flex;
   gap: 12px;
   width: 100%;
+  flex: 1;
+  min-width: 0;
   padding: 10px 12px;
   border: 0;
-  border-bottom: 1px solid var(--line);
-  background: var(--surface);
+  background: transparent;
   text-align: left;
   font: inherit;
   cursor: pointer;
-}
-.hgadm-cpe__list li:last-child .hgadm-cpe__item {
-  border-bottom: 0;
 }
 .hgadm-cpe__item:hover {
   background: var(--ad-primary-soft);
 }
 .hgadm-cpe__time {
   flex: none;
-  min-width: 44px;
+  min-width: 64px;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
 }
@@ -3848,28 +3876,7 @@ a.hgadm-recent--link:hover {
   }
 }
 
-/* Shared by the checkpoint draft panel: kind toggle and content picker. */
-.hgadm-cp__kinds {
-  display: flex;
-  gap: 8px;
-}
-.hgadm-cp__kind {
-  flex: 1;
-  height: 38px;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--ad-radius-sm);
-  background: var(--surface);
-  color: var(--ink-2);
-  font: inherit;
-  font-size: 13.5px;
-  cursor: pointer;
-}
-.hgadm-cp__kind.is-on {
-  border-color: var(--ad-primary);
-  background: var(--ad-primary-soft);
-  color: var(--ad-primary);
-  font-weight: 600;
-}
+/* The checkpoint draft panel's content picker. */
 .hgadm-cp__picked {
   display: flex;
   align-items: center;
