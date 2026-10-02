@@ -21,6 +21,7 @@ import {
 import type { Column } from "../../components/kit";
 import {
   ChangeView,
+  DIMENSION_LABEL,
   MetricLabel,
   RatioView,
   STRENGTH_LABEL,
@@ -78,11 +79,24 @@ const CAUSE_LABEL: Record<string, string> = {
   review_decay: "복습 일정",
 };
 
+/* Skills, sessions and content are named here, never shown by their internal
+   ids; these stand in when a name could not be resolved. */
+const UNNAMED_SKILL = "(이름 없는 기술)";
+const UNNAMED_CONTENT = "(내용 없음)";
+
+const dimension = (d: string) => DIMENSION_LABEL[d] ?? d;
+
 export function LearnerDetailPage() {
   const { userId = "" } = useParams();
   const back = useBackTarget({ to: "/learning/learners", label: "학습자 성장" });
   const [tab, setTab] = useState<Tab>("overview");
   const [skillFilter, setSkillFilter] = useState<string>("");
+  // The name of a skill picked from a screen whose list may not include it.
+  const [pickedSkillName, setPickedSkillName] = useState<string | null>(null);
+  const pickSkill = (skillId: string, name: string | null) => {
+    setSkillFilter(skillId);
+    setPickedSkillName(name);
+  };
   const [traceId, setTraceId] = useState<string | null>(null);
   const f = useUrlFilters();
   const track = f.value("track", "conversation");
@@ -150,7 +164,7 @@ export function LearnerDetailPage() {
             </div>
             <DataTable
               columns={[
-                { key: "skill", header: "기술", render: (s) => <div><div>{s.name_ko}</div><div className="hgadm-cell-sub hgadm-cell-mono">{s.skill_id} · {s.dimension}</div></div> },
+                { key: "skill", header: "기술", render: (s) => <div><div>{s.name_ko}</div><div className="hgadm-cell-sub">{dimension(s.dimension)}</div></div> },
                 { key: "mastery", header: "숙달 추정치", numeric: true, render: (s) => <span title="규칙 기반 추정치이며 보정된 확률이 아닙니다">{pct(s.mastery, 0)}</span> },
                 { key: "prior", header: "배치 초기값", numeric: true, render: (s) => pct(s.prior, 0) },
                 { key: "evidence", header: "증거", numeric: true, render: (s) => `${s.evidence_count}건` },
@@ -161,7 +175,7 @@ export function LearnerDetailPage() {
               rowKey={(s) => `${s.skill_id}:${s.dimension}`}
               onRowClick={(s) => {
                 f.patch({ track: t.track });
-                setSkillFilter(s.skill_id);
+                pickSkill(s.skill_id, s.name_ko);
                 setTab("evidence");
               }}
               empty="아직 반영된 학습 증거가 없습니다."
@@ -175,7 +189,7 @@ export function LearnerDetailPage() {
                   <ul>
                     {t.review_queue.map((r) => (
                       <li key={r.review_id}>
-                        {r.skill_id} · {r.kind === "retention_check" ? "유지 확인" : "복습"} · {formatDateTime(r.due_at)}{" "}
+                        {r.skill_name ?? UNNAMED_SKILL} · {r.kind === "retention_check" ? "유지 확인" : "복습"} · {formatDateTime(r.due_at)}{" "}
                         {r.overdue && <Badge tone="warning">기한 지남</Badge>}
                       </li>
                     ))}
@@ -190,7 +204,7 @@ export function LearnerDetailPage() {
                   <ul>
                     {t.recent_miss_patterns.map((m) => (
                       <li key={m.skill_id}>
-                        {m.skill_id}: {m.independent_misses_30d}회 (마지막 {formatDateTime(m.last_miss_at)})
+                        {m.skill_name ?? UNNAMED_SKILL}: {m.independent_misses_30d}회 (마지막 {formatDateTime(m.last_miss_at)})
                       </li>
                     ))}
                   </ul>
@@ -200,13 +214,29 @@ export function LearnerDetailPage() {
           </div>
         ))}
 
-      {tab === "growth" && <GrowthPanel userId={userId} track={track} onSkill={(s) => { setSkillFilter(s); setTab("evidence"); }} />}
+      {tab === "growth" && (
+        <GrowthPanel
+          userId={userId}
+          track={track}
+          onSkill={(id, name) => {
+            pickSkill(id, name);
+            setTab("evidence");
+          }}
+        />
+      )}
       {/* Keyed by track: the paging cursor is a timestamp from one track's
           evidence and means nothing for the other. */}
       {tab === "evidence" && (
-        <EvidencePanel key={track} userId={userId} track={track} skillId={skillFilter} onSkillChange={setSkillFilter} />
+        <EvidencePanel
+          key={track}
+          userId={userId}
+          track={track}
+          skills={skillOptions(d.tracks.find((t) => t.track === track)?.skills ?? [], skillFilter, pickedSkillName)}
+          skillId={skillFilter}
+          onSkillChange={(id) => pickSkill(id, null)}
+        />
       )}
-      {tab === "timeline" && <TimelinePanel userId={userId} />}
+      {tab === "timeline" && <TimelinePanel userId={userId} onSession={setTraceId} />}
       {tab === "sessions" && (
         <div className="hgadm-card">
           <DataTable
@@ -229,7 +259,23 @@ export function LearnerDetailPage() {
   );
 }
 
-function GrowthPanel({ userId, track, onSkill }: { userId: string; track: string; onSkill: (skill: string) => void }) {
+/**
+ * The evidence filter's choices: the track's skills by name, one entry per
+ * skill (a skill has a row per dimension). A skill picked elsewhere that the
+ * learner has no state for yet is kept, under the name it was picked by.
+ */
+function skillOptions(
+  states: { skill_id: string; name_ko: string }[],
+  selected: string,
+  selectedName: string | null,
+): { id: string; name: string }[] {
+  const byId = new Map<string, string>();
+  for (const s of states) if (!byId.has(s.skill_id)) byId.set(s.skill_id, s.name_ko);
+  if (selected && !byId.has(selected)) byId.set(selected, selectedName ?? UNNAMED_SKILL);
+  return [...byId].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name, "ko"));
+}
+
+function GrowthPanel({ userId, track, onSkill }: { userId: string; track: string; onSkill: (skill: string, name: string | null) => void }) {
   const f = useUrlFilters();
   const params = {
     track,
@@ -260,9 +306,18 @@ function GrowthPanel({ userId, track, onSkill }: { userId: string; track: string
   );
 }
 
-function GrowthView({ g, onSkill }: { g: Growth; onSkill: (skill: string) => void }) {
+function GrowthView({ g, onSkill }: { g: Growth; onSkill: (skill: string, name: string | null) => void }) {
   const skillColumns: Column<SkillGrowth>[] = [
-    { key: "skill", header: "기술", render: (s) => <span className="hgadm-cell-mono">{s.skill_id} · {s.dimension}</span> },
+    {
+      key: "skill",
+      header: "기술",
+      render: (s) => (
+        <div>
+          <div>{s.skill_name ?? UNNAMED_SKILL}</div>
+          <div className="hgadm-cell-sub">{dimension(s.dimension)}</div>
+        </div>
+      ),
+    },
     { key: "base", header: "기준", numeric: true, render: (s) => (s.baseline_mastery === null ? "—" : `${pct(s.baseline_mastery, 0)} (${s.baseline_evidence_count}건)`) },
     { key: "cur", header: "현재", numeric: true, render: (s) => `${pct(s.current_mastery, 0)} (${s.current_evidence_count}건)` },
     {
@@ -284,7 +339,7 @@ function GrowthView({ g, onSkill }: { g: Growth; onSkill: (skill: string) => voi
           ? Object.entries(s.change_causes).map(([k, n]) => `${CAUSE_LABEL[k] ?? k} ${n}`).join(", ")
           : "—",
     },
-    { key: "drill", header: "", render: (s) => <Button size="sm" variant="ghost" onClick={() => onSkill(s.skill_id)}>근거 보기</Button> },
+    { key: "drill", header: "", render: (s) => <Button size="sm" variant="ghost" onClick={() => onSkill(s.skill_id, s.skill_name)}>근거 보기</Button> },
   ];
   const ia = g.independent_accuracy;
   return (
@@ -365,7 +420,19 @@ function GrowthView({ g, onSkill }: { g: Growth; onSkill: (skill: string) => voi
   );
 }
 
-function EvidencePanel({ userId, track, skillId, onSkillChange }: { userId: string; track: string; skillId: string; onSkillChange: (s: string) => void }) {
+function EvidencePanel({
+  userId,
+  track,
+  skills,
+  skillId,
+  onSkillChange,
+}: {
+  userId: string;
+  track: string;
+  skills: { id: string; name: string }[];
+  skillId: string;
+  onSkillChange: (s: string) => void;
+}) {
   const [before, setBefore] = useState<string | undefined>(undefined);
   const q = useQuery({
     queryKey: ["admin", "learning", "evidence", userId, track, skillId, before],
@@ -373,7 +440,7 @@ function EvidencePanel({ userId, track, skillId, onSkillChange }: { userId: stri
   });
   const columns: Column<EvidenceRow>[] = [
     { key: "at", header: "시각", render: (e) => formatDateTime(e.occurred_at) },
-    { key: "skill", header: "기술", render: (e) => <span className="hgadm-cell-mono">{e.skill_id} ({e.role === "primary" ? "주" : "보조"})</span> },
+    { key: "skill", header: "기술", render: (e) => `${e.skill_name ?? UNNAMED_SKILL} (${e.role === "primary" ? "주" : "보조"})` },
     { key: "outcome", header: "결과", render: (e) => (e.outcome >= 0.5 ? "정답" : "오답") },
     {
       key: "policy",
@@ -387,13 +454,42 @@ function EvidencePanel({ userId, track, skillId, onSkillChange }: { userId: stri
     },
     { key: "weight", header: "가중치", numeric: true, render: (e) => e.weight.toFixed(2) },
     { key: "delta", header: "숙달도", render: (e) => (e.mastery_after === null ? "반영 안 됨" : `${pct(e.mastery_before, 0)} → ${pct(e.mastery_after, 0)}`) },
-    { key: "content", header: "콘텐츠 버전", render: (e) => <span className="hgadm-cell-mono">{e.content_item_key} v{e.content_version_no} · L{e.item_band}{e.content_review_status === "legacy_unreviewed" ? " · 미검수(레거시)" : ""}</span> },
+    {
+      key: "content",
+      header: "콘텐츠",
+      render: (e) => (
+        <div style={{ maxWidth: 320 }}>
+          <div className="hgadm-cell-main" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {e.content_preview || UNNAMED_CONTENT}
+          </div>
+          <div className="hgadm-cell-sub">
+            v{e.content_version_no} · L{e.item_band}
+            {e.content_review_status === "legacy_unreviewed" ? " · 미검수(레거시)" : ""}
+          </div>
+        </div>
+      ),
+    },
     { key: "model", header: "모델", render: (e) => e.model_version },
   ];
   return (
     <div className="hgadm-card">
       <div className="hgadm-toolbar">
-        <Input aria-label="기술 ID" placeholder="기술 ID로 거르기 (예: grammar.euni_kka)" value={skillId} onChange={(e) => { setBefore(undefined); onSkillChange(e.target.value.trim()); }} style={{ width: 320 }} />
+        <Select
+          aria-label="기술로 거르기"
+          value={skillId}
+          onChange={(e) => {
+            setBefore(undefined);
+            onSkillChange(e.target.value);
+          }}
+          style={{ width: 280 }}
+        >
+          <option value="">모든 기술</option>
+          {skills.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </Select>
       </div>
       {q.isLoading && <LoadingState />}
       {q.isError && <ErrorState message={errorMessage(q.error)} onRetry={() => q.refetch()} />}
@@ -410,7 +506,7 @@ function EvidencePanel({ userId, track, skillId, onSkillChange }: { userId: stri
   );
 }
 
-function TimelinePanel({ userId }: { userId: string }) {
+function TimelinePanel({ userId, onSession }: { userId: string; onSession: (sessionId: string) => void }) {
   const [beforeSeq, setBeforeSeq] = useState<number | undefined>(undefined);
   const q = useQuery({
     queryKey: ["admin", "learning", "timeline", userId, beforeSeq],
@@ -419,8 +515,20 @@ function TimelinePanel({ userId }: { userId: string }) {
   const columns: Column<TimelineRow>[] = [
     { key: "at", header: "시각", render: (r) => formatDateTime(r.occurred_at) },
     { key: "event", header: "사건", render: (r) => EVENT_LABEL[r.event_name] ?? r.event_name },
-    { key: "session", header: "세션", render: (r) => <span className="hgadm-cell-mono">{r.session_id ?? "—"}{r.session_revision ? ` r${r.session_revision}` : ""}</span> },
-    { key: "detail", header: "세부", render: (r) => <span className="hgadm-cell-sub hgadm-cell-mono">{summarize(r.payload)}</span> },
+    {
+      key: "session",
+      header: "세션",
+      // The session opens its trace; its id stays internal.
+      render: (r) =>
+        r.session_id ? (
+          <Button size="sm" variant="ghost" onClick={() => onSession(r.session_id!)}>
+            세션 보기{r.session_revision ? ` (r${r.session_revision})` : ""}
+          </Button>
+        ) : (
+          "—"
+        ),
+    },
+    { key: "detail", header: "세부", render: (r) => <span className="hgadm-cell-sub">{summarize(r)}</span> },
   ];
   return (
     <div className="hgadm-card">
@@ -439,11 +547,13 @@ function TimelinePanel({ userId }: { userId: string }) {
   );
 }
 
-function summarize(payload: Record<string, unknown>): string {
+function summarize(row: TimelineRow): string {
+  const payload = row.payload;
   const keys = ["correct", "evidence_policy", "skill_id", "reason", "route", "mode", "fallback_step", "outcome", "mastery_after", "cause"];
   return keys
     .filter((k) => payload[k] !== undefined && payload[k] !== null)
-    .map((k) => `${k}=${String(payload[k])}`)
+    // The skill is named, never shown by its id.
+    .map((k) => (k === "skill_id" ? `기술=${row.skill_name ?? UNNAMED_SKILL}` : `${k}=${String(payload[k])}`))
     .join(" · ");
 }
 
@@ -458,12 +568,32 @@ function TraceModal({ userId, sessionId, onClose }: { userId: string; sessionId:
   );
 }
 
+/**
+ * The learner state a trace was built from, in words: the band, the skills
+ * due for review and the mastery that mattered, and the topic preferences —
+ * every skill and topic by name.
+ */
+function describeSnapshot(snapshot: Record<string, unknown>, t: SessionTrace): string {
+  const skill = (id: string) => t.skill_names[id] ?? UNNAMED_SKILL;
+  const parts: string[] = [];
+  if (typeof snapshot.band === "number") parts.push(`레벨 ${snapshot.band}`);
+  const due = Array.isArray(snapshot.due_skills) ? (snapshot.due_skills as string[]) : [];
+  if (due.length) parts.push(`복습 예정: ${due.map(skill).join(", ")}`);
+  const mastery = snapshot.mastery && typeof snapshot.mastery === "object" ? (snapshot.mastery as Record<string, number | null>) : {};
+  const known = Object.entries(mastery).filter(([, v]) => typeof v === "number");
+  if (known.length) parts.push(`숙달도: ${known.map(([id, v]) => `${skill(id)} ${pct(v as number, 0)}`).join(", ")}`);
+  if (typeof snapshot.recent_family_count === "number") parts.push(`최근 문항군 ${snapshot.recent_family_count}개`);
+  const topics = Array.isArray(snapshot.topic_preferences) ? (snapshot.topic_preferences as string[]) : [];
+  if (topics.length) parts.push(`선호 주제: ${topics.map((id) => t.topic_names[id] ?? "(이름 없는 주제)").join(", ")}`);
+  return parts.join(" · ") || "—";
+}
+
 function TraceView({ t }: { t: SessionTrace }) {
   return (
     <div>
       <Dl
         items={[
-          ["세션", <span className="hgadm-cell-mono" key="s">{t.session_id}</span>],
+          ["세션 시작", formatDateTime(t.started_at)],
           ["트랙 · 레벨", `${TRACK_LABEL[t.track]} · ${t.learner_band}`],
           ["정책", `${t.blueprint_version} · ${t.ranking_policy_version}`],
           ["짧아진 이유", t.shortfall_reason ?? "—"],
@@ -477,13 +607,21 @@ function TraceView({ t }: { t: SessionTrace }) {
           </h4>
           <div className="hgadm-cell-sub">
             제외 사유: {Object.entries(tr.excluded_by_reason).map(([k, n]) => `${k} ${n}`).join(", ") || "없음"} · 학습자 모델 {tr.learner_model_version} ·
-            사용한 학습자 상태: {JSON.stringify(tr.learner_snapshot)}
+            사용한 학습자 상태: {describeSnapshot(tr.learner_snapshot, t)}
           </div>
           <DataTable
             columns={[
-              { key: "item", header: "콘텐츠", render: (s) => <span className="hgadm-cell-mono">{s.item_key}</span> },
+              {
+                key: "item",
+                header: "콘텐츠",
+                render: (s) => (
+                  <span style={{ display: "inline-block", maxWidth: 280, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {s.preview || UNNAMED_CONTENT}
+                  </span>
+                ),
+              },
               { key: "phase", header: "단계", render: (s) => `${s.phase}${s.review_kind !== "none" ? ` (${s.review_kind})` : ""}` },
-              { key: "skill", header: "기술", render: (s) => s.primary_skill_id ?? "—" },
+              { key: "skill", header: "기술", render: (s) => (s.primary_skill_id ? s.primary_skill_name ?? UNNAMED_SKILL : "—") },
               { key: "score", header: "점수", numeric: true, render: (s) => s.score.toFixed(3) },
               { key: "why", header: "점수 구성", render: (s) => <span className="hgadm-cell-sub hgadm-cell-mono">{Object.entries(s.components).map(([k, v]) => `${k}=${v}`).join(" ")}</span> },
             ]}

@@ -156,8 +156,8 @@ export interface LearnerDetail {
     placement_method: string | null;
     placement_uncertainty: string | null;
     skills: SkillState[];
-    review_queue: { review_id: string; skill_id: string; kind: string; due_at: string; overdue: boolean }[];
-    recent_miss_patterns: { skill_id: string; independent_misses_30d: number; last_miss_at: string }[];
+    review_queue: { review_id: string; skill_id: string; skill_name: string | null; kind: string; due_at: string; overdue: boolean }[];
+    recent_miss_patterns: { skill_id: string; skill_name: string | null; independent_misses_30d: number; last_miss_at: string }[];
   }[];
   recent_sessions: {
     session_id: string;
@@ -172,6 +172,7 @@ export interface LearnerDetail {
 
 export interface SkillGrowth {
   skill_id: string;
+  skill_name: string | null;
   dimension: string;
   metric: string;
   baseline_mastery: number | null;
@@ -225,6 +226,7 @@ export interface EvidenceRow {
   evidence_id: string;
   occurred_at: string;
   skill_id: string;
+  skill_name: string | null;
   dimension: string;
   role: string;
   outcome: number;
@@ -242,6 +244,7 @@ export interface EvidenceRow {
   attempt_id: string;
   content_version_id: string;
   content_item_key: string;
+  content_preview: string | null;
   content_version_no: number;
   content_review_status: string;
   item_band: number;
@@ -256,10 +259,33 @@ export interface TimelineRow {
   session_revision: number | null;
   content_version_id: string | null;
   payload: Record<string, unknown>;
+  /** The payload's skill, by name. */
+  skill_name: string | null;
+}
+
+/** One pick in a recommendation trace or a simulation, with its labels. */
+export interface TracePick {
+  version_id: string;
+  item_key: string;
+  preview: string | null;
+  phase: string;
+  review_kind: string;
+  primary_skill_id: string | null;
+  primary_skill_name: string | null;
+  band: number;
+  topic_id: string | null;
+  topic_name: string | null;
+  score: number;
+  components: Record<string, number>;
 }
 
 export interface SessionTrace {
   session_id: string;
+  started_at: string;
+  /** skill_id → name, for every skill the trace mentions. */
+  skill_names: Record<string, string>;
+  /** topic_id → name, for every topic the trace mentions. */
+  topic_names: Record<string, string>;
   track: string;
   status: string;
   learner_band: number;
@@ -277,12 +303,12 @@ export interface SessionTrace {
     candidates_considered: number;
     candidates_eligible: number;
     excluded_by_reason: Record<string, number>;
-    selected: { version_id: string; item_key: string; phase: string; review_kind: string; primary_skill_id: string | null; band: number; topic_id: string | null; score: number; components: Record<string, number> }[];
+    selected: TracePick[];
     fallbacks: Record<string, unknown>[];
     latency_ms: number | null;
     created_at: string;
   }[];
-  activities: { activity_id: string; position: number; revision_introduced: number; content_version_id: string; phase: string; review_kind: string; primary_skill_id: string | null; status: string; disposition_note: string | null; hints_used: number; answer_revealed_at: string | null; selection: Record<string, unknown> }[];
+  activities: { activity_id: string; position: number; revision_introduced: number; content_version_id: string; preview: string | null; phase: string; review_kind: string; primary_skill_id: string | null; primary_skill_name: string | null; status: string; disposition_note: string | null; hints_used: number; answer_revealed_at: string | null; selection: Record<string, unknown> }[];
   attempts: { attempt_id: string; activity_id: string; attempt_no: number; correct: boolean | null; evidence_policy: string; hints_used_before: number; answer_revealed_before: boolean; duration_ms: number | null; graded_at: string; answer: string | null }[];
   answers_included: boolean;
 }
@@ -290,6 +316,8 @@ export interface SessionTrace {
 export interface ContentDiagnosticRow {
   version_id: string;
   item_key: string;
+  /** What the item says — how the screen names it. */
+  preview: string;
   version_no: number;
   track: string;
   band: number;
@@ -329,7 +357,7 @@ export interface ContentVersionDetail extends ContentVersionSummary {
   public_payload: Record<string, unknown>;
   answer_key: Record<string, unknown>;
   explanations: { kind: string; choice_key: string | null; language: string; body: string; review_status: string }[];
-  skills: { skill_id: string; role: string; dimension: string; source: string }[];
+  skills: { skill_id: string; name_ko: string | null; role: string; dimension: string; source: string }[];
   validation: { validator: string; passed: boolean; findings: { code: string; message: string; severity: string }[]; ran_at: string }[];
   reviews: { review_id: string; kind: string; decision: string; reviewer_id: string; blind_answer: string | null; agrees_with_key: boolean | null; note: string | null; reviewed_at: string }[];
   actions: { action: string; from_state: string | null; to_state: string; actor_id: string | null; reason: string | null; acted_at: string }[];
@@ -407,7 +435,7 @@ export interface SimulationResult {
   candidates_eligible: number;
   excluded_by_reason: Record<string, number>;
   shortfall_reason: string | null;
-  selected: { version_id: string; item_key: string; phase: string; review_kind: string; primary_skill_id: string | null; band: number; topic_id: string | null; score: number; components: Record<string, number>; predicted_success: number }[];
+  selected: (TracePick & { predicted_success: number })[];
 }
 
 export interface AiFeature {
@@ -529,6 +557,7 @@ export const learningApi = {
   traces: (params: Query) => http.get<{ items: TraceSummary[] }>(`${LA}/traces`, params),
   simulate: (body: { user_id: string; track: string; activity_count?: number; topic_preferences?: string[]; band_override?: number }) =>
     http.post<SimulationResult>(`${LA}/simulate`, body),
+  topics: () => http.get<{ items: { topic_id: string; name_ko: string }[] }>(`${LA}/topics`),
   createExport: (body: { report: "cohorts" | "content"; filters: Record<string, unknown> }) =>
     http.post<{ export_id: string; row_count: number; expires_at: string }>(`${LA}/exports`, body),
   downloadExport: (exportId: string) =>

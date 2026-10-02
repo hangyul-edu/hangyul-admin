@@ -124,6 +124,7 @@ describe("ContentQualityPage", () => {
         {
           version_id: "cv_1",
           item_key: "quiz:q1",
+          preview: "다음을 읽고 알맞은 것을 고르십시오.",
           version_no: 1,
           track: "topik",
           band: 2,
@@ -151,6 +152,20 @@ describe("ContentQualityPage", () => {
     renderAt("/learning/content?tab=diagnostics");
     expect(await screen.findByText("대상 데이터 없음")).toBeInTheDocument();
     expect(screen.queryByText("0.0%")).not.toBeInTheDocument();
+    // The item reads as what it says, never as its key or version id.
+    expect(screen.getByText("다음을 읽고 알맞은 것을 고르십시오.")).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/quiz:q1|cv_1/);
+  });
+
+  it("names the version's skills and never shows its ids", async () => {
+    api.version.mockResolvedValue({
+      ...DETAIL,
+      skills: [{ skill_id: "grammar.euni_kka", name_ko: "-(으)니까", role: "primary", dimension: "production", source: "author" }],
+    });
+    renderAt("/learning/content?tab=queue");
+    await userEvent.click(await screen.findByText(SUMMARY.preview));
+    expect(await screen.findByText("-(으)니까 (주/산출)")).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/grammar\.euni_kka|quiz:q1|cv_1/);
   });
 
   it("hides publish without content:publish", async () => {

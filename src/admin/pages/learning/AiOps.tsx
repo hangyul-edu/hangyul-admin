@@ -385,8 +385,8 @@ function TurnReviewModal({ turn, onClose }: { turn: TutorTurnRow; onClose: () =>
         </>
       }
     >
-      <div className="hgadm-cell-sub hgadm-cell-mono" style={{ marginBottom: 8 }}>
-        {turn.turn_id} · {ROUTE_LABEL[turn.route] ?? turn.route}
+      <div className="hgadm-cell-sub" style={{ marginBottom: 8 }}>
+        {formatDateTime(turn.created_at)} · {ROUTE_LABEL[turn.route] ?? turn.route}
       </div>
       <Field label="정확한가요?">
         <Switch checked={correct} onChange={setCorrect} label="정확함" />

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ToastProvider } from "../../../hooks/toast";
@@ -12,6 +13,8 @@ vi.mock("../../learningApi", () => ({
     recommendations: vi.fn(),
     traces: vi.fn(),
     simulate: vi.fn(),
+    learners: vi.fn(),
+    topics: vi.fn(),
     metricDefinitions: vi.fn().mockResolvedValue({ reporting_timezone: "Asia/Seoul", metrics: [] }),
   },
 }));
@@ -64,6 +67,43 @@ describe("RecommendationsPage", () => {
   beforeEach(() => {
     vi.mocked(learningApi.recommendations).mockReset().mockResolvedValue(diagnostics);
     vi.mocked(learningApi.traces).mockReset().mockResolvedValue({ items: [] });
+    vi.mocked(learningApi.topics).mockReset().mockResolvedValue({
+      items: [
+        { topic_id: "topic.travel", name_ko: "여행" },
+        { topic_id: "topic.food", name_ko: "음식" },
+      ],
+    });
+    vi.mocked(learningApi.learners).mockReset().mockResolvedValue({
+      items: [{ user_id: "usr_42", email_masked: "ji•••@example.com", nickname: "지수", last_study_at: null, evidence_count: 0, overdue_reviews: 0, labels: [] }],
+      total: 1,
+      page: 1,
+      page_size: 8,
+    });
+    vi.mocked(learningApi.simulate).mockReset().mockResolvedValue({
+      simulation: true,
+      learner_band: 2,
+      candidates_considered: 10,
+      candidates_eligible: 4,
+      excluded_by_reason: {},
+      shortfall_reason: null,
+      selected: [
+        {
+          version_id: "cv_9",
+          item_key: "quiz:quz_0444235d70c8",
+          preview: "비가 오니까 우산을 가져가세요.",
+          phase: "new",
+          review_kind: "none",
+          primary_skill_id: "grammar.euni_kka",
+          primary_skill_name: "-(으)니까",
+          band: 2,
+          topic_id: "topic.travel",
+          topic_name: "여행",
+          score: 0.5,
+          components: {},
+          predicted_success: 0.7,
+        },
+      ],
+    });
     scopes = ["analytics:read"];
   });
 
@@ -86,5 +126,26 @@ describe("RecommendationsPage", () => {
     renderPage();
     expect(await screen.findByText("시뮬레이션 — 저장되지 않음")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "시뮬레이션 실행" })).toBeDisabled();
+  });
+
+  it("picks the learner and topics by name and shows results without ids", async () => {
+    scopes = ["analytics:read", "learners:read"];
+    renderPage();
+    await screen.findByText("시뮬레이션 — 저장되지 않음");
+    expect(screen.queryByText(/ID/)).not.toBeInTheDocument();
+
+    await userEvent.type(screen.getByPlaceholderText("닉네임으로 검색"), "지수{Enter}");
+    await userEvent.click(await screen.findByRole("button", { name: /지수 · ji•••@example\.com/ }));
+    await userEvent.click(await screen.findByRole("checkbox", { name: "여행" }));
+    await userEvent.click(screen.getByRole("button", { name: "시뮬레이션 실행" }));
+
+    await waitFor(() =>
+      expect(learningApi.simulate).toHaveBeenCalledWith(
+        expect.objectContaining({ user_id: "usr_42", topic_preferences: ["topic.travel"] }),
+      ),
+    );
+    expect(await screen.findByText("비가 오니까 우산을 가져가세요.")).toBeInTheDocument();
+    expect(screen.getByText("-(으)니까")).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/usr_42|quz_0444235d70c8|grammar\.euni_kka|topic\.travel|cv_9/);
   });
 });

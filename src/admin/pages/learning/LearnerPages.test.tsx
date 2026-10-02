@@ -165,7 +165,7 @@ describe("LearnerDetailPage", () => {
         current: { review_success: empty("review_success_rate@1"), reviews_assisted: 0, reviews_overdue_now: 0, delayed_retention: empty("delayed_retention_rate@1"), retention_participation: { completed_on_time: 0, due_in_window: 0 }, transfer: empty("transfer_performance@1") },
       },
       skills: [{
-        skill_id: "grammar.euni_kka", dimension: "production", metric: "mastery_change@1", baseline_mastery: 0.1, baseline_evidence_count: 9,
+        skill_id: "grammar.euni_kka", skill_name: "-(으)니까", dimension: "production", metric: "mastery_change@1", baseline_mastery: 0.1, baseline_evidence_count: 9,
         current_mastery: 0.5, current_evidence_count: 1, evidence_strength: "low", model_version: "lm-rule-v1", status: "not_comparable",
         change_pp: null, note: "학습자 모델 버전이 다릅니다 (lm-rule-v0 → lm-rule-v1).", change_causes: { evidence: 1 },
       }],
@@ -177,6 +177,24 @@ describe("LearnerDetailPage", () => {
     expect(await screen.findByText(/비교 불가 — 학습자 모델 버전이 다릅니다/)).toBeInTheDocument();
     expect(screen.queryByText(/\+40\.0%p/)).not.toBeInTheDocument();
     expect(screen.getByText("새 증거 1")).toBeInTheDocument();
+    // The skill is named; its id never shows.
+    expect(screen.getByText("-(으)니까")).toBeInTheDocument();
+    expect(screen.getByText("산출")).toBeInTheDocument();
+    expect(document.body.textContent).not.toContain("grammar.euni_kka");
+  });
+
+  it("filters evidence by a skill picked by name, never by a typed id", async () => {
+    api.evidence.mockReset();
+    api.evidence.mockResolvedValue({ items: [], next_before: null });
+    wrap(<LearnerDetailPage />, "/learning/learners/usr_1");
+    await userEvent.click(await screen.findByRole("tab", { name: "학습 증거" }));
+    expect(screen.queryByRole("textbox", { name: /기술/ })).toBeNull();
+    await userEvent.click(await screen.findByRole("button", { name: "기술로 거르기" }));
+    await userEvent.click(await screen.findByRole("option", { name: "-(으)니까" }));
+    await waitFor(() =>
+      expect(api.evidence).toHaveBeenLastCalledWith("usr_1", expect.objectContaining({ skill_id: "grammar.euni_kka" })),
+    );
+    expect(document.body.textContent).not.toContain("grammar.euni_kka");
   });
 
   it("starts evidence from the newest rows again when the track changes", async () => {
@@ -199,16 +217,17 @@ describe("LearnerDetailPage", () => {
   it("labels excluded and invalidated evidence and hides raw answers without transcripts access", async () => {
     api.evidence.mockResolvedValue({
       items: [{
-        evidence_id: "evd_1", occurred_at: "2026-09-01T00:00:00Z", skill_id: "grammar.euni_kka", dimension: "production", role: "primary",
+        evidence_id: "evd_1", occurred_at: "2026-09-01T00:00:00Z", skill_id: "grammar.euni_kka", skill_name: "-(으)니까", dimension: "production", role: "primary",
         outcome: 1, policy: "revealed", exclusion_reason: "answer_revealed", weight: 0, hints_used_before: 0, mastery_before: null,
         mastery_after: null, model_version: "lm-rule-v1", review_kind: "none", invalidated_at: "2026-09-02T00:00:00Z", session_id: "ss_1",
-        activity_id: "act_1", attempt_id: "sat_1", content_version_id: "cv_1", content_item_key: "sentence:s1", content_version_no: 1,
+        activity_id: "act_1", attempt_id: "sat_1", content_version_id: "cv_1", content_item_key: "sentence:s1", content_preview: "비가 오니까 우산을 가져가세요.", content_version_no: 1,
         content_review_status: "legacy_unreviewed", item_band: 2, learner_band: 2,
       }],
       next_before: null,
     });
     api.sessionTrace.mockResolvedValue({
-      session_id: "ss_1", track: "conversation", status: "completed", learner_band: 2, blueprint_version: "bp-v1", ranking_policy_version: "rank-v1",
+      session_id: "ss_1", started_at: "2026-09-01T00:00:00Z", skill_names: {}, topic_names: {},
+      track: "conversation", status: "completed", learner_band: 2, blueprint_version: "bp-v1", ranking_policy_version: "rank-v1",
       shortfall_reason: null, revisions: [], traces: [], activities: [],
       attempts: [{ attempt_id: "sat_1", activity_id: "act_1", attempt_no: 1, correct: true, evidence_policy: "revealed", hints_used_before: 0, answer_revealed_before: true, duration_ms: null, graded_at: "2026-09-01T00:00:00Z", answer: null }],
       answers_included: false,
@@ -218,10 +237,16 @@ describe("LearnerDetailPage", () => {
     expect(await screen.findByText("정답 공개 후")).toBeInTheDocument();
     expect(screen.getByText("콘텐츠 정정으로 무효")).toBeInTheDocument();
     expect(screen.getByText("반영 안 됨")).toBeInTheDocument();
+    // Skill and content are named; none of their ids show.
+    expect(screen.getByText("-(으)니까 (주)")).toBeInTheDocument();
+    expect(screen.getByText("비가 오니까 우산을 가져가세요.")).toBeInTheDocument();
+    for (const id of ["grammar.euni_kka", "sentence:s1", "cv_1", "ss_1"]) expect(document.body.textContent).not.toContain(id);
 
     await userEvent.click(screen.getByRole("tab", { name: "세션·추천 근거" }));
     await userEvent.click(await screen.findByText("completed"));
     const dialog = await screen.findByRole("dialog");
     await waitFor(() => expect(within(dialog).getByText(/transcripts:read 권한 필요/)).toBeInTheDocument());
+    expect(within(dialog).getByText("세션 시작")).toBeInTheDocument();
+    expect(dialog.textContent).not.toContain("ss_1");
   });
 });

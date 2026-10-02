@@ -52,7 +52,6 @@ export function LearnersPage() {
         <div>
           <div className="hgadm-cell-main">{r.nickname ?? "(닉네임 없음)"}</div>
           <div className="hgadm-cell-sub">{r.email_masked}</div>
-          <div className="hgadm-cell-sub hgadm-cell-mono">{r.user_id}</div>
         </div>
       ),
     },

@@ -109,9 +109,7 @@ export function MetricLabel({ metric, children }: { metric: string; children?: R
       {def ? (
         <dl className="hgadm-dl" style={{ fontSize: 12, marginTop: 6 }}>
           <dt>정의 버전</dt>
-          <dd>
-            {def.metric_id}@{def.version}
-          </dd>
+          <dd>v{def.version}</dd>
           <dt>분자</dt>
           <dd>{def.numerator}</dd>
           <dt>분모</dt>
@@ -220,6 +218,9 @@ export function StaleNotice({ stale, lastSuccess, lag }: { stale: boolean; lastS
 export const TRACK_LABEL: Record<string, string> = { conversation: "회화", topik: "TOPIK" };
 
 export const STRENGTH_LABEL: Record<string, string> = { low: "증거 적음", medium: "증거 보통", high: "증거 많음" };
+
+/** A skill's dimension, in words. */
+export const DIMENSION_LABEL: Record<string, string> = { recognition: "인식", comprehension: "이해", production: "산출" };
 
 export async function downloadExport(exportId: string, filename: string): Promise<void> {
   const csv = await learningApi.downloadExport(exportId);

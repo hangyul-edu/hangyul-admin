@@ -46,7 +46,8 @@ export function CohortsPage() {
   const exporter = useMutation({
     mutationFn: async () => {
       const created = await learningApi.createExport({ report: "cohorts", filters });
-      await downloadExport(created.export_id, `cohorts-${created.export_id}.csv`);
+      // Named by date, not by the export's internal id.
+      await downloadExport(created.export_id, `cohorts-${new Date().toISOString().slice(0, 10)}.csv`);
       return created;
     },
     onSuccess: (created) => toast.success(`CSV를 내보냈어요 (${created.row_count.toLocaleString()}행).`),

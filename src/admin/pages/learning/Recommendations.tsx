@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { learningApi } from "../../learningApi";
-import type { SimulationResult, TraceSummary } from "../../learningApi";
+import type { LearnerRow, SimulationResult, TraceSummary } from "../../learningApi";
 import { useUrlFilters } from "../../lib/urlFilters";
 import { useAdminAuth } from "../../auth";
 import { useToastError } from "../../../hooks/toast";
@@ -13,6 +13,7 @@ import {
   Field,
   Input,
   LoadingState,
+  SearchBox,
   Select,
   Stat,
 } from "../../components/kit";
@@ -149,7 +150,6 @@ function Traces() {
   const columns: Column<TraceSummary>[] = [
     { key: "at", header: "시각", render: (t) => formatDateTime(t.created_at) },
     { key: "kind", header: "종류", render: (t) => <Badge tone="info">{KIND_LABEL[t.kind] ?? t.kind}</Badge> },
-    { key: "session", header: "세션", render: (t) => <span className="hgadm-cell-mono">{t.session_id ?? "—"}</span> },
     { key: "considered", header: "후보", numeric: true, render: (t) => t.candidates_considered.toLocaleString() },
     { key: "eligible", header: "적격", numeric: true, render: (t) => t.candidates_eligible.toLocaleString() },
     { key: "selected", header: "선택", numeric: true, render: (t) => t.selected_count.toLocaleString() },
@@ -186,21 +186,78 @@ function Traces() {
   );
 }
 
+/** At most this many topics can be preferred (the API's limit). */
+const MAX_TOPICS = 8;
+
+/**
+ * Pick the learner to simulate by nickname — their id is used only for the
+ * request, never typed or shown.
+ */
+function LearnerPicker({ value, onChange }: { value: LearnerRow | null; onChange: (learner: LearnerRow | null) => void }) {
+  const [q, setQ] = useState("");
+  const results = useQuery({
+    queryKey: ["admin", "learning", "simulation-learners", q],
+    queryFn: () => learningApi.learners({ q, page: 1, page_size: 8 }),
+    enabled: !value && q.trim().length > 0,
+  });
+  if (value) {
+    return (
+      <div className="hgadm-row" style={{ gap: 8 }}>
+        <span>
+          <strong>{value.nickname ?? "(닉네임 없음)"}</strong> <span className="hgadm-cell-sub">{value.email_masked}</span>
+        </span>
+        <Button size="sm" variant="ghost" onClick={() => onChange(null)}>
+          변경
+        </Button>
+      </div>
+    );
+  }
+  return (
+    <div style={{ width: 260 }}>
+      <SearchBox value={q} placeholder="닉네임으로 검색" onSearch={setQ} />
+      {q.trim() && (
+        <div className="hgadm-card" style={{ marginTop: 4, padding: 4 }}>
+          {results.isLoading ? (
+            <LoadingState />
+          ) : (results.data?.items ?? []).length === 0 ? (
+            <div className="hgadm-cell-sub" style={{ padding: 6 }}>
+              찾는 학습자가 없습니다.
+            </div>
+          ) : (
+            <ul aria-label="학습자 검색 결과" style={{ listStyle: "none", margin: 0, padding: 0 }}>
+              {results.data!.items.map((l) => (
+                <li key={l.user_id}>
+                  <Button size="sm" variant="ghost" onClick={() => onChange(l)}>
+                    {l.nickname ?? "(닉네임 없음)"} · {l.email_masked}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Simulation() {
   const toastError = useToastError();
-  const [userId, setUserId] = useState("");
+  const [learner, setLearner] = useState<LearnerRow | null>(null);
   const [track, setTrack] = useState("conversation");
   const [count, setCount] = useState("8");
-  const [topics, setTopics] = useState("");
+  const [topics, setTopics] = useState<string[]>([]);
   const [band, setBand] = useState("");
   const [result, setResult] = useState<SimulationResult | null>(null);
+  const topicList = useQuery({ queryKey: ["admin", "learning", "topics"], queryFn: () => learningApi.topics() });
+  const toggleTopic = (topicId: string) =>
+    setTopics((was) => (was.includes(topicId) ? was.filter((t) => t !== topicId) : [...was, topicId]));
   const run = useMutation({
     mutationFn: () =>
       learningApi.simulate({
-        user_id: userId.trim(),
+        user_id: learner!.user_id,
         track,
         activity_count: Number(count) || 8,
-        topic_preferences: topics.split(",").map((t) => t.trim()).filter(Boolean),
+        topic_preferences: topics,
         band_override: band ? Number(band) : undefined,
       }),
     onSuccess: setResult,
@@ -215,8 +272,8 @@ function Simulation() {
         학습자의 현재 상태로 실제 구성 로직을 실행합니다. 세션·노출·예측·이벤트는 기록되지 않습니다. 조회는 감사 기록에 남습니다.
       </div>
       <div className="hgadm-toolbar">
-        <Field label="학습자 ID">
-          <Input value={userId} onChange={(e) => setUserId(e.target.value)} style={{ width: 220 }} />
+        <Field label="학습자">
+          <LearnerPicker value={learner} onChange={setLearner} />
         </Field>
         <Field label="트랙">
           <Select value={track} onChange={(e) => setTrack(e.target.value)} style={{ width: 120 }}>
@@ -227,15 +284,38 @@ function Simulation() {
         <Field label="활동 수">
           <Input type="number" min={1} max={20} value={count} onChange={(e) => setCount(e.target.value)} style={{ width: 80 }} />
         </Field>
-        <Field label="주제 ID (쉼표)">
-          <Input value={topics} onChange={(e) => setTopics(e.target.value)} style={{ width: 180 }} />
-        </Field>
         <Field label="수준 지정 (선택)">
           <Input type="number" min={1} max={10} value={band} onChange={(e) => setBand(e.target.value)} style={{ width: 90 }} />
         </Field>
-        <Button variant="primary" disabled={!userId.trim()} loading={run.isPending} onClick={() => run.mutate()}>
+        <Button variant="primary" disabled={!learner} loading={run.isPending} onClick={() => run.mutate()}>
           시뮬레이션 실행
         </Button>
+      </div>
+      {/* A group, not a Field: Field's <label> would turn any click into a
+          click on the first checkbox. */}
+      <div role="group" aria-label="선호 주제 (선택)" style={{ margin: "4px 0 8px" }}>
+        <div className="hgadm-field__label">
+          선호 주제 (선택, 최대 {MAX_TOPICS}개){topics.length ? ` · ${topics.length}개 선택` : ""}
+        </div>
+        {topicList.isLoading ? (
+          <LoadingState />
+        ) : topicList.isError ? (
+          <ErrorState message="주제를 불러오지 못했습니다." onRetry={() => void topicList.refetch()} />
+        ) : (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 14px" }}>
+            {(topicList.data?.items ?? []).map((t) => (
+              <label key={t.topic_id} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 13 }}>
+                <input
+                  type="checkbox"
+                  checked={topics.includes(t.topic_id)}
+                  disabled={!topics.includes(t.topic_id) && topics.length >= MAX_TOPICS}
+                  onChange={() => toggleTopic(t.topic_id)}
+                />
+                {t.name_ko}
+              </label>
+            ))}
+          </div>
+        )}
       </div>
       {result && (
         <div>
@@ -247,11 +327,19 @@ function Simulation() {
           <BarList rows={rows(result.excluded_by_reason, EXCLUSION_LABEL)} />
           <DataTable
             columns={[
-              { key: "item", header: "콘텐츠", render: (s) => <span className="hgadm-cell-mono">{s.item_key}</span> },
+              {
+                key: "item",
+                header: "콘텐츠",
+                render: (s) => (
+                  <span style={{ display: "inline-block", maxWidth: 280, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {s.preview || "(내용 없음)"}
+                  </span>
+                ),
+              },
               { key: "phase", header: "단계", render: (s) => s.phase },
-              { key: "skill", header: "기술", render: (s) => s.primary_skill_id ?? "—" },
+              { key: "skill", header: "기술", render: (s) => (s.primary_skill_id ? s.primary_skill_name ?? "(이름 없는 기술)" : "—") },
               { key: "band", header: "수준", numeric: true, render: (s) => s.band },
-              { key: "topic", header: "주제", render: (s) => s.topic_id ?? "—" },
+              { key: "topic", header: "주제", render: (s) => (s.topic_id ? s.topic_name ?? "(이름 없는 주제)" : "—") },
               { key: "score", header: "점수", numeric: true, render: (s) => s.score.toFixed(3) },
               {
                 key: "components",

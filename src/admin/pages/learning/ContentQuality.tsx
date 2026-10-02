@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { learningApi } from "../../learningApi";
 import type { ContentDiagnosticRow, ContentVersionDetail, ContentVersionSummary } from "../../learningApi";
-import { RatioView, TRACK_LABEL, pct } from "../../components/learning";
+import { DIMENSION_LABEL, RatioView, TRACK_LABEL, pct } from "../../components/learning";
 import {
   Badge,
   Button,
@@ -144,7 +144,7 @@ function CoverageTab() {
             rowKey={(s) => s.skill_id}
             empty="대상 데이터 없음"
             columns={[
-              { key: "name", header: "기술", render: (s) => <div><div>{s.name_ko}</div><div className="hgadm-cell-sub hgadm-cell-mono">{s.skill_id}</div></div> },
+              { key: "name", header: "기술", render: (s) => s.name_ko },
               { key: "n", header: "게시 버전", numeric: true, render: (s) => s.published_versions },
             ]}
           />
@@ -187,8 +187,10 @@ function DiagnosticsTab() {
       key: "item",
       header: "문항",
       render: (r) => (
-        <div>
-          <div className="hgadm-cell-mono">{r.item_key}</div>
+        <div style={{ maxWidth: 360 }}>
+          <div className="hgadm-cell-main" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {r.preview || "(내용 없음)"}
+          </div>
           <div className="hgadm-cell-sub">
             v{r.version_no} · {TRACK_LABEL[r.track] ?? r.track} {r.band} · {r.task_type} · {REVIEW_STATUS_LABEL[r.review_status] ?? r.review_status}
           </div>
@@ -295,9 +297,7 @@ function QueueTab() {
           <div className="hgadm-cell-main" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {v.preview}
           </div>
-          <div className="hgadm-cell-sub hgadm-cell-mono">
-            {v.item_key} v{v.version_no}
-          </div>
+          <div className="hgadm-cell-sub">v{v.version_no}</div>
         </div>
       ),
     },
@@ -495,7 +495,8 @@ function VersionModal({ versionId, onClose }: { versionId: string; onClose: () =
         <div>
           <Dl
             items={[
-              ["버전", `${v.item_key} v${v.version_no} (${v.version_id})`],
+              ["내용", v.preview || "(내용 없음)"],
+              ["버전", `v${v.version_no}`],
               ["상태", `${LIFECYCLE_LABEL[v.lifecycle] ?? v.lifecycle} · ${REVIEW_STATUS_LABEL[v.review_status] ?? v.review_status}`],
               ["트랙·수준·유형", `${TRACK_LABEL[v.track] ?? v.track} ${v.band} · ${v.task_type}`],
               ["작성 방식·출처", `${v.authoring_method} · ${v.source_use}`],
@@ -520,8 +521,12 @@ function VersionModal({ versionId, onClose }: { versionId: string; onClose: () =
             </ul>
           )}
           <h3>연결 기술</h3>
-          <div className="hgadm-cell-mono">
-            {v.skills.length === 0 ? "없음 (세션에 제공되지 않음)" : v.skills.map((s) => `${s.skill_id}(${s.role}/${s.dimension})`).join(", ")}
+          <div>
+            {v.skills.length === 0
+              ? "없음 (세션에 제공되지 않음)"
+              : v.skills
+                  .map((s) => `${s.name_ko ?? "(이름 없는 기술)"} (${s.role === "primary" ? "주" : "보조"}/${DIMENSION_LABEL[s.dimension] ?? s.dimension})`)
+                  .join(", ")}
           </div>
           <h3>자동 검증</h3>
           {v.validation.slice(0, 1).map((r, i) => (
