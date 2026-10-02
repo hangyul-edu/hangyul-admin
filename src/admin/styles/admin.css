@@ -3491,35 +3491,72 @@ a.hgadm-recent--link:hover {
   font-size: 13px;
   line-height: 1.6;
 }
+/* The three steps double as the page's tabs: each shows its progress (✓,
+   or its number — blue while it needs work), and the open one is outlined
+   with an indicator bar under it. */
 .hgadm-lw__steps {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   margin: 0 0 16px;
-  padding: 0;
-  list-style: none;
 }
-.hgadm-lw__steps li {
+.hgadm-lw__step {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
   padding: 12px 14px;
   border: 1px solid var(--border);
   border-radius: var(--ad-radius);
   background: var(--surface);
-  min-width: 0;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s,
+    background 0.15s;
 }
-.hgadm-lw__steps li > span:last-child {
+.hgadm-lw__step:hover {
+  border-color: var(--border-strong);
+}
+.hgadm-lw__step:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.hgadm-lw__step > span:last-child {
   display: flex;
   flex-direction: column;
   min-width: 0;
 }
-.hgadm-lw__steps li.is-active {
-  border-color: var(--ad-primary);
-  box-shadow: var(--focus-ring);
+.hgadm-lw__step > span:last-child > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.hgadm-lw__steps li.is-waiting {
-  opacity: 0.6;
+.hgadm-lw__step.is-current {
+  border-color: var(--ad-primary);
+  background: var(--ad-primary-soft);
+}
+.hgadm-lw__step.is-current::after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: -1px;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: var(--ad-primary);
+}
+.hgadm-lw__step.is-waiting:not(.is-current) {
+  opacity: 0.65;
+}
+.hgadm-lw__next {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 20px 18px;
 }
 .hgadm-lw__step-no {
   display: grid;
@@ -3533,16 +3570,13 @@ a.hgadm-recent--link:hover {
   font-size: 13px;
   font-weight: 700;
 }
-.hgadm-lw__steps li.is-done .hgadm-lw__step-no {
+.hgadm-lw__step.is-done .hgadm-lw__step-no {
   background: var(--ad-success-soft);
   color: var(--ad-success);
 }
-.hgadm-lw__steps li.is-active .hgadm-lw__step-no {
+.hgadm-lw__step.is-active .hgadm-lw__step-no {
   background: var(--ad-primary);
   color: #fff;
-}
-.hgadm-lw__card {
-  margin-bottom: 16px;
 }
 .hgadm-lw__drop {
   display: flex;
@@ -3859,6 +3893,17 @@ a.hgadm-recent--link:hover {
   font-size: 20px;
   font-variant-numeric: tabular-nums;
 }
+.hgadm-cpe__time-input {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.hgadm-cpe__time-input .hgadm-input {
+  width: 130px;
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
 .hgadm-cpe__draft-actions {
   display: flex;
   align-items: center;
@@ -3887,16 +3932,30 @@ a.hgadm-recent--link:hover {
   border-radius: var(--ad-radius-sm);
   background: var(--surface);
 }
+.hgadm-cp__picked-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
 .hgadm-cp__picker {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
+/* The shared search box grows along a toolbar's row (flex: 1 1 320px); in
+   this column that basis became a 320px-tall box with the icon floating in
+   the middle of it. Here it is one line, the panel's full width. */
+.hgadm-cp__picker .hgadm-search {
+  flex: none;
+  max-width: none;
+  min-width: 0;
+}
 .hgadm-cp__options {
   list-style: none;
   margin: 0;
   padding: 0;
-  max-height: 240px;
+  max-height: 320px;
   overflow-y: auto;
   border: 1px solid var(--border);
   border-radius: var(--ad-radius-sm);
@@ -3905,9 +3964,9 @@ a.hgadm-recent--link:hover {
 .hgadm-cp__option {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   width: 100%;
-  padding: 9px 12px;
+  padding: 10px 12px;
   border: 0;
   border-bottom: 1px solid var(--line);
   background: none;
@@ -3918,10 +3977,47 @@ a.hgadm-recent--link:hover {
 .hgadm-cp__options li:last-child .hgadm-cp__option {
   border-bottom: 0;
 }
-.hgadm-cp__option:hover {
+.hgadm-cp__option:hover,
+.hgadm-cp__option:focus-visible {
+  outline: none;
   background: var(--ad-primary-soft);
 }
+.hgadm-cp__option-label {
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+.hgadm-cp__option-detail {
+  color: var(--ink-2);
+  font-size: 12.5px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+.hgadm-cp__option-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: var(--ink-3);
+  font-size: 11.5px;
+}
+.hgadm-cp__tag {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  color: var(--ink-2);
+  font-weight: 600;
+}
 .hgadm-cp__none {
-  padding: 8px 2px;
+  padding: 16px 12px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--ad-radius-sm);
+  color: var(--ink-3);
   font-size: 13px;
+  text-align: center;
+}
+.hgadm-cp__count {
+  color: var(--ink-3);
+  font-size: 12px;
 }

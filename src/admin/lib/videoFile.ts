@@ -51,6 +51,26 @@ export function formatPrecise(seconds: number): string {
   return `${formatClock(whole)}.${hundredths}`;
 }
 
+/**
+ * A typed checkpoint time back to seconds: "1:23.45", "1:02:03.5" or plain
+ * seconds ("83.45"). Rounded like `roundTime`; null when it is not a time.
+ */
+export function parseTime(text: string): number | null {
+  const parts = text.trim().replace(/초$/, "").trim().split(":");
+  if (parts.length > 3 || parts.some((p) => p.trim() === "")) return null;
+  const last = parts.length - 1;
+  let total = 0;
+  for (const [i, raw] of parts.entries()) {
+    const p = raw.trim();
+    // Only the seconds may carry a fraction; minutes and seconds after a ":" stay under 60.
+    if (!(i === last ? /^\d+(\.\d+)?$/ : /^\d+$/).test(p)) return null;
+    const n = Number(p);
+    if (i > 0 && n >= 60) return null;
+    total = total * 60 + n;
+  }
+  return roundTime(total);
+}
+
 /** 205 → "3:25", 3725 → "1:02:05" — how lengths and checkpoint times read in the CMS. */
 export function formatClock(totalSeconds: number): string {
   const s = Math.max(0, Math.floor(totalSeconds));

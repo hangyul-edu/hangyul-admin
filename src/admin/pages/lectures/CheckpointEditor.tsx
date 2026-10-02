@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { adminApi } from "../../api";
 import type { AdminCheckpoint, AdminCheckpointWrite, AdminLecture, CheckpointInteractionType } from "../../api";
 import { StreamVideo } from "../../../components/StreamVideo";
-import { formatPrecise, roundTime } from "../../lib/videoFile";
+import { formatPrecise, parseTime, roundTime } from "../../lib/videoFile";
 import { errorMessage } from "../../../lib/http";
 import { useToast, useToastError } from "../../../hooks/toast";
 import { Badge, Button, ConfirmDialog, ErrorState, LoadingState, SearchBox } from "../../components/kit";
@@ -555,7 +555,11 @@ function DraftPanel({
 
       <Group label="재생 시점">
         <div className="hgadm-cpe__at">
-          <strong>{formatPrecise(draft.at)}</strong>
+          {canWrite ? (
+            <TimeInput value={draft.at} duration={duration} onCommit={onMove} />
+          ) : (
+            <strong>{formatPrecise(draft.at)}</strong>
+          )}
           <Button size="sm" variant="ghost" onClick={onPreview}>
             앞 {LEAD_IN_SECONDS}초부터 미리보기
           </Button>
@@ -587,10 +591,12 @@ function DraftPanel({
       <Group label={copy.picker} hint={copy.hint}>
         {draft.contentId ? (
           <div className="hgadm-cp__picked">
-            <div>
-              <div className="hgadm-cell-main">{draft.contentLabel || draft.contentId}</div>
-              {draft.contentDetail && <div className="hgadm-cell-sub">{draft.contentDetail}</div>}
-              <div className="hgadm-cell-sub hgadm-cell-mono">{draft.contentId}</div>
+            <div className="hgadm-cp__picked-body">
+              <span className="hgadm-cp__option-label">{draft.contentLabel || draft.contentId}</span>
+              {draft.contentDetail && <span className="hgadm-cp__option-detail">{draft.contentDetail}</span>}
+              <span className="hgadm-cp__option-meta">
+                <span className="hgadm-cell-mono">{draft.contentId}</span>
+              </span>
             </div>
             {canWrite && (
               <Button size="sm" onClick={() => onChange({ ...draft, contentId: "", contentLabel: "", contentDetail: "" })}>
@@ -628,6 +634,64 @@ function DraftPanel({
 }
 
 /**
+ * The checkpoint's time, typed exactly: "1:23.45", "1:02:03.5" or seconds
+ * ("83.45"). Applied on Enter or when the field loses focus — the preview
+ * jumps there — and Esc puts back the current time.
+ */
+function TimeInput({ value, duration, onCommit }: { value: number; duration: number; onCommit: (seconds: number) => void }) {
+  const [text, setText] = useState(formatPrecise(value));
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    setText(formatPrecise(value));
+    setError(null);
+  }, [value]);
+
+  function commit() {
+    const seconds = parseTime(text);
+    if (seconds === null) {
+      setError("1:23.45 또는 83.45처럼 입력해 주세요.");
+    } else if (seconds >= duration) {
+      setError(`영상 길이(${formatPrecise(duration)})보다 앞선 시점을 입력해 주세요.`);
+    } else if (seconds === value) {
+      setText(formatPrecise(value));
+      setError(null);
+    } else {
+      setError(null);
+      onCommit(seconds);
+    }
+  }
+
+  return (
+    <span className="hgadm-cpe__time-input">
+      <input
+        className="hgadm-input"
+        value={text}
+        inputMode="decimal"
+        spellCheck={false}
+        aria-label="체크포인트 시점 (분:초.00)"
+        aria-invalid={error ? true : undefined}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            commit();
+          } else if (e.key === "Escape") {
+            setText(formatPrecise(value));
+            setError(null);
+          }
+        }}
+      />
+      {error && (
+        <span className="hgadm-lw__error" role="alert">
+          {error}
+        </span>
+      )}
+    </span>
+  );
+}
+
+/**
  * `Field` wraps its control in a <label>, which turns a click anywhere on it
  * into a click on the first button inside — wrong for a radio group or a
  * result list. Same look, as a plain group.
@@ -640,6 +704,14 @@ function Group({ label, hint, children }: { label: string; hint?: string; childr
       {hint && <span className="hgadm-field__hint">{hint}</span>}
     </div>
   );
+}
+
+interface PickerOption {
+  id: string;
+  label: string;
+  /** A sentence's translation, or a question's choices. */
+  detail: string;
+  tags: string[];
 }
 
 function ContentPicker({
@@ -663,19 +735,15 @@ function ContentPicker({
     enabled: kind === "quiz",
   });
   const active = kind === "sentence" ? sentences : quizzes;
-  const options =
+  const total = active.data?.total ?? 0;
+  const options: PickerOption[] =
     kind === "sentence"
-      ? (sentences.data?.items ?? []).map((s) => ({ id: s.sentence_id, label: s.korean, detail: s.translation }))
+      ? (sentences.data?.items ?? []).map((s) => ({ id: s.sentence_id, label: s.korean, detail: s.translation, tags: [] }))
       : (quizzes.data?.items ?? []).map((quiz) => ({
           id: quiz.quiz_id,
           label: quiz.prompt,
-          detail: [
-            quiz.topik_question_type,
-            quiz.answer_format === "single_choice" ? "객관식" : "주관식/쓰기",
-            quiz.choices.length ? quiz.choices.map((c) => `${c.key}) ${c.text}`).join("  ") : null,
-          ]
-            .filter(Boolean)
-            .join(" · "),
+          detail: quiz.choices.map((c) => `${c.key}) ${c.text}`).join("   "),
+          tags: [quiz.answer_format === "single_choice" ? "객관식" : "주관식/쓰기", quiz.topik_question_type ?? ""].filter(Boolean),
         }));
   return (
     <div className="hgadm-cp__picker">
@@ -685,21 +753,35 @@ function ContentPicker({
       ) : active.isError ? (
         <ErrorState message={errorMessage(active.error)} onRetry={() => void active.refetch()} />
       ) : options.length === 0 ? (
-        <div className="hgadm-muted hgadm-cp__none">검색 결과가 없습니다.</div>
+        <div className="hgadm-cp__none">
+          {q ? `‘${q}’에 맞는 ${kind === "sentence" ? "문장이" : "문제가"} 없어요.` : `등록된 ${kind === "sentence" ? "문장이" : "문제가"} 없어요.`}
+        </div>
       ) : (
-        <ul className="hgadm-cp__options">
-          {options.map((o) => (
-            <li key={o.id}>
-              <button type="button" className="hgadm-cp__option" onClick={() => onPick(o.id, o.label, o.detail)}>
-                <span className="hgadm-cell-main">{o.label}</span>
-                <span className="hgadm-cell-sub">
-                  <span className="hgadm-cell-mono">{o.id}</span>
-                  {o.detail && ` · ${o.detail}`}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
+        <>
+          <ul className="hgadm-cp__options">
+            {options.map((o) => (
+              <li key={o.id}>
+                <button type="button" className="hgadm-cp__option" onClick={() => onPick(o.id, o.label, o.detail)}>
+                  <span className="hgadm-cp__option-label">{o.label}</span>
+                  {o.detail && <span className="hgadm-cp__option-detail">{o.detail}</span>}
+                  <span className="hgadm-cp__option-meta">
+                    {o.tags.map((tag) => (
+                      <span key={tag} className="hgadm-cp__tag">
+                        {tag}
+                      </span>
+                    ))}
+                    <span className="hgadm-cell-mono">{o.id}</span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          {total > options.length && (
+            <div className="hgadm-cp__count">
+              {total}개 중 {options.length}개를 보여 주고 있어요. 검색어로 좁혀 보세요.
+            </div>
+          )}
+        </>
       )}
     </div>
   );

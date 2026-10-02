@@ -182,11 +182,35 @@ describe("CheckpointEditor", () => {
     await userEvent.click(within(nudges).getByRole("button", { name: "+1초" }));
     await userEvent.click(within(nudges).getByRole("button", { name: "+0.1초" }));
     await userEvent.click(within(nudges).getByRole("button", { name: "+0.1초" }));
-    expect(within(screen.getByLabelText("체크포인트 편집")).getByText("1:16.20")).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: /체크포인트 시점/ })).toHaveValue("1:16.20");
     await userEvent.click(screen.getByRole("button", { name: "저장" }));
 
     await waitFor(() => expect(adminApi.replaceCheckpoint).toHaveBeenCalledTimes(1));
     expect(adminApi.replaceCheckpoint).toHaveBeenCalledWith("lec_1", "cp_1", { at_second: 76.2, sentence_id: "sen_hello_01" });
+  });
+
+  it("takes an exactly typed time and moves the preview there", async () => {
+    renderEditor();
+    const el = await video();
+    await userEvent.click(screen.getByRole("button", { name: "1:15.00 회화 · 따라 말하기 체크포인트" }));
+    const input = screen.getByRole("textbox", { name: /체크포인트 시점/ });
+
+    await userEvent.clear(input);
+    await userEvent.type(input, "abc{Enter}");
+    expect(screen.getByRole("alert")).toHaveTextContent("1:23.45 또는 83.45처럼 입력해 주세요.");
+
+    await userEvent.clear(input);
+    await userEvent.type(input, "5:00{Enter}");
+    expect(screen.getByRole("alert")).toHaveTextContent("영상 길이(5:00.00)보다 앞선 시점을 입력해 주세요.");
+
+    await userEvent.clear(input);
+    await userEvent.type(input, "2:03.456{Enter}");
+    expect(input).toHaveValue("2:03.46");
+    expect(el.currentTime).toBe(123.46);
+    await userEvent.click(screen.getByRole("button", { name: "저장" }));
+
+    await waitFor(() => expect(adminApi.replaceCheckpoint).toHaveBeenCalledTimes(1));
+    expect(adminApi.replaceCheckpoint).toHaveBeenCalledWith("lec_1", "cp_1", { at_second: 123.46, sentence_id: "sen_hello_01" });
   });
 
   it("moves an open checkpoint to where the preview is", async () => {
