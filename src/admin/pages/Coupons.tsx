@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { adminApi } from "../api";
 import type { CouponBatch, CouponRow } from "../api";
 import { errorMessage } from "../../lib/http";
@@ -118,10 +118,7 @@ function BatchesTab() {
       key: "name",
       header: "발행 묶음",
       render: (b) => (
-        <div>
-          <div className="hgadm-cell-main">{b.name}</div>
-          <div className="hgadm-cell-sub hgadm-cell-mono">{b.batch_id}</div>
-        </div>
+        <div className="hgadm-cell-main">{b.name}</div>
       ),
     },
     { key: "duration", header: "이용 기간", render: (b) => `${b.duration_days}일` },
@@ -320,6 +317,7 @@ function CouponSearchTab() {
     onError: toastError,
   });
 
+  const canReadUsers = can("users:read");
   const columns: Column<CouponRow>[] = [
     {
       key: "code",
@@ -329,7 +327,7 @@ function CouponSearchTab() {
     {
       key: "batch",
       header: "발행 묶음",
-      render: (c) => c.batch_name ?? c.batch_id,
+      render: (c) => c.batch_name ?? "(이름 없는 배치)",
     },
     { key: "duration", header: "기간", render: (c) => `${c.duration_days}일` },
     {
@@ -343,7 +341,8 @@ function CouponSearchTab() {
       render: (c) =>
         c.redeemed_by_user_id ? (
           <div>
-            <div className="hgadm-cell-mono">{c.redeemed_by_user_id}</div>
+            {/* The redeemer is linked, not shown by ID. */}
+            {canReadUsers ? <Link to={`/users/${c.redeemed_by_user_id}`}>사용자 보기</Link> : <div>사용됨</div>}
             <div className="hgadm-cell-sub">{formatDateTime(c.redeemed_at)}</div>
           </div>
         ) : (

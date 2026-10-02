@@ -77,10 +77,7 @@ function PaymentsTab() {
       key: "payment",
       header: "결제",
       render: (p) => (
-        <div>
-          <div className="hgadm-cell-main">{p.user_email ?? "(탈퇴한 사용자)"}</div>
-          <div className="hgadm-cell-sub hgadm-cell-mono">{p.payment_id}</div>
-        </div>
+        <div className="hgadm-cell-main">{p.user_email ?? "(탈퇴한 사용자)"}</div>
       ),
     },
     {
@@ -187,10 +184,7 @@ function InvoicesTab() {
       key: "invoice",
       header: "청구서",
       render: (inv) => (
-        <div>
-          <div className="hgadm-cell-main">{inv.user_email ?? "(탈퇴한 사용자)"}</div>
-          <div className="hgadm-cell-sub hgadm-cell-mono">{inv.invoice_id}</div>
-        </div>
+        <div className="hgadm-cell-main">{inv.user_email ?? "(탈퇴한 사용자)"}</div>
       ),
     },
     { key: "plan", header: "요금제", render: (inv) => inv.plan_name },

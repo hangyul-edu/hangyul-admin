@@ -146,6 +146,7 @@ export interface AdminUserSummary {
   status: string;
   subscription_status: string | null;
   plan_id: string | null;
+  plan_name: string | null;
   created_at: string;
   deactivated_at: string | null;
 }
@@ -228,6 +229,7 @@ export interface AdminUserDetail {
     grant_id: string;
     coupon_id: string;
     batch_id: string;
+    batch_name: string | null;
     duration_days: number;
     status: string;
     activated_at: string | null;

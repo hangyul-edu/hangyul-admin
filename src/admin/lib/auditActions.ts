@@ -308,6 +308,17 @@ export const AUDIT_OBJECT_TYPES: readonly [value: string, label: string][] = [
   ["learning-analytics", "학습 분석"],
 ];
 
+const OBJECT_TYPE_LABEL = new Map(AUDIT_OBJECT_TYPES);
+
+/**
+ * An audit row's target as the 대상 filter names it (an unlisted type as
+ * written). Rows name what KIND of thing changed this way; which one is told
+ * by the action's context, never by the object's internal id.
+ */
+export function objectTypeLabel(type: string | null | undefined): string {
+  return type ? OBJECT_TYPE_LABEL.get(type) ?? type : "—";
+}
+
 /** Every action string this module knows — the completeness test reads it. */
 export const KNOWN_AUDIT_ACTIONS: readonly string[] = Object.keys(ACTION_COPY);
 

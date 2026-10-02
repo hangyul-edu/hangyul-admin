@@ -355,7 +355,8 @@ describe("the league detail", () => {
       member({ user_id: "usr_gone", name: null, nickname: null, email: null, account_status: null }),
     ]);
 
-    expect(await screen.findByText("usr_gone")).toHaveClass("hgadm-cell-main");
+    expect(await screen.findByText("(이름 없는 계정)")).toHaveClass("hgadm-cell-main");
+    expect(screen.queryByText("usr_gone")).toBeNull();
     // "계정 없음", not "삭제됨": this column also shows 탈퇴, which is a member
     // deleting their own account. Two words for "deleted" side by side, one of
     // them meaning "there is no account row at all", is the ambiguity the

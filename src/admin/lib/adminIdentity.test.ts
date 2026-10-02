@@ -20,8 +20,8 @@ describe("personName — the compact label", () => {
     expect(personName({ name: null, email: "jm@talkhangyul.co.kr" })).toBe("jm@talkhangyul.co.kr");
   });
 
-  it("falls back to the id when there is neither", () => {
-    expect(personName({ name: null, email: null, user_id: "usr_1" })).toBe("usr_1");
+  it("never shows the id when there is neither", () => {
+    expect(personName({ name: null, email: null, user_id: "usr_1" })).toBe("(이름 없는 계정)");
   });
 
   it("never renders an empty label", () => {

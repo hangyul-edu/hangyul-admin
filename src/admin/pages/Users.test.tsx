@@ -69,6 +69,7 @@ describe("UsersPage", () => {
           status: "active",
           subscription_status: "trial",
           plan_id: "plan_monthly",
+          plan_name: "월간 프리미엄",
           created_at: "2026-07-01T00:00:00Z",
           deactivated_at: null,
         },
@@ -87,6 +88,9 @@ describe("UsersPage", () => {
     // Status badges render the Korean label, not the raw backend enum.
     expect(screen.getByText("무료 체험")).toBeInTheDocument();
     expect(screen.queryByText("trial")).not.toBeInTheDocument();
+    // The plan by name; neither its id nor the account's is shown.
+    expect(screen.getByText("월간 프리미엄")).toBeInTheDocument();
+    expect(screen.queryByText(/plan_monthly|usr_1/)).not.toBeInTheDocument();
     // The account is 활성 — the word the filter and the detail page use. It
     // used to read "이용 중", the *subscription* label, because both domains
     // share the value `active` and both went through one map.
@@ -108,6 +112,7 @@ describe("UsersPage", () => {
           status: "active",
           subscription_status: null,
           plan_id: null,
+          plan_name: null,
           created_at: "2026-07-01T00:00:00Z",
           deactivated_at: null,
         },
@@ -169,6 +174,7 @@ describe("UsersPage", () => {
           status: "active",
           subscription_status: null,
           plan_id: null,
+          plan_name: null,
           created_at: "2026-09-11T03:09:35Z",
           deactivated_at: null,
         },

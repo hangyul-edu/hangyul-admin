@@ -142,7 +142,6 @@ export function AiContentPage() {
           >
             {g.preview}
           </div>
-          <div className="hgadm-cell-sub hgadm-cell-mono">{g.content_id}</div>
         </div>
       ),
     },
@@ -188,7 +187,7 @@ export function AiContentPage() {
         <div className="hgadm-toolbar">
           <SearchBox
             value={q}
-            placeholder="생성 내용·주제·콘텐츠 ID 검색"
+            placeholder="생성 내용·주제 검색"
             onSearch={(next) => filters.patch({ q: next, page: null })}
           />
           <Select

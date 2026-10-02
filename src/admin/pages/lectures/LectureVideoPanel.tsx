@@ -10,6 +10,8 @@ import { useToast, useToastError } from "../../../hooks/toast";
 import { Badge, Button, ConfirmDialog, ErrorState, LoadingState, statusLabel, statusTone } from "../../components/kit";
 
 const IN_PROGRESS = ["pending", "uploading", "processing"];
+/** A video uploaded without a file name (the provider's own uploads) — never shown by its ID. */
+const UNNAMED_VIDEO = "이름 없는 영상";
 
 /** What the upload is doing right now, for the progress line. */
 type Transfer = { name: string; duration: number | null; percent: number | null };
@@ -198,7 +200,7 @@ export function LectureVideoPanel({
         <div className="hgadm-lw__current">
           <div>
             <div className="hgadm-cell-main">
-              {current.original_file_name ?? current.video_id}{" "}
+              {current.original_file_name ?? UNNAMED_VIDEO}{" "}
               <Badge tone={statusTone(current.upload_status)}>{statusLabel(current.upload_status)}</Badge>
             </div>
             <div className="hgadm-cell-sub">
@@ -227,7 +229,7 @@ export function LectureVideoPanel({
 
       {incoming && (
         <div className="hgadm-lw__incoming" role="status">
-          새 영상 <strong>{incoming.original_file_name ?? incoming.video_id}</strong> 처리 중 — 끝나면 지금
+          새 영상 <strong>{incoming.original_file_name ?? UNNAMED_VIDEO}</strong> 처리 중 — 끝나면 지금
           영상과 자동으로 교체돼요.
           {canWrite && (
             <Button size="sm" variant="ghost" loading={refreshStatus.isPending} onClick={() => refreshStatus.mutate(incoming)}>
@@ -246,7 +248,7 @@ export function LectureVideoPanel({
             <ul>
               {history.map((v) => (
                 <li key={v.video_id}>
-                  <span>{v.original_file_name ?? v.video_id}</span>
+                  <span>{v.original_file_name ?? UNNAMED_VIDEO}</span>
                   <Badge tone={statusTone(v.upload_status)}>{statusLabel(v.upload_status)}</Badge>
                   <span className="hgadm-muted">
                     {v.duration_seconds ? formatClock(v.duration_seconds) : "—"} · {formatDateTime(v.uploaded_at)}

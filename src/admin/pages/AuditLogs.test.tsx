@@ -21,6 +21,8 @@ vi.mock("../api", async () => {
   return { ...actual, adminApi: { ...actual.adminApi, listAuditLogs: vi.fn() } };
 });
 
+vi.mock("../auth", () => ({ useAdminAuth: () => ({ can: () => true }) }));
+
 const listAuditLogs = vi.mocked(adminApi.listAuditLogs);
 
 function entry(overrides: Partial<AuditLogEntry> = {}): AuditLogEntry {
@@ -102,10 +104,23 @@ describe("the detail drawer", () => {
 
     // "IP" is also the table's column header, so look at the drawer's own
     // definition terms rather than at every match on the page.
-    await screen.findByText("요청 ID");
+    await screen.findByText("대상 사용자");
     const terms = [...document.querySelectorAll("dt")].map((d) => d.textContent);
     expect(terms).toContain("IP");
     expect(terms).not.toContain("IP / UA");
+  });
+});
+
+describe("internal ids", () => {
+  it("never shows the object's, the user's or the request's id", async () => {
+    const user = userEvent.setup();
+    renderPage([entry()]);
+    await user.click(await screen.findByText("관리자 권한 부여"));
+    await screen.findByText("대상 사용자");
+
+    expect(document.body.textContent).not.toMatch(/usr_target|usr_admin|req_1/);
+    expect(screen.getAllByText("관리자 권한").length).toBeGreaterThan(0);
+    expect(screen.getByRole("link", { name: "회원 보기" })).toHaveAttribute("href", "/users/usr_target");
   });
 });
 

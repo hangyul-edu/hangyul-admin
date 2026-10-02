@@ -54,10 +54,7 @@ export function SubscriptionsPage() {
       key: "user",
       header: "가입자",
       render: (s) => (
-        <div>
-          <div className="hgadm-cell-main">{s.user_email ?? "(탈퇴한 사용자)"}</div>
-          <div className="hgadm-cell-sub hgadm-cell-mono">{s.subscription_id}</div>
-        </div>
+        <div className="hgadm-cell-main">{s.user_email ?? "(탈퇴한 사용자)"}</div>
       ),
     },
     { key: "plan", header: "요금제", render: (s) => s.plan_id ?? "—" },

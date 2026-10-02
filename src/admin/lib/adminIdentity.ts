@@ -10,7 +10,7 @@
  * Both helpers take the same loose shape so every caller can pass whatever it
  * holds: an admin account, an audit row's actor, a member record. Whatever is
  * missing simply falls through, and the last resort is an em dash rather than
- * an empty cell.
+ * an empty cell. A `user_id` is never displayed — internal ids stay off screen.
  */
 export type NamedPerson = {
   name?: string | null;
@@ -35,8 +35,13 @@ function firstNonEmpty(...values: (string | null | undefined)[]): string | null 
  */
 export function personName(person: NamedPerson | null | undefined): string {
   if (!person) return "—";
-  return firstNonEmpty(person.name, person.email, person.user_id) ?? "—";
+  // An account known only by its id (deleted, or never given a name or
+  // email) still reads as someone; the id itself is internal, never shown.
+  return firstNonEmpty(person.name, person.email) ?? (person.user_id?.trim() ? UNNAMED_ACCOUNT : "—");
 }
+
+/** The label for an account with neither a name nor an email. */
+export const UNNAMED_ACCOUNT = "(이름 없는 계정)";
 
 /**
  * `Name (email@example.com)` — the identifier plus its proof.

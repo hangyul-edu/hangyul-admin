@@ -167,8 +167,7 @@ export function LectureWorkspacePage() {
           <div className="hgadm-card__body">
             <Dl
               items={[
-                ["강의 ID", <span className="hgadm-cell-mono">{l.lecture_id}</span>],
-                ["소속 코스", courseTitle ?? (l.course_id ? l.course_id : "(코스 없음)")],
+                ["소속 코스", courseTitle ?? (l.course_id ? (courses.isPending ? "불러오는 중…" : "(삭제된 코스)") : "(코스 없음)")],
                 ["정렬 순서", l.sequence],
                 [
                   "길이",

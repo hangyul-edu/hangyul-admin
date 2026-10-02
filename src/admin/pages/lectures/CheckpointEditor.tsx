@@ -25,14 +25,14 @@ const KIND_COPY: Record<ContentKind, { add: string; noun: string; picker: string
     noun: "회화 문장",
     picker: "따라 말할 문장",
     hint: "학습자는 이 지점에서 문장을 듣고 따라 말합니다. 문장 콘텐츠에 등록한 문장 중에서 고르세요.",
-    search: "한국어·번역·문장 ID 검색",
+    search: "한국어·번역 검색",
   },
   quiz: {
     add: "이 지점에 TOPIK 문제 추가",
     noun: "TOPIK 문제",
     picker: "풀 문제",
     hint: "학습자는 이 지점에서 문제를 풉니다. 객관식은 선택형, 주관식·쓰기 문제는 답안 입력 모달로 열립니다.",
-    search: "문제 내용·문제 ID 검색",
+    search: "문제 내용 검색",
   },
 };
 
@@ -592,11 +592,8 @@ function DraftPanel({
         {draft.contentId ? (
           <div className="hgadm-cp__picked">
             <div className="hgadm-cp__picked-body">
-              <span className="hgadm-cp__option-label">{draft.contentLabel || draft.contentId}</span>
+              <span className="hgadm-cp__option-label">{draft.contentLabel || "(삭제된 콘텐츠)"}</span>
               {draft.contentDetail && <span className="hgadm-cp__option-detail">{draft.contentDetail}</span>}
-              <span className="hgadm-cp__option-meta">
-                <span className="hgadm-cell-mono">{draft.contentId}</span>
-              </span>
             </div>
             {canWrite && (
               <Button size="sm" onClick={() => onChange({ ...draft, contentId: "", contentLabel: "", contentDetail: "" })}>
@@ -764,14 +761,15 @@ function ContentPicker({
                 <button type="button" className="hgadm-cp__option" onClick={() => onPick(o.id, o.label, o.detail)}>
                   <span className="hgadm-cp__option-label">{o.label}</span>
                   {o.detail && <span className="hgadm-cp__option-detail">{o.detail}</span>}
-                  <span className="hgadm-cp__option-meta">
-                    {o.tags.map((tag) => (
-                      <span key={tag} className="hgadm-cp__tag">
-                        {tag}
-                      </span>
-                    ))}
-                    <span className="hgadm-cell-mono">{o.id}</span>
-                  </span>
+                  {o.tags.length > 0 && (
+                    <span className="hgadm-cp__option-meta">
+                      {o.tags.map((tag) => (
+                        <span key={tag} className="hgadm-cp__tag">
+                          {tag}
+                        </span>
+                      ))}
+                    </span>
+                  )}
                 </button>
               </li>
             ))}

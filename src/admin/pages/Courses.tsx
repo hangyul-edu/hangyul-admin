@@ -126,10 +126,7 @@ export function CoursesPage() {
       key: "title",
       header: "코스",
       render: (c) => (
-        <div>
-          <div className="hgadm-cell-main">{c.title}</div>
-          <div className="hgadm-cell-sub hgadm-cell-mono">{c.course_id}</div>
-        </div>
+        <div className="hgadm-cell-main">{c.title}</div>
       ),
     },
     {

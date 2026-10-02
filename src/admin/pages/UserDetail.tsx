@@ -465,7 +465,7 @@ export function UserDetailPage() {
                   items={[
                     [
                       "요금제",
-                      `${user.subscription.plan_name ?? user.subscription.plan_id ?? "—"}`,
+                      `${user.subscription.plan_name ?? "—"}`,
                     ],
                     ["결제 수단 제공자", user.subscription.provider],
                     [
@@ -497,7 +497,6 @@ export function UserDetailPage() {
               <table className="hgadm-table">
                 <thead>
                   <tr>
-                    <th>청구서</th>
                     <th>요금제</th>
                     <th className="num">금액</th>
                     <th>상태</th>
@@ -507,14 +506,13 @@ export function UserDetailPage() {
                 <tbody>
                   {user.recent_invoices.length === 0 && (
                     <tr>
-                      <td colSpan={5}>
+                      <td colSpan={4}>
                         <div className="hgadm-table__empty">청구서가 없습니다.</div>
                       </td>
                     </tr>
                   )}
                   {user.recent_invoices.map((inv) => (
                     <tr key={inv.invoice_id}>
-                      <td className="hgadm-cell-mono">{inv.invoice_id}</td>
                       <td>{inv.plan_name}</td>
                       <td className="num">{formatMoney(inv.total_cents, inv.currency)}</td>
                       <td>
@@ -629,7 +627,7 @@ export function UserDetailPage() {
                   )}
                   {user.coupons.map((c) => (
                     <tr key={c.grant_id}>
-                      <td className="hgadm-cell-mono">{c.coupon_id}</td>
+                      <td>{c.batch_name ?? "(이름 없는 배치)"}</td>
                       <td>{c.duration_days}일</td>
                       <td>
                         <Badge tone={statusTone(c.status)}>{statusLabel(c.status)}</Badge>

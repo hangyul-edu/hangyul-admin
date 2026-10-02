@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
+import { useAdminAuth } from "../auth";
 import { useUrlFilters } from "../lib/urlFilters";
 import { adminApi } from "../api";
 import type { AuditLogEntry } from "../api";
@@ -16,11 +18,12 @@ import {
   Timestamp,
 } from "../components/kit";
 import type { Column } from "../components/kit";
-import { AUDIT_OBJECT_TYPES, describeAuditAction } from "../lib/auditActions";
+import { AUDIT_OBJECT_TYPES, describeAuditAction, objectTypeLabel } from "../lib/auditActions";
 import { personName, personNameWithEmail } from "../lib/adminIdentity";
 
 export function AuditLogsPage() {
   const filters = useUrlFilters();
+  const { can } = useAdminAuth();
   const [detail, setDetail] = useState<AuditLogEntry | null>(null);
 
   const actorType = filters.value("actor_type");
@@ -86,12 +89,9 @@ export function AuditLogsPage() {
     {
       key: "object",
       header: "대상",
-      render: (e) => (
-        <div>
-          <div>{e.object_type}</div>
-          <div className="hgadm-cell-sub hgadm-cell-mono">{e.object_id}</div>
-        </div>
-      ),
+      // What kind of thing was touched; which one is in the 작업 column's
+      // context. The object's own id stays internal.
+      render: (e) => objectTypeLabel(e.object_type),
     },
     {
       key: "ip",
@@ -196,13 +196,24 @@ export function AuditLogsPage() {
                 <div className="hgadm-cell-sub hgadm-cell-mono">{detail.action}</div>
               </dd>
               <dt>대상</dt>
-              <dd className="hgadm-cell-mono">
-                {detail.object_type} / {detail.object_id}
+              <dd>
+                {objectTypeLabel(detail.object_type)}
+                {describeAuditAction(detail).context && (
+                  <div className="hgadm-cell-sub">{describeAuditAction(detail).context}</div>
+                )}
               </dd>
               <dt>대상 사용자</dt>
-              <dd className="hgadm-cell-mono">{detail.user_id ?? "—"}</dd>
-              <dt>요청 ID</dt>
-              <dd className="hgadm-cell-mono">{detail.request_id ?? "—"}</dd>
+              <dd>
+                {detail.user_id ? (
+                  can("users:read") ? (
+                    <Link to={`/users/${detail.user_id}`}>회원 보기</Link>
+                  ) : (
+                    "있음"
+                  )
+                ) : (
+                  "—"
+                )}
+              </dd>
               {/* The row also stores a user agent, but the API does not expose
                   it — the label said "IP / UA" while only ever showing the IP. */}
               <dt>IP</dt>

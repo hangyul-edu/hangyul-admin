@@ -279,7 +279,6 @@ export function QuizzesPage() {
           >
             {quiz.prompt}
           </div>
-          <div className="hgadm-cell-sub hgadm-cell-mono">{quiz.quiz_id}</div>
         </div>
       ),
     },
@@ -398,7 +397,7 @@ export function QuizzesPage() {
         <div className="hgadm-toolbar">
           <SearchBox
             value={q}
-            placeholder="문항·번역·문제 ID 검색"
+            placeholder="문항·번역 검색"
             onSearch={(next) => filters.patch({ q: next, page: null })}
           />
           <Select
@@ -539,7 +538,7 @@ export function QuizzesPage() {
       {/* Editor */}
       <Modal
         open={draft !== null}
-        title={editingId ? `문제 수정 — ${editingId}` : "문제 추가"}
+        title={editingId ? "문제 수정" : "문제 추가"}
         size="xl"
         onClose={() => setDraft(null)}
         footer={

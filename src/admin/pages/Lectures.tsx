@@ -84,10 +84,7 @@ export function LecturesPage() {
       render: (l) => (
         <div className="hgadm-row">
           {l.thumbnail_url && <img src={l.thumbnail_url} alt="" className="hgadm-thumb" />}
-          <div>
-            <div className="hgadm-cell-main">{l.title}</div>
-            <div className="hgadm-cell-sub hgadm-cell-mono">{l.lecture_id}</div>
-          </div>
+          <div className="hgadm-cell-main">{l.title}</div>
         </div>
       ),
     },
@@ -171,7 +168,7 @@ export function LecturesPage() {
         <div className="hgadm-toolbar">
           <SearchBox
             value={q}
-            placeholder="제목·강의 ID 검색"
+            placeholder="강의 제목 검색"
             onSearch={(next) => filters.patch({ q: next, page: null })}
           />
           <Select

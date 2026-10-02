@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { adminApi } from "../api";
 import type { MetricsOverview, RecentAdminActionRow } from "../api";
 import { personName } from "../lib/adminIdentity";
-import { describeAuditAction } from "../lib/auditActions";
+import { describeAuditAction, objectTypeLabel } from "../lib/auditActions";
 import type { MonthlyRevenueResponse } from "../api";
 import { errorMessage } from "../../lib/http";
 import { useAdminAuth } from "../auth";
@@ -339,7 +339,7 @@ export function AdminActivityRow({ entry }: { entry: RecentAdminActionRow }) {
   const actor = entry.actor_id
     ? personName({ name: entry.actor_name, email: entry.actor_email, user_id: entry.actor_id })
     : "시스템";
-  const target = described.context ?? `${entry.object_type} · ${entry.object_id}`;
+  const target = described.context ?? objectTypeLabel(entry.object_type);
 
   return (
     <RecentRow

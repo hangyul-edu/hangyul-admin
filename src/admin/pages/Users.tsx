@@ -137,7 +137,7 @@ export function UsersPage() {
             <Badge tone={statusTone(u.subscription_status)}>
               {statusLabel(u.subscription_status)}
             </Badge>
-            <div className="hgadm-cell-sub">{u.plan_id}</div>
+            {u.plan_name && <div className="hgadm-cell-sub">{u.plan_name}</div>}
           </div>
         ) : (
           <span className="hgadm-muted">없음</span>

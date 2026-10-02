@@ -174,10 +174,7 @@ export function PlansPage() {
       key: "plan",
       header: "요금제",
       render: (p) => (
-        <div>
-          <div className="hgadm-cell-main">{p.name}</div>
-          <div className="hgadm-cell-sub hgadm-cell-mono">{p.plan_id}</div>
-        </div>
+        <div className="hgadm-cell-main">{p.name}</div>
       ),
     },
     {
@@ -295,7 +292,7 @@ export function PlansPage() {
 
       <Modal
         open={draft !== null}
-        title={editingId ? `요금제 수정 — ${editingId}` : "새 요금제"}
+        title={editingId ? "요금제 수정" : "새 요금제"}
         size="lg"
         onClose={() => setDraft(null)}
         footer={

@@ -95,7 +95,8 @@ describe("what the row says", () => {
     const { container } = render(
       <AdminActivityRow entry={entry({ action: "POST /admin/banners", object_type: "banners", object_id: "bnr_1" })} />,
     );
-    expect(container.querySelector(".hgadm-recent__rest")?.textContent).toBe("banners · bnr_1");
+    // The kind of object, by name — its internal id is never shown.
+    expect(container.querySelector(".hgadm-recent__rest")?.textContent).toBe("배너");
   });
 
   it("drops the endpoint line for an action it cannot name, since that IS the label", () => {
