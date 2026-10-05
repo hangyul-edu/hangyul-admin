@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { adminApi } from "../../api";
 import type { AdminLecture, AdminLectureVideo } from "../../api";
-import { tusUploadToUrl } from "../../lib/videoUpload";
+import { UploadAbortedError, tusUploadToUrl } from "../../lib/videoUpload";
 import { formatClock, readVideoDuration } from "../../lib/videoFile";
 import { formatDateTime } from "../../lib/format";
 import { errorMessage } from "../../../lib/http";
@@ -116,7 +116,8 @@ export function LectureVideoPanel({
           : "업로드 완료. 인코딩이 끝나면 자동으로 재생 가능 상태가 됩니다.",
       );
     } catch (e) {
-      toast.error(errorMessage(e));
+      // Leaving the page stops the upload on purpose: no error to show.
+      if (!(e instanceof UploadAbortedError)) toast.error(errorMessage(e));
       // The session created the row as `uploading` before any bytes were sent;
       // without this it would stay "업로드 중" forever.
       if (videoId) await adminApi.deleteLectureVideo(videoId).catch(() => undefined);

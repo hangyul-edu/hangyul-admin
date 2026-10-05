@@ -47,6 +47,9 @@ export const MIN_GAP_SECONDS = 1;
 /** "미리보기" plays the lead-up to a checkpoint and stops on it, as a learner meets it. */
 const LEAD_IN_SECONDS = 3;
 const SPEEDS = [1, 0.5] as const;
+/** At most this many fresh preview URLs per window before showing the error. */
+const STREAM_REFRESH_LIMIT = 2;
+const STREAM_REFRESH_WINDOW_MS = 5 * 60 * 1000;
 
 interface Draft {
   checkpointId: string | null;
@@ -95,9 +98,38 @@ export function CheckpointEditor({ lecture, canWrite }: { lecture: AdminLecture;
     queryKey: ["admin", "lecture-preview", lecture.lecture_id, videoId],
     queryFn: () => adminApi.previewLectureVideo(lecture.lecture_id),
     enabled: !!videoId,
-    // Signed URLs expire; a fresh one well before that keeps the preview working.
-    staleTime: 5 * 60 * 1000,
+    // A new URL reloads the video and loses the frame being placed, so the
+    // URL is only replaced when the stream actually fails (it is signed for at
+    // least the video's length plus slack) — never on a timer or tab focus.
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
   });
+  // Where to pick up once a fresh URL has loaded, and recent refreshes (a
+  // stream that keeps failing shows the error instead of looping).
+  const restoreRef = useRef<{ at: number; play: boolean } | null>(null);
+  const refreshTimesRef = useRef<number[]>([]);
+
+  /** The stream stopped (usually its signed URL ran out): fetch a fresh one and keep the frame. */
+  function refreshStream() {
+    const stamp = Date.now();
+    const recent = refreshTimesRef.current.filter((t) => stamp - t < STREAM_REFRESH_WINDOW_MS);
+    refreshTimesRef.current = recent;
+    const v = videoRef.current;
+    const previousUrl = preview.data?.url;
+    if (recent.length >= STREAM_REFRESH_LIMIT) {
+      setVideoError(true);
+      return;
+    }
+    refreshTimesRef.current = [...recent, stamp];
+    restoreRef.current = { at: v?.currentTime ?? now, play: !!v && !v.paused };
+    void preview.refetch().then((r) => {
+      // The same URL again (an offline file that will not load) cannot help.
+      if (r.isError || r.data?.url === previousUrl) {
+        restoreRef.current = null;
+        setVideoError(true);
+      }
+    });
+  }
 
   const duration = list.data?.duration_seconds ?? 0;
   const items = list.data?.items ?? [];
@@ -264,6 +296,8 @@ export function CheckpointEditor({ lecture, canWrite }: { lecture: AdminLecture;
                 message="영상을 불러오지 못했어요. 잠시 후 다시 시도해 주세요."
                 onRetry={() => {
                   setVideoError(false);
+                  refreshTimesRef.current = [];
+                  restoreRef.current = { at: now, play: false };
                   void preview.refetch();
                 }}
               />
@@ -291,7 +325,17 @@ export function CheckpointEditor({ lecture, canWrite }: { lecture: AdminLecture;
                 onSeeked={(e) => setNow(e.currentTarget.currentTime)}
                 onPlay={() => setPlaying(true)}
                 onPause={() => setPlaying(false)}
-                onError={() => setVideoError(true)}
+                onLoadedMetadata={(e) => {
+                  // After a fresh URL: back to the same frame.
+                  const restore = restoreRef.current;
+                  if (!restore) return;
+                  restoreRef.current = null;
+                  const v = e.currentTarget;
+                  v.currentTime = restore.at;
+                  setNow(restore.at);
+                  if (restore.play) void v.play().catch(() => setPlaying(false));
+                }}
+                onStreamError={refreshStream}
               />
             )}
           </div>

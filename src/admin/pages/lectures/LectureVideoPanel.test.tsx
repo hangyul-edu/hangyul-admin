@@ -33,7 +33,9 @@ vi.mock("../../api", async () => {
     },
   };
 });
-vi.mock("../../lib/videoUpload", () => ({
+vi.mock("../../lib/videoUpload", async () => ({
+  UploadAbortedError: (await vi.importActual<typeof import("../../lib/videoUpload")>("../../lib/videoUpload"))
+    .UploadAbortedError,
   tusUploadToUrl: (...args: unknown[]) => tusUploadToUrl(...args),
 }));
 vi.mock("../../lib/videoFile", async () => {

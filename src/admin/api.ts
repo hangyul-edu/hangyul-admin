@@ -1246,6 +1246,13 @@ export const adminApi = {
     }),
   replaceQuiz: (quizId: string, body: Record<string, unknown>) =>
     http.put<AdminQuiz>(`/admin/quizzes/${quizId}`, body),
+  /** A listening question's MP3 (what members hear); `durationMs` as the browser measured it. */
+  uploadQuizAudio: (quizId: string, file: File, durationMs?: number) => {
+    const form = new FormData();
+    form.append("file", file);
+    if (durationMs !== undefined) form.append("duration_ms", String(durationMs));
+    return http.upload<AdminQuiz>(`/admin/quizzes/${quizId}/audio`, form, { method: "PUT" });
+  },
   deleteQuiz: (quizId: string) => http.del<void>(`/admin/quizzes/${quizId}`),
 
   // Content cleanup (super-admin only; destructive bulk reset)

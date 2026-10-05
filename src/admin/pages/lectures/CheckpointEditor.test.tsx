@@ -264,6 +264,41 @@ describe("CheckpointEditor", () => {
     expect(el.currentTime).toBe(75);
   });
 
+  it("swaps in a fresh preview URL when the stream stops, keeping the frame", async () => {
+    renderEditor();
+    const el = await video();
+    playTo(el, 61.5);
+    vi.mocked(adminApi.previewLectureVideo).mockResolvedValue({
+      video_id: "vid_1",
+      url: "http://127.0.0.1:8000/media/lecture-videos/v.mp4?fresh",
+      duration_seconds: 300,
+      expires_at: "2026-10-01T06:00:00Z",
+    });
+    fireEvent.error(el);
+    await waitFor(() => expect(el.getAttribute("src")).toContain("?fresh"));
+    el.currentTime = 0;
+    fireEvent.loadedMetadata(el);
+    expect(el.currentTime).toBe(61.5);
+  });
+
+  it("shows the error when a fresh preview URL cannot help", async () => {
+    renderEditor();
+    const el = await video();
+    fireEvent.error(el); // same URL comes back: an offline file that will not load
+    expect(await screen.findByText(/영상을 불러오지 못했어요/)).toBeInTheDocument();
+  });
+
+  it("does not reload the preview when the window regains focus", async () => {
+    renderEditor();
+    await video();
+    expect(adminApi.previewLectureVideo).toHaveBeenCalledTimes(1);
+    act(() => {
+      window.dispatchEvent(new Event("visibilitychange"));
+      window.dispatchEvent(new Event("focus"));
+    });
+    expect(adminApi.previewLectureVideo).toHaveBeenCalledTimes(1);
+  });
+
   it("waits for a ready video before checkpoints can be placed", async () => {
     vi.mocked(adminApi.listCheckpoints).mockResolvedValue({ lecture_id: "lec_1", video_id: null, duration_seconds: 0, items: [] });
     renderEditor();

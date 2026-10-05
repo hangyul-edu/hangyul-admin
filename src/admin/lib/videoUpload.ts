@@ -17,7 +17,9 @@ export function tusUploadToUrl(
   onProgress: (percent: number) => void,
 ): { promise: Promise<void>; abort: () => void } {
   let upload: tus.Upload;
+  let rejectUpload: (reason: Error) => void = () => {};
   const promise = new Promise<void>((resolve, reject) => {
+    rejectUpload = reject;
     upload = new tus.Upload(file, {
       // The backend already created the tus upload (Direct Creator Upload), so
       // resume against that exact URL rather than creating a new one.
@@ -32,5 +34,21 @@ export function tusUploadToUrl(
     });
     upload.start();
   });
-  return { promise, abort: () => upload?.abort() };
+  return {
+    promise,
+    // tus-js-client's abort() calls neither onError nor onSuccess, so settle the
+    // promise here — the caller's clean-up (removing the half-made video) runs.
+    abort: () => {
+      void upload?.abort();
+      rejectUpload(new UploadAbortedError());
+    },
+  };
+}
+
+/** The upload was stopped on purpose (the page closed), not by a failure. */
+export class UploadAbortedError extends Error {
+  constructor() {
+    super("upload aborted");
+    this.name = "UploadAbortedError";
+  }
 }

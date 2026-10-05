@@ -58,6 +58,7 @@ const ACTION_COPY: Record<string, ActionCopy> = {
   "POST /admin/quizzes/batch": { ko: "문제 일괄 등록", en: "Bulk-created questions" },
   "PUT /admin/quizzes/{quiz_id}": { ko: "문제 전체 수정", en: "Replaced a question" },
   "DELETE /admin/quizzes/{quiz_id}": { ko: "문제 삭제", en: "Deleted a question" },
+  "PUT /admin/quizzes/{quiz_id}/audio": { ko: "듣기 음원 업로드", en: "Uploaded listening audio" },
 
   // ---- Courses & lectures ------------------------------------------------
   "POST /admin/courses": { ko: "코스 생성", en: "Created a course" },

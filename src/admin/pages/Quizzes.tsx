@@ -617,7 +617,7 @@ export function QuizzesPage() {
                 </Select>
               </Field>
               {draft.material_kind === "audio" && (
-                <Field label="오디오 길이 (ms)" required>
+                <Field label="오디오 길이 (ms)" required hint="MP3를 올리면 파일에서 자동으로 채워져요.">
                   <Input
                     type="number"
                     min={0}
@@ -627,6 +627,16 @@ export function QuizzesPage() {
                     }
                   />
                 </Field>
+              )}
+              {draft.material_kind === "audio" && (
+                <ListeningAudioField
+                  quizId={editingId}
+                  canWrite={canWrite}
+                  onUploaded={(durationMs) => {
+                    setDraft((d) => (d ? { ...d, audio_duration_ms: String(durationMs) } : d));
+                    refresh();
+                  }}
+                />
               )}
               {draft.material_kind === "image" && (
                 <Field label="이미지 URL" required>
@@ -822,5 +832,92 @@ export function QuizzesPage() {
         onCancel={() => setDeleting(null)}
       />
     </div>
+  );
+}
+
+/** Reads an audio file's length in the browser; undefined when it can't. */
+export function readAudioDurationMs(file: File): Promise<number | undefined> {
+  return new Promise((resolve) => {
+    let url: string;
+    try {
+      url = URL.createObjectURL(file);
+    } catch {
+      resolve(undefined);
+      return;
+    }
+    const audio = new Audio();
+    let settled = false;
+    const done = (ms: number | undefined) => {
+      if (settled) return;
+      settled = true;
+      URL.revokeObjectURL(url);
+      resolve(ms);
+    };
+    // A file the browser can't decode may never answer; upload without a length.
+    const timer = setTimeout(() => done(undefined), 5000);
+    audio.preload = "metadata";
+    audio.onloadedmetadata = () => {
+      clearTimeout(timer);
+      done(Number.isFinite(audio.duration) ? Math.round(audio.duration * 1000) : undefined);
+    };
+    audio.onerror = () => {
+      clearTimeout(timer);
+      done(undefined);
+    };
+    audio.src = url;
+  });
+}
+
+/**
+ * The listening passage's MP3. A question gets its audio once it exists, so a
+ * new question is saved first; the upload also fills in the audio length.
+ */
+export function ListeningAudioField({
+  quizId,
+  canWrite,
+  onUploaded,
+}: {
+  quizId: string | null;
+  canWrite: boolean;
+  onUploaded: (durationMs: number) => void;
+}) {
+  const toast = useToast();
+  const toastError = useToastError();
+  const upload = useMutation({
+    mutationFn: async (file: File) => {
+      const durationMs = await readAudioDurationMs(file);
+      return adminApi.uploadQuizAudio(quizId as string, file, durationMs);
+    },
+    onSuccess: (quiz) => {
+      onUploaded(quiz.audio_duration_ms);
+      toast.success("듣기 음원을 올렸어요.");
+    },
+    onError: toastError,
+  });
+
+  if (!quizId) {
+    return (
+      <Field label="듣기 음원 (MP3)" hint="저장한 뒤 MP3를 올릴 수 있어요.">
+        <Input type="file" accept="audio/mpeg,.mp3" disabled />
+      </Field>
+    );
+  }
+  return (
+    <Field
+      label="듣기 음원 (MP3)"
+      hint={upload.isPending ? "올리는 중…" : "새 파일을 올리면 기존 음원을 바꿔요. 최대 20MB."}
+    >
+      <Input
+        type="file"
+        accept="audio/mpeg,.mp3"
+        aria-label="듣기 음원 (MP3)"
+        disabled={!canWrite || upload.isPending}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = "";
+          if (file) upload.mutate(file);
+        }}
+      />
+    </Field>
   );
 }
