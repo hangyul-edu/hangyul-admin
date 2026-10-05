@@ -156,47 +156,65 @@ describe("CoursesPage series", () => {
 });
 
 describe("CoursesPage languages", () => {
-  it("saves a course's English title and description beside the Korean ones", async () => {
+  it("requires the English title and saves the Korean text beside it", async () => {
     vi.mocked(adminApi.createCourse).mockResolvedValue(COURSE);
     renderPage();
     await userEvent.click(await screen.findByRole("button", { name: "+ 코스 추가" }));
     const dialog = screen.getByRole("dialog");
     expect(within(dialog).queryByLabelText(/정렬 순서/)).toBeNull();
+    // English opens first and is the required one.
+    expect(within(dialog).getByRole("tab", { name: /English/ })).toHaveAttribute("aria-selected", "true");
+    expect(within(dialog).getByRole("tab", { name: /English/ })).toHaveTextContent("(필수)");
+    expect(within(dialog).getByRole("button", { name: "저장" })).toBeDisabled();
 
-    await userEvent.type(within(dialog).getByLabelText(/코스 제목 · 한국어/), "바로 쓰는 한국어");
-    await userEvent.click(within(dialog).getByRole("tab", { name: /English/ }));
-    expect(within(dialog).getByText(/비워 두면 그 칸은 한국어로 보여요/)).toBeInTheDocument();
     await userEvent.type(within(dialog).getByLabelText(/코스 제목 · English/), "Speak Korean Instantly");
-    await userEvent.type(within(dialog).getByLabelText(/설명 · English/), "Everyday phrases.");
-    expect(within(dialog).getByRole("tab", { name: /English/ })).toHaveTextContent("✓");
+    await userEvent.click(within(dialog).getByRole("tab", { name: /한국어/ }));
+    expect(within(dialog).getByText(/비워 두면 그 칸은 영어로 보여요/)).toBeInTheDocument();
+    // An empty Korean field shows the English text it falls back to.
+    expect(within(dialog).getByLabelText(/코스 제목 · 한국어/)).toHaveAttribute("placeholder", "Speak Korean Instantly");
+    await userEvent.type(within(dialog).getByLabelText(/코스 제목 · 한국어/), "바로 쓰는 한국어");
+    await userEvent.type(within(dialog).getByLabelText(/설명 · 한국어/), "일상 표현");
+    expect(within(dialog).getByRole("tab", { name: /한국어/ })).toHaveTextContent("✓");
     await userEvent.click(within(dialog).getByRole("button", { name: "저장" }));
 
     await waitFor(() => expect(adminApi.createCourse).toHaveBeenCalledTimes(1));
     expect(adminApi.createCourse).toHaveBeenCalledWith({
       track_id: "track_conversation",
-      title: "바로 쓰는 한국어",
+      title: "Speak Korean Instantly",
       description: "",
       cover_image_url: null,
-      translations: [{ locale: "en", title: "Speak Korean Instantly", description: "Everyday phrases." }],
+      translations: [{ locale: "ko", title: "바로 쓰는 한국어", description: "일상 표현" }],
     });
   });
 
-  it("opens an existing course with its English text and can clear it", async () => {
+  it("opens an existing course with its Korean text and can clear it", async () => {
     vi.mocked(adminApi.listCourses).mockResolvedValue({
-      items: [{ ...COURSE, translations: [{ locale: "en", title: "Instantly", description: "" }] }],
+      items: [{ ...COURSE, translations: [{ locale: "ko", title: "바로 쓰는 한국어", description: "" }] }],
     });
     vi.mocked(adminApi.updateCourse).mockResolvedValue(COURSE);
     renderPage();
-    // The English title reads under the Korean one in the list.
-    expect(await screen.findByText("Instantly")).toBeInTheDocument();
+    // The Korean title reads under the English one in the list.
+    expect(await screen.findByText("바로 쓰는 한국어")).toBeInTheDocument();
     const table = document.querySelector(".hgadm-table") as HTMLElement;
     await userEvent.click(within(table).getByRole("button", { name: "수정" }));
     const dialog = screen.getByRole("dialog");
-    await userEvent.click(within(dialog).getByRole("tab", { name: /English/ }));
-    await userEvent.clear(within(dialog).getByLabelText(/코스 제목 · English/));
+    await userEvent.click(within(dialog).getByRole("tab", { name: /한국어/ }));
+    await userEvent.clear(within(dialog).getByLabelText(/코스 제목 · 한국어/));
     await userEvent.click(within(dialog).getByRole("button", { name: "저장" }));
     await waitFor(() => expect(adminApi.updateCourse).toHaveBeenCalledTimes(1));
     expect(vi.mocked(adminApi.updateCourse).mock.calls[0][1].translations).toEqual([]);
+  });
+
+  it("flags a course whose English title is still a Korean stand-in", async () => {
+    vi.mocked(adminApi.listCourses).mockResolvedValue({ items: [{ ...COURSE, title: "바로 쓰는 한국어" }] });
+    renderPage();
+    expect(await screen.findByText("영어 제목 필요")).toBeInTheDocument();
+    const table = document.querySelector(".hgadm-table") as HTMLElement;
+    await userEvent.click(within(table).getByRole("button", { name: "수정" }));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText(/지금은 한국어가 임시로 들어가 있어요/)).toBeInTheDocument();
+    // Not a blocker: the form can still be saved.
+    expect(within(dialog).getByRole("button", { name: "저장" })).toBeEnabled();
   });
 });
 

@@ -6,7 +6,14 @@ import type { AdminLecture } from "../../api";
 import { errorMessage } from "../../../lib/http";
 import { useToast, useToastError } from "../../../hooks/toast";
 import { Button, Field, Input, Modal, Select } from "../../components/kit";
-import { LanguageFields, languageDraft, translationsOf } from "../../components/LanguageFields";
+import { LanguageFields, koreanTitle, languageDraft, translationsOf } from "../../components/LanguageFields";
+import type { CatalogTranslation } from "../../api";
+
+/** "English title (한국어 제목)" for a picker option — plain text only. */
+function withKorean(item: { title: string; translations?: CatalogTranslation[] }): string {
+  const ko = koreanTitle(item);
+  return ko && ko !== item.title ? `${item.title} (${ko})` : item.title;
+}
 import type { LanguageDraft } from "../../components/LanguageFields";
 
 export const TRACKS = [
@@ -97,8 +104,8 @@ export function LectureFormModal({
     mutationFn: (d: LectureDraft) => {
       const base = {
         series_id: d.series_id,
-        title: d.text.ko.title.trim(),
-        description: d.text.ko.description,
+        title: d.text.en.title.trim(),
+        description: d.text.en.description,
         translations: translationsOf(d.text),
         access: d.access,
         // null (not omitted) so emptying a field on edit clears it.
@@ -128,7 +135,7 @@ export function LectureFormModal({
           <Button
             variant="primary"
             loading={save.isPending}
-            disabled={!draft.text.ko.title.trim() || !draft.series_id}
+            disabled={!draft.text.en.title.trim() || !draft.series_id}
             onClick={() => save.mutate(draft)}
           >
             {editing ? "저장" : "만들고 영상 올리기"}
@@ -161,7 +168,7 @@ export function LectureFormModal({
                 .filter((c) => c.track_id === trackId)
                 .map((c) => (
                   <option key={c.course_id} value={c.course_id}>
-                    {`${label} · ${c.title}`}
+                    {`${label} · ${withKorean(c)}`}
                   </option>
                 )),
             )}
@@ -186,7 +193,7 @@ export function LectureFormModal({
             </option>
             {seriesItems.map((s) => (
               <option key={s.series_id} value={s.series_id}>
-                {s.title}
+                {withKorean(s)}
               </option>
             ))}
           </Select>

@@ -154,21 +154,23 @@ describe("LectureFormModal", () => {
     expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({ lecture_id: "lec_new" }));
   });
 
-  it("writes a description and an English title and description", async () => {
+  it("writes the English title and description, and a Korean title beside them", async () => {
     renderForm(null);
     await choose(screen.getByLabelText(/소속 코스/), "회화 · Speak Korean Instantly");
     await choose(screen.getByLabelText(/소속 시리즈/), "KOREAN SURVIVAL KIT");
-    await userEvent.type(screen.getByLabelText(/강의 제목 · 한국어/), "1-1 인사");
-    await userEvent.type(screen.getByLabelText(/설명 · 한국어/), "만났을 때 쓰는 인사");
-    await userEvent.click(screen.getByRole("tab", { name: /English/ }));
+    // Without the English title there is nothing to create.
+    expect(screen.getByRole("button", { name: "만들고 영상 올리기" })).toBeDisabled();
     await userEvent.type(screen.getByLabelText(/강의 제목 · English/), "1-1 Greetings");
+    await userEvent.type(screen.getByLabelText(/설명 · English/), "Hello and goodbye");
+    await userEvent.click(screen.getByRole("tab", { name: /한국어/ }));
+    await userEvent.type(screen.getByLabelText(/강의 제목 · 한국어/), "1-1 인사");
     await userEvent.click(screen.getByRole("button", { name: "만들고 영상 올리기" }));
 
     await waitFor(() => expect(adminApi.createLecture).toHaveBeenCalledTimes(1));
     expect(vi.mocked(adminApi.createLecture).mock.calls[0][0]).toMatchObject({
-      title: "1-1 인사",
-      description: "만났을 때 쓰는 인사",
-      translations: [{ locale: "en", title: "1-1 Greetings", description: "" }],
+      title: "1-1 Greetings",
+      description: "Hello and goodbye",
+      translations: [{ locale: "ko", title: "1-1 인사", description: "" }],
     });
   });
 

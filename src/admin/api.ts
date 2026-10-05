@@ -558,13 +558,13 @@ export interface AdminBanner {
 }
 
 /**
- * A non-Korean version of a catalogue item's title and description. Korean is
- * the base (the item's own `title` / `description`); members whose app runs
- * in another language see that language's text, falling back to Korean per
+ * A non-English version of a catalogue item's title and description. English
+ * is the base (the item's own `title` / `description`); members whose app runs
+ * in another language see that language's text, falling back to English per
  * field when it is empty.
  */
 export interface CatalogTranslation {
-  locale: "en";
+  locale: "ko";
   title: string;
   description: string;
 }

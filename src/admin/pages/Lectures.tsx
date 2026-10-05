@@ -22,7 +22,7 @@ import {
 } from "../components/kit";
 import type { Column } from "../components/kit";
 import { formatClock } from "../lib/videoFile";
-import { englishTitle } from "../components/LanguageFields";
+import { StandInBadge, koreanTitle } from "../components/LanguageFields";
 import { MoveButtons, OrderNumber, useReorder } from "../components/ordering";
 import { LectureFormModal, TRACKS, TRACK_LABEL } from "./lectures/LectureFormModal";
 
@@ -132,8 +132,11 @@ export function LecturesPage() {
         <div className="hgadm-row">
           {l.thumbnail_url && <img src={l.thumbnail_url} alt="" className="hgadm-thumb" />}
           <div>
-            <div className="hgadm-cell-main">{l.title}</div>
-            {englishTitle(l) && <div className="hgadm-cell-sub">{englishTitle(l)}</div>}
+            <div className="hgadm-title-row">
+              <span className="hgadm-cell-main">{l.title}</span>
+              <StandInBadge title={l.title} />
+            </div>
+            {koreanTitle(l) && <div className="hgadm-cell-sub">{koreanTitle(l)}</div>}
           </div>
         </div>
       ),

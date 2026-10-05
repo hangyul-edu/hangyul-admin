@@ -4199,6 +4199,17 @@ a.hgadm-recent--link:hover {
   color: var(--ink-3);
   font-size: 12.5px;
 }
+/* The English title still holds Korean text left from before English became the base. */
+.hgadm-lang__standin {
+  color: var(--ad-warning, #b45309);
+}
+/* A title with its "영어 제목 필요" badge beside it. */
+.hgadm-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
 .hgadm-series__upload {
   display: flex;
   flex-direction: column;

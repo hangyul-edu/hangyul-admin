@@ -6,7 +6,7 @@ import type { AdminCourse, AdminSeries } from "../../api";
 import { errorMessage } from "../../../lib/http";
 import { useToast, useToastError } from "../../../hooks/toast";
 import { Button, ConfirmDialog, ErrorState, Field, LoadingState, Modal } from "../../components/kit";
-import { LanguageFields, englishTitle, languageDraft, translationsOf } from "../../components/LanguageFields";
+import { LanguageFields, StandInBadge, koreanTitle, languageDraft, translationsOf } from "../../components/LanguageFields";
 import type { LanguageDraft } from "../../components/LanguageFields";
 import { MoveButtons, OrderNumber, useReorder } from "../../components/ordering";
 import { LessonOrder } from "./LessonOrder";
@@ -55,8 +55,8 @@ export function SeriesPanel({ course, canWrite }: { course: AdminCourse; canWrit
   const save = useMutation({
     mutationFn: (d: SeriesDraft) => {
       const body = {
-        title: d.text.ko.title.trim(),
-        description: d.text.ko.description,
+        title: d.text.en.title.trim(),
+        description: d.text.en.description,
         thumbnail_url: d.thumbnail_url || null,
         translations: translationsOf(d.text),
       };
@@ -133,8 +133,11 @@ export function SeriesPanel({ course, canWrite }: { course: AdminCourse; canWrit
                   </span>
                 </div>
                 <div className="hgadm-series__info">
-                  <div className="hgadm-cell-main">{s.title}</div>
-                  {englishTitle(s) && <div className="hgadm-cell-sub">{englishTitle(s)}</div>}
+                  <div className="hgadm-title-row">
+                    <span className="hgadm-cell-main">{s.title}</span>
+                    <StandInBadge title={s.title} />
+                  </div>
+                  {koreanTitle(s) && <div className="hgadm-cell-sub">{koreanTitle(s)}</div>}
                   <Link className="hgadm-cell-sub" to={`/lectures?course_id=${course.course_id}&series_id=${s.series_id}`}>
                     강의 {s.lecture_count}개 보기
                   </Link>
@@ -185,7 +188,7 @@ export function SeriesPanel({ course, canWrite }: { course: AdminCourse; canWrit
             <Button
               variant="primary"
               loading={save.isPending}
-              disabled={!draft?.text.ko.title.trim()}
+              disabled={!draft?.text.en.title.trim()}
               onClick={() => draft && save.mutate(draft)}
             >
               저장

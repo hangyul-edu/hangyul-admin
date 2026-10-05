@@ -3,7 +3,7 @@ import { adminApi } from "../../api";
 import type { AdminLecture, AdminSeries } from "../../api";
 import { errorMessage } from "../../../lib/http";
 import { ErrorState, LoadingState } from "../../components/kit";
-import { englishTitle } from "../../components/LanguageFields";
+import { StandInBadge, koreanTitle } from "../../components/LanguageFields";
 import { MoveButtons, OrderNumber, useReorder } from "../../components/ordering";
 
 /** Every lesson of one series, which the series page (COU-002) lists top to bottom. */
@@ -41,8 +41,11 @@ export function LessonOrder({ series, canWrite }: { series: AdminSeries; canWrit
         <li key={lesson.lecture_id} className="hgadm-order-list__row">
           <OrderNumber position={index + 1} />
           <div className="hgadm-order-list__main">
-            <div className="hgadm-cell-main">{lesson.title}</div>
-            {englishTitle(lesson) && <div className="hgadm-cell-sub">{englishTitle(lesson)}</div>}
+            <div className="hgadm-title-row">
+              <span className="hgadm-cell-main">{lesson.title}</span>
+              <StandInBadge title={lesson.title} />
+            </div>
+            {koreanTitle(lesson) && <div className="hgadm-cell-sub">{koreanTitle(lesson)}</div>}
           </div>
           {canWrite && (
             <MoveButtons

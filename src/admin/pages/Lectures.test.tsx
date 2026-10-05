@@ -47,8 +47,8 @@ const lesson = (id: string, title: string, extra: Partial<AdminLecture> = {}): A
   ...extra,
 });
 
-const L1 = lesson("l1", "1-1 인사", { translations: [{ locale: "en", title: "1-1 Greetings", description: "" }] });
-const L2 = lesson("l2", "1-2 자기소개");
+const L1 = lesson("l1", "1-1 Greetings", { translations: [{ locale: "ko", title: "1-1 인사", description: "" }] });
+const L2 = lesson("l2", "1-2 Introductions");
 
 function renderAt(url: string) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -86,29 +86,31 @@ beforeEach(() => {
 describe("LecturesPage order", () => {
   it("offers no order controls on the whole catalogue", async () => {
     renderAt("/lectures");
-    await screen.findByText("1-1 인사");
+    await screen.findByText("1-1 Greetings");
     expect(screen.queryByRole("button", { name: /위로 이동/ })).toBeNull();
     expect(screen.getByRole("note")).toHaveTextContent(/코스와 시리즈를 고르면/);
-    // The English title reads under the Korean one.
-    expect(screen.getByText("1-1 Greetings")).toBeInTheDocument();
+    // The Korean title reads under the English one.
+    expect(screen.getByText("1-1 인사")).toBeInTheDocument();
+    // English titles: no stand-in warning.
+    expect(screen.queryByText("영어 제목 필요")).toBeNull();
   });
 
   it("orders one series' lessons as the app lists them", async () => {
     renderAt("/lectures?course_id=crs_1&series_id=ser_kit");
-    await screen.findByText("1-2 자기소개");
+    await screen.findByText("1-2 Introductions");
     expect(adminApi.listLectures).toHaveBeenLastCalledWith(
       expect.objectContaining({ series_id: "ser_kit", page: 1, page_size: 100 }),
     );
     expect(screen.getByLabelText("1번째")).toBeInTheDocument();
     expect(screen.getByLabelText("2번째")).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: "1-2 자기소개 위로 이동" }));
+    await userEvent.click(screen.getByRole("button", { name: "1-2 Introductions 위로 이동" }));
     await waitFor(() => expect(adminApi.reorderSeriesLectures).toHaveBeenCalledWith("ser_kit", ["l2", "l1"]));
   });
 
   it("explains that a narrowed series view cannot be reordered", async () => {
     renderAt("/lectures?course_id=crs_1&series_id=ser_kit&access=free");
-    await screen.findByText("1-1 인사");
+    await screen.findByText("1-1 Greetings");
     expect(screen.queryByRole("button", { name: /위로 이동/ })).toBeNull();
     expect(screen.getByRole("note")).toHaveTextContent(/필터를 비우세요/);
   });

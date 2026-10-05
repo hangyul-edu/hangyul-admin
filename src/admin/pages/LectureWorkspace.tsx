@@ -12,7 +12,7 @@ import { LectureFormModal, TRACK_LABEL } from "./lectures/LectureFormModal";
 import { LectureVideoPanel } from "./lectures/LectureVideoPanel";
 import { CheckpointEditor } from "./lectures/CheckpointEditor";
 import { seriesLessonsKey } from "./courses/LessonOrder";
-import { englishTitle } from "../components/LanguageFields";
+import { StandInBadge, koreanTitle } from "../components/LanguageFields";
 
 type StepState = "done" | "active" | "waiting";
 const TABS = ["info", "video", "checkpoints"] as const;
@@ -126,7 +126,9 @@ export function LectureWorkspacePage() {
             <Badge tone={l.access === "premium" ? "warning" : "success"}>
               {l.access === "premium" ? "프리미엄" : "무료"}
             </Badge>
+            <StandInBadge title={l.title} />
           </h1>
+          {koreanTitle(l) && <div className="hgadm-cell-sub">{koreanTitle(l)}</div>}
           <div className="hgadm-page-head__desc">
             영상을 올리면 길이는 자동으로 맞춰지고, 그 영상을 보면서 회화·TOPIK 체크포인트를 원하는 지점에 붙일 수
             있어요.
@@ -197,10 +199,10 @@ export function LectureWorkspacePage() {
                     "—"
                   ),
                 ],
-                ["설명", l.description || <span className="hgadm-muted">없음</span>],
+                ["설명 (English)", l.description || <span className="hgadm-muted">없음</span>],
                 [
-                  "영어 (English)",
-                  englishTitle(l) ?? <span className="hgadm-muted">없음 — 앱에서 한국어로 보여요</span>,
+                  "한국어 제목",
+                  koreanTitle(l) ?? <span className="hgadm-muted">없음 — 앱에서 영어로 보여요</span>,
                 ],
                 [
                   "길이",

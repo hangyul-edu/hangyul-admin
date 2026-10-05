@@ -18,7 +18,7 @@ import {
   Select,
 } from "../components/kit";
 import type { Column } from "../components/kit";
-import { LanguageFields, englishTitle, languageDraft, translationsOf } from "../components/LanguageFields";
+import { LanguageFields, StandInBadge, koreanTitle, languageDraft, translationsOf } from "../components/LanguageFields";
 import type { LanguageDraft } from "../components/LanguageFields";
 import { MoveButtons, OrderNumber, useReorder } from "../components/ordering";
 import { SeriesPanel } from "./courses/SeriesPanel";
@@ -98,8 +98,8 @@ export function CoursesPage() {
   const save = useMutation({
     mutationFn: (d: CourseDraft) => {
       const body = {
-        title: d.text.ko.title.trim(),
-        description: d.text.ko.description,
+        title: d.text.en.title.trim(),
+        description: d.text.en.description,
         cover_image_url: d.cover_image_url || null,
         translations: translationsOf(d.text),
       };
@@ -180,8 +180,11 @@ export function CoursesPage() {
       header: "코스",
       render: (c) => (
         <div>
-          <div className="hgadm-cell-main">{c.title}</div>
-          {englishTitle(c) && <div className="hgadm-cell-sub">{englishTitle(c)}</div>}
+          <div className="hgadm-title-row">
+            <span className="hgadm-cell-main">{c.title}</span>
+            <StandInBadge title={c.title} />
+          </div>
+          {koreanTitle(c) && <div className="hgadm-cell-sub">{koreanTitle(c)}</div>}
         </div>
       ),
     },
@@ -311,7 +314,7 @@ export function CoursesPage() {
             <Button
               variant="primary"
               loading={save.isPending}
-              disabled={!draft?.text.ko.title.trim()}
+              disabled={!draft?.text.en.title.trim()}
               onClick={() => draft && save.mutate(draft)}
             >
               저장
