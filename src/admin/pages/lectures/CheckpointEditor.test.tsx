@@ -45,6 +45,8 @@ const CONVERSATION: AdminLecture = {
   topik_question_type: null,
   video_status: "ready",
   checkpoint_count: 1,
+  description: "",
+  translations: [],
 };
 const TOPIK: AdminLecture = { ...CONVERSATION, track_id: "track_topik", title: "TOPIK 듣기" };
 

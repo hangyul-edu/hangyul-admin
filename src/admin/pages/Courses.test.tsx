@@ -25,6 +25,12 @@ vi.mock("../api", async () => {
       updateSeries: vi.fn(),
       deleteSeries: vi.fn(),
       deleteCourse: vi.fn(),
+      createCourse: vi.fn(),
+      updateCourse: vi.fn(),
+      reorderCourses: vi.fn(),
+      reorderSeries: vi.fn(),
+      listLectures: vi.fn(),
+      reorderSeriesLectures: vi.fn(),
       uploadMedia: vi.fn(),
     },
   };
@@ -39,6 +45,7 @@ const COURSE: AdminCourse = {
   sequence: 1,
   lecture_count: 5,
   series_count: 2,
+  translations: [],
 };
 const KIT: AdminSeries = {
   series_id: "ser_kit",
@@ -48,6 +55,7 @@ const KIT: AdminSeries = {
   thumbnail_url: "https://cdn.example.com/kit.png",
   sequence: 1,
   lecture_count: 5,
+  translations: [],
 };
 const ICE: AdminSeries = { ...KIT, series_id: "ser_ice", title: "ICEBREAKER KIT", thumbnail_url: null, sequence: 2, lecture_count: 0 };
 
@@ -106,11 +114,12 @@ describe("CoursesPage series", () => {
     await userEvent.click(screen.getByRole("button", { name: "저장" }));
 
     await waitFor(() => expect(adminApi.createSeries).toHaveBeenCalledTimes(1));
+    // No typed position: a new series goes to the end of the course.
     expect(adminApi.createSeries).toHaveBeenCalledWith("crs_1", {
       title: "PATTERN KIT",
       description: "",
-      sequence: 3,
       thumbnail_url: "https://cdn.example.com/new.png",
+      translations: [],
     });
   });
 
@@ -143,5 +152,106 @@ describe("CoursesPage series", () => {
     expect(await screen.findByText(/시리즈가 2개 있어 삭제할 수 없어요/)).toBeInTheDocument();
     expect(within(screen.getByRole("dialog")).getByRole("button", { name: "삭제" })).toBeDisabled();
     expect(adminApi.deleteCourse).not.toHaveBeenCalled();
+  });
+});
+
+describe("CoursesPage languages", () => {
+  it("saves a course's English title and description beside the Korean ones", async () => {
+    vi.mocked(adminApi.createCourse).mockResolvedValue(COURSE);
+    renderPage();
+    await userEvent.click(await screen.findByRole("button", { name: "+ 코스 추가" }));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).queryByLabelText(/정렬 순서/)).toBeNull();
+
+    await userEvent.type(within(dialog).getByLabelText(/코스 제목 · 한국어/), "바로 쓰는 한국어");
+    await userEvent.click(within(dialog).getByRole("tab", { name: /English/ }));
+    expect(within(dialog).getByText(/비워 두면 그 칸은 한국어로 보여요/)).toBeInTheDocument();
+    await userEvent.type(within(dialog).getByLabelText(/코스 제목 · English/), "Speak Korean Instantly");
+    await userEvent.type(within(dialog).getByLabelText(/설명 · English/), "Everyday phrases.");
+    expect(within(dialog).getByRole("tab", { name: /English/ })).toHaveTextContent("✓");
+    await userEvent.click(within(dialog).getByRole("button", { name: "저장" }));
+
+    await waitFor(() => expect(adminApi.createCourse).toHaveBeenCalledTimes(1));
+    expect(adminApi.createCourse).toHaveBeenCalledWith({
+      track_id: "track_conversation",
+      title: "바로 쓰는 한국어",
+      description: "",
+      cover_image_url: null,
+      translations: [{ locale: "en", title: "Speak Korean Instantly", description: "Everyday phrases." }],
+    });
+  });
+
+  it("opens an existing course with its English text and can clear it", async () => {
+    vi.mocked(adminApi.listCourses).mockResolvedValue({
+      items: [{ ...COURSE, translations: [{ locale: "en", title: "Instantly", description: "" }] }],
+    });
+    vi.mocked(adminApi.updateCourse).mockResolvedValue(COURSE);
+    renderPage();
+    // The English title reads under the Korean one in the list.
+    expect(await screen.findByText("Instantly")).toBeInTheDocument();
+    const table = document.querySelector(".hgadm-table") as HTMLElement;
+    await userEvent.click(within(table).getByRole("button", { name: "수정" }));
+    const dialog = screen.getByRole("dialog");
+    await userEvent.click(within(dialog).getByRole("tab", { name: /English/ }));
+    await userEvent.clear(within(dialog).getByLabelText(/코스 제목 · English/));
+    await userEvent.click(within(dialog).getByRole("button", { name: "저장" }));
+    await waitFor(() => expect(adminApi.updateCourse).toHaveBeenCalledTimes(1));
+    expect(vi.mocked(adminApi.updateCourse).mock.calls[0][1].translations).toEqual([]);
+  });
+});
+
+describe("CoursesPage order", () => {
+  const second: AdminCourse = { ...COURSE, course_id: "crs_2", title: "Speak Korean Naturally", sequence: 2 };
+  const topik: AdminCourse = { ...COURSE, course_id: "crs_t", track_id: "track_topik", title: "TOPIK 1급", sequence: 1 };
+
+  it("numbers courses within their track and moves one a place, saved at once", async () => {
+    vi.mocked(adminApi.listCourses).mockResolvedValue({ items: [COURSE, second, topik] });
+    vi.mocked(adminApi.reorderCourses).mockResolvedValue({ items: [second, COURSE] });
+    renderPage();
+    await screen.findByText("Speak Korean Naturally");
+    // Each track counts from 1 — the TOPIK course is first in its own track.
+    expect(screen.getAllByLabelText("1번째")).toHaveLength(2);
+    // The first of a track cannot go up, the last of a track cannot go down.
+    expect(screen.getByRole("button", { name: "Speak Korean Instantly 위로 이동" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Speak Korean Naturally 아래로 이동" })).toBeDisabled();
+
+    await userEvent.click(screen.getByRole("button", { name: "Speak Korean Instantly 아래로 이동" }));
+    await waitFor(() => expect(adminApi.reorderCourses).toHaveBeenCalledWith("track_conversation", ["crs_2", "crs_1"]));
+  });
+
+  it("puts the list back when saving the order fails", async () => {
+    vi.mocked(adminApi.listCourses).mockResolvedValue({ items: [COURSE, second] });
+    vi.mocked(adminApi.reorderCourses).mockRejectedValue(new Error("network down"));
+    renderPage();
+    await screen.findByText("Speak Korean Naturally");
+    await userEvent.click(screen.getByRole("button", { name: "Speak Korean Instantly 아래로 이동" }));
+    expect(await screen.findByText("network down")).toBeInTheDocument();
+    const rows = [...document.querySelectorAll(".hgadm-table tbody tr")].map((r) => r.textContent ?? "");
+    expect(rows[0]).toContain("Speak Korean Instantly");
+  });
+
+  it("moves series left and right, and orders a series' lessons", async () => {
+    vi.mocked(adminApi.reorderSeries).mockResolvedValue({ items: [ICE, KIT] });
+    const lesson = (id: string, title: string) =>
+      ({ lecture_id: id, title, translations: [], series_id: "ser_kit" }) as never;
+    vi.mocked(adminApi.listLectures).mockResolvedValue({
+      items: [lesson("l1", "1-1 인사"), lesson("l2", "1-2 자기소개")],
+      total: 2,
+      page: 1,
+      page_size: 100,
+    } as never);
+    vi.mocked(adminApi.reorderSeriesLectures).mockResolvedValue({ items: [] });
+    renderPage("/courses?course_id=crs_1");
+    const panel = await screen.findByRole("region", { name: /의 시리즈/ });
+    await within(panel).findByText("ICEBREAKER KIT");
+    await userEvent.click(within(panel).getByRole("button", { name: "KOREAN SURVIVAL KIT 뒤로 이동" }));
+    await waitFor(() => expect(adminApi.reorderSeries).toHaveBeenCalledWith("crs_1", ["ser_ice", "ser_kit"]));
+
+    await userEvent.click(within(panel).getByRole("button", { name: "강의 순서" }));
+    const dialog = await screen.findByRole("dialog");
+    await within(dialog).findByText("1-2 자기소개");
+    await userEvent.click(within(dialog).getByRole("button", { name: "1-2 자기소개 위로 이동" }));
+    await waitFor(() => expect(adminApi.reorderSeriesLectures).toHaveBeenCalledWith("ser_kit", ["l2", "l1"]));
+    expect(adminApi.listLectures).toHaveBeenCalledWith({ series_id: "ser_kit", page_size: 100 });
   });
 });

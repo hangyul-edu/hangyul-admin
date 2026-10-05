@@ -22,6 +22,8 @@ import {
 } from "../components/kit";
 import type { Column } from "../components/kit";
 import { formatClock } from "../lib/videoFile";
+import { englishTitle } from "../components/LanguageFields";
+import { MoveButtons, OrderNumber, useReorder } from "../components/ordering";
 import { LectureFormModal, TRACKS, TRACK_LABEL } from "./lectures/LectureFormModal";
 
 /**
@@ -58,8 +60,13 @@ export function LecturesPage() {
     enabled: !!courseId,
   });
 
+  // Lessons are ordered within their series. With one series chosen and
+  // nothing else narrowing the list, every lesson of it is shown in the app's
+  // order and can be moved; any other view is a search, not an order.
+  const ordering = !!seriesId && !q && !track && !access;
+  const listKey = ["admin", "lectures", { q, track, courseId, seriesId, access, page, ordering }];
   const query = useQuery({
-    queryKey: ["admin", "lectures", { q, track, courseId, seriesId, access, page }],
+    queryKey: listKey,
     queryFn: () =>
       adminApi.listLectures({
         q: q || undefined,
@@ -67,10 +74,18 @@ export function LecturesPage() {
         course_id: courseId || undefined,
         series_id: seriesId || undefined,
         access: access || undefined,
-        page,
-        page_size: 25,
+        page: ordering ? 1 : page,
+        page_size: ordering ? 100 : 25,
       }),
   });
+  const reorder = useReorder<AdminLecture>({
+    queryKey: listKey,
+    idOf: (l) => l.lecture_id,
+    save: (ids) => adminApi.reorderSeriesLectures(seriesId, ids),
+    alsoRefresh: [["admin", "series-lessons", seriesId], ["admin", "lecture"]],
+  });
+  const lectureIds = (query.data?.items ?? []).map((l) => l.lecture_id);
+  const seriesTitle = series.data?.items.find((s) => s.series_id === seriesId)?.title;
 
   const remove = useMutation({
     mutationFn: (lecture: AdminLecture) => adminApi.deleteLecture(lecture.lecture_id),
@@ -85,14 +100,41 @@ export function LecturesPage() {
 
   const open = (l: AdminLecture) => nav(`/lectures/${l.lecture_id}`);
 
+  const orderColumn: Column<AdminLecture> = {
+    key: "order",
+    header: "앱 표시 순서",
+    width: 120,
+    render: (l) => {
+      const index = lectureIds.indexOf(l.lecture_id);
+      return (
+        <div className="hgadm-row" onClick={(e) => e.stopPropagation()}>
+          <OrderNumber position={index + 1} />
+          {canWrite && (
+            <MoveButtons
+              name={l.title}
+              index={index}
+              count={lectureIds.length}
+              disabled={reorder.saving}
+              onMove={(dir) => reorder.move(lectureIds, l.lecture_id, dir)}
+            />
+          )}
+        </div>
+      );
+    },
+  };
+
   const columns: Column<AdminLecture>[] = [
+    ...(ordering ? [orderColumn] : []),
     {
       key: "title",
       header: "강의",
       render: (l) => (
         <div className="hgadm-row">
           {l.thumbnail_url && <img src={l.thumbnail_url} alt="" className="hgadm-thumb" />}
-          <div className="hgadm-cell-main">{l.title}</div>
+          <div>
+            <div className="hgadm-cell-main">{l.title}</div>
+            {englishTitle(l) && <div className="hgadm-cell-sub">{englishTitle(l)}</div>}
+          </div>
         </div>
       ),
     },
@@ -108,13 +150,8 @@ export function LecturesPage() {
     },
     {
       key: "track",
-      header: "학습 분야/순서",
-      render: (l) => (
-        <div>
-          <Badge tone="brand">{TRACK_LABEL[l.track_id] ?? l.track_id}</Badge>
-          <div className="hgadm-cell-sub">순서 {l.sequence}</div>
-        </div>
-      ),
+      header: "학습 분야",
+      render: (l) => <Badge tone="brand">{TRACK_LABEL[l.track_id] ?? l.track_id}</Badge>,
     },
     {
       key: "access",
@@ -239,6 +276,13 @@ export function LecturesPage() {
             <option value="premium">프리미엄</option>
           </Select>
         </div>
+        <p className="hgadm-order-note" role="note">
+          {ordering
+            ? `‘${seriesTitle ?? "이 시리즈"}’의 강의가 앱에 보이는 순서예요. ↑ / ↓ 로 바꾸면 바로 저장돼요.`
+            : seriesId
+              ? "순서를 바꾸려면 검색어·학습 분야·공개 필터를 비우세요 — 시리즈의 강의 전체가 보여야 순서를 정할 수 있어요."
+              : "강의는 시리즈 안에서 순서가 정해져요. 코스와 시리즈를 고르면 앱에 보이는 순서대로 나오고, 여기서 바로 바꿀 수 있어요."}
+        </p>
         {query.isPending ? (
           <LoadingState />
         ) : query.isError ? (
@@ -252,12 +296,14 @@ export function LecturesPage() {
               onRowClick={open}
               empty="조건에 맞는 강의가 없습니다."
             />
-            <Pagination
-              page={query.data.page}
-              pageSize={query.data.page_size}
-              total={query.data.total}
-              onPageChange={(next) => filters.patch({ page: String(next) })}
-            />
+            {!ordering && (
+              <Pagination
+                page={query.data.page}
+                pageSize={query.data.page_size}
+                total={query.data.total}
+                onPageChange={(next) => filters.patch({ page: String(next) })}
+              />
+            )}
           </>
         )}
       </div>

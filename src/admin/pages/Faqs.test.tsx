@@ -19,6 +19,7 @@ const listFaqs = vi.fn();
 const createFaq = vi.fn();
 const updateFaq = vi.fn();
 const deleteFaqTranslation = vi.fn();
+const reorderFaqs = vi.fn();
 
 vi.mock("../api", async () => {
   const actual = await vi.importActual<typeof import("../api")>("../api");
@@ -30,6 +31,7 @@ vi.mock("../api", async () => {
       createFaq: (b: unknown) => createFaq(b),
       updateFaq: (id: string, b: unknown) => updateFaq(id, b),
       deleteFaqTranslation: (id: string, l: string) => deleteFaqTranslation(id, l),
+      reorderFaqs: (c: string, ids: string[]) => reorderFaqs(c, ids),
     },
   };
 });
@@ -69,11 +71,34 @@ function renderPage() {
 }
 
 beforeEach(() => {
-  [listFaqs, createFaq, updateFaq, deleteFaqTranslation].forEach((m) => m.mockReset());
+  [listFaqs, createFaq, updateFaq, deleteFaqTranslation, reorderFaqs].forEach((m) => m.mockReset());
   listFaqs.mockResolvedValue({ items: [BILINGUAL, KO_ONLY] });
   createFaq.mockResolvedValue(BILINGUAL);
   updateFaq.mockResolvedValue(BILINGUAL);
   deleteFaqTranslation.mockResolvedValue(KO_ONLY);
+});
+
+describe("FAQ order", () => {
+  it("numbers FAQs within their category and moves one, saved at once", async () => {
+    const other: AdminFaq = { ...KO_ONLY, faq_id: "faq_3", category: "account_settings" };
+    listFaqs.mockResolvedValue({ items: [BILINGUAL, KO_ONLY, other] });
+    reorderFaqs.mockResolvedValue({ items: [KO_ONLY, BILINGUAL] });
+    renderPage();
+    await screen.findAllByText("한국어만");
+    // Each category counts from 1.
+    expect(screen.getAllByLabelText("1번째")).toHaveLength(2);
+    expect(screen.queryByLabelText(/정렬 순서/)).toBeNull();
+
+    const down = screen.getAllByRole("button", { name: /아래로 이동/ });
+    await userEvent.click(down[0]);
+    await waitFor(() => expect(reorderFaqs).toHaveBeenCalledWith("getting_started", ["faq_2", "faq_1"]));
+  });
+
+  it("sends no order with a new FAQ", async () => {
+    renderPage();
+    await userEvent.click(await screen.findByRole("button", { name: "+ FAQ 추가" }));
+    expect(screen.queryByLabelText(/정렬 순서/)).toBeNull();
+  });
 });
 
 describe("FAQ list", () => {

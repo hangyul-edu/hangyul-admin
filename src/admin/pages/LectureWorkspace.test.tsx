@@ -35,6 +35,8 @@ const LECTURE: AdminLecture = {
   topik_question_type: null,
   video_status: "ready",
   checkpoint_count: 2,
+  description: "",
+  translations: [],
 };
 
 function Where() {
@@ -72,7 +74,13 @@ describe("LectureWorkspacePage", () => {
   it("shows one step at a time, switching from the tabs", async () => {
     renderAt("/lectures/lec_1?tab=info");
     expect(await screen.findByRole("tab", { name: /기본 정보/, selected: true })).toBeInTheDocument();
-    expect(screen.getByText("정렬 순서")).toBeInTheDocument();
+    // Its place in the series as the app lists it, never a typed number.
+    expect(screen.getByText("시리즈 안 순서")).toBeInTheDocument();
+    expect(await screen.findByText(/1번째 \/ 1개/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "순서 바꾸기 →" })).toHaveAttribute(
+      "href",
+      "/lectures?course_id=crs_1&series_id=ser_1",
+    );
     // Where the lesson lives, by name.
     expect(screen.getByText("Speak Korean Instantly")).toBeInTheDocument();
     expect(screen.getByText("KOREAN SURVIVAL KIT")).toBeInTheDocument();
@@ -81,7 +89,7 @@ describe("LectureWorkspacePage", () => {
 
     await userEvent.click(screen.getByRole("tab", { name: /영상/ }));
     expect(screen.getByText("video-panel")).toBeInTheDocument();
-    expect(screen.queryByText("정렬 순서")).toBeNull();
+    expect(screen.queryByText("시리즈 안 순서")).toBeNull();
     expect(screen.getByLabelText("search")).toHaveTextContent("?tab=video");
 
     await userEvent.click(screen.getByRole("button", { name: /다음: 체크포인트 설정/ }));

@@ -11,6 +11,8 @@ import { formatClock } from "../lib/videoFile";
 import { LectureFormModal, TRACK_LABEL } from "./lectures/LectureFormModal";
 import { LectureVideoPanel } from "./lectures/LectureVideoPanel";
 import { CheckpointEditor } from "./lectures/CheckpointEditor";
+import { seriesLessonsKey } from "./courses/LessonOrder";
+import { englishTitle } from "../components/LanguageFields";
 
 type StepState = "done" | "active" | "waiting";
 const TABS = ["info", "video", "checkpoints"] as const;
@@ -58,9 +60,19 @@ export function LectureWorkspacePage() {
     },
   });
 
+  // The lesson's series, in the app's order, for "n번째" in 기본 정보.
+  const seriesId = lecture.data?.series_id ?? "";
+  const siblings = useQuery({
+    queryKey: seriesLessonsKey(seriesId),
+    queryFn: () => adminApi.listLectures({ series_id: seriesId, page_size: 100 }),
+    enabled: !!seriesId,
+  });
+  const position = (siblings.data?.items.findIndex((s) => s.lecture_id === lectureId) ?? -1) + 1;
+
   const refreshLecture = useCallback(() => {
     void qc.invalidateQueries({ queryKey: ["admin", "lecture", lectureId] });
     void qc.invalidateQueries({ queryKey: ["admin", "lectures"] });
+    void qc.invalidateQueries({ queryKey: ["admin", "series-lessons"] });
     void qc.invalidateQueries({ queryKey: ["admin", "lecture-checkpoints", lectureId] });
   }, [qc, lectureId]);
 
@@ -172,7 +184,24 @@ export function LectureWorkspacePage() {
                     <span className="hgadm-muted">시리즈가 없어요 — 수정에서 시리즈를 골라 주세요</span>
                   ),
                 ],
-                ["정렬 순서", l.sequence],
+                [
+                  "시리즈 안 순서",
+                  l.series_id ? (
+                    <span>
+                      {position > 0 ? `${position}번째 / ${siblings.data?.items.length ?? "—"}개` : "—"}{" "}
+                      <Link to={`/lectures?course_id=${l.course_id ?? ""}&series_id=${l.series_id}`}>
+                        순서 바꾸기 →
+                      </Link>
+                    </span>
+                  ) : (
+                    "—"
+                  ),
+                ],
+                ["설명", l.description || <span className="hgadm-muted">없음</span>],
+                [
+                  "영어 (English)",
+                  englishTitle(l) ?? <span className="hgadm-muted">없음 — 앱에서 한국어로 보여요</span>,
+                ],
                 [
                   "길이",
                   l.duration_seconds && videoReady

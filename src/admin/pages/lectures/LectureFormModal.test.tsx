@@ -41,6 +41,7 @@ const course = (id: string, track: string, title: string): AdminCourse => ({
   sequence: 1,
   lecture_count: 0,
   series_count: 1,
+  translations: [],
 });
 const series = (id: string, courseId: string, title: string): AdminSeries => ({
   series_id: id,
@@ -50,6 +51,7 @@ const series = (id: string, courseId: string, title: string): AdminSeries => ({
   thumbnail_url: null,
   sequence: 1,
   lecture_count: 0,
+  translations: [],
 });
 
 const COURSES = [
@@ -79,6 +81,8 @@ const LECTURE: AdminLecture = {
   topik_question_type: "reading_03",
   video_status: null,
   checkpoint_count: 0,
+  description: "",
+  translations: [],
 };
 
 function renderForm(lecture: AdminLecture | null, onSaved = vi.fn()) {
@@ -144,7 +148,28 @@ describe("LectureFormModal", () => {
     expect(body).not.toHaveProperty("track_id");
     expect(body).not.toHaveProperty("kind");
     expect(body).not.toHaveProperty("duration_seconds");
+    // Its place is the end of the series, set by reordering — never typed.
+    expect(body).not.toHaveProperty("sequence");
+    expect(screen.queryByLabelText(/정렬 순서/)).toBeNull();
     expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({ lecture_id: "lec_new" }));
+  });
+
+  it("writes a description and an English title and description", async () => {
+    renderForm(null);
+    await choose(screen.getByLabelText(/소속 코스/), "회화 · Speak Korean Instantly");
+    await choose(screen.getByLabelText(/소속 시리즈/), "KOREAN SURVIVAL KIT");
+    await userEvent.type(screen.getByLabelText(/강의 제목 · 한국어/), "1-1 인사");
+    await userEvent.type(screen.getByLabelText(/설명 · 한국어/), "만났을 때 쓰는 인사");
+    await userEvent.click(screen.getByRole("tab", { name: /English/ }));
+    await userEvent.type(screen.getByLabelText(/강의 제목 · English/), "1-1 Greetings");
+    await userEvent.click(screen.getByRole("button", { name: "만들고 영상 올리기" }));
+
+    await waitFor(() => expect(adminApi.createLecture).toHaveBeenCalledTimes(1));
+    expect(vi.mocked(adminApi.createLecture).mock.calls[0][0]).toMatchObject({
+      title: "1-1 인사",
+      description: "만났을 때 쓰는 인사",
+      translations: [{ locale: "en", title: "1-1 Greetings", description: "" }],
+    });
   });
 
   it("offers no '(코스 없음)' option", async () => {

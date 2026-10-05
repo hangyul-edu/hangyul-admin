@@ -21,6 +21,7 @@ import {
   Textarea,
 } from "../components/kit";
 import type { Column } from "../components/kit";
+import { MoveButtons, OrderNumber, useReorder } from "../components/ordering";
 
 const CATEGORIES = [
   ["getting_started", "시작하기"],
@@ -64,7 +65,6 @@ interface FaqText {
 
 interface FaqDraft {
   category: string;
-  order: string;
   published: boolean;
   /** Keyed by locale, one entry per authoring language. A language left blank
    *  is simply not submitted, so no FAQ is forced to carry every language. */
@@ -79,7 +79,6 @@ function emptyText(): Record<string, FaqText> {
 
 const EMPTY: FaqDraft = {
   category: "getting_started",
-  order: "0",
   published: true,
   text: emptyText(),
 };
@@ -123,7 +122,6 @@ function draftFrom(faq: AdminFaq): FaqDraft {
   }
   return {
     category: faq.category,
-    order: String(faq.order),
     published: faq.published,
     text,
   };
@@ -169,10 +167,11 @@ export function FaqsPage() {
         question: d.text[locale].question.trim(),
         answer: d.text[locale].answer.trim(),
       }));
+      // No order: a new FAQ goes to the end of its category, and the order
+      // is changed with ↑ / ↓ in the list.
       const body = {
         category: d.category,
         translations,
-        order: Number(d.order),
         published: d.published,
       };
       if (!editingId) return adminApi.createFaq(body);
@@ -220,7 +219,44 @@ export function FaqsPage() {
     (f) => !category || f.category === category,
   );
 
+  // FAQs are ordered within their category (the app lists one category at
+  // a time); the list arrives grouped by category, in the app's order.
+  const reorder = useReorder<AdminFaq>({
+    queryKey: ["admin", "faqs"],
+    idOf: (f) => f.faq_id,
+    save: (ids) => {
+      const of = query.data?.items.find((f) => f.faq_id === ids[0])?.category ?? "";
+      return adminApi.reorderFaqs(of, ids);
+    },
+  });
+  const categoryIds = (cat: string) =>
+    (query.data?.items ?? []).filter((f) => f.category === cat).map((f) => f.faq_id);
+  const firstQuestion = (f: AdminFaq) => registered(f)[0]?.question ?? "FAQ";
+
   const columns: Column<AdminFaq>[] = [
+    {
+      key: "order",
+      header: "앱 표시 순서",
+      width: 120,
+      render: (f) => {
+        const scope = categoryIds(f.category);
+        const index = scope.indexOf(f.faq_id);
+        return (
+          <div className="hgadm-row">
+            <OrderNumber position={index + 1} />
+            {canWrite && (
+              <MoveButtons
+                name={firstQuestion(f)}
+                index={index}
+                count={scope.length}
+                disabled={reorder.saving}
+                onMove={(dir) => reorder.move(scope, f.faq_id, dir)}
+              />
+            )}
+          </div>
+        );
+      },
+    },
     {
       key: "category",
       header: "카테고리",
@@ -248,7 +284,6 @@ export function FaqsPage() {
         </div>
       ),
     },
-    { key: "order", header: "순서", numeric: true, render: (f) => f.order },
     {
       key: "published",
       header: "게시",
@@ -293,7 +328,8 @@ export function FaqsPage() {
         <div>
           <h1>FAQ 관리</h1>
           <div className="hgadm-page-head__desc">
-            자주 묻는 질문을 카테고리별로 관리합니다. 초안은 앱에 노출되지 않습니다.
+            자주 묻는 질문을 카테고리별로 관리합니다. 초안은 앱에 노출되지 않습니다. 앱에는 카테고리마다 아래
+            순서대로 보여요 — ↑ / ↓ 로 바꾸면 바로 저장돼요.
           </div>
         </div>
         {canWrite && (
@@ -370,7 +406,11 @@ export function FaqsPage() {
         {draft && (
           <div>
             <div className="hgadm-form-grid">
-              <Field label="카테고리" required>
+              <Field
+                label="카테고리"
+                required
+                hint={editingId ? undefined : "새 FAQ는 카테고리의 맨 뒤에 놓여요. 순서는 목록에서 ↑ / ↓ 로 바꿔요."}
+              >
                 <Select
                   value={draft.category}
                   onChange={(e) => setDraft({ ...draft, category: e.target.value })}
@@ -381,13 +421,6 @@ export function FaqsPage() {
                     </option>
                   ))}
                 </Select>
-              </Field>
-              <Field label="정렬 순서">
-                <Input
-                  type="number"
-                  value={draft.order}
-                  onChange={(e) => setDraft({ ...draft, order: e.target.value })}
-                />
               </Field>
             </div>
             {AUTHORING_LANGUAGES.map(({ code, nativeLabel }) => (

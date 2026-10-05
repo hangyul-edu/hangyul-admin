@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, ChevronUp, ImageIcon } from "lucide-react";
+import { ImageIcon } from "lucide-react";
+import { MoveButtons, OrderNumber } from "../components/ordering";
 import { adminApi } from "../api";
 import type { AdminBanner } from "../api";
 import { errorMessage } from "../../lib/http";
@@ -145,7 +146,7 @@ export function BannersPage() {
         <div>
           <h1>배너 관리</h1>
           <div className="hgadm-page-head__desc">
-            강의 홈 상단 슬라이드 배너입니다. 순서는 위/아래 버튼으로 조정하고, 노출
+            강의 홈 상단 슬라이드 배너입니다. 앱에서 아래 순서대로 넘어가요 — ↑ / ↓ 로 바꾸면 바로 저장돼요. 노출
             기간을 지정하면 그 기간에만 표시됩니다.
           </div>
         </div>
@@ -188,6 +189,7 @@ export function BannersPage() {
               className="hgadm-card"
               style={{ display: "flex", gap: 16, padding: 14, alignItems: "center" }}
             >
+              <OrderNumber position={index + 1} />
               <img
                 src={banner.image_url}
                 alt={banner.alt_text}
@@ -216,24 +218,13 @@ export function BannersPage() {
               </div>
               {canWrite && (
                 <div className="hgadm-row">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    disabled={index === 0}
-                    onClick={() => move.mutate({ id: banner.banner_id, dir: -1 })}
-                    aria-label="위로"
-                  >
-                    <ChevronUp size={16} strokeWidth={2} />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    disabled={index === query.data.items.length - 1}
-                    onClick={() => move.mutate({ id: banner.banner_id, dir: 1 })}
-                    aria-label="아래로"
-                  >
-                    <ChevronDown size={16} strokeWidth={2} />
-                  </Button>
+                  <MoveButtons
+                    name={banner.alt_text || "배너"}
+                    index={index}
+                    count={query.data.items.length}
+                    disabled={move.isPending}
+                    onMove={(dir) => move.mutate({ id: banner.banner_id, dir })}
+                  />
                   <Switch
                     checked={banner.is_active}
                     onChange={() => toggleActive.mutate(banner)}

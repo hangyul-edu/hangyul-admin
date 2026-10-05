@@ -61,6 +61,9 @@ const ACTION_COPY: Record<string, ActionCopy> = {
 
   // ---- Courses & lectures ------------------------------------------------
   "POST /admin/courses": { ko: "코스 생성", en: "Created a course" },
+  "POST /admin/courses/reorder": { ko: "코스 순서 변경", en: "Reordered courses" },
+  "POST /admin/courses/{course_id}/series/reorder": { ko: "시리즈 순서 변경", en: "Reordered series" },
+  "POST /admin/series/{series_id}/lectures/reorder": { ko: "강의 순서 변경", en: "Reordered lectures" },
   "PATCH /admin/courses/{course_id}": { ko: "코스 수정", en: "Updated a course" },
   "DELETE /admin/courses/{course_id}": { ko: "코스 삭제", en: "Deleted a course" },
   "POST /admin/courses/{course_id}/series": { ko: "시리즈 생성", en: "Created a series" },
@@ -124,6 +127,7 @@ const ACTION_COPY: Record<string, ActionCopy> = {
 
   // ---- FAQs --------------------------------------------------------------
   "POST /admin/support/faqs": { ko: "FAQ 등록", en: "Created a FAQ" },
+  "POST /admin/support/faqs/reorder": { ko: "FAQ 순서 변경", en: "Reordered FAQs" },
   "PATCH /admin/support/faqs/{faq_id}": { ko: "FAQ 수정", en: "Updated a FAQ" },
   "DELETE /admin/support/faqs/{faq_id}": { ko: "FAQ 삭제", en: "Deleted a FAQ" },
   "POST /admin/support/faqs/{faq_id}/publish": { ko: "FAQ 게시", en: "Published a FAQ" },
@@ -138,6 +142,7 @@ const ACTION_COPY: Record<string, ActionCopy> = {
 
   // ---- Notices -----------------------------------------------------------
   "POST /admin/support/notices": { ko: "공지 등록", en: "Created a notice" },
+  "POST /admin/support/notices/reorder": { ko: "공지 순서 변경", en: "Reordered notices" },
   "PATCH /admin/support/notices/{notice_id}": { ko: "공지 수정", en: "Updated a notice" },
   "DELETE /admin/support/notices/{notice_id}": { ko: "공지 삭제", en: "Deleted a notice" },
   "POST /admin/support/notices/{notice_id}/publish": { ko: "공지 게시", en: "Published a notice" },

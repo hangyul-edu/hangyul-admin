@@ -557,16 +557,38 @@ export interface AdminBanner {
   updated_at: string;
 }
 
+/**
+ * A non-Korean version of a catalogue item's title and description. Korean is
+ * the base (the item's own `title` / `description`); members whose app runs
+ * in another language see that language's text, falling back to Korean per
+ * field when it is empty.
+ */
+export interface CatalogTranslation {
+  locale: "en";
+  title: string;
+  description: string;
+}
+
 export interface AdminCourse {
   course_id: string;
   track_id: string;
   title: string;
   description: string;
   cover_image_url: string | null;
+  /** Position within the track (managed with the reorder endpoint). */
   sequence: number;
   lecture_count: number;
   /** Series in the course; it can only be deleted at 0. */
   series_count: number;
+  translations: CatalogTranslation[];
+}
+
+export interface AdminCourseWrite {
+  title?: string;
+  description?: string;
+  cover_image_url?: string | null;
+  /** Replaces every translation when sent. */
+  translations?: CatalogTranslation[];
 }
 
 /** A series inside a course: its own key art, and the lessons filed under it. */
@@ -576,8 +598,10 @@ export interface AdminSeries {
   title: string;
   description: string;
   thumbnail_url: string | null;
+  /** Position within the course (managed with the reorder endpoint). */
   sequence: number;
   lecture_count: number;
+  translations: CatalogTranslation[];
 }
 
 export interface AdminSeriesWrite {
@@ -585,7 +609,8 @@ export interface AdminSeriesWrite {
   description?: string;
   /** null clears it on an update. */
   thumbnail_url?: string | null;
-  sequence?: number;
+  /** Replaces every translation when sent. */
+  translations?: CatalogTranslation[];
 }
 
 /**
@@ -622,19 +647,28 @@ export interface AdminLecture {
   series_title: string | null;
   course_title: string | null;
   title: string;
+  /** The lesson's Korean description (other languages in `translations`). */
+  description: string;
   kind: string;
   duration_seconds: number;
   thumbnail_url: string | null;
   access: string;
+  /** Position within its series (managed with the reorder endpoint). */
   sequence: number;
   topik_question_type: string | null;
   video_status: string | null;
   checkpoint_count: number;
+  translations: CatalogTranslation[];
 }
 
-/** The lecture fields an admin edits; kind and length come from the video. */
+/**
+ * The lecture fields an admin edits; kind and length come from the video, and
+ * its position is set by reordering the series, never typed.
+ */
 export type AdminLectureFields = Partial<
-  Pick<AdminLecture, "title" | "thumbnail_url" | "access" | "sequence" | "topik_question_type"> & { series_id: string }
+  Pick<AdminLecture, "title" | "description" | "thumbnail_url" | "access" | "topik_question_type" | "translations"> & {
+    series_id: string;
+  }
 >;
 
 /** speaking_exercise → conversation modal; multiple_choice / short_answer → TOPIK modal. */
@@ -808,7 +842,6 @@ export interface AdminFaq {
 export interface AdminFaqBody {
   category?: string;
   translations?: FaqTranslation[];
-  order?: number;
   published?: boolean;
 }
 
@@ -1107,11 +1140,19 @@ export const adminApi = {
   // Courses / lectures
   listCourses: (trackId?: string) =>
     http.get<{ items: AdminCourse[] }>("/admin/courses", { track_id: trackId }),
-  createCourse: (body: Partial<AdminCourse> & { track_id: string; title: string }) =>
+  // A new course goes to the end of its track; order is changed by reordering.
+  createCourse: (body: AdminCourseWrite & { track_id: string; title: string }) =>
     http.post<AdminCourse>("/admin/courses", body),
-  updateCourse: (courseId: string, body: Partial<AdminCourse>) =>
+  updateCourse: (courseId: string, body: AdminCourseWrite) =>
     http.patch<AdminCourse>(`/admin/courses/${courseId}`, body),
   deleteCourse: (courseId: string) => http.del<void>(`/admin/courses/${courseId}`),
+  /** Sets a track's course order: the ids given come first, in that order. */
+  reorderCourses: (trackId: string, courseIds: string[]) =>
+    http.post<{ items: AdminCourse[] }>("/admin/courses/reorder", { track_id: trackId, course_ids: courseIds }),
+  reorderSeries: (courseId: string, seriesIds: string[]) =>
+    http.post<{ items: AdminSeries[] }>(`/admin/courses/${courseId}/series/reorder`, { series_ids: seriesIds }),
+  reorderSeriesLectures: (seriesId: string, lectureIds: string[]) =>
+    http.post<{ items: AdminLecture[] }>(`/admin/series/${seriesId}/lectures/reorder`, { lecture_ids: lectureIds }),
   // Series: a course's rows of lessons, each with its own thumbnail.
   listSeries: (courseId: string) =>
     http.get<{ items: AdminSeries[] }>(`/admin/courses/${courseId}/series`),
@@ -1240,13 +1281,18 @@ export const adminApi = {
   updateFaq: (faqId: string, body: AdminFaqBody) =>
     http.patch<AdminFaq>(`/admin/support/faqs/${faqId}`, body),
   deleteFaq: (faqId: string) => http.del<void>(`/admin/support/faqs/${faqId}`),
+  /** Sets the order of one category's FAQs. */
+  reorderFaqs: (category: string, faqIds: string[]) =>
+    http.post<{ items: AdminFaq[] }>("/admin/support/faqs/reorder", { category, faq_ids: faqIds }),
+  reorderNotices: (noticeIds: string[]) =>
+    http.post<{ items: AdminNotice[] }>("/admin/support/notices/reorder", { notice_ids: noticeIds }),
   deleteFaqTranslation: (faqId: string, locale: string) =>
     http.del<AdminFaq>(`/admin/support/faqs/${faqId}/translations/${locale}`),
   listNotices: () => http.get<{ items: AdminNotice[] }>("/admin/support/notices"),
+  // A new notice goes to the end of the list; order is changed by reordering.
   createNotice: (body: {
     translations: NoticeTranslation[];
     pinned?: boolean;
-    display_order?: number;
     published?: boolean;
   }) => http.post<AdminNotice>("/admin/support/notices", body),
   updateNotice: (
@@ -1254,7 +1300,6 @@ export const adminApi = {
     body: {
       translations?: NoticeTranslation[];
       pinned?: boolean;
-      display_order?: number;
       published?: boolean;
     },
   ) => http.patch<AdminNotice>(`/admin/support/notices/${noticeId}`, body),

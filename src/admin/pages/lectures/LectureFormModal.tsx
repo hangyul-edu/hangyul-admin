@@ -6,6 +6,8 @@ import type { AdminLecture } from "../../api";
 import { errorMessage } from "../../../lib/http";
 import { useToast, useToastError } from "../../../hooks/toast";
 import { Button, Field, Input, Modal, Select } from "../../components/kit";
+import { LanguageFields, languageDraft, translationsOf } from "../../components/LanguageFields";
+import type { LanguageDraft } from "../../components/LanguageFields";
 
 export const TRACKS = [
   ["track_conversation", "회화"],
@@ -16,9 +18,8 @@ export const TRACK_LABEL: Record<string, string> = Object.fromEntries(TRACKS);
 interface LectureDraft {
   course_id: string;
   series_id: string;
-  title: string;
+  text: LanguageDraft;
   access: string;
-  sequence: string;
   thumbnail_url: string;
   topik_question_type: string;
 }
@@ -28,18 +29,16 @@ function draftOf(lecture: AdminLecture | null, initial?: { courseId?: string; se
     ? {
         course_id: lecture.course_id ?? "",
         series_id: lecture.series_id ?? "",
-        title: lecture.title,
+        text: languageDraft(lecture),
         access: lecture.access,
-        sequence: String(lecture.sequence),
         thumbnail_url: lecture.thumbnail_url ?? "",
         topik_question_type: lecture.topik_question_type ?? "",
       }
     : {
         course_id: initial?.courseId ?? "",
         series_id: initial?.seriesId ?? "",
-        title: "",
+        text: languageDraft(null),
         access: "free",
-        sequence: "0",
         thumbnail_url: "",
         topik_question_type: "",
       };
@@ -98,9 +97,10 @@ export function LectureFormModal({
     mutationFn: (d: LectureDraft) => {
       const base = {
         series_id: d.series_id,
-        title: d.title,
+        title: d.text.ko.title.trim(),
+        description: d.text.ko.description,
+        translations: translationsOf(d.text),
         access: d.access,
-        sequence: Number(d.sequence),
         // null (not omitted) so emptying a field on edit clears it.
         thumbnail_url: d.thumbnail_url || null,
         topik_question_type: d.topik_question_type || null,
@@ -128,7 +128,7 @@ export function LectureFormModal({
           <Button
             variant="primary"
             loading={save.isPending}
-            disabled={!draft.title.trim() || !draft.series_id}
+            disabled={!draft.text.ko.title.trim() || !draft.series_id}
             onClick={() => save.mutate(draft)}
           >
             {editing ? "저장" : "만들고 영상 올리기"}
@@ -167,7 +167,15 @@ export function LectureFormModal({
             )}
           </Select>
         </Field>
-        <Field label="소속 시리즈" required>
+        <Field
+          label="소속 시리즈"
+          required
+          hint={
+            editing
+              ? "같은 학습 분야의 다른 시리즈로 옮길 수 있어요. 옮기면 그 시리즈의 맨 뒤에 들어가고, 순서는 코스 관리의 ‘강의 순서’에서 바꿔요."
+              : "새 강의는 시리즈의 맨 뒤에 놓여요. 순서는 코스 관리의 ‘강의 순서’에서 바꿔요."
+          }
+        >
           <Select
             value={draft.series_id}
             disabled={!draft.course_id || noSeries}
@@ -192,23 +200,16 @@ export function LectureFormModal({
             </Link>
           </div>
         )}
-        <Field label="제목" required>
-          <Input
-            value={draft.title}
-            maxLength={200}
-            onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+        <div className="span-2">
+          <LanguageFields
+            noun="강의"
+            titleMaxLength={200}
+            value={draft.text}
+            onChange={(text) => setDraft({ ...draft, text })}
           />
-        </Field>
+        </div>
         <Field label="학습 분야" hint="코스에서 정해져요.">
           <Input value={track ? TRACK_LABEL[track] ?? track : "—"} readOnly disabled />
-        </Field>
-        <Field label="정렬 순서">
-          <Input
-            type="number"
-            min={0}
-            value={draft.sequence}
-            onChange={(e) => setDraft({ ...draft, sequence: e.target.value })}
-          />
         </Field>
         <Field label="공개 범위" required>
           <Select value={draft.access} onChange={(e) => setDraft({ ...draft, access: e.target.value })}>

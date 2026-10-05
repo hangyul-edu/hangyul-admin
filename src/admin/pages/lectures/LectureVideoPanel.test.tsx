@@ -59,6 +59,8 @@ const LECTURE: AdminLecture = {
   topik_question_type: null,
   video_status: null,
   checkpoint_count: 0,
+  description: "",
+  translations: [],
 };
 
 const READY: AdminLectureVideo = {

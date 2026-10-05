@@ -5,24 +5,29 @@ import { adminApi } from "../../api";
 import type { AdminCourse, AdminSeries } from "../../api";
 import { errorMessage } from "../../../lib/http";
 import { useToast, useToastError } from "../../../hooks/toast";
-import { Button, ConfirmDialog, ErrorState, Field, Input, LoadingState, Modal, Textarea } from "../../components/kit";
+import { Button, ConfirmDialog, ErrorState, Field, LoadingState, Modal } from "../../components/kit";
+import { LanguageFields, englishTitle, languageDraft, translationsOf } from "../../components/LanguageFields";
+import type { LanguageDraft } from "../../components/LanguageFields";
+import { MoveButtons, OrderNumber, useReorder } from "../../components/ordering";
+import { LessonOrder } from "./LessonOrder";
 
 interface SeriesDraft {
-  title: string;
-  description: string;
-  sequence: string;
+  text: LanguageDraft;
   thumbnail_url: string;
 }
 
-const EMPTY: SeriesDraft = { title: "", description: "", sequence: "0", thumbnail_url: "" };
+const EMPTY: SeriesDraft = { text: languageDraft(null), thumbnail_url: "" };
 
 /**
  * A course's series — the row of key-art cards learners see under the
  * course on the 강의 tab (COU-001); opening one lists its lessons (COU-002).
  *
- * Each series has its own thumbnail. A series holding lessons cannot be
- * deleted (move or delete them first), and lessons can only be added into a
- * series, so this is also where a new course gets its first one.
+ * Each series has its own thumbnail and its title and description in every
+ * app language. The cards are in the app's order (left to right) and move
+ * with ← / →; each series' lessons are put in order from 강의 순서. A series
+ * holding lessons cannot be deleted (move or delete them first), and lessons
+ * can only be added into a series, so this is also where a new course gets
+ * its first one.
  */
 export function SeriesPanel({ course, canWrite }: { course: AdminCourse; canWrite: boolean }) {
   const qc = useQueryClient();
@@ -31,9 +36,15 @@ export function SeriesPanel({ course, canWrite }: { course: AdminCourse; canWrit
   const [draft, setDraft] = useState<SeriesDraft | null>(null);
   const [editing, setEditing] = useState<AdminSeries | null>(null);
   const [deleting, setDeleting] = useState<AdminSeries | null>(null);
+  const [ordering, setOrdering] = useState<AdminSeries | null>(null);
 
   const key = ["admin", "series", course.course_id];
   const list = useQuery({ queryKey: key, queryFn: () => adminApi.listSeries(course.course_id) });
+  const reorder = useReorder<AdminSeries>({
+    queryKey: key,
+    idOf: (s) => s.series_id,
+    save: (ids) => adminApi.reorderSeries(course.course_id, ids),
+  });
 
   function refresh() {
     void qc.invalidateQueries({ queryKey: key });
@@ -44,10 +55,10 @@ export function SeriesPanel({ course, canWrite }: { course: AdminCourse; canWrit
   const save = useMutation({
     mutationFn: (d: SeriesDraft) => {
       const body = {
-        title: d.title.trim(),
-        description: d.description,
-        sequence: Number(d.sequence) || 0,
+        title: d.text.ko.title.trim(),
+        description: d.text.ko.description,
         thumbnail_url: d.thumbnail_url || null,
+        translations: translationsOf(d.text),
       };
       return editing ? adminApi.updateSeries(editing.series_id, body) : adminApi.createSeries(course.course_id, body);
     },
@@ -71,20 +82,16 @@ export function SeriesPanel({ course, canWrite }: { course: AdminCourse; canWrit
   });
 
   function openNew() {
-    const next = (list.data?.items ?? []).reduce((max, s) => Math.max(max, s.sequence), 0) + 1;
     setEditing(null);
-    setDraft({ ...EMPTY, sequence: String(next) });
+    setDraft({ ...EMPTY });
   }
 
   function openEdit(s: AdminSeries) {
     setEditing(s);
-    setDraft({
-      title: s.title,
-      description: s.description,
-      sequence: String(s.sequence),
-      thumbnail_url: s.thumbnail_url ?? "",
-    });
+    setDraft({ text: languageDraft(s), thumbnail_url: s.thumbnail_url ?? "" });
   }
+
+  const ids = (list.data?.items ?? []).map((s) => s.series_id);
 
   return (
     <section className="hgadm-card hgadm-series" aria-label={`${course.title}의 시리즈`}>
@@ -92,8 +99,8 @@ export function SeriesPanel({ course, canWrite }: { course: AdminCourse; canWrit
         <div>
           <div className="hgadm-card__title">‘{course.title}’의 시리즈</div>
           <div className="hgadm-cell-sub">
-            앱의 강의 탭에서 이 코스 아래 가로로 넘겨 보는 카드들이에요. 카드를 누르면 시리즈의 강의 목록이
-            열립니다.
+            앱의 강의 탭에서 이 코스 아래 가로로 넘겨 보는 카드들이에요 — 앱에서도 이 순서(왼쪽부터)대로 보여요. ←
+            / → 로 순서를 바꾸면 바로 저장돼요. 카드를 누르면 시리즈의 강의 목록이 열립니다.
           </div>
         </div>
         {canWrite && (
@@ -113,7 +120,7 @@ export function SeriesPanel({ course, canWrite }: { course: AdminCourse; canWrit
           </div>
         ) : (
           <ul className="hgadm-series__grid" role="list">
-            {list.data.items.map((s) => (
+            {list.data.items.map((s, index) => (
               <li key={s.series_id} className="hgadm-series__card">
                 <div className="hgadm-series__art">
                   {s.thumbnail_url ? (
@@ -121,24 +128,44 @@ export function SeriesPanel({ course, canWrite }: { course: AdminCourse; canWrit
                   ) : (
                     <span className="hgadm-muted">썸네일 없음</span>
                   )}
-                  <span className="hgadm-series__order">순서 {s.sequence}</span>
+                  <span className="hgadm-series__order">
+                    <OrderNumber position={index + 1} />
+                  </span>
                 </div>
                 <div className="hgadm-series__info">
                   <div className="hgadm-cell-main">{s.title}</div>
+                  {englishTitle(s) && <div className="hgadm-cell-sub">{englishTitle(s)}</div>}
                   <Link className="hgadm-cell-sub" to={`/lectures?course_id=${course.course_id}&series_id=${s.series_id}`}>
                     강의 {s.lecture_count}개 보기
                   </Link>
                 </div>
-                {canWrite && (
-                  <div className="hgadm-row hgadm-series__actions">
-                    <Button size="sm" onClick={() => openEdit(s)}>
-                      수정
+                <div className="hgadm-row hgadm-series__actions">
+                  {canWrite && (
+                    <MoveButtons
+                      name={s.title}
+                      index={index}
+                      count={ids.length}
+                      axis="horizontal"
+                      disabled={reorder.saving}
+                      onMove={(dir) => reorder.move(ids, s.series_id, dir)}
+                    />
+                  )}
+                  {s.lecture_count > 1 && (
+                    <Button size="sm" onClick={() => setOrdering(s)}>
+                      강의 순서
                     </Button>
-                    <Button size="sm" variant="danger-soft" onClick={() => setDeleting(s)}>
-                      삭제
-                    </Button>
-                  </div>
-                )}
+                  )}
+                  {canWrite && (
+                    <>
+                      <Button size="sm" onClick={() => openEdit(s)}>
+                        수정
+                      </Button>
+                      <Button size="sm" variant="danger-soft" onClick={() => setDeleting(s)}>
+                        삭제
+                      </Button>
+                    </>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
@@ -158,7 +185,7 @@ export function SeriesPanel({ course, canWrite }: { course: AdminCourse; canWrit
             <Button
               variant="primary"
               loading={save.isPending}
-              disabled={!draft?.title.trim()}
+              disabled={!draft?.text.ko.title.trim()}
               onClick={() => draft && save.mutate(draft)}
             >
               저장
@@ -168,34 +195,37 @@ export function SeriesPanel({ course, canWrite }: { course: AdminCourse; canWrit
       >
         {draft && (
           <div>
-            <div className="hgadm-form-grid">
-              <Field label="제목" required>
-                <Input
-                  value={draft.title}
-                  maxLength={120}
-                  placeholder="예: KOREAN SURVIVAL KIT"
-                  onChange={(e) => setDraft({ ...draft, title: e.target.value })}
-                />
-              </Field>
-              <Field label="정렬 순서" hint="코스 안에서 작은 수가 먼저 보여요.">
-                <Input
-                  type="number"
-                  min={0}
-                  value={draft.sequence}
-                  onChange={(e) => setDraft({ ...draft, sequence: e.target.value })}
-                />
-              </Field>
-            </div>
-            <Field label="설명">
-              <Textarea
-                rows={3}
-                maxLength={2000}
-                value={draft.description}
-                onChange={(e) => setDraft({ ...draft, description: e.target.value })}
-              />
-            </Field>
+            <LanguageFields
+              noun="시리즈"
+              titleMaxLength={120}
+              value={draft.text}
+              onChange={(text) => setDraft({ ...draft, text })}
+            />
             <SeriesThumbnail value={draft.thumbnail_url} onChange={(url) => setDraft({ ...draft, thumbnail_url: url })} />
+            {!editing && (
+              <p className="hgadm-field__hint">새 시리즈는 이 코스의 맨 뒤에 놓여요. 순서는 카드의 ← / → 로 바꿔요.</p>
+            )}
           </div>
+        )}
+      </Modal>
+
+      <Modal
+        open={ordering !== null}
+        title={ordering ? `‘${ordering.title}’ 강의 순서` : "강의 순서"}
+        onClose={() => setOrdering(null)}
+        footer={
+          <Button variant="ghost" onClick={() => setOrdering(null)}>
+            닫기
+          </Button>
+        }
+      >
+        {ordering && (
+          <>
+            <p className="hgadm-cell-sub hgadm-order-note">
+              앱의 시리즈 강의 목록에 위에서부터 이 순서대로 보여요. ↑ / ↓ 로 바꾸면 바로 저장돼요.
+            </p>
+            <LessonOrder series={ordering} canWrite={canWrite} />
+          </>
         )}
       </Modal>
 

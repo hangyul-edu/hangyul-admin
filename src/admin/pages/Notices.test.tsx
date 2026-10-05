@@ -18,6 +18,7 @@ const listNotices = vi.fn();
 const createNotice = vi.fn();
 const updateNotice = vi.fn();
 const deleteNoticeTranslation = vi.fn();
+const reorderNotices = vi.fn();
 
 vi.mock("../api", async () => {
   const actual = await vi.importActual<typeof import("../api")>("../api");
@@ -29,6 +30,7 @@ vi.mock("../api", async () => {
       createNotice: (b: unknown) => createNotice(b),
       updateNotice: (id: string, b: unknown) => updateNotice(id, b),
       deleteNoticeTranslation: (id: string, l: string) => deleteNoticeTranslation(id, l),
+      reorderNotices: (ids: string[]) => reorderNotices(ids),
     },
   };
 });
@@ -62,7 +64,7 @@ function renderPage() {
 }
 
 beforeEach(() => {
-  [listNotices, createNotice, updateNotice, deleteNoticeTranslation].forEach((m) => m.mockReset());
+  [listNotices, createNotice, updateNotice, deleteNoticeTranslation, reorderNotices].forEach((m) => m.mockReset());
   listNotices.mockResolvedValue({ items: [BILINGUAL] });
   createNotice.mockResolvedValue(BILINGUAL);
   updateNotice.mockResolvedValue(BILINGUAL);
@@ -77,6 +79,41 @@ async function openEditor() {
   await screen.findByText("점검 안내");
   await userEvent.click(screen.getByRole("button", { name: "수정" }));
 }
+
+describe("notice order", () => {
+  it("moves a notice within its group — pinned notices always stay on top", async () => {
+    const pinned: AdminNotice = {
+      ...BILINGUAL,
+      notice_id: "ntc_pin",
+      pinned: true,
+      translations: [{ locale: "ko", title: "고정 공지", body: "항상 위에 있어요." }],
+    };
+    const second: AdminNotice = {
+      ...BILINGUAL,
+      notice_id: "ntc_2",
+      translations: [{ locale: "ko", title: "두 번째 공지", body: "두 번째입니다." }],
+    };
+    listNotices.mockResolvedValue({ items: [pinned, BILINGUAL, second] });
+    reorderNotices.mockResolvedValue({ items: [pinned, second, BILINGUAL] });
+    renderPage();
+    await screen.findByText("두 번째 공지");
+    // The pinned group and the rest each count from 1, and never trade places.
+    expect(screen.getAllByLabelText("1번째")).toHaveLength(2);
+    expect(screen.getByRole("button", { name: "고정 공지 아래로 이동" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "점검 안내 위로 이동" })).toBeDisabled();
+
+    await userEvent.click(screen.getByRole("button", { name: "두 번째 공지 위로 이동" }));
+    await waitFor(() => expect(reorderNotices).toHaveBeenCalledWith(["ntc_2", "ntc_1"]));
+  });
+
+  it("has no order field in the editor and sends no order", async () => {
+    await openEditor();
+    expect(screen.queryByLabelText(/정렬 순서/)).toBeNull();
+    await userEvent.click(screen.getByRole("button", { name: "저장" }));
+    await waitFor(() => expect(updateNotice).toHaveBeenCalledTimes(1));
+    expect(updateNotice.mock.calls[0][1]).not.toHaveProperty("display_order");
+  });
+});
 
 describe("notice editor", () => {
   it("deletes a language the admin cleared instead of leaving the old text live", async () => {

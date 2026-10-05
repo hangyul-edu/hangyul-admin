@@ -13,13 +13,14 @@ import {
   DataTable,
   ErrorState,
   Field,
-  Input,
   LoadingState,
   Modal,
   Select,
-  Textarea,
 } from "../components/kit";
 import type { Column } from "../components/kit";
+import { LanguageFields, englishTitle, languageDraft, translationsOf } from "../components/LanguageFields";
+import type { LanguageDraft } from "../components/LanguageFields";
+import { MoveButtons, OrderNumber, useReorder } from "../components/ordering";
 import { SeriesPanel } from "./courses/SeriesPanel";
 
 const TRACKS = [
@@ -30,17 +31,13 @@ const TRACK_LABEL = Object.fromEntries(TRACKS);
 
 interface CourseDraft {
   track_id: string;
-  title: string;
-  description: string;
-  sequence: string;
+  text: LanguageDraft;
   cover_image_url: string;
 }
 
 const EMPTY: CourseDraft = {
   track_id: "track_conversation",
-  title: "",
-  description: "",
-  sequence: "0",
+  text: languageDraft(null),
   cover_image_url: "",
 };
 
@@ -84,13 +81,27 @@ export function CoursesPage() {
     void qc.invalidateQueries({ queryKey: ["admin", "courses"] });
   }
 
+  // Courses are ordered within their track; a new one goes to the end.
+  const courseKey = ["admin", "courses", track];
+  const reorder = useReorder<AdminCourse>({
+    queryKey: courseKey,
+    idOf: (c) => c.course_id,
+    save: (ids) => {
+      const trackOf = query.data?.items.find((c) => c.course_id === ids[0])?.track_id ?? "";
+      return adminApi.reorderCourses(trackOf, ids);
+    },
+    alsoRefresh: [["admin", "courses"]],
+  });
+  const items = query.data?.items ?? [];
+  const trackIds = (trackId: string) => items.filter((c) => c.track_id === trackId).map((c) => c.course_id);
+
   const save = useMutation({
     mutationFn: (d: CourseDraft) => {
       const body = {
-        title: d.title,
-        description: d.description,
-        sequence: Number(d.sequence),
+        title: d.text.ko.title.trim(),
+        description: d.text.ko.description,
         cover_image_url: d.cover_image_url || null,
+        translations: translationsOf(d.text),
       };
       return editingId
         ? adminApi.updateCourse(editingId, body)
@@ -131,6 +142,29 @@ export function CoursesPage() {
 
   const columns: Column<AdminCourse>[] = [
     {
+      key: "order",
+      header: "앱 표시 순서",
+      width: 120,
+      render: (c) => {
+        const scope = trackIds(c.track_id);
+        const index = scope.indexOf(c.course_id);
+        return (
+          <div className="hgadm-row" onClick={(e) => e.stopPropagation()}>
+            <OrderNumber position={index + 1} />
+            {canWrite && (
+              <MoveButtons
+                name={c.title}
+                index={index}
+                count={scope.length}
+                disabled={reorder.saving}
+                onMove={(dir) => reorder.move(scope, c.course_id, dir)}
+              />
+            )}
+          </div>
+        );
+      },
+    },
+    {
       key: "cover",
       header: "대표 이미지",
       width: 90,
@@ -145,7 +179,10 @@ export function CoursesPage() {
       key: "title",
       header: "코스",
       render: (c) => (
-        <div className="hgadm-cell-main">{c.title}</div>
+        <div>
+          <div className="hgadm-cell-main">{c.title}</div>
+          {englishTitle(c) && <div className="hgadm-cell-sub">{englishTitle(c)}</div>}
+        </div>
       ),
     },
     {
@@ -153,7 +190,6 @@ export function CoursesPage() {
       header: "학습 분야",
       render: (c) => <Badge tone="brand">{TRACK_LABEL[c.track_id] ?? c.track_id}</Badge>,
     },
-    { key: "sequence", header: "순서", numeric: true, render: (c) => c.sequence },
     {
       key: "series",
       header: "시리즈",
@@ -186,9 +222,7 @@ export function CoursesPage() {
                 setEditingId(c.course_id);
                 setDraft({
                   track_id: c.track_id,
-                  title: c.title,
-                  description: c.description,
-                  sequence: String(c.sequence),
+                  text: languageDraft(c),
                   cover_image_url: c.cover_image_url ?? "",
                 });
               }}
@@ -210,7 +244,8 @@ export function CoursesPage() {
           <h1>코스 관리</h1>
           <div className="hgadm-page-head__desc">
             코스 › 시리즈 › 강의 순으로 묶여요. 코스를 누르면 그 코스의 시리즈(썸네일이 있는 카드)를 관리할 수
-            있고, 강의는 시리즈 안에만 넣을 수 있어요. 시리즈가 남아 있는 코스는 삭제할 수 없습니다.
+            있고, 강의는 시리즈 안에만 넣을 수 있어요. 시리즈가 남아 있는 코스는 삭제할 수 없습니다. 앱의 강의
+            탭에는 학습 분야마다 아래 순서대로 코스가 보여요 — ↑ / ↓ 로 바꾸면 바로 저장돼요.
           </div>
         </div>
         {canWrite && (
@@ -276,7 +311,7 @@ export function CoursesPage() {
             <Button
               variant="primary"
               loading={save.isPending}
-              disabled={!draft?.title.trim()}
+              disabled={!draft?.text.ko.title.trim()}
               onClick={() => draft && save.mutate(draft)}
             >
               저장
@@ -287,7 +322,15 @@ export function CoursesPage() {
         {draft && (
           <div>
             <div className="hgadm-form-grid">
-              <Field label="학습 분야" required hint={editingId ? "학습 분야는 변경할 수 없습니다." : undefined}>
+              <Field
+                label="학습 분야"
+                required
+                hint={
+                  editingId
+                    ? "학습 분야는 변경할 수 없습니다."
+                    : "새 코스는 이 학습 분야의 맨 뒤에 놓여요. 순서는 목록에서 ↑ / ↓ 로 바꿔요."
+                }
+              >
                 <Select
                   value={draft.track_id}
                   disabled={editingId !== null}
@@ -300,29 +343,13 @@ export function CoursesPage() {
                   ))}
                 </Select>
               </Field>
-              <Field label="제목" required>
-                <Input
-                  value={draft.title}
-                  maxLength={200}
-                  onChange={(e) => setDraft({ ...draft, title: e.target.value })}
-                />
-              </Field>
-              <Field label="정렬 순서">
-                <Input
-                  type="number"
-                  min={0}
-                  value={draft.sequence}
-                  onChange={(e) => setDraft({ ...draft, sequence: e.target.value })}
-                />
-              </Field>
             </div>
-            <Field label="설명">
-              <Textarea
-                rows={3}
-                value={draft.description}
-                onChange={(e) => setDraft({ ...draft, description: e.target.value })}
-              />
-            </Field>
+            <LanguageFields
+              noun="코스"
+              titleMaxLength={200}
+              value={draft.text}
+              onChange={(text) => setDraft({ ...draft, text })}
+            />
             <Field label="대표 이미지" hint="JPEG/PNG/WebP, 최대 5MB">
               <div>
                 {draft.cover_image_url && (

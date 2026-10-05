@@ -23,6 +23,7 @@ import {
   formatDateTime,
 } from "../lib/format";
 import type { Column } from "../components/kit";
+import { MoveButtons, OrderNumber, useReorder } from "../components/ordering";
 
 interface NoticeDraft {
   ko_title: string;
@@ -31,7 +32,6 @@ interface NoticeDraft {
   en_body: string;
   pinned: boolean;
   published: boolean;
-  display_order: string;
 }
 
 const EMPTY: NoticeDraft = {
@@ -41,7 +41,6 @@ const EMPTY: NoticeDraft = {
   en_body: "",
   pinned: false,
   published: false,
-  display_order: "0",
 };
 
 function pick(notice: AdminNotice, locale: string): NoticeTranslation | undefined {
@@ -84,11 +83,12 @@ export function NoticesPage() {
   const save = useMutation({
     mutationFn: async (d: NoticeDraft) => {
       const translations = draftTranslations(d);
+      // No order: a new notice goes to the end, and the order is changed
+      // with ↑ / ↓ in the list.
       const body = {
         translations,
         pinned: d.pinned,
         published: d.published,
-        display_order: Number(d.display_order),
       };
       if (!editingId) return adminApi.createNotice(body);
 
@@ -133,7 +133,41 @@ export function NoticesPage() {
     onError: toastError,
   });
 
+  // The app lists pinned notices first, then the rest; each group keeps its
+  // own order, so a notice moves within its group.
+  const reorder = useReorder<AdminNotice>({
+    queryKey: ["admin", "notices"],
+    idOf: (n) => n.notice_id,
+    save: (ids) => adminApi.reorderNotices(ids),
+  });
+  const groupIds = (pinned: boolean) =>
+    (query.data?.items ?? []).filter((n) => n.pinned === pinned).map((n) => n.notice_id);
+  const titleOf = (n: AdminNotice) => (pick(n, "ko") ?? n.translations[0])?.title ?? "공지";
+
   const columns: Column<AdminNotice>[] = [
+    {
+      key: "order",
+      header: "앱 표시 순서",
+      width: 120,
+      render: (n) => {
+        const scope = groupIds(n.pinned);
+        const index = scope.indexOf(n.notice_id);
+        return (
+          <div className="hgadm-row">
+            <OrderNumber position={index + 1} />
+            {canWrite && (
+              <MoveButtons
+                name={titleOf(n)}
+                index={index}
+                count={scope.length}
+                disabled={reorder.saving}
+                onMove={(dir) => reorder.move(scope, n.notice_id, dir)}
+              />
+            )}
+          </div>
+        );
+      },
+    },
     {
       key: "title",
       header: "공지",
@@ -173,7 +207,6 @@ export function NoticesPage() {
         </div>
       ),
     },
-    { key: "order", header: "순서", numeric: true, render: (n) => n.display_order },
     {
       key: "actions",
       header: "",
@@ -198,7 +231,6 @@ export function NoticesPage() {
                   en_body: en?.body ?? "",
                   pinned: n.pinned,
                   published: n.published,
-                  display_order: String(n.display_order),
                 });
               }}
             >
@@ -221,7 +253,8 @@ export function NoticesPage() {
           <h1>공지 관리</h1>
           <div className="hgadm-page-head__desc">
             앱 공지사항입니다. 한국어/영어 번역을 각각 작성할 수 있으며, 초안은
-            사용자에게 노출되지 않습니다.
+            사용자에게 노출되지 않습니다. 앱에는 상단 고정 공지가 먼저, 그다음 나머지가 아래 순서대로 보여요 —
+            ↑ / ↓ 로 바꾸면 바로 저장돼요.
           </div>
         </div>
         {canWrite && (
@@ -328,15 +361,10 @@ export function NoticesPage() {
                 />
                 저장과 동시에 게시
               </label>
-              <Field label="정렬 순서">
-                <Input
-                  type="number"
-                  style={{ width: 90 }}
-                  value={draft.display_order}
-                  onChange={(e) => setDraft({ ...draft, display_order: e.target.value })}
-                />
-              </Field>
             </div>
+            {!editingId && (
+              <p className="hgadm-field__hint">새 공지는 목록의 맨 뒤에 놓여요. 순서는 목록에서 ↑ / ↓ 로 바꿔요.</p>
+            )}
           </div>
         )}
       </Modal>
