@@ -57,7 +57,6 @@ export function LectureWorkspacePage() {
       return found;
     },
   });
-  const courses = useQuery({ queryKey: ["admin", "courses", ""], queryFn: () => adminApi.listCourses() });
 
   const refreshLecture = useCallback(() => {
     void qc.invalidateQueries({ queryKey: ["admin", "lecture", lectureId] });
@@ -71,7 +70,6 @@ export function LectureWorkspacePage() {
 
   const l = lecture.data;
   const videoReady = l.video_status === "ready";
-  const courseTitle = courses.data?.items.find((c) => c.course_id === l.course_id)?.title;
   const steps: [Tab, string, string, StepState][] = [
     ["info", "기본 정보", l.title, "done"],
     [
@@ -167,7 +165,13 @@ export function LectureWorkspacePage() {
           <div className="hgadm-card__body">
             <Dl
               items={[
-                ["소속 코스", courseTitle ?? (l.course_id ? (courses.isPending ? "불러오는 중…" : "(삭제된 코스)") : "(코스 없음)")],
+                ["소속 코스", l.course_title ?? "—"],
+                [
+                  "소속 시리즈",
+                  l.series_title ?? (
+                    <span className="hgadm-muted">시리즈가 없어요 — 수정에서 시리즈를 골라 주세요</span>
+                  ),
+                ],
                 ["정렬 순서", l.sequence],
                 [
                   "길이",

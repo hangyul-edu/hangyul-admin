@@ -43,6 +43,7 @@ export function LecturesPage() {
   const q = filters.value("q");
   const track = filters.value("track_id");
   const courseId = filters.value("course_id");
+  const seriesId = filters.value("series_id");
   const access = filters.value("access");
   const page = filters.number("page", 1);
 
@@ -50,14 +51,21 @@ export function LecturesPage() {
     queryKey: ["admin", "courses", ""],
     queryFn: () => adminApi.listCourses(),
   });
+  // The series filter lists the chosen course's series.
+  const series = useQuery({
+    queryKey: ["admin", "series", courseId],
+    queryFn: () => adminApi.listSeries(courseId),
+    enabled: !!courseId,
+  });
 
   const query = useQuery({
-    queryKey: ["admin", "lectures", { q, track, courseId, access, page }],
+    queryKey: ["admin", "lectures", { q, track, courseId, seriesId, access, page }],
     queryFn: () =>
       adminApi.listLectures({
         q: q || undefined,
         track_id: track || undefined,
         course_id: courseId || undefined,
+        series_id: seriesId || undefined,
         access: access || undefined,
         page,
         page_size: 25,
@@ -85,6 +93,16 @@ export function LecturesPage() {
         <div className="hgadm-row">
           {l.thumbnail_url && <img src={l.thumbnail_url} alt="" className="hgadm-thumb" />}
           <div className="hgadm-cell-main">{l.title}</div>
+        </div>
+      ),
+    },
+    {
+      key: "home",
+      header: "코스 › 시리즈",
+      render: (l) => (
+        <div>
+          <div>{l.course_title ?? "—"}</div>
+          <div className="hgadm-cell-sub">{l.series_title ? `› ${l.series_title}` : "시리즈 없음"}</div>
         </div>
       ),
     },
@@ -151,8 +169,8 @@ export function LecturesPage() {
         <div>
           <h1>강의·영상 관리</h1>
           <div className="hgadm-page-head__desc">
-            강의는 영상 한 편입니다. 강의를 추가하면 영상을 올리고(길이는 영상에서 자동으로 읽어요), 그 영상을
-            보면서 회화·TOPIK 체크포인트를 원하는 지점에 붙일 수 있어요.
+            강의는 영상 한 편이고, 코스의 시리즈 안에 들어가요. 강의를 추가하면 영상을 올리고(길이는 영상에서
+            자동으로 읽어요), 그 영상을 보면서 회화·TOPIK 체크포인트를 원하는 지점에 붙일 수 있어요.
           </div>
         </div>
         {canWrite && (
@@ -173,13 +191,27 @@ export function LecturesPage() {
           />
           <Select
             value={courseId}
-            onChange={(e) => filters.patch({ course_id: e.target.value, page: null })}
+            onChange={(e) => filters.patch({ course_id: e.target.value, series_id: null, page: null })}
             style={{ minWidth: 180 }}
           >
             <option value="">코스: 전체</option>
             {courses.data?.items.map((c) => (
               <option key={c.course_id} value={c.course_id}>
                 {c.title}
+              </option>
+            ))}
+          </Select>
+          <Select
+            value={seriesId}
+            disabled={!courseId}
+            aria-label="시리즈"
+            onChange={(e) => filters.patch({ series_id: e.target.value, page: null })}
+            style={{ minWidth: 170 }}
+          >
+            <option value="">{courseId ? "시리즈: 전체" : "시리즈: 코스 먼저"}</option>
+            {series.data?.items.map((s) => (
+              <option key={s.series_id} value={s.series_id}>
+                {s.title}
               </option>
             ))}
           </Select>
@@ -233,6 +265,8 @@ export function LecturesPage() {
       {creating && (
         <LectureFormModal
           lecture={null}
+          initialCourseId={courseId || undefined}
+          initialSeriesId={seriesId || undefined}
           onClose={() => setCreating(false)}
           onSaved={(created) => {
             setCreating(false);

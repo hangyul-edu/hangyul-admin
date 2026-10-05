@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { adminApi } from "../../api";
 import type { AdminLecture } from "../../api";
 import { errorMessage } from "../../../lib/http";
@@ -13,8 +14,8 @@ export const TRACKS = [
 export const TRACK_LABEL: Record<string, string> = Object.fromEntries(TRACKS);
 
 interface LectureDraft {
-  track_id: string;
   course_id: string;
+  series_id: string;
   title: string;
   access: string;
   sequence: string;
@@ -22,11 +23,11 @@ interface LectureDraft {
   topik_question_type: string;
 }
 
-function draftOf(lecture: AdminLecture | null): LectureDraft {
+function draftOf(lecture: AdminLecture | null, initial?: { courseId?: string; seriesId?: string }): LectureDraft {
   return lecture
     ? {
-        track_id: lecture.track_id,
         course_id: lecture.course_id ?? "",
+        series_id: lecture.series_id ?? "",
         title: lecture.title,
         access: lecture.access,
         sequence: String(lecture.sequence),
@@ -34,8 +35,8 @@ function draftOf(lecture: AdminLecture | null): LectureDraft {
         topik_question_type: lecture.topik_question_type ?? "",
       }
     : {
-        track_id: "track_conversation",
-        course_id: "",
+        course_id: initial?.courseId ?? "",
+        series_id: initial?.seriesId ?? "",
         title: "",
         access: "free",
         sequence: "0",
@@ -47,34 +48,56 @@ function draftOf(lecture: AdminLecture | null): LectureDraft {
 /**
  * A lecture's basic information — step 1 of setting up a lecture.
  *
- * Every lecture is a video, and its length is read from that video once it
- * is uploaded, so neither a type nor a length is asked for here. Creating a
- * lecture hands it back so the caller can go straight on to its video.
+ * A lecture is always filed under a series of a course (코스 › 시리즈); there
+ * is no standalone lecture. Its track is the course's. Every lecture is a
+ * video, and its length is read from that video once it is uploaded, so
+ * neither a type nor a length is asked for here. Creating a lecture hands it
+ * back so the caller can go straight on to its video.
  */
 export function LectureFormModal({
   lecture,
+  initialCourseId,
+  initialSeriesId,
   onClose,
   onSaved,
 }: {
   /** null to create a new lecture. */
   lecture: AdminLecture | null;
+  /** Preselect where a new lecture goes (e.g. from a series' "강의 추가"). */
+  initialCourseId?: string;
+  initialSeriesId?: string;
   onClose: () => void;
   onSaved: (lecture: AdminLecture) => void;
 }) {
   const toast = useToast();
   const toastError = useToastError();
-  const [draft, setDraft] = useState<LectureDraft>(() => draftOf(lecture));
+  const [draft, setDraft] = useState<LectureDraft>(() =>
+    draftOf(lecture, { courseId: initialCourseId, seriesId: initialSeriesId }),
+  );
   const editing = lecture !== null;
 
   const courses = useQuery({
     queryKey: ["admin", "courses", ""],
     queryFn: () => adminApi.listCourses(),
   });
-  const draftCourses = courses.data?.items.filter((c) => c.track_id === draft.track_id) ?? [];
+  const course = courses.data?.items.find((c) => c.course_id === draft.course_id);
+  // A lecture keeps its track: once created it can move only to a series of
+  // a course in the same track.
+  const track = lecture?.track_id ?? course?.track_id ?? "";
+  const choosable = (courses.data?.items ?? []).filter((c) => !lecture || c.track_id === lecture.track_id);
+
+  const series = useQuery({
+    queryKey: ["admin", "series", draft.course_id],
+    queryFn: () => adminApi.listSeries(draft.course_id),
+    enabled: !!draft.course_id,
+  });
+  const seriesItems = series.data?.items ?? [];
+  const noSeries = !!draft.course_id && series.isSuccess && seriesItems.length === 0;
 
   const save = useMutation({
     mutationFn: (d: LectureDraft) => {
       const base = {
+        series_id: d.series_id,
         title: d.title,
         access: d.access,
         sequence: Number(d.sequence),
@@ -82,18 +105,7 @@ export function LectureFormModal({
         thumbnail_url: d.thumbnail_url || null,
         topik_question_type: d.topik_question_type || null,
       };
-      if (lecture) {
-        return adminApi.updateLecture(lecture.lecture_id, {
-          ...base,
-          course_id: d.course_id || undefined,
-          clear_course: d.course_id === "",
-        });
-      }
-      return adminApi.createLecture({
-        ...base,
-        track_id: d.track_id,
-        course_id: d.course_id || undefined,
-      });
+      return lecture ? adminApi.updateLecture(lecture.lecture_id, base) : adminApi.createLecture(base);
     },
     onSuccess: (saved) => {
       toast.success(editing ? "강의 정보를 저장했어요." : "강의를 만들었어요. 이제 영상을 올려 주세요.");
@@ -116,7 +128,7 @@ export function LectureFormModal({
           <Button
             variant="primary"
             loading={save.isPending}
-            disabled={!draft.title.trim()}
+            disabled={!draft.title.trim() || !draft.series_id}
             onClick={() => save.mutate(draft)}
           >
             {editing ? "저장" : "만들고 영상 올리기"}
@@ -126,24 +138,60 @@ export function LectureFormModal({
     >
       {!editing && (
         <p className="hgadm-lw__note">
-          강의는 영상 한 편이에요. 만든 뒤 영상을 올리면 길이는 영상에서 자동으로 읽어 오고, 회화·TOPIK
-          연습은 영상의 원하는 지점에 체크포인트로 붙입니다.
+          강의는 영상 한 편이고, 항상 코스의 시리즈 안에 들어가요. 만든 뒤 영상을 올리면 길이는 영상에서
+          자동으로 읽어 오고, 회화·TOPIK 연습은 영상의 원하는 지점에 체크포인트로 붙입니다.
         </p>
       )}
       <div className="hgadm-form-grid">
-        <Field label="학습 분야" required hint={editing ? "학습 분야는 변경할 수 없습니다." : undefined}>
+        <Field
+          label="소속 코스"
+          required
+          hint={editing ? "같은 학습 분야의 코스로만 옮길 수 있어요." : "학습 분야는 코스를 따라갑니다."}
+        >
           <Select
-            value={draft.track_id}
-            disabled={editing}
-            onChange={(e) => setDraft({ ...draft, track_id: e.target.value, course_id: "" })}
+            value={draft.course_id}
+            onChange={(e) => setDraft({ ...draft, course_id: e.target.value, series_id: "" })}
           >
-            {TRACKS.map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
+            <option value="" disabled>
+              {courses.isPending ? "불러오는 중…" : "코스를 고르세요"}
+            </option>
+            {/* The kit Select reads plain <option>s only, so the track leads each label. */}
+            {TRACKS.flatMap(([trackId, label]) =>
+              choosable
+                .filter((c) => c.track_id === trackId)
+                .map((c) => (
+                  <option key={c.course_id} value={c.course_id}>
+                    {`${label} · ${c.title}`}
+                  </option>
+                )),
+            )}
+          </Select>
+        </Field>
+        <Field label="소속 시리즈" required>
+          <Select
+            value={draft.series_id}
+            disabled={!draft.course_id || noSeries}
+            onChange={(e) => setDraft({ ...draft, series_id: e.target.value })}
+          >
+            <option value="" disabled>
+              {!draft.course_id ? "코스를 먼저 고르세요" : series.isPending ? "불러오는 중…" : "시리즈를 고르세요"}
+            </option>
+            {seriesItems.map((s) => (
+              <option key={s.series_id} value={s.series_id}>
+                {s.title}
               </option>
             ))}
           </Select>
         </Field>
+        {noSeries && (
+          <div className="span-2 hgadm-lf__noseries" role="status">
+            ‘{course?.title}’ 코스에는 아직 시리즈가 없어요. 강의는 시리즈 안에만 넣을 수 있으니, 먼저
+            시리즈를 만들어 주세요.{" "}
+            <Link to={`/courses?course_id=${draft.course_id}`} onClick={onClose}>
+              코스 관리에서 시리즈 추가 →
+            </Link>
+          </div>
+        )}
         <Field label="제목" required>
           <Input
             value={draft.title}
@@ -151,15 +199,8 @@ export function LectureFormModal({
             onChange={(e) => setDraft({ ...draft, title: e.target.value })}
           />
         </Field>
-        <Field label="소속 코스" hint="같은 학습 분야의 코스만 선택 가능">
-          <Select value={draft.course_id} onChange={(e) => setDraft({ ...draft, course_id: e.target.value })}>
-            <option value="">(코스 없음)</option>
-            {draftCourses.map((c) => (
-              <option key={c.course_id} value={c.course_id}>
-                {c.title}
-              </option>
-            ))}
-          </Select>
+        <Field label="학습 분야" hint="코스에서 정해져요.">
+          <Input value={track ? TRACK_LABEL[track] ?? track : "—"} readOnly disabled />
         </Field>
         <Field label="정렬 순서">
           <Input
@@ -175,7 +216,7 @@ export function LectureFormModal({
             <option value="premium">프리미엄</option>
           </Select>
         </Field>
-        {draft.track_id === "track_topik" && (
+        {track === "track_topik" && (
           <Field label="TOPIK 문제 유형" hint="예: reading_03 — 강의 후 문제 연습의 유형">
             <Input
               value={draft.topik_question_type}

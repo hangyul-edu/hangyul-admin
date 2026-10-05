@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { adminApi } from "../api";
 import type { AdminCourse } from "../api";
 import { errorMessage } from "../../lib/http";
@@ -20,6 +20,7 @@ import {
   Textarea,
 } from "../components/kit";
 import type { Column } from "../components/kit";
+import { SeriesPanel } from "./courses/SeriesPanel";
 
 const TRACKS = [
   ["track_conversation", "회화"],
@@ -56,10 +57,28 @@ export function CoursesPage() {
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // The course whose series are open below the table — in the URL, so the
+  // lecture form's "시리즈 추가" link lands straight on it.
+  const [params, setParams] = useSearchParams();
+  const selectedId = params.get("course_id") ?? "";
+
   const query = useQuery({
     queryKey: ["admin", "courses", track],
     queryFn: () => adminApi.listCourses(track || undefined),
   });
+  const selected = query.data?.items.find((c) => c.course_id === selectedId) ?? null;
+
+  function select(course: AdminCourse) {
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (next.get("course_id") === course.course_id) next.delete("course_id");
+        else next.set("course_id", course.course_id);
+        return next;
+      },
+      { replace: true },
+    );
+  }
 
   function refresh() {
     void qc.invalidateQueries({ queryKey: ["admin", "courses"] });
@@ -136,6 +155,13 @@ export function CoursesPage() {
     },
     { key: "sequence", header: "순서", numeric: true, render: (c) => c.sequence },
     {
+      key: "series",
+      header: "시리즈",
+      numeric: true,
+      render: (c) =>
+        c.series_count ? `${c.series_count}개` : <Badge tone="warning">없음</Badge>,
+    },
+    {
       key: "lectures",
       header: "강의 수",
       numeric: true,
@@ -151,6 +177,9 @@ export function CoursesPage() {
       render: (c) =>
         canWrite ? (
           <div className="hgadm-row" onClick={(e) => e.stopPropagation()}>
+            <Button size="sm" variant={c.course_id === selectedId ? "primary" : "secondary"} onClick={() => select(c)}>
+              시리즈 관리
+            </Button>
             <Button
               size="sm"
               onClick={() => {
@@ -180,8 +209,8 @@ export function CoursesPage() {
         <div>
           <h1>코스 관리</h1>
           <div className="hgadm-page-head__desc">
-            학습 분야별 코스(강의 묶음)를 관리합니다. 강의가 남아 있는 코스는 삭제할 수
-            없습니다.
+            코스 › 시리즈 › 강의 순으로 묶여요. 코스를 누르면 그 코스의 시리즈(썸네일이 있는 카드)를 관리할 수
+            있고, 강의는 시리즈 안에만 넣을 수 있어요. 시리즈가 남아 있는 코스는 삭제할 수 없습니다.
           </div>
         </div>
         {canWrite && (
@@ -219,10 +248,20 @@ export function CoursesPage() {
             columns={columns}
             rows={query.data.items}
             rowKey={(c) => c.course_id}
+            onRowClick={select}
             empty="코스가 없습니다."
           />
         )}
       </div>
+
+      {selected ? (
+        <SeriesPanel key={selected.course_id} course={selected} canWrite={canWrite} />
+      ) : (
+        query.isSuccess &&
+        query.data.items.length > 0 && (
+          <p className="hgadm-muted hgadm-series__hint">코스를 누르면 그 코스의 시리즈를 볼 수 있어요.</p>
+        )
+      )}
 
       <Modal
         open={draft !== null}
@@ -312,9 +351,14 @@ export function CoursesPage() {
       <ConfirmDialog
         open={deleting !== null}
         title="코스 삭제"
-        message={`'${deleting?.title ?? ""}' 코스를 삭제할까요? 강의가 남아 있으면 삭제할 수 없습니다.`}
+        message={
+          deleting && deleting.series_count > 0
+            ? `‘${deleting.title}’ 코스에는 시리즈가 ${deleting.series_count}개 있어 삭제할 수 없어요. 시리즈를 먼저 삭제해 주세요(강의가 든 시리즈는 강의부터 옮기거나 삭제해야 해요).`
+            : `‘${deleting?.title ?? ""}’ 코스를 삭제할까요?`
+        }
         danger
         confirmLabel="삭제"
+        confirmDisabled={!!deleting && deleting.series_count > 0}
         loading={remove.isPending}
         onConfirm={() => deleting && remove.mutate(deleting)}
         onCancel={() => setDeleting(null)}

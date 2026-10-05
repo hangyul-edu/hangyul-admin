@@ -565,6 +565,27 @@ export interface AdminCourse {
   cover_image_url: string | null;
   sequence: number;
   lecture_count: number;
+  /** Series in the course; it can only be deleted at 0. */
+  series_count: number;
+}
+
+/** A series inside a course: its own key art, and the lessons filed under it. */
+export interface AdminSeries {
+  series_id: string;
+  course_id: string;
+  title: string;
+  description: string;
+  thumbnail_url: string | null;
+  sequence: number;
+  lecture_count: number;
+}
+
+export interface AdminSeriesWrite {
+  title?: string;
+  description?: string;
+  /** null clears it on an update. */
+  thumbnail_url?: string | null;
+  sequence?: number;
 }
 
 /**
@@ -596,6 +617,10 @@ export interface AdminLecture {
   lecture_id: string;
   track_id: string;
   course_id: string | null;
+  /** Every lesson belongs to a series (and through it, a course). */
+  series_id: string | null;
+  series_title: string | null;
+  course_title: string | null;
   title: string;
   kind: string;
   duration_seconds: number;
@@ -609,7 +634,7 @@ export interface AdminLecture {
 
 /** The lecture fields an admin edits; kind and length come from the video. */
 export type AdminLectureFields = Partial<
-  Pick<AdminLecture, "course_id" | "title" | "thumbnail_url" | "access" | "sequence" | "topik_question_type">
+  Pick<AdminLecture, "title" | "thumbnail_url" | "access" | "sequence" | "topik_question_type"> & { series_id: string }
 >;
 
 /** speaking_exercise → conversation modal; multiple_choice / short_answer → TOPIK modal. */
@@ -1087,16 +1112,23 @@ export const adminApi = {
   updateCourse: (courseId: string, body: Partial<AdminCourse>) =>
     http.patch<AdminCourse>(`/admin/courses/${courseId}`, body),
   deleteCourse: (courseId: string) => http.del<void>(`/admin/courses/${courseId}`),
+  // Series: a course's rows of lessons, each with its own thumbnail.
+  listSeries: (courseId: string) =>
+    http.get<{ items: AdminSeries[] }>(`/admin/courses/${courseId}/series`),
+  createSeries: (courseId: string, body: AdminSeriesWrite & { title: string }) =>
+    http.post<AdminSeries>(`/admin/courses/${courseId}/series`, body),
+  updateSeries: (seriesId: string, body: AdminSeriesWrite) =>
+    http.patch<AdminSeries>(`/admin/series/${seriesId}`, body),
+  deleteSeries: (seriesId: string) => http.del<void>(`/admin/series/${seriesId}`),
   listLectures: (params: Query) =>
     http.get<Page<AdminLecture>>("/admin/lectures", params),
   // A lecture is always a video and its length is read from the video, so
-  // neither kind nor duration is ever sent (the server refuses both).
-  createLecture: (body: AdminLectureFields & { track_id: string; title: string }) =>
+  // neither kind nor duration is ever sent (the server refuses both). Its
+  // course and track come from the series it is filed under.
+  createLecture: (body: AdminLectureFields & { series_id: string; title: string }) =>
     http.post<AdminLecture>("/admin/lectures", body),
-  updateLecture: (
-    lectureId: string,
-    body: AdminLectureFields & { clear_course?: boolean },
-  ) => http.patch<AdminLecture>(`/admin/lectures/${lectureId}`, body),
+  updateLecture: (lectureId: string, body: AdminLectureFields) =>
+    http.patch<AdminLecture>(`/admin/lectures/${lectureId}`, body),
   deleteLecture: (lectureId: string) =>
     http.del<void>(`/admin/lectures/${lectureId}`),
   // Checkpoints: where the player pauses for a conversation / TOPIK modal.

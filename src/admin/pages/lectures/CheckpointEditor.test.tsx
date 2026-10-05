@@ -32,7 +32,10 @@ vi.mock("../../api", async () => {
 const CONVERSATION: AdminLecture = {
   lecture_id: "lec_1",
   track_id: "track_conversation",
-  course_id: null,
+  course_id: "crs_1",
+  series_id: "ser_1",
+  series_title: "시리즈 1",
+  course_title: "코스 1",
   title: "인사하기",
   kind: "video",
   duration_seconds: 300,

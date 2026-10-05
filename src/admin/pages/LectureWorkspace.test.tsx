@@ -22,7 +22,10 @@ vi.mock("../api", async () => {
 const LECTURE: AdminLecture = {
   lecture_id: "lec_1",
   track_id: "track_conversation",
-  course_id: null,
+  course_id: "crs_1",
+  series_id: "ser_1",
+  series_title: "KOREAN SURVIVAL KIT",
+  course_title: "Speak Korean Instantly",
   title: "인사하기",
   kind: "video",
   duration_seconds: 300,
@@ -70,6 +73,9 @@ describe("LectureWorkspacePage", () => {
     renderAt("/lectures/lec_1?tab=info");
     expect(await screen.findByRole("tab", { name: /기본 정보/, selected: true })).toBeInTheDocument();
     expect(screen.getByText("정렬 순서")).toBeInTheDocument();
+    // Where the lesson lives, by name.
+    expect(screen.getByText("Speak Korean Instantly")).toBeInTheDocument();
+    expect(screen.getByText("KOREAN SURVIVAL KIT")).toBeInTheDocument();
     expect(screen.queryByText("video-panel")).toBeNull();
     expect(screen.queryByText("checkpoint-editor")).toBeNull();
 
