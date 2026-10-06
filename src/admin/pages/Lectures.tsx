@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUrlFilters } from "../lib/urlFilters";
 import { adminApi } from "../api";
@@ -34,6 +35,7 @@ import { LectureFormModal, TRACKS, TRACK_LABEL } from "./lectures/LectureFormMod
 export function LecturesPage() {
   const qc = useQueryClient();
   const nav = useNavigate();
+  const location = useLocation();
   const toast = useToast();
   const toastError = useToastError();
   const { can } = useAdminAuth();
@@ -98,7 +100,11 @@ export function LecturesPage() {
     onError: toastError,
   });
 
-  const open = (l: AdminLecture) => nav(`/lectures/${l.lecture_id}`);
+  // The workspace's back link returns to this list as filtered now.
+  const open = (l: AdminLecture) => nav(`/lectures/${l.lecture_id}`, { state: { listSearch: location.search } });
+  // Opened for one course (코스 관리 → a series' "강의 N개 보기", or a course's
+  // lecture link): offer the way back to that course's series list.
+  const courseTitle = courses.data?.items.find((c) => c.course_id === courseId)?.title;
 
   const orderColumn: Column<AdminLecture> = {
     key: "order",
@@ -207,6 +213,18 @@ export function LecturesPage() {
     <div>
       <div className="hgadm-page-head">
         <div>
+          {courseId && (
+            <div className="hgadm-row" style={{ marginBottom: 4 }}>
+              <Link
+                to={`/courses?course_id=${encodeURIComponent(courseId)}`}
+                className="hgadm-muted hgadm-row"
+                style={{ fontSize: 13, gap: 4 }}
+              >
+                <ArrowLeft size={14} strokeWidth={2} />
+                {courseTitle ? `${courseTitle} 시리즈 목록` : "코스의 시리즈 목록"}
+              </Link>
+            </div>
+          )}
           <h1>강의·영상 관리</h1>
           <div className="hgadm-page-head__desc">
             강의는 영상 한 편이고, 코스의 시리즈 안에 들어가요. 강의를 추가하면 영상을 올리고(길이는 영상에서

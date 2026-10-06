@@ -118,3 +118,29 @@ describe("LectureWorkspacePage", () => {
     expect(screen.getByRole("tab", { name: /체크포인트 영상 준비 후/ })).toHaveAttribute("aria-selected", "false");
   });
 });
+
+describe("LectureWorkspacePage back link", () => {
+  it("returns to the list as it was filtered when the lecture was opened", async () => {
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    vi.mocked(adminApi.listLectures).mockResolvedValue({ items: [LECTURE], total: 1, page: 1, page_size: 5 } as never);
+    render(
+      <QueryClientProvider client={qc}>
+        <MemoryRouter
+          initialEntries={[{ pathname: `/lectures/${LECTURE.lecture_id}`, state: { listSearch: "?course_id=crs_1&q=인사" } }]}
+        >
+          <Routes>
+            <Route path="/lectures/:lectureId" element={<LectureWorkspacePage />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    const back = await screen.findByRole("link", { name: /강의·영상 관리/ });
+    expect(back).toHaveAttribute("href", "/lectures?course_id=crs_1&q=인사");
+  });
+
+  it("without that, returns to the lecture's own series (which leads back to its course)", async () => {
+    renderAt(`/lectures/${LECTURE.lecture_id}`);
+    const back = await screen.findByRole("link", { name: /강의·영상 관리/ });
+    expect(back).toHaveAttribute("href", "/lectures?course_id=crs_1&series_id=ser_1");
+  });
+});

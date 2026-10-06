@@ -115,3 +115,21 @@ describe("LecturesPage order", () => {
     expect(screen.getByRole("note")).toHaveTextContent(/필터를 비우세요/);
   });
 });
+
+describe("LecturesPage back to the course", () => {
+  it("opened for a course's series, links back to that course's series list", async () => {
+    // Regression: 코스 관리 → 시리즈 → "강의 N개 보기" landed here with no way back.
+    vi.mocked(adminApi.listCourses).mockResolvedValue({
+      items: [{ course_id: "crs_1", title: "Speak Korean Instantly" }],
+    } as never);
+    renderAt("/lectures?course_id=crs_1&series_id=ser_1");
+    const back = await screen.findByRole("link", { name: /Speak Korean Instantly 시리즈 목록/ });
+    expect(back).toHaveAttribute("href", "/courses?course_id=crs_1");
+  });
+
+  it("shows no course back link on the unfiltered list", async () => {
+    renderAt("/lectures");
+    await screen.findByText("강의·영상 관리");
+    expect(screen.queryByRole("link", { name: /시리즈 목록/ })).toBeNull();
+  });
+});

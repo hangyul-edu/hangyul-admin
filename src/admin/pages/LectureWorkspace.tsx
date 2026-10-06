@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import type { ReactNode } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import { adminApi } from "../api";
@@ -47,6 +47,10 @@ export function LectureWorkspacePage() {
   const canWrite = can("content:write");
   const [editing, setEditing] = useState(false);
   const [params, setParams] = useSearchParams();
+  // The list's filters when the lecture was opened from it — kept for the
+  // whole visit, since switching tabs replaces the URL (and its state).
+  const location = useLocation();
+  const [openedFrom] = useState(() => (location.state as { listSearch?: string } | null)?.listSearch ?? null);
 
   const lecture = useQuery({
     queryKey: ["admin", "lecture", lectureId],
@@ -62,6 +66,16 @@ export function LectureWorkspacePage() {
 
   // The lesson's series, in the app's order, for "n번째" in 기본 정보.
   const seriesId = lecture.data?.series_id ?? "";
+  // Back link target: the list it was opened from, else (a reload, a pasted
+  // link) this lecture's own series — whose list leads back to its course.
+  const listSearch =
+    openedFrom ??
+    (lecture.data?.course_id
+      ? `?${new URLSearchParams({
+          course_id: lecture.data.course_id,
+          ...(seriesId ? { series_id: seriesId } : {}),
+        }).toString()}`
+      : "");
   const siblings = useQuery({
     queryKey: seriesLessonsKey(seriesId),
     queryFn: () => adminApi.listLectures({ series_id: seriesId, page_size: 100 }),
@@ -115,7 +129,8 @@ export function LectureWorkspacePage() {
       <div className="hgadm-page-head">
         <div>
           <div className="hgadm-row" style={{ marginBottom: 4 }}>
-            <Link to="/lectures" className="hgadm-muted hgadm-row" style={{ fontSize: 13, gap: 4 }}>
+            {/* Back to the list as it was filtered (e.g. one series), not the whole list. */}
+            <Link to={`/lectures${listSearch}`} className="hgadm-muted hgadm-row" style={{ fontSize: 13, gap: 4 }}>
               <ArrowLeft size={14} strokeWidth={2} />
               강의·영상 관리
             </Link>
