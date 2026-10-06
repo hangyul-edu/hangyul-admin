@@ -492,6 +492,23 @@ export interface AdminPaymentRow {
   created_at: string;
 }
 
+/** POST /admin/commerce/payments/{payment_id}/refund. Omit `amount_cents` to
+ *  refund everything not yet refunded. */
+export interface AdminRefundRequest {
+  amount_cents?: number;
+  reason: string;
+}
+
+export interface AdminRefundResult {
+  payment_id: string;
+  status: string;
+  amount_cents: number;
+  refunded_amount_cents: number;
+  refund_amount_cents: number;
+  currency: string;
+  invoice_status: string;
+}
+
 // ---- Plans -----------------------------------------------------------------
 
 /** What a plan's subscribers may use — the values access checks compare
@@ -1077,6 +1094,11 @@ export const adminApi = {
     http.get<Page<AdminInvoiceRow>>("/admin/commerce/invoices", params),
   listPayments: (params: Query) =>
     http.get<Page<AdminPaymentRow>>("/admin/commerce/payments", params),
+  refundPayment: (paymentId: string, body: AdminRefundRequest) =>
+    http.post<AdminRefundResult>(
+      `/admin/commerce/payments/${encodeURIComponent(paymentId)}/refund`,
+      body,
+    ),
 
   // Plans
   listPlans: () => http.get<{ plans: Plan[] }>("/admin/subscriptions/plans"),

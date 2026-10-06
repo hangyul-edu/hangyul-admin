@@ -53,6 +53,22 @@ describe("the label", () => {
   });
 });
 
+describe("payment refunds", () => {
+  const refund = (after: unknown) =>
+    describeAuditAction(
+      entry({ action: "POST /admin/commerce/payments/{payment_id}/refund", after: after as never }),
+    );
+
+  it("says whether the refund was full or partial when the row records it", () => {
+    expect(refund({ state: { status: "refunded" } }).label).toBe("결제 전액 환불");
+    expect(refund({ state: { status: "succeeded" } }).label).toBe("결제 부분 환불");
+  });
+
+  it("falls back to the plain label without a snapshot", () => {
+    expect(refund(null).label).toBe("결제 환불");
+  });
+});
+
 describe("labels sharpened by the recorded snapshot", () => {
   const memberEdit = (before: unknown, after: unknown) =>
     describeAuditAction(

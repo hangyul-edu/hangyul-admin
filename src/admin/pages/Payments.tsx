@@ -1,25 +1,197 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { adminApi } from "../api";
 import type { AdminInvoiceRow, AdminPaymentRow } from "../api";
-import { errorMessage } from "../../lib/http";
+import { ApiError, errorMessage } from "../../lib/http";
+import { useToast } from "../../hooks/toast";
+import { useAdminAuth } from "../auth";
 import {
   Badge,
+  Button,
+  ConfirmDialog,
   DataTable,
+  Dl,
   ErrorState,
+  Field,
+  Input,
   LoadingState,
+  Modal,
   Pagination,
   SearchBox,
   Select,
+  Textarea,
   statusLabel,
   statusTone,
 } from "../components/kit";
 import {
   formatDateTime,
   formatMoney,
+  isZeroDecimal,
+  toMajorUnits,
 } from "../lib/format";
 import type { Column } from "../components/kit";
+
+/** What is left to refund on a payment, in minor units. */
+function refundableCents(p: AdminPaymentRow): number {
+  return Math.max(p.amount_cents - p.refunded_amount_cents, 0);
+}
+
+/**
+ * The admin's typed amount (major units: won, or dollars with up to two
+ * decimals) as minor units, or null when it is not a valid amount.
+ */
+export function parseRefundAmount(input: string, currency: string): number | null {
+  const text = input.trim().replace(/,/g, "");
+  const pattern = isZeroDecimal(currency) ? /^\d+$/ : /^\d+(\.\d{1,2})?$/;
+  if (!pattern.test(text)) return null;
+  const minor = isZeroDecimal(currency) ? Number(text) : Math.round(Number(text) * 100);
+  return Number.isSafeInteger(minor) && minor > 0 ? minor : null;
+}
+
+/** Operator-facing sentence for a refund the server did not complete. */
+export function refundErrorMessage(error: unknown): string {
+  if (error instanceof ApiError) {
+    switch (error.code) {
+      case "payment_method.refund_refused":
+        return "결제사가 환불을 거절했습니다. 환불된 금액은 없습니다.";
+      case "payment_method.provider_unavailable":
+        return "결제사의 응답을 확인하지 못했습니다. 기록된 환불은 없습니다. 같은 금액으로 다시 시도하면 중복 환불 없이 처리됩니다.";
+      case "payment_method.provider_not_configured":
+        return "이 결제사의 연동 정보가 설정되어 있지 않아 환불할 수 없습니다.";
+      case "billing.refund_exceeds_invoice":
+        return "환불 가능한 금액을 넘었습니다. 목록을 새로 고친 뒤 다시 확인해 주세요.";
+      case "billing.payment_not_refundable":
+        return "성공한 결제만 환불할 수 있습니다.";
+      case "billing.payment_not_found":
+        return "결제를 찾을 수 없습니다.";
+    }
+  }
+  return errorMessage(error);
+}
+
+function RefundDialog({
+  payment,
+  onClose,
+}: {
+  payment: AdminPaymentRow;
+  onClose: () => void;
+}) {
+  const qc = useQueryClient();
+  const toast = useToast();
+  const remaining = refundableCents(payment);
+  const [amount, setAmount] = useState(String(toMajorUnits(remaining, payment.currency)));
+  const [reason, setReason] = useState("");
+  const [confirming, setConfirming] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
+
+  const amountCents = parseRefundAmount(amount, payment.currency);
+  const amountError =
+    amount.trim() === ""
+      ? null
+      : amountCents === null
+        ? isZeroDecimal(payment.currency)
+          ? "1 이상의 정수로 입력해 주세요."
+          : "0보다 큰 금액을 소수점 둘째 자리까지 입력해 주세요."
+        : amountCents > remaining
+          ? `환불 가능 금액(${formatMoney(remaining, payment.currency)})을 넘었습니다.`
+          : null;
+  const valid = amountCents !== null && amountCents <= remaining && reason.trim().length > 0;
+
+  const refund = useMutation({
+    mutationFn: () =>
+      adminApi.refundPayment(payment.payment_id, {
+        amount_cents: amountCents ?? undefined,
+        reason: reason.trim(),
+      }),
+    onSuccess: (result) => {
+      toast.success(`${formatMoney(result.refund_amount_cents, result.currency)}을 환불했습니다.`);
+      void qc.invalidateQueries({ queryKey: ["admin", "payments"] });
+      void qc.invalidateQueries({ queryKey: ["admin", "invoices"] });
+      onClose();
+    },
+    onError: (error) => {
+      setConfirming(false);
+      setFailure(refundErrorMessage(error));
+    },
+  });
+
+  return (
+    <>
+      <Modal
+        open={!confirming}
+        title="결제 환불"
+        onClose={refund.isPending ? () => {} : onClose}
+        footer={
+          <>
+            <Button variant="ghost" onClick={onClose} disabled={refund.isPending}>
+              취소
+            </Button>
+            <Button
+              variant="danger"
+              disabled={!valid}
+              onClick={() => {
+                setFailure(null);
+                setConfirming(true);
+              }}
+            >
+              환불하기
+            </Button>
+          </>
+        }
+      >
+        <Dl
+          items={[
+            ["회원", payment.user_email ?? "(탈퇴한 사용자)"],
+            ["결제사", payment.provider],
+            ["결제 금액", formatMoney(payment.amount_cents, payment.currency)],
+            ["환불된 금액", formatMoney(payment.refunded_amount_cents, payment.currency)],
+            ["환불 가능 금액", formatMoney(remaining, payment.currency)],
+          ]}
+        />
+        <Field
+          label={`환불 금액 (${payment.currency.toUpperCase()})`}
+          required
+          hint="일부만 환불하려면 금액을 줄이세요."
+          error={amountError}
+        >
+          <Input
+            inputMode={isZeroDecimal(payment.currency) ? "numeric" : "decimal"}
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            aria-label="환불 금액"
+          />
+        </Field>
+        <Field label="환불 사유" required hint="결제사에 취소 사유로 전달되고 감사 로그에 남습니다. 최대 200자.">
+          <Textarea
+            value={reason}
+            maxLength={200}
+            rows={3}
+            onChange={(e) => setReason(e.target.value)}
+            aria-label="환불 사유"
+          />
+        </Field>
+        {failure && (
+          <span className="hgadm-field__error" role="alert">
+            {failure}
+          </span>
+        )}
+      </Modal>
+      <ConfirmDialog
+        open={confirming}
+        title="환불할까요?"
+        message={`${payment.user_email ?? "탈퇴한 사용자"}님의 결제에서 ${
+          amountCents !== null ? formatMoney(amountCents, payment.currency) : ""
+        }을 환불합니다. 결제사에 바로 취소가 요청되며 되돌릴 수 없습니다.`}
+        danger
+        confirmLabel="환불"
+        loading={refund.isPending}
+        onConfirm={() => refund.mutate()}
+        onCancel={() => setConfirming(false)}
+      />
+    </>
+  );
+}
 
 export function PaymentsPage() {
   const [params, setParams] = useSearchParams();
@@ -56,9 +228,12 @@ export function PaymentsPage() {
 
 function PaymentsTab() {
   const navigate = useNavigate();
+  const { can } = useAdminAuth();
+  const canRefund = can("commerce:write");
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
+  const [refunding, setRefunding] = useState<AdminPaymentRow | null>(null);
   const pageSize = 25;
 
   const query = useQuery({
@@ -108,9 +283,30 @@ function PaymentsTab() {
     },
     { key: "paid", header: "결제일", render: (p) => formatDateTime(p.paid_at ?? p.created_at) },
   ];
+  if (canRefund) {
+    columns.push({
+      key: "actions",
+      header: "",
+      render: (p) =>
+        p.status === "succeeded" && refundableCents(p) > 0 ? (
+          <Button
+            size="sm"
+            variant="danger-soft"
+            onClick={(e) => {
+              // The row itself opens the member.
+              e.stopPropagation();
+              setRefunding(p);
+            }}
+          >
+            환불
+          </Button>
+        ) : null,
+    });
+  }
 
   return (
     <div className="hgadm-card">
+      {refunding && <RefundDialog payment={refunding} onClose={() => setRefunding(null)} />}
       <div className="hgadm-toolbar">
         <SearchBox
           value={q}

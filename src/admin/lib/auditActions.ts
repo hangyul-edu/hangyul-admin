@@ -164,6 +164,12 @@ const ACTION_COPY: Record<string, ActionCopy> = {
   },
   "POST /admin/coupons/{coupon_id}/revoke": { ko: "쿠폰 회수", en: "Revoked a coupon" },
 
+  // ---- Payments ----------------------------------------------------------
+  "POST /admin/commerce/payments/{payment_id}/refund": {
+    ko: "결제 환불",
+    en: "Refunded a payment",
+  },
+
   // ---- Plans -------------------------------------------------------------
   "POST /admin/subscriptions/plans": { ko: "요금제 생성", en: "Created a plan" },
   "PATCH /admin/subscriptions/plans/{plan_id}": { ko: "요금제 수정", en: "Updated a plan" },
@@ -434,6 +440,12 @@ function refine(entry: AuditLogEntry): ActionCopy | null {
       return { ko: "AI 생성 콘텐츠 승인", en: "Approved an AI-generated item" };
     if (decision === "rejected")
       return { ko: "AI 생성 콘텐츠 반려", en: "Rejected an AI-generated item" };
+  }
+
+  if (entry.action === "POST /admin/commerce/payments/{payment_id}/refund") {
+    const status = str(after, "status");
+    if (status === "refunded") return { ko: "결제 전액 환불", en: "Refunded a payment in full" };
+    if (status === "succeeded") return { ko: "결제 부분 환불", en: "Partially refunded a payment" };
   }
 
   return null;
