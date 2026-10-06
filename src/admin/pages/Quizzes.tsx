@@ -617,7 +617,7 @@ export function QuizzesPage() {
                 </Select>
               </Field>
               {draft.material_kind === "audio" && (
-                <Field label="오디오 길이 (ms)" required hint="MP3를 올리면 파일에서 자동으로 채워져요.">
+                <Field label="오디오 길이 (ms)" required hint="MP3를 올리면 실제 오디오 길이로 자동으로 채워져요.">
                   <Input
                     type="number"
                     min={0}
@@ -835,42 +835,11 @@ export function QuizzesPage() {
   );
 }
 
-/** Reads an audio file's length in the browser; undefined when it can't. */
-export function readAudioDurationMs(file: File): Promise<number | undefined> {
-  return new Promise((resolve) => {
-    let url: string;
-    try {
-      url = URL.createObjectURL(file);
-    } catch {
-      resolve(undefined);
-      return;
-    }
-    const audio = new Audio();
-    let settled = false;
-    const done = (ms: number | undefined) => {
-      if (settled) return;
-      settled = true;
-      URL.revokeObjectURL(url);
-      resolve(ms);
-    };
-    // A file the browser can't decode may never answer; upload without a length.
-    const timer = setTimeout(() => done(undefined), 5000);
-    audio.preload = "metadata";
-    audio.onloadedmetadata = () => {
-      clearTimeout(timer);
-      done(Number.isFinite(audio.duration) ? Math.round(audio.duration * 1000) : undefined);
-    };
-    audio.onerror = () => {
-      clearTimeout(timer);
-      done(undefined);
-    };
-    audio.src = url;
-  });
-}
-
 /**
  * The listening passage's MP3. A question gets its audio once it exists, so a
- * new question is saved first; the upload also fills in the audio length.
+ * new question is saved first. The server validates the file (a real,
+ * complete MP3) and measures it; its answer fills in the audio length, and a
+ * rejected file's reason is shown as is.
  */
 export function ListeningAudioField({
   quizId,
@@ -884,10 +853,7 @@ export function ListeningAudioField({
   const toast = useToast();
   const toastError = useToastError();
   const upload = useMutation({
-    mutationFn: async (file: File) => {
-      const durationMs = await readAudioDurationMs(file);
-      return adminApi.uploadQuizAudio(quizId as string, file, durationMs);
-    },
+    mutationFn: (file: File) => adminApi.uploadQuizAudio(quizId as string, file),
     onSuccess: (quiz) => {
       onUploaded(quiz.audio_duration_ms);
       toast.success("듣기 음원을 올렸어요.");
@@ -905,7 +871,11 @@ export function ListeningAudioField({
   return (
     <Field
       label="듣기 음원 (MP3)"
-      hint={upload.isPending ? "올리는 중…" : "새 파일을 올리면 기존 음원을 바꿔요. 최대 20MB."}
+      hint={
+        upload.isPending
+          ? "파일을 확인하고 올리는 중…"
+          : "새 파일을 올리면 기존 음원을 바꿔요. MP3만, 최대 20MB·30분. 서버가 파일을 검사해 길이를 채워요."
+      }
     >
       <Input
         type="file"

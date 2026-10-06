@@ -1247,10 +1247,11 @@ export const adminApi = {
   replaceQuiz: (quizId: string, body: Record<string, unknown>) =>
     http.put<AdminQuiz>(`/admin/quizzes/${quizId}`, body),
   /** A listening question's MP3 (what members hear); `durationMs` as the browser measured it. */
-  uploadQuizAudio: (quizId: string, file: File, durationMs?: number) => {
+  // The server checks the file is a decodable MP3 and sets the audio length
+  // from the decoded audio; a rejected file comes back as a 422 message.
+  uploadQuizAudio: (quizId: string, file: File) => {
     const form = new FormData();
     form.append("file", file);
-    if (durationMs !== undefined) form.append("duration_ms", String(durationMs));
     return http.upload<AdminQuiz>(`/admin/quizzes/${quizId}/audio`, form, { method: "PUT" });
   },
   deleteQuiz: (quizId: string) => http.del<void>(`/admin/quizzes/${quizId}`),
