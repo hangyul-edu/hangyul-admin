@@ -26,7 +26,9 @@ export function tusUploadToUrl(
       uploadUrl,
       chunkSize: CHUNK_SIZE,
       retryDelays: [0, 3000, 5000, 10000, 20000],
-      metadata: { filename: file.name, filetype: file.type },
+      // Each session URL is single-use, so a fingerprint kept in localStorage
+      // for resuming later would only pile up.
+      storeFingerprintForResuming: false,
       onError: (error) => reject(error),
       onProgress: (sent, total) =>
         onProgress(total > 0 ? Math.round((sent / total) * 100) : 0),
