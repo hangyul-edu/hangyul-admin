@@ -378,6 +378,8 @@ export interface CoverageBand {
   eligible: number;
   approved: number;
   legacy_unreviewed: number;
+  /** Published by the automated checks, with no reviewer. */
+  auto_published: number;
   required_new_items: number;
   shortage: number;
   status: "ok" | "short";

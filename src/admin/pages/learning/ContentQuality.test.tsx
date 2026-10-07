@@ -103,8 +103,8 @@ describe("ContentQualityPage", () => {
       model_version: "coverage-v1",
       assumptions: { new_items_per_session: 6, sessions_per_week: 5, variation_weeks: 4, customization_headroom: 1.5, required_new_items: 180 },
       bands: [
-        { track: "topik", band: 3, eligible: 12, approved: 0, legacy_unreviewed: 12, required_new_items: 180, shortage: 168, status: "short" },
-        { track: "topik", band: 4, eligible: 200, approved: 10, legacy_unreviewed: 190, required_new_items: 180, shortage: 0, status: "ok" },
+        { track: "topik", band: 3, eligible: 12, approved: 0, legacy_unreviewed: 12, auto_published: 0, required_new_items: 180, shortage: 168, status: "short" },
+        { track: "topik", band: 4, eligible: 200, approved: 10, legacy_unreviewed: 120, auto_published: 70, required_new_items: 180, shortage: 0, status: "ok" },
       ],
       skills: [],
       topics: [],
@@ -116,6 +116,9 @@ describe("ContentQualityPage", () => {
     expect(await screen.findByText("부족")).toBeInTheDocument();
     expect(screen.getByText("충분")).toBeInTheDocument();
     expect(screen.getByText("168")).toBeInTheDocument();
+    // Content the automated checks published is counted on its own.
+    expect(screen.getByRole("columnheader", { name: "자동 게시" })).toBeInTheDocument();
+    expect(screen.getByText("70")).toBeInTheDocument();
   });
 
   it("shows 대상 데이터 없음 for a ratio with no eligible data", async () => {

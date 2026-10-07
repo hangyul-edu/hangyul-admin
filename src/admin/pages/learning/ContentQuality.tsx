@@ -37,6 +37,7 @@ const LIFECYCLE_LABEL: Record<string, string> = {
 
 const REVIEW_STATUS_LABEL: Record<string, string> = {
   legacy_unreviewed: "기존 콘텐츠(미검수)",
+  auto_published: "자동 게시(미검수)",
   pending: "검수 대기",
   approved: "승인됨",
   changes_requested: "수정 요청",
@@ -126,6 +127,7 @@ function CoverageTab() {
             { key: "eligible", header: "제공 가능", numeric: true, render: (b) => b.eligible.toLocaleString() },
             { key: "approved", header: "검수 승인", numeric: true, render: (b) => b.approved.toLocaleString() },
             { key: "legacy", header: "기존(미검수)", numeric: true, render: (b) => b.legacy_unreviewed.toLocaleString() },
+            { key: "auto", header: "자동 게시", numeric: true, render: (b) => b.auto_published.toLocaleString() },
             { key: "required", header: "필요량", numeric: true, render: (b) => b.required_new_items.toLocaleString() },
             { key: "shortage", header: "부족분", numeric: true, render: (b) => b.shortage.toLocaleString() },
             {
@@ -342,6 +344,7 @@ function QueueTab() {
         <Select value={reviewStatus} aria-label="검수 상태" onChange={(e) => f.patch({ review_status: e.target.value, page: null })} style={{ width: 180 }}>
           <option value="">검수 상태 전체</option>
           <option value="legacy_unreviewed">기존 콘텐츠(미검수)</option>
+          <option value="auto_published">자동 게시(미검수)</option>
           <option value="pending">검수 대기</option>
           <option value="approved">승인됨</option>
           <option value="changes_requested">수정 요청</option>

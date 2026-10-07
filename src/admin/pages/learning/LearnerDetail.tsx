@@ -465,6 +465,7 @@ function EvidencePanel({
           <div className="hgadm-cell-sub">
             v{e.content_version_no} · L{e.item_band}
             {e.content_review_status === "legacy_unreviewed" ? " · 미검수(레거시)" : ""}
+            {e.content_review_status === "auto_published" ? " · 미검수(자동 게시)" : ""}
           </div>
         </div>
       ),
