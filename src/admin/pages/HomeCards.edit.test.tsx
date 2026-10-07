@@ -30,6 +30,7 @@ vi.mock("../api", async () => {
 const BANNER: AdminBanner = {
   banner_id: "ban_1",
   image_url: "https://cdn.example.com/b.png",
+  image_crop: { x: 0.1, y: 0, width: 0.6, height: 1 },
   alt_text: "배너",
   action_url: "/subscription",
   sort_order: 0,
@@ -71,5 +72,14 @@ describe("banner edit", () => {
     expect(body).toHaveProperty("ends_at", null);
     expect(body).toHaveProperty("action_url", null);
     expect(body.starts_at).toBe(new Date(BANNER.starts_at as string).toISOString());
+    // The chosen crop is kept as it was.
+    expect(body).toHaveProperty("image_crop", BANNER.image_crop);
+  });
+
+  it("shows the recommended size and ratio in the editor", async () => {
+    renderPage();
+    await userEvent.click(await screen.findByRole("button", { name: "수정" }));
+    expect(screen.getByText("1005 × 536px")).toBeInTheDocument();
+    expect(screen.getByText(/비율 15:8/)).toBeInTheDocument();
   });
 });

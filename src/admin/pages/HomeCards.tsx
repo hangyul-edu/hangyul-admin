@@ -2,6 +2,9 @@ import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ImageIcon } from "lucide-react";
 import { MoveButtons, OrderNumber } from "../components/ordering";
+import { CardImageSizeHint, ImageCropField } from "../components/ImageCropField";
+import { croppedImageStyle } from "../../lib/imageCrop";
+import type { ImageCrop } from "../../lib/imageCrop";
 import { adminApi } from "../api";
 import type { AdminBanner } from "../api";
 import { errorMessage } from "../../lib/http";
@@ -26,6 +29,8 @@ import {
 
 interface BannerDraft {
   image_url: string;
+  /** The part of the image the app shows; null = centred cover crop. */
+  image_crop: ImageCrop | null;
   alt_text: string;
   action_url: string;
   is_active: boolean;
@@ -35,6 +40,7 @@ interface BannerDraft {
 
 const EMPTY: BannerDraft = {
   image_url: "",
+  image_crop: null,
   alt_text: "",
   action_url: "",
   is_active: true,
@@ -73,6 +79,7 @@ export function BannersPage() {
     mutationFn: (d: BannerDraft) => {
       const body = {
         image_url: d.image_url,
+        image_crop: d.image_crop,
         alt_text: d.alt_text,
         // null (not omitted) so emptying a field on edit clears it — either
         // end of the window can be removed on its own.
@@ -130,7 +137,9 @@ export function BannersPage() {
     setUploading(true);
     try {
       const result = await adminApi.uploadMedia(file);
-      setDraft({ ...draft, image_url: result.url });
+      // A new picture starts from the centred default; the old crop was for
+      // the old one.
+      setDraft({ ...draft, image_url: result.url, image_crop: null });
       toast.success("이미지를 업로드했어요.");
     } catch (e) {
       toast.error(errorMessage(e));
@@ -190,12 +199,14 @@ export function BannersPage() {
               style={{ display: "flex", gap: 16, padding: 14, alignItems: "center" }}
             >
               <OrderNumber position={index + 1} />
-              <img
-                src={banner.image_url}
-                alt={banner.alt_text}
-                className="hgadm-thumb"
-                style={{ width: 160, height: 80 }}
-              />
+              {/* As the app shows it: the card's 15:8 with the chosen crop. */}
+              <span className="hgadm-crop-thumb">
+                <img
+                  src={banner.image_url}
+                  alt={banner.alt_text}
+                  style={banner.image_crop ? croppedImageStyle(banner.image_crop) : undefined}
+                />
+              </span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="hgadm-row hgadm-row--wrap">
                   <Badge tone={banner.is_active ? "success" : "neutral"} dot>
@@ -236,6 +247,7 @@ export function BannersPage() {
                       setEditingId(banner.banner_id);
                       setDraft({
                         image_url: banner.image_url,
+                        image_crop: banner.image_crop ?? null,
                         alt_text: banner.alt_text,
                         action_url: banner.action_url ?? "",
                         is_active: banner.is_active,
@@ -283,14 +295,16 @@ export function BannersPage() {
       >
         {draft && (
           <div>
-            <Field label="배너 이미지" required hint="JPEG/PNG/WebP, 최대 5MB. 권장 비율 2:1.">
+            <Field label="배너 이미지" required>
               <div>
+                <p className="hgadm-cell-sub" style={{ margin: "0 0 8px" }}>
+                  <CardImageSizeHint />
+                </p>
                 {draft.image_url ? (
-                  <img
-                    src={draft.image_url}
-                    alt="배너 미리보기"
-                    className="hgadm-thumb hgadm-thumb--lg"
-                    style={{ marginBottom: 8 }}
+                  <ImageCropField
+                    imageUrl={draft.image_url}
+                    value={draft.image_crop}
+                    onChange={(image_crop) => setDraft((d) => (d ? { ...d, image_crop } : d))}
                   />
                 ) : null}
                 {canUploadImage ? (

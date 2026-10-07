@@ -1,6 +1,7 @@
 // Typed client for every /admin/* backend endpoint the portal uses.
 // All requests go through src/lib/http.ts (Bearer auth + auto refresh).
 import { http } from "../lib/http";
+import type { ImageCrop } from "../lib/imageCrop";
 
 export interface TokenPair {
   access_token: string;
@@ -564,6 +565,8 @@ export interface CouponRow {
 export interface AdminBanner {
   banner_id: string;
   image_url: string;
+  /** The part of the image shown (fractions of the original); null = centred cover. */
+  image_crop: ImageCrop | null;
   alt_text: string;
   action_url: string | null;
   sort_order: number;
