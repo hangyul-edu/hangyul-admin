@@ -27,6 +27,9 @@ const FEATURE_LABEL: Record<string, string> = {
   "customization.interpret": "맞춤화 요청 해석",
   "tutor.explain": "튜터 설명",
   "custom_practice.generate": "맞춤 연습 생성",
+  "content_factory.generate": "콘텐츠 일괄 생성",
+  "proficiency.score_conversation": "회화 실력 평가 채점",
+  "proficiency.score_writing": "TOPIK 쓰기 채점",
 };
 
 const ROUTE_LABEL: Record<string, string> = {
