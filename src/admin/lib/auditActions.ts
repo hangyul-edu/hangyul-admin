@@ -279,6 +279,22 @@ const ACTION_COPY: Record<string, ActionCopy> = {
     ko: "학습자 학습 데이터 삭제",
     en: "Erased a learner's learning data",
   },
+  "POST /admin/proficiency/learners/{user_id}/corrections": {
+    ko: "학습자 실력 레벨 관리자 정정",
+    en: "Corrected a learner's proficiency level",
+  },
+  "POST /admin/proficiency/learners/{user_id}/reprocess": {
+    ko: "학습자 실력 판정 재처리",
+    en: "Reprocessed a learner's proficiency evidence",
+  },
+  "POST /admin/proficiency/observations/{observation_id}/invalidate": {
+    ko: "실력 평가 증거 무효 처리",
+    en: "Invalidated a piece of proficiency evidence",
+  },
+  "POST /admin/proficiency/ratings": {
+    ko: "평가 응답 기준 채점 기록",
+    en: "Recorded a reference rating for an assessment response",
+  },
 };
 
 /**
@@ -326,6 +342,8 @@ export const AUDIT_OBJECT_TYPES: readonly [value: string, label: string][] = [
   ["tutor_turns", "튜터 대화 조회"],
   ["analytics_export", "학습 통계 내보내기"],
   ["learning-analytics", "학습 분석"],
+  ["learner_proficiency", "학습자 실력 판정"],
+  ["proficiency_rating", "평가 기준 채점"],
 ];
 
 const OBJECT_TYPE_LABEL = new Map(AUDIT_OBJECT_TYPES);
