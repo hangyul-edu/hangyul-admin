@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import {
   Activity,
+  Award,
   Bell,
   BookOpen,
   Bot,
@@ -25,6 +26,7 @@ import {
   PenLine,
   Receipt,
   Repeat,
+  Scale,
   ScrollText,
   ShieldCheck,
   SlidersHorizontal,
@@ -110,6 +112,8 @@ const NAV: NavGroup[] = [
     items: [
       { to: "/learning", icon: LineChart, label: "학습 개요", scopes: ["analytics:read"] },
       { to: "/learning/learners", icon: GraduationCap, label: "학습자 성장", scopes: ["learners:read"] },
+      { to: "/learning/proficiency", icon: Award, label: "실력 판정", scopes: ["learners:read"] },
+      { to: "/learning/proficiency-policy", icon: Scale, label: "판정 기준·검증", scopes: ["analytics:read"] },
       { to: "/learning/cohorts", icon: CalendarRange, label: "코호트·재방문", scopes: ["analytics:read"] },
       { to: "/learning/content", icon: ListChecks, label: "콘텐츠 품질·검수", scopes: ["content:read"] },
       { to: "/learning/recommendations", icon: RouteIcon, label: "추천·맞춤화 진단", scopes: ["analytics:read"] },

@@ -4446,3 +4446,69 @@ a.hgadm-recent--link:hover {
   font-size: 13px;
   line-height: 1.6;
 }
+
+/* ---- Proficiency (실력 판정) ---- */
+.hgadm-prof-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+.hgadm-prof-cohort {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.hgadm-prof-gates,
+.hgadm-prof-list {
+  margin: 10px 0;
+  padding: 0;
+  list-style: none;
+}
+.hgadm-prof-gates li,
+.hgadm-prof-list li {
+  padding: 4px 0;
+  font-size: 13px;
+}
+.hgadm-prof-chart {
+  width: 100%;
+  max-width: 560px;
+  height: auto;
+  margin-top: 12px;
+}
+.hgadm-prof-chart__grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+.hgadm-prof-chart__label {
+  font-size: 10px;
+  fill: var(--ink-3);
+}
+.hgadm-prof-chart__seg polyline {
+  fill: none;
+  stroke-width: 2;
+}
+.hgadm-prof-chart__seg--0 polyline,
+.hgadm-prof-chart__seg--0 circle {
+  stroke: var(--brand-500);
+  fill: var(--brand-500);
+}
+.hgadm-prof-chart__seg--0 polyline {
+  fill: none;
+}
+.hgadm-prof-chart__seg--1 polyline,
+.hgadm-prof-chart__seg--1 circle {
+  stroke: var(--positive);
+  fill: var(--positive);
+}
+.hgadm-prof-chart__seg--1 polyline {
+  fill: none;
+}
+.hgadm-prof-chart__seg--2 polyline,
+.hgadm-prof-chart__seg--2 circle {
+  stroke: var(--gray-6);
+  fill: var(--gray-6);
+}
+.hgadm-prof-chart__seg--2 polyline {
+  fill: none;
+}

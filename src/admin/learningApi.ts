@@ -560,7 +560,7 @@ export const learningApi = {
   simulate: (body: { user_id: string; track: string; activity_count?: number; topic_preferences?: string[]; band_override?: number }) =>
     http.post<SimulationResult>(`${LA}/simulate`, body),
   topics: () => http.get<{ items: { topic_id: string; name_ko: string }[] }>(`${LA}/topics`),
-  createExport: (body: { report: "cohorts" | "content"; filters: Record<string, unknown> }) =>
+  createExport: (body: { report: "cohorts" | "content" | "proficiency"; filters: Record<string, unknown> }) =>
     http.post<{ export_id: string; row_count: number; expires_at: string }>(`${LA}/exports`, body),
   downloadExport: (exportId: string) =>
     http.get<string>(`${LA}/exports/${exportId}`, undefined, { responseType: "text" }),

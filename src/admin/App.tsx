@@ -37,6 +37,9 @@ import { AiContentPage } from "./pages/AiContent";
 import { LearningOverviewPage } from "./pages/learning/Overview";
 import { LearnersPage } from "./pages/learning/Learners";
 import { LearnerDetailPage } from "./pages/learning/LearnerDetail";
+import { ProficiencyLearnersPage } from "./pages/learning/Proficiency";
+import { ProficiencyDetailPage } from "./pages/learning/ProficiencyDetail";
+import { ProficiencyPolicyPage } from "./pages/learning/ProficiencyPolicy";
 import { CohortsPage } from "./pages/learning/Cohorts";
 import { ContentQualityPage } from "./pages/learning/ContentQuality";
 import { RecommendationsPage } from "./pages/learning/Recommendations";
@@ -133,6 +136,9 @@ const router = createBrowserRouter(
         <Route path="/learning" element={<RequireScope scope="analytics:read"><LearningOverviewPage /></RequireScope>} />
         <Route path="/learning/learners" element={<RequireScope scope="learners:read"><LearnersPage /></RequireScope>} />
         <Route path="/learning/learners/:userId" element={<RequireScope scope="learners:read"><LearnerDetailPage /></RequireScope>} />
+        <Route path="/learning/proficiency" element={<RequireScope scope="learners:read"><ProficiencyLearnersPage /></RequireScope>} />
+        <Route path="/learning/proficiency/:userId" element={<RequireScope scope="learners:read"><ProficiencyDetailPage /></RequireScope>} />
+        <Route path="/learning/proficiency-policy" element={<RequireScope scope="analytics:read"><ProficiencyPolicyPage /></RequireScope>} />
         <Route path="/learning/cohorts" element={<RequireScope scope="analytics:read"><CohortsPage /></RequireScope>} />
         <Route path="/learning/content" element={<RequireScope scope="content:read"><ContentQualityPage /></RequireScope>} />
         <Route path="/learning/recommendations" element={<RequireScope scope="analytics:read"><RecommendationsPage /></RequireScope>} />
