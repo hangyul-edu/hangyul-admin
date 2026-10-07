@@ -47,7 +47,6 @@ const ENTITLEMENT_LABELS:Record<Entitlement, { label: string; hint: string }> = 
   premium_courses: { label: "프리미엄 강의", hint: "모든 레슨·강의" },
   ai_tutor: { label: "AI 한귤 튜터", hint: "튜터 대화와 오답 설명" },
   offline_download: { label: "오프라인 저장", hint: "강의·음성 내려받기" },
-  ad_free: { label: "광고 없음", hint: "앱 안 광고 숨김" },
   premium_content: { label: "프리미엄 콘텐츠", hint: "프리미엄 전용 학습 자료" },
 };
 

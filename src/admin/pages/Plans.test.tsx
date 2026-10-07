@@ -74,7 +74,7 @@ describe("plan entitlements", () => {
     const row = (await screen.findByText("Monthly")).closest("tr")!;
     expect(within(row).getByText("프리미엄 강의")).toBeInTheDocument();
     expect(within(row).getByText("AI 한귤 튜터")).toBeInTheDocument();
-    expect(within(row).queryByText("광고 없음")).toBeNull();
+    expect(within(row).queryByText("오프라인 저장")).toBeNull();
     expect(within(row).getByText("해지 방어 제안")).toBeInTheDocument();
   });
 
@@ -88,13 +88,13 @@ describe("plan entitlements", () => {
     // The stored audience is selected, not a value the API does not know.
     expect(within(dialog).getByText("해지 방어 제안")).toBeInTheDocument();
 
-    await userEvent.click(within(dialog).getByRole("checkbox", { name: "광고 없음" }));
+    await userEvent.click(within(dialog).getByRole("checkbox", { name: "오프라인 저장" }));
     await userEvent.click(within(dialog).getByRole("checkbox", { name: "프리미엄 강의" }));
     await userEvent.click(within(dialog).getByRole("button", { name: "저장" }));
     await waitFor(() => expect(updatePlan).toHaveBeenCalled());
     const [id, body] = updatePlan.mock.calls[0];
     expect(id).toBe("plan_monthly");
-    expect(body.entitlements).toEqual(["ai_tutor", "ad_free"]);
+    expect(body.entitlements).toEqual(["ai_tutor", "offline_download"]);
     expect(body.features).toEqual(["모든 레슨"]);
   });
 
@@ -115,8 +115,10 @@ describe("plan entitlements", () => {
     await screen.findByText("Monthly");
     await userEvent.click(screen.getByRole("button", { name: "+ 새 요금제" }));
     const dialog = await screen.findByRole("dialog");
-    for (const name of ["프리미엄 강의", "AI 한귤 튜터", "오프라인 저장", "광고 없음", "프리미엄 콘텐츠"]) {
+    for (const name of ["프리미엄 강의", "AI 한귤 튜터", "오프라인 저장", "프리미엄 콘텐츠"]) {
       expect(within(dialog).getByRole("checkbox", { name })).toBeChecked();
     }
+    // The app has no ads: there is no ad-free option to grant.
+    expect(within(dialog).queryByRole("checkbox", { name: /광고/ })).toBeNull();
   });
 });

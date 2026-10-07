@@ -546,7 +546,7 @@ export interface AdminRetryResult {
 /** What a plan's subscribers may use — the values access checks compare
  *  against (access_control `Entitlement`). Separate from `features`, which is
  *  only paywall copy. */
-export const ENTITLEMENTS = ["premium_courses", "ai_tutor", "offline_download", "ad_free", "premium_content"] as const;
+export const ENTITLEMENTS = ["premium_courses", "ai_tutor", "offline_download", "premium_content"] as const;
 export type Entitlement = (typeof ENTITLEMENTS)[number];
 
 export interface Plan {
