@@ -82,27 +82,68 @@ describe("ImageCropField", () => {
     const zoomed = lastCrop(onChange);
     expect(zoomed.width).toBeLessThan(1);
 
-    const frame = screen.getByRole("slider", { name: /노출 영역 위치/ });
-    fireEvent.keyDown(frame, { key: "ArrowRight", shiftKey: true });
+    const area = screen.getByRole("group", { name: /노출 영역/ });
+    fireEvent.keyDown(area, { key: "ArrowRight", shiftKey: true });
     const moved = lastCrop(onChange);
     expect(moved.x).toBeGreaterThan(zoomed.x);
     expect(moved.width).toBeCloseTo(zoomed.width, 5);
+    fireEvent.keyDown(area, { key: "+" });
+    expect(lastCrop(onChange).width).toBeLessThan(moved.width);
 
     fireEvent.click(screen.getByRole("button", { name: "가운데 기본값으로" }));
     expect(onChange).toHaveBeenLastCalledWith(null);
   });
 
-  it("drags the picture: moving it right shows more of its left", async () => {
-    naturalSize = { width: 1600, height: 900 };
-    const onChange = vi.fn();
-    render(<Harness initial={{ x: 0.4, y: 0, width: 0.5, height: 1 }} onChange={onChange} />);
-    const frame = await screen.findByRole("slider", { name: /노출 영역 위치/ });
-    frame.getBoundingClientRect = () => ({ width: 402, height: 214.4, x: 0, y: 0, top: 0, left: 0, right: 402, bottom: 214.4, toJSON: () => ({}) });
-    frame.setPointerCapture = vi.fn();
-    fireEvent.pointerDown(frame, { clientX: 200, clientY: 100, pointerId: 1 });
-    fireEvent.pointerMove(frame, { clientX: 300, clientY: 100, pointerId: 1 });
-    fireEvent.pointerUp(frame, { pointerId: 1 });
-    const dragged = lastCrop(onChange);
-    expect(dragged.x).toBeLessThan(0.4);
+  describe("on the whole image, with the app card beside it", () => {
+    // The image drawn 400 x 225 (1600 x 900 at a quarter).
+    async function editor(initial: ImageCrop | null, onChange = vi.fn()) {
+      naturalSize = { width: 1600, height: 900 };
+      render(<Harness initial={initial} onChange={onChange} />);
+      const area = await screen.findByRole("group", { name: /노출 영역/ });
+      const canvas = area.parentElement as HTMLDivElement;
+      canvas.getBoundingClientRect = () => ({ width: 400, height: 225, x: 0, y: 0, top: 0, left: 0, right: 400, bottom: 225, toJSON: () => ({}) });
+      return { area, canvas, onChange, preview: screen.getByAltText("앱 카드 미리보기") };
+    }
+
+    it("outlines the shown area on the image and draws the same area in the card preview", async () => {
+      const { area, preview } = await editor({ x: 0.4, y: 0, width: 0.5, height: 0.5 * (16 / 9) / (15 / 8) });
+      expect(area.style.left).toBe("40%");
+      expect(area.style.width).toBe("50%");
+      // The preview is the app's own crop style: 1/0.5 = 200% wide, shifted 80%.
+      expect(preview.style.width).toBe("200%");
+      expect(preview.style.left).toBe("-80%");
+    });
+
+    it("dragging the area moves it the same way, and the preview follows", async () => {
+      const { area, canvas, onChange, preview } = await editor({ x: 0.2, y: 0, width: 0.5, height: 0.5 * (16 / 9) / (15 / 8) });
+      fireEvent.pointerDown(area, { clientX: 150, clientY: 50, pointerId: 1, button: 0 });
+      fireEvent.pointerMove(canvas, { clientX: 230, clientY: 50, pointerId: 1 });
+      fireEvent.pointerUp(canvas, { pointerId: 1 });
+      const moved = lastCrop(onChange);
+      expect(moved.x).toBeCloseTo(0.4, 4); // 80px of 400 = 20% to the right
+      expect(moved.width).toBeCloseTo(0.5, 4);
+      expect(preview.style.left).toBe("-80%");
+    });
+
+    it("dragging a corner resizes the area at 15:8 around the opposite corner", async () => {
+      const start = { x: 0.2, y: 0.1, width: 0.5, height: 0.5 * (16 / 9) / (15 / 8) };
+      const { canvas, onChange } = await editor(start);
+      const se = canvas.querySelector('[data-corner="se"]') as HTMLElement;
+      fireEvent.pointerDown(se, { clientX: 280, clientY: 130, pointerId: 1, button: 0 });
+      fireEvent.pointerMove(canvas, { clientX: 240, clientY: 130, pointerId: 1 });
+      const resized = lastCrop(onChange);
+      expect(resized.x).toBeCloseTo(0.2, 4);
+      expect(resized.y).toBeCloseTo(0.1, 4);
+      expect(resized.width).toBeCloseTo(0.4, 4);
+      expect((resized.width * 1600) / (resized.height * 900)).toBeCloseTo(15 / 8, 3);
+    });
+
+    it("clicking elsewhere on the image brings the area there", async () => {
+      const { canvas, onChange } = await editor({ x: 0, y: 0, width: 0.5, height: 0.5 * (16 / 9) / (15 / 8) });
+      fireEvent.pointerDown(canvas, { clientX: 300, clientY: 112.5, pointerId: 1, button: 0 });
+      const moved = lastCrop(onChange);
+      expect(moved.x + moved.width / 2).toBeCloseTo(0.75, 4);
+      expect(moved.y + moved.height / 2).toBeCloseTo(0.5, 4);
+    });
   });
 });

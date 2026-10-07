@@ -1,18 +1,19 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { KeyboardEvent, PointerEvent } from "react";
 import {
-  CARD_ASPECT,
   CARD_ASPECT_LABEL,
+  CARD_ASPECT,
   CARD_MIN_SHARP_PX,
   CARD_RECOMMENDED_PX,
   cropAt,
   croppedImageStyle,
+  resizeCropFromCorner,
   zoomAndCenterOf,
 } from "../../lib/imageCrop";
-import type { ImageCrop } from "../../lib/imageCrop";
+import type { CropCorner, ImageCrop } from "../../lib/imageCrop";
 
 const MAX_ZOOM = 4;
-const PREVIEW_WIDTH = 402; // the 335pt card at 1.2x
+const CORNERS: CropCorner[] = ["nw", "ne", "sw", "se"];
 
 /** The upload guidance shown before and after an image is chosen. */
 export function CardImageSizeHint() {
@@ -25,14 +26,19 @@ export function CardImageSizeHint() {
   );
 }
 
+type Drag =
+  | { mode: "move"; from: { x: number; y: number }; center: { x: number; y: number } }
+  | { mode: "resize"; corner: CropCorner; crop: ImageCrop };
+
 /**
  * Choose which part of an uploaded image a Classes-tab carousel card shows.
  *
- * The preview is the card's exact 15:8 shape, drawn the way the app draws it
- * (the same `croppedImageStyle`). Drag the picture (or use the arrow keys) to
- * move it; the slider zooms in. Below, the whole image with the chosen area
- * outlined. `value` null means "not chosen": the app's centred cover crop,
- * which is also where the editor starts.
+ * Left: the whole upload with the card-shaped (15:8) area over it; what lies
+ * outside is dimmed. Drag the area to move it, drag a corner to resize it,
+ * or click elsewhere on the image to move it there (arrow keys and +/− work
+ * too). Right, updating as you go: the card as the app draws it, with the
+ * same `croppedImageStyle`. `value` null means "not chosen": the app's
+ * centred cover crop, which is also where the editor starts.
  */
 export function ImageCropField({
   imageUrl,
@@ -45,7 +51,9 @@ export function ImageCropField({
 }) {
   const [natural, setNatural] = useState<{ width: number; height: number } | null>(null);
   const [failed, setFailed] = useState(false);
-  const drag = useRef<{ x: number; y: number; center: { x: number; y: number } } | null>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const drag = useRef<Drag | null>(null);
+  const whereId = useId();
 
   useEffect(() => {
     setNatural(null);
@@ -65,23 +73,43 @@ export function ImageCropField({
   const fits = Math.abs(imageAspect - CARD_ASPECT) / CARD_ASPECT < 0.01;
   const shownPx = { width: Math.round(crop.width * natural.width), height: Math.round(crop.height * natural.height) };
   const soft = shownPx.width < CARD_MIN_SHARP_PX.width;
+  const area = {
+    left: `${crop.x * 100}%`,
+    top: `${crop.y * 100}%`,
+    width: `${crop.width * 100}%`,
+    height: `${crop.height * 100}%`,
+  };
 
   const set = (nextZoom: number, nextCenter: { x: number; y: number }) =>
     onChange(cropAt(natural, nextZoom, nextCenter));
 
+  /** The pointer as fractions of the image (it may run past its edges). */
+  function at(e: PointerEvent<HTMLDivElement>) {
+    const box = canvasRef.current!.getBoundingClientRect();
+    return { x: (e.clientX - box.left) / box.width, y: (e.clientY - box.top) / box.height };
+  }
   function onPointerDown(e: PointerEvent<HTMLDivElement>) {
-    e.currentTarget.setPointerCapture(e.pointerId);
-    drag.current = { x: e.clientX, y: e.clientY, center };
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    const p = at(e);
+    const corner = (e.target as HTMLElement).dataset.corner as CropCorner | undefined;
+    if (corner) {
+      drag.current = { mode: "resize", corner, crop };
+      return;
+    }
+    const inside = p.x >= crop.x && p.x <= crop.x + crop.width && p.y >= crop.y && p.y <= crop.y + crop.height;
+    // A click outside the area brings the area there, then drags on from it.
+    const from = inside ? center : p;
+    if (!inside) set(zoom, p);
+    drag.current = { mode: "move", from: p, center: from };
   }
   function onPointerMove(e: PointerEvent<HTMLDivElement>) {
-    const start = drag.current;
-    if (!start) return;
-    const box = e.currentTarget.getBoundingClientRect();
-    // Moving the picture right shows more of its left: the centre moves left
-    // by the dragged share of what the frame shows.
-    const dx = ((e.clientX - start.x) / box.width) * crop.width;
-    const dy = ((e.clientY - start.y) / box.height) * crop.height;
-    set(zoom, { x: start.center.x - dx, y: start.center.y - dy });
+    const d = drag.current;
+    if (!d) return;
+    const p = at(e);
+    if (d.mode === "resize") onChange(resizeCropFromCorner(natural!, d.crop, d.corner, p, MAX_ZOOM));
+    else set(zoom, { x: d.center.x + p.x - d.from.x, y: d.center.y + p.y - d.from.y });
   }
   function onPointerUp() {
     drag.current = null;
@@ -94,49 +122,68 @@ export function ImageCropField({
       ArrowUp: [0, -step * crop.height],
       ArrowDown: [0, step * crop.height],
     };
-    const move = moves[e.key];
-    if (!move) return;
-    e.preventDefault();
-    set(zoom, { x: center.x + move[0], y: center.y + move[1] });
+    const zooms: Record<string, number> = { "+": 0.1, "=": 0.1, "-": -0.1, _: -0.1 };
+    if (moves[e.key]) {
+      e.preventDefault();
+      set(zoom, { x: center.x + moves[e.key][0], y: center.y + moves[e.key][1] });
+    } else if (zooms[e.key]) {
+      e.preventDefault();
+      set(Math.min(MAX_ZOOM, Math.max(1, zoom + zooms[e.key])), center);
+    }
   }
 
   return (
     <div className="hgadm-crop">
-      <div className="hgadm-crop__meta">
-        <span>
-          올린 이미지 {natural.width} × {natural.height}px · 앱에 보이는 영역 {shownPx.width} × {shownPx.height}px
-        </span>
-        {fits ? (
-          <span className="hgadm-crop__ok">권장 비율과 같아 그대로 맞아요.</span>
-        ) : (
-          <span className="hgadm-crop__warn">
-            비율이 {CARD_ASPECT_LABEL}와 달라 일부만 보여요. 아래에서 보일 부분을 드래그해 고르세요.
-          </span>
-        )}
-        {soft && (
-          <span className="hgadm-crop__warn">
-            보이는 영역이 {CARD_MIN_SHARP_PX.width}px보다 좁아 휴대폰에서 흐리게 보일 수 있어요.
-          </span>
-        )}
+      <div className="hgadm-crop__editor">
+        <div className="hgadm-crop__label">보일 영역 고르기</div>
+        <div className="hgadm-crop__stage">
+          <div
+            ref={canvasRef}
+            className="hgadm-crop__canvas"
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerUp}
+          >
+            <img src={imageUrl} alt="올린 이미지 전체" draggable={false} />
+            <div className="hgadm-crop__shade" aria-hidden="true">
+              <span style={area} />
+            </div>
+            <div
+              className="hgadm-crop__box"
+              role="group"
+              tabIndex={0}
+              aria-label="노출 영역 (드래그해 옮기고, 모서리를 끌어 크기 조절 · 방향키로 이동, +/−로 확대·축소)"
+              aria-describedby={whereId}
+              style={area}
+              onKeyDown={onKeyDown}
+            >
+              <span id={whereId} className="hgadm-crop__where">
+                가로 {Math.round(crop.x * 100)}%, 세로 {Math.round(crop.y * 100)}%에서 시작, {zoom.toFixed(1)}배
+              </span>
+              <span className="hgadm-crop__thirds" aria-hidden="true" />
+              {CORNERS.map((c) => (
+                <span key={c} className={`hgadm-crop__handle is-${c}`} data-corner={c} aria-hidden="true" />
+              ))}
+            </div>
+          </div>
+        </div>
+        <p className="hgadm-crop__help">
+          밝은 영역이 앱에 보여요. 영역을 끌어 옮기고, 모서리를 끌어 크기를 바꾸거나, 이미지의 다른 곳을 눌러 그리로
+          옮기세요.
+        </p>
       </div>
 
-      <div
-        className="hgadm-crop__frame"
-        style={{ width: PREVIEW_WIDTH, aspectRatio: "15 / 8" }}
-        role="slider"
-        tabIndex={0}
-        aria-label="노출 영역 위치 (드래그하거나 방향키로 이동)"
-        aria-valuetext={`가로 ${Math.round(crop.x * 100)}%, 세로 ${Math.round(crop.y * 100)}%에서 시작`}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-        onKeyDown={onKeyDown}
-      >
-        <img src={imageUrl} alt="앱 카드 미리보기" draggable={false} style={croppedImageStyle(crop)} />
-      </div>
+      <div className="hgadm-crop__side">
+        <div className="hgadm-crop__label">앱에서 보이는 모습</div>
+        {/* The Classes-tab band and card, scaled down: same shape, corner and
+            shadow, drawn with the app's own crop style. */}
+        <div className="hgadm-crop__band">
+          <div className="hgadm-crop__card">
+            <img src={imageUrl} alt="앱 카드 미리보기" draggable={false} style={croppedImageStyle(crop)} />
+          </div>
+        </div>
 
-      <div className="hgadm-crop__controls">
         <label className="hgadm-crop__zoom">
           확대
           <input
@@ -152,19 +199,23 @@ export function ImageCropField({
         <button type="button" className="hgadm-crop__reset" onClick={() => onChange(null)} disabled={!value}>
           가운데 기본값으로
         </button>
-      </div>
 
-      <div className="hgadm-crop__overview" aria-hidden="true">
-        <img src={imageUrl} alt="" draggable={false} />
-        <span
-          className="hgadm-crop__area"
-          style={{
-            left: `${crop.x * 100}%`,
-            top: `${crop.y * 100}%`,
-            width: `${crop.width * 100}%`,
-            height: `${crop.height * 100}%`,
-          }}
-        />
+        <div className="hgadm-crop__meta">
+          <span>올린 이미지 {natural.width} × {natural.height}px</span>
+          <span>앱에 보이는 영역 {shownPx.width} × {shownPx.height}px</span>
+          {fits ? (
+            <span className="hgadm-crop__ok">권장 비율과 같아 그대로 맞아요.</span>
+          ) : (
+            <span className="hgadm-crop__warn">
+              비율이 {CARD_ASPECT_LABEL}와 달라 일부만 보여요. 왼쪽에서 보일 영역을 고르세요.
+            </span>
+          )}
+          {soft && (
+            <span className="hgadm-crop__warn">
+              보이는 영역이 {CARD_MIN_SHARP_PX.width}px보다 좁아 휴대폰에서 흐리게 보일 수 있어요.
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
