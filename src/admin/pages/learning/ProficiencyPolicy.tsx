@@ -81,7 +81,7 @@ export function ProficiencyPolicyPage() {
 
       <div className="hgadm-card">
         <h3 className="hgadm-card__title">레벨별 필수 역량 ({p.conversation.framework_version})</h3>
-        <table className="hgadm-table">
+        <div className="hgadm-table-wrap"><table className="hgadm-table">
           <thead>
             <tr>
               <th>레벨</th>
@@ -98,7 +98,7 @@ export function ProficiencyPolicyPage() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       </div>
 
       <div className="hgadm-grid-2">
@@ -139,7 +139,7 @@ export function ProficiencyPolicyPage() {
               ["보정·검증 분할 누수", `학습자 ${v.leakage.learners_in_both_splits.length} · 과제 유형 ${v.leakage.families_in_both_splits.length}`],
             ]}
           />
-          <table className="hgadm-table">
+          <div className="hgadm-table-wrap"><table className="hgadm-table">
             <thead>
               <tr>
                 <th>비교</th>
@@ -161,7 +161,7 @@ export function ProficiencyPolicyPage() {
                 <AgreementRow key={`rc-${k}`} label={`녹음 조건 ${k}`} a={a} />
               ))}
             </tbody>
-          </table>
+          </table></div>
         </div>
       )}
     </div>

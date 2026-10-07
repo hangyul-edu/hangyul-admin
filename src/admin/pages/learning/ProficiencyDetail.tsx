@@ -211,7 +211,7 @@ function DimensionTrends({ d }: { d: ProficiencyDetail }) {
   return (
     <div className="hgadm-card">
       <h3 className="hgadm-card__title">루브릭 차원 추이 (같은 목표 레벨·루브릭 안에서만 비교)</h3>
-      <table className="hgadm-table">
+      <div className="hgadm-table-wrap"><table className="hgadm-table">
         <thead>
           <tr>
             <th>목표</th>
@@ -232,7 +232,7 @@ function DimensionTrends({ d }: { d: ProficiencyDetail }) {
             </tr>
           ))}
         </tbody>
-      </table>
+      </table></div>
       <p className="hgadm-cell-sub">* 신뢰되지 않은 채점(개발용·모의 채점) — 판정에 쓰이지 않습니다.</p>
     </div>
   );
@@ -287,8 +287,10 @@ function CoverageChart({ series }: { series: GrowthView["series"] }) {
   const h = 140;
   const t0 = new Date(series[0].at).getTime();
   const t1 = new Date(series[series.length - 1].at).getTime();
-  const x = (at: string) => (t1 === t0 ? w / 2 : ((new Date(at).getTime() - t0) / (t1 - t0)) * (w - 20) + 10);
-  const y = (pct: number) => h - 10 - (pct / 100) * (h - 20);
+  // Left gutter for the axis labels, top band for the segment labels.
+  const left = 40;
+  const x = (at: string) => (t1 === t0 ? (w + left) / 2 : ((new Date(at).getTime() - t0) / (t1 - t0)) * (w - left - 16) + left);
+  const y = (pct: number) => h - 10 - (pct / 100) * (h - 34);
   // One line per comparable segment (target level + policy). A change of
   // target or policy is a discontinuity, never drawn as a continuous line.
   const segments: GrowthView["series"][] = [];
@@ -301,8 +303,8 @@ function CoverageChart({ series }: { series: GrowthView["series"] }) {
     <svg className="hgadm-prof-chart" viewBox={`0 0 ${w} ${h}`} role="img" aria-label="필수 역량 확인 비율 추이(목표 레벨별 구간)">
       {[0, 50, 100].map((g) => (
         <g key={g}>
-          <line x1={0} x2={w} y1={y(g)} y2={y(g)} className="hgadm-prof-chart__grid" />
-          <text x={2} y={y(g) - 2} className="hgadm-prof-chart__label">
+          <line x1={left} x2={w} y1={y(g)} y2={y(g)} className="hgadm-prof-chart__grid" />
+          <text x={left - 6} y={y(g) + 3} textAnchor="end" className="hgadm-prof-chart__label">
             {g}%
           </text>
         </g>
@@ -313,7 +315,12 @@ function CoverageChart({ series }: { series: GrowthView["series"] }) {
           {seg.map((p) => (
             <circle key={p.at} cx={x(p.at)} cy={y(p.pct)} r={3} />
           ))}
-          <text x={x(seg[0].at) + 4} y={12} className="hgadm-prof-chart__label">
+          <text
+            x={x(seg[0].at)}
+            y={12}
+            textAnchor={x(seg[0].at) > w - 60 ? "end" : "start"}
+            className="hgadm-prof-chart__label"
+          >
             레벨 {seg[0].target_level}
           </text>
         </g>
@@ -374,7 +381,7 @@ function GrowthPanel({ userId, track }: { userId: string; track: ProficiencyTrac
       </div>
       <div className="hgadm-card">
         <h3 className="hgadm-card__title">비교 가능한 점수 추이</h3>
-        <table className="hgadm-table">
+        <div className="hgadm-table-wrap"><table className="hgadm-table">
           <thead>
             <tr>
               <th>목표·루브릭·과제 유형</th>
@@ -404,7 +411,7 @@ function GrowthPanel({ userId, track }: { userId: string; track: ProficiencyTrac
               </tr>
             )}
           </tbody>
-        </table>
+        </table></div>
         <p className="hgadm-cell-sub">과제 변형끼리 동등화되지 않았으므로 같은 목표 레벨·루브릭·과제 유형 안에서만 비교합니다.</p>
       </div>
       <div className="hgadm-card">
@@ -440,7 +447,7 @@ function EvidencePanel({ userId, track, canCorrect, canTranscripts }: { userId: 
   if (track === "topik") {
     return (
       <div className="hgadm-card">
-        <table className="hgadm-table">
+        <div className="hgadm-table-wrap"><table className="hgadm-table">
           <thead>
             <tr>
               <th>시작</th>
@@ -461,7 +468,7 @@ function EvidencePanel({ userId, track, canCorrect, canTranscripts }: { userId: 
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       </div>
     );
   }
@@ -557,7 +564,7 @@ function HistoryPanel({ d, track }: { d: ProficiencyDetail; track: ProficiencyTr
       </div>
       <div className="hgadm-card">
         <h3 className="hgadm-card__title">학습 난이도 변경 이력</h3>
-        <table className="hgadm-table">
+        <div className="hgadm-table-wrap"><table className="hgadm-table">
           <thead>
             <tr>
               <th>시각</th>
@@ -583,7 +590,7 @@ function HistoryPanel({ d, track }: { d: ProficiencyDetail; track: ProficiencyTr
               </tr>
             )}
           </tbody>
-        </table>
+        </table></div>
         <p className="hgadm-cell-sub">
           &quot;기존 활동 기반 진급(레거시)&quot;은 폐지된 &quot;5문제 정답&quot; 규칙의 기록이며, 확인된 실력 레벨로 인정하지 않습니다.
         </p>
