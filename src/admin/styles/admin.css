@@ -867,6 +867,21 @@ body {
   color: var(--danger);
   font-weight: 600;
 }
+/* Invoice retry dialog: the rule that applies, or the attempt's outcome. */
+.hgadm-retry__note,
+.hgadm-retry__blocked,
+.hgadm-retry__outcome {
+  margin: 12px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.hgadm-retry__blocked {
+  color: var(--danger);
+  font-weight: 600;
+}
+.hgadm-retry__outcome {
+  font-weight: 600;
+}
 .hgadm-input,
 .hgadm-select,
 .hgadm-textarea {

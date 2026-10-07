@@ -169,6 +169,10 @@ const ACTION_COPY: Record<string, ActionCopy> = {
     ko: "결제 환불",
     en: "Refunded a payment",
   },
+  "POST /admin/commerce/invoices/{invoice_id}/retry": {
+    ko: "청구서 결제 재시도",
+    en: "Retried an unpaid invoice",
+  },
 
   // ---- Plans -------------------------------------------------------------
   "POST /admin/subscriptions/plans": { ko: "요금제 생성", en: "Created a plan" },

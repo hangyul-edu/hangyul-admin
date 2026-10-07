@@ -513,6 +513,34 @@ export interface AdminRefundResult {
   invoice_status: string;
 }
 
+/** GET /admin/commerce/invoices/{invoice_id}/retry-eligibility — whether an
+ *  operator retry would be accepted now, and if not why (`reason`). */
+export interface AdminRetryEligibility {
+  invoice_id: string;
+  allowed: boolean;
+  reason: string | null;
+  error_code: string | null;
+  message: string;
+  retry_after: string | null;
+  /** The last charge is undecided: a retry re-asks about it, it cannot charge twice. */
+  replays_pending: boolean;
+  manual_retries_today: number;
+  manual_retry_limit: number;
+  attempts: number;
+  max_attempts: number;
+}
+
+/** POST /admin/commerce/invoices/{invoice_id}/retry — the attempt made. */
+export interface AdminRetryResult {
+  invoice_id: string;
+  invoice_status: string;
+  attempt_id: string;
+  attempt_no: number;
+  attempt_status: string;
+  failure_class: string | null;
+  failure_code: string | null;
+}
+
 // ---- Plans -----------------------------------------------------------------
 
 /** What a plan's subscribers may use — the values access checks compare
@@ -1105,6 +1133,12 @@ export const adminApi = {
       `/admin/commerce/payments/${encodeURIComponent(paymentId)}/refund`,
       body,
     ),
+  invoiceRetryEligibility: (invoiceId: string) =>
+    http.get<AdminRetryEligibility>(
+      `/admin/commerce/invoices/${encodeURIComponent(invoiceId)}/retry-eligibility`,
+    ),
+  retryInvoice: (invoiceId: string) =>
+    http.post<AdminRetryResult>(`/admin/commerce/invoices/${encodeURIComponent(invoiceId)}/retry`, {}),
 
   // Plans
   listPlans: () => http.get<{ plans: Plan[] }>("/admin/subscriptions/plans"),

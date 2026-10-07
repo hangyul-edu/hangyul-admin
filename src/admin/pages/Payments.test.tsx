@@ -10,10 +10,13 @@ import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ToastProvider } from "../../hooks/toast";
 import { ApiError } from "../../lib/http";
-import type { AdminPaymentRow } from "../api";
+import type { AdminInvoiceRow, AdminPaymentRow } from "../api";
 
 const listPayments = vi.fn();
 const refundPayment = vi.fn();
+const listInvoices = vi.fn();
+const invoiceRetryEligibility = vi.fn();
+const retryInvoice = vi.fn();
 let scopes = new Set<string>(["commerce:read", "commerce:write"]);
 
 vi.mock("../api", async () => {
@@ -24,12 +27,16 @@ vi.mock("../api", async () => {
       ...actual.adminApi,
       listPayments: (q: unknown) => listPayments(q),
       refundPayment: (id: string, body: unknown) => refundPayment(id, body),
+      listInvoices: (q: unknown) => listInvoices(q),
+      invoiceRetryEligibility: (id: string) => invoiceRetryEligibility(id),
+      retryInvoice: (id: string) => retryInvoice(id),
     },
   };
 });
 vi.mock("../auth", () => ({ useAdminAuth: () => ({ can: (s: string) => scopes.has(s) }) }));
 
-const { PaymentsPage, parseRefundAmount, refundErrorMessage } = await import("./Payments");
+const { PaymentsPage, parseRefundAmount, refundErrorMessage, retryBlockedMessage, retryErrorMessage } =
+  await import("./Payments");
 
 function row(overrides: Partial<AdminPaymentRow> = {}): AdminPaymentRow {
   return {
@@ -54,12 +61,12 @@ function page(items: AdminPaymentRow[]) {
   return { items, total: items.length, page: 1, page_size: 25 };
 }
 
-function renderPage() {
+function renderPage(path = "/payments") {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
       <ToastProvider>
-        <MemoryRouter initialEntries={["/payments"]}>
+        <MemoryRouter initialEntries={[path]}>
           <PaymentsPage />
         </MemoryRouter>
       </ToastProvider>
@@ -70,6 +77,9 @@ function renderPage() {
 beforeEach(() => {
   listPayments.mockReset();
   refundPayment.mockReset();
+  listInvoices.mockReset();
+  invoiceRetryEligibility.mockReset();
+  retryInvoice.mockReset();
   scopes = new Set(["commerce:read", "commerce:write"]);
 });
 
@@ -206,5 +216,126 @@ describe("helpers", () => {
       "환불 가능한 금액을 넘었습니다",
     );
     expect(refundErrorMessage(new ApiError(404, "billing.payment_not_found", "x"))).toBe("결제를 찾을 수 없습니다.");
+  });
+});
+
+/* ------------------------------ invoice retries ------------------------------ */
+
+function invoice(overrides: Partial<AdminInvoiceRow> = {}): AdminInvoiceRow {
+  return {
+    invoice_id: "inv_5d1e8a0c44",
+    user_id: "usr_member_01",
+    user_email: "member@talkhangyul.co.kr",
+    subscription_id: "sub_1",
+    plan_name: "프리미엄 월간",
+    subtotal_cents: 9900,
+    discount_cents: 0,
+    total_cents: 9900,
+    refunded_cents: 0,
+    currency: "KRW",
+    status: "open",
+    coupon_code: null,
+    paid_at: null,
+    created_at: "2026-10-01T00:00:00Z",
+    ...overrides,
+  };
+}
+
+function eligibility(overrides: Record<string, unknown> = {}) {
+  return {
+    invoice_id: "inv_5d1e8a0c44",
+    allowed: true,
+    reason: null,
+    error_code: null,
+    message: "",
+    retry_after: null,
+    replays_pending: false,
+    manual_retries_today: 1,
+    manual_retry_limit: 3,
+    attempts: 2,
+    max_attempts: 10,
+    ...overrides,
+  };
+}
+
+async function openRetry() {
+  renderPage("/payments?tab=invoices");
+  await userEvent.click(await screen.findByRole("button", { name: "결제 재시도" }));
+  return screen.findByRole("dialog");
+}
+
+describe("retrying an invoice", () => {
+  it("offers a retry only on open or unpaid invoices, and only with commerce:write", async () => {
+    listInvoices.mockResolvedValue({
+      items: [invoice(), invoice({ invoice_id: "inv_paid", status: "paid" })],
+      total: 2,
+      page: 1,
+      page_size: 25,
+    });
+    const { unmount } = renderPage("/payments?tab=invoices");
+    expect(await screen.findAllByRole("button", { name: "결제 재시도" })).toHaveLength(1);
+    unmount();
+
+    scopes = new Set(["commerce:read"]);
+    renderPage("/payments?tab=invoices");
+    await screen.findAllByText("member@talkhangyul.co.kr");
+    expect(screen.queryByRole("button", { name: "결제 재시도" })).not.toBeInTheDocument();
+  });
+
+  it("shows the counters, retries, and reports the outcome", async () => {
+    listInvoices.mockResolvedValue({ items: [invoice()], total: 1, page: 1, page_size: 25 });
+    invoiceRetryEligibility.mockResolvedValue(eligibility());
+    retryInvoice.mockResolvedValue({
+      invoice_id: "inv_5d1e8a0c44",
+      invoice_status: "open",
+      attempt_id: "pa_3",
+      attempt_no: 3,
+      attempt_status: "failed",
+      failure_class: "insufficient_funds",
+      failure_code: "REJECT_CARD_PAYMENT",
+    });
+    const dialog = await openRetry();
+    expect(await within(dialog).findByText("1/3")).toBeInTheDocument();
+    expect(within(dialog).getByText("2/10")).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole("button", { name: "지금 결제 시도" }));
+    expect(retryInvoice).toHaveBeenCalledWith("inv_5d1e8a0c44");
+    expect(await within(dialog).findByText(/결제가 거절되었습니다 \(시도 #3, insufficient_funds\)/)).toBeInTheDocument();
+    // One attempt per dialog: the send button is gone once it ran.
+    expect(within(dialog).queryByRole("button", { name: "지금 결제 시도" })).not.toBeInTheDocument();
+  });
+
+  it("explains a blocked retry before anything is sent", async () => {
+    listInvoices.mockResolvedValue({ items: [invoice()], total: 1, page: 1, page_size: 25 });
+    invoiceRetryEligibility.mockResolvedValue(
+      eligibility({
+        allowed: false,
+        reason: "cooldown",
+        error_code: "billing.retry_limit_reached",
+        retry_after: "2026-10-01T00:10:00Z",
+      }),
+    );
+    const dialog = await openRetry();
+    expect(await within(dialog).findByText(/방금 결제를 시도했습니다/)).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "지금 결제 시도" })).toBeDisabled();
+    expect(retryInvoice).not.toHaveBeenCalled();
+  });
+
+  it("shows the server's reason when the retry is refused at send time", async () => {
+    listInvoices.mockResolvedValue({ items: [invoice()], total: 1, page: 1, page_size: 25 });
+    invoiceRetryEligibility.mockResolvedValue(eligibility());
+    retryInvoice.mockRejectedValue(
+      new ApiError(429, "billing.retry_limit_reached", "x", { reason: "daily_limit", retry_after: null }),
+    );
+    const dialog = await openRetry();
+    await userEvent.click(await within(dialog).findByRole("button", { name: "지금 결제 시도" }));
+    expect(await within(dialog).findByText(/운영자 재시도 한도를 모두 사용했습니다/)).toBeInTheDocument();
+  });
+
+  it("words each refusal for an operator", () => {
+    expect(retryBlockedMessage("obsolete")).toMatch(/현재 결제 기간의 청구서가 아닙니다/);
+    expect(retryBlockedMessage("method_unusable")).toMatch(/새 결제수단을 등록해야/);
+    expect(retryBlockedMessage("attempt_cap")).toMatch(/10회/);
+    expect(retryErrorMessage(new ApiError(409, "billing.charge_in_progress", "x"))).toMatch(/처리 중/);
+    expect(retryErrorMessage(new ApiError(409, "billing.cannot_retry_paid", "x"))).toBe("이미 결제된 청구서입니다.");
   });
 });

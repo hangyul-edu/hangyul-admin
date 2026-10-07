@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { adminApi } from "../api";
-import type { AdminInvoiceRow, AdminPaymentRow } from "../api";
+import type { AdminInvoiceRow, AdminPaymentRow, AdminRetryResult } from "../api";
 import { ApiError, errorMessage } from "../../lib/http";
 import { randomUuid } from "../../lib/uuid";
 import { useToast } from "../../hooks/toast";
@@ -198,6 +198,167 @@ function RefundDialog({
   );
 }
 
+/**
+ * Why an operator retry is refused (`reason` from retry-eligibility, or
+ * `details.reason` of a refused POST …/retry), in the operator's words.
+ * Each charge is a real authorisation at the card company, so retries are
+ * spaced (10 minutes on the same card), counted (3 per 24 hours by operators,
+ * separately from the member's 3) and capped (10 attempts per invoice).
+ */
+export function retryBlockedMessage(reason: string | null | undefined, retryAfter?: string | null): string {
+  const after = retryAfter ? formatDateTime(retryAfter) : null;
+  switch (reason) {
+    case "paid":
+      return "이미 결제된 청구서입니다.";
+    case "closed":
+      return "무효 또는 환불된 청구서라 더 이상 결제할 수 없습니다.";
+    case "obsolete":
+      return "현재 결제 기간의 청구서가 아닙니다. 이전 기간의 청구서는 재시도하면 지금 기간을 예전 금액으로 결제하게 되어 막혀 있습니다.";
+    case "cancelled":
+      return "구독이 해지되어 있습니다. 회원이 구독을 재개한 뒤에 재시도할 수 있습니다.";
+    case "in_progress":
+      return "이전 결제 시도가 아직 결제사에서 처리 중입니다. 결과가 기록된 뒤 다시 확인해 주세요.";
+    case "cooldown":
+      return `같은 결제수단으로 방금 결제를 시도했습니다. 카드사 연속 승인 제한을 피하려고 10분 간격을 둡니다${
+        after ? ` (${after} 이후 가능)` : ""
+      }.`;
+    case "daily_limit":
+      return `이 청구서는 지난 24시간 동안 운영자 재시도 한도를 모두 사용했습니다${after ? ` (${after} 이후 가능)` : ""}.`;
+    case "attempt_cap":
+      return "이 청구서는 허용된 결제 시도 횟수(10회)를 모두 사용했습니다. 회원에게 새 결제수단 등록이나 재구독을 안내해 주세요.";
+    case "no_payment_method":
+      return "결제할 수 있는 결제수단이 없습니다. 회원이 결제수단을 등록해야 합니다.";
+    case "method_unusable":
+      return "청구될 결제수단이 만료·해지되었거나 통화가 맞지 않아 재시도해도 실패합니다. 회원이 새 결제수단을 등록해야 합니다.";
+    default:
+      return "지금은 이 청구서를 재시도할 수 없습니다.";
+  }
+}
+
+/** Operator-facing sentence for a retry the server refused or could not run. */
+export function retryErrorMessage(error: unknown): string {
+  if (error instanceof ApiError) {
+    const reason = typeof error.details?.reason === "string" ? error.details.reason : null;
+    const retryAfter = typeof error.details?.retry_after === "string" ? error.details.retry_after : null;
+    if (reason) return retryBlockedMessage(reason, retryAfter);
+    switch (error.code) {
+      case "billing.cannot_retry_paid":
+        return retryBlockedMessage("paid");
+      case "billing.charge_in_progress":
+        return retryBlockedMessage("in_progress");
+      case "billing.invoice_not_found":
+        return "청구서를 찾을 수 없습니다.";
+      case "billing.key_management_unavailable":
+        return "결제 키를 읽을 수 없어 결제를 보내지 않았습니다. 잠시 뒤 다시 시도해 주세요.";
+    }
+  }
+  return errorMessage(error);
+}
+
+/** The outcome of an operator retry, in one sentence. */
+export function retryOutcomeMessage(result: AdminRetryResult): string {
+  if (result.invoice_status === "paid") return `결제되었습니다 (시도 #${result.attempt_no}).`;
+  if (result.attempt_status === "failed") {
+    return `결제가 거절되었습니다 (시도 #${result.attempt_no}${result.failure_class ? `, ${result.failure_class}` : ""}). 자동 재시도 일정은 그대로 이어집니다.`;
+  }
+  return `결제사가 아직 결과를 주지 않았습니다 (시도 #${result.attempt_no}). 결제 스윕이 같은 요청으로 다시 확인합니다.`;
+}
+
+function RetryDialog({ invoice, onClose }: { invoice: AdminInvoiceRow; onClose: () => void }) {
+  const qc = useQueryClient();
+  const [result, setResult] = useState<AdminRetryResult | null>(null);
+  const [failure, setFailure] = useState<string | null>(null);
+
+  const eligibility = useQuery({
+    queryKey: ["admin", "invoice-retry", invoice.invoice_id],
+    queryFn: () => adminApi.invoiceRetryEligibility(invoice.invoice_id),
+    staleTime: 0,
+  });
+
+  const retry = useMutation({
+    mutationFn: () => adminApi.retryInvoice(invoice.invoice_id),
+    onSuccess: (outcome) => {
+      setResult(outcome);
+      setFailure(null);
+    },
+    onError: (error) => {
+      setFailure(retryErrorMessage(error));
+      void eligibility.refetch();
+    },
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: ["admin", "invoices"] });
+      void qc.invalidateQueries({ queryKey: ["admin", "payments"] });
+    },
+  });
+
+  const info = eligibility.data;
+  const canSend = !!info?.allowed && !result && !retry.isPending;
+
+  return (
+    <Modal
+      open
+      title="결제 재시도"
+      onClose={retry.isPending ? () => {} : onClose}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose} disabled={retry.isPending}>
+            {result ? "닫기" : "취소"}
+          </Button>
+          {!result && (
+            <Button
+              variant="primary"
+              disabled={!canSend}
+              loading={retry.isPending}
+              onClick={() => retry.mutate()}
+            >
+              지금 결제 시도
+            </Button>
+          )}
+        </>
+      }
+    >
+      <Dl
+        items={[
+          ["회원", invoice.user_email ?? "(탈퇴한 사용자)"],
+          ["요금제", invoice.plan_name],
+          ["금액", formatMoney(invoice.total_cents, invoice.currency)],
+          ["상태", statusLabel(invoice.status)],
+          ...(info
+            ? ([
+                ["오늘 재시도", `${info.manual_retries_today}/${info.manual_retry_limit}`],
+                ["시도", `${info.attempts}/${info.max_attempts}`],
+              ] as [string, string][])
+            : []),
+        ]}
+      />
+      {eligibility.isPending ? (
+        <LoadingState />
+      ) : eligibility.isError ? (
+        <ErrorState message={retryErrorMessage(eligibility.error)} onRetry={() => void eligibility.refetch()} />
+      ) : result ? (
+        <p className="hgadm-retry__outcome" role="status">
+          {retryOutcomeMessage(result)}
+        </p>
+      ) : info?.allowed ? (
+        <p className="hgadm-retry__note">
+          {info.replays_pending
+            ? "이전 결제가 결제사에서 아직 결정되지 않았습니다. 같은 요청(같은 멱등키)으로 결과를 다시 확인하므로 중복 결제되지 않습니다."
+            : "회원의 기본 결제수단으로 지금 바로 결제를 시도합니다. 시도와 결과는 감사 로그에 기록됩니다."}
+        </p>
+      ) : (
+        <p className="hgadm-retry__blocked" role="alert">
+          {retryBlockedMessage(info?.reason, info?.retry_after)}
+        </p>
+      )}
+      {failure && (
+        <span className="hgadm-field__error" role="alert">
+          {failure}
+        </span>
+      )}
+    </Modal>
+  );
+}
+
 export function PaymentsPage() {
   const [params, setParams] = useSearchParams();
   const tab = params.get("tab") === "invoices" ? "invoices" : "payments";
@@ -364,9 +525,12 @@ function PaymentsTab() {
 
 function InvoicesTab() {
   const navigate = useNavigate();
+  const { can } = useAdminAuth();
+  const canRetry = can("commerce:write");
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
+  const [retrying, setRetrying] = useState<AdminInvoiceRow | null>(null);
   const pageSize = 25;
 
   const query = useQuery({
@@ -413,9 +577,30 @@ function InvoicesTab() {
     { key: "paid", header: "결제일", render: (inv) => formatDateTime(inv.paid_at) },
     { key: "created", header: "생성일", render: (inv) => formatDateTime(inv.created_at) },
   ];
+  if (canRetry) {
+    columns.push({
+      key: "actions",
+      header: "",
+      render: (inv) =>
+        inv.status === "open" || inv.status === "unpaid" ? (
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={(e) => {
+              // The row itself opens the member.
+              e.stopPropagation();
+              setRetrying(inv);
+            }}
+          >
+            결제 재시도
+          </Button>
+        ) : null,
+    });
+  }
 
   return (
     <div className="hgadm-card">
+      {retrying && <RetryDialog invoice={retrying} onClose={() => setRetrying(null)} />}
       <div className="hgadm-toolbar">
         <SearchBox
           value={q}
