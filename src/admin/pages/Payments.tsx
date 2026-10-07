@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { adminApi } from "../api";
 import type { AdminInvoiceRow, AdminPaymentRow } from "../api";
 import { ApiError, errorMessage } from "../../lib/http";
+import { randomUuid } from "../../lib/uuid";
 import { useToast } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
 import {
@@ -84,6 +85,9 @@ function RefundDialog({
   const [reason, setReason] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
+  // One id for this refund dialog: a retry after an unknown outcome (502)
+  // re-sends it, so Toss answers the first request instead of refunding twice.
+  const [requestId] = useState(() => randomUuid());
 
   const amountCents = parseRefundAmount(amount, payment.currency);
   const amountError =
@@ -103,6 +107,7 @@ function RefundDialog({
       adminApi.refundPayment(payment.payment_id, {
         amount_cents: amountCents ?? undefined,
         reason: reason.trim(),
+        request_id: requestId,
       }),
     onSuccess: (result) => {
       toast.success(`${formatMoney(result.refund_amount_cents, result.currency)}을 환불했습니다.`);

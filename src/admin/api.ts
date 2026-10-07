@@ -498,6 +498,9 @@ export interface AdminPaymentRow {
 export interface AdminRefundRequest {
   amount_cents?: number;
   reason: string;
+  /** New for each refund the admin starts, re-sent unchanged when retrying
+   *  one whose outcome was unknown (502): the provider then never refunds twice. */
+  request_id?: string;
 }
 
 export interface AdminRefundResult {

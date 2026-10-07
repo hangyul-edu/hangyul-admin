@@ -120,7 +120,12 @@ describe("the refund dialog", () => {
     await user.click(within(confirm).getByRole("button", { name: "환불" }));
 
     await waitFor(() =>
-      expect(refundPayment).toHaveBeenCalledWith("pay_7f3a9c2e1b", { amount_cents: 10000, reason: "중복 결제" }),
+      expect(refundPayment).toHaveBeenCalledWith("pay_7f3a9c2e1b", {
+        amount_cents: 10000,
+        reason: "중복 결제",
+        // One id per refund, re-sent on a retry so the provider never refunds twice.
+        request_id: expect.stringMatching(/^[A-Za-z0-9_-]{6,64}$/),
+      }),
     );
     expect(await screen.findByText("₩10,000을 환불했습니다.")).toBeInTheDocument();
     expect(document.body.textContent).not.toContain("pay_7f3a9c2e1b");
@@ -145,7 +150,11 @@ describe("the refund dialog", () => {
     await user.click(within(dialog).getByRole("button", { name: "환불하기" }));
     await user.click(within(screen.getByRole("dialog", { name: "환불할까요?" })).getByRole("button", { name: "환불" }));
     await waitFor(() =>
-      expect(refundPayment).toHaveBeenCalledWith("pay_7f3a9c2e1b", { amount_cents: 550, reason: "부분 환불" }),
+      expect(refundPayment).toHaveBeenCalledWith("pay_7f3a9c2e1b", {
+        amount_cents: 550,
+        reason: "부분 환불",
+        request_id: expect.any(String),
+      }),
     );
   });
 
