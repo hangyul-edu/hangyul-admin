@@ -12,6 +12,7 @@ import { ToastProvider } from "../../hooks/toast";
 import { CatalogImportPage, importBlocker } from "./CatalogImport";
 import { catalogImportApi } from "../catalogImportApi";
 import type { CatalogImportOverview, CatalogJob } from "../catalogImportApi";
+import { ApiError } from "../../lib/http";
 
 vi.mock("../catalogImportApi", async () => {
   const actual = await vi.importActual<typeof import("../catalogImportApi")>("../catalogImportApi");
@@ -112,6 +113,14 @@ describe("CatalogImportPage", () => {
       backup_confirmed: true,
       seed_curriculum: false,
     });
+  });
+});
+
+describe("CatalogImportPage on an outdated server", () => {
+  it("explains a 404 as an API process older than the page", async () => {
+    overviewMock.mockRejectedValue(new ApiError(404, "http_404", "Not Found"));
+    renderPage();
+    expect(await screen.findByText(/API 서버가 이 화면보다 오래된 버전이에요/)).toBeInTheDocument();
   });
 });
 

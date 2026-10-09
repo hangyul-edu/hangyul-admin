@@ -6,7 +6,7 @@ import type { CatalogImportOverview, CatalogJob, PlanSummary } from "../catalogI
 import { Badge, Button, DataTable, Dl, ErrorState, Field, Input, LoadingState, Modal } from "../components/kit";
 import type { Column } from "../components/kit";
 import { formatDateTime } from "../lib/format";
-import { errorMessage } from "../../lib/http";
+import { ApiError, errorMessage } from "../../lib/http";
 import { useToast, useToastError } from "../../hooks/toast";
 
 /**
@@ -111,7 +111,21 @@ export function CatalogImportPage() {
   });
 
   if (query.isLoading) return <LoadingState />;
-  if (query.isError) return <ErrorState message={errorMessage(query.error)} onRetry={() => void query.refetch()} />;
+  if (query.isError) {
+    // A 404 here means the API process predates this page (the admin bundle
+    // was updated, the server was not), not that the catalog is missing.
+    const stale = query.error instanceof ApiError && query.error.status === 404;
+    return (
+      <ErrorState
+        message={
+          stale
+            ? "API 서버가 이 화면보다 오래된 버전이에요. 서버를 최신 코드로 다시 시작하고 마이그레이션(alembic upgrade head)을 적용한 뒤 새로고침하세요."
+            : errorMessage(query.error)
+        }
+        onRetry={() => void query.refetch()}
+      />
+    );
+  }
   const d = query.data!;
   const db = d.database;
   const active = d.active_job;
