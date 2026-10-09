@@ -45,6 +45,7 @@ import { ContentQualityPage } from "./pages/learning/ContentQuality";
 import { RecommendationsPage } from "./pages/learning/Recommendations";
 import { AiOpsPage } from "./pages/learning/AiOps";
 import { DataHealthPage } from "./pages/learning/DataHealth";
+import { CatalogImportPage } from "./pages/CatalogImport";
 import { SystemSettingsPage } from "./pages/SystemSettings";
 import { homeFallback } from "./lib/homeFallback";
 
@@ -144,6 +145,7 @@ const router = createBrowserRouter(
         <Route path="/learning/recommendations" element={<RequireScope scope="analytics:read"><RecommendationsPage /></RequireScope>} />
         <Route path="/learning/ai" element={<RequireScope scope="ai:read"><AiOpsPage /></RequireScope>} />
         <Route path="/learning/data-health" element={<RequireScope scope="ops:read"><DataHealthPage /></RequireScope>} />
+        <Route path="/catalog-import" element={<RequireScope scope="admins:manage"><CatalogImportPage /></RequireScope>} />
         </Route>
         <Route path="/settings" element={<RequireScope scope="settings:read"><SystemSettingsPage /></RequireScope>} />
         <Route path="/audit-logs" element={<RequireScope scope="audit:read"><AuditLogsPage /></RequireScope>} />

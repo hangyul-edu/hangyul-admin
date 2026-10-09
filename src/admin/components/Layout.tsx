@@ -15,6 +15,7 @@ import {
   Clapperboard,
   Clock,
   CreditCard,
+  DatabaseZap,
   HelpCircle,
   Image as ImageIcon,
   LayoutDashboard,
@@ -105,6 +106,8 @@ const NAV: NavGroup[] = [
       { to: "/sentences", icon: PenLine, label: "문장(회화)", scopes: ["content:read"] },
       { to: "/quizzes", icon: HelpCircle, label: "문제(TOPIK)", scopes: ["content:read"] },
       { to: "/ai-content", icon: Bot, label: "AI 생성 검수", scopes: ["content:read"] },
+      // Super-admin only: admins:manage is the scope only that tier holds.
+      { to: "/catalog-import", icon: DatabaseZap, label: "카탈로그 가져오기", scopes: ["admins:manage"] },
     ],
   },
   {

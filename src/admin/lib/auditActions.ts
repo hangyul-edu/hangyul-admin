@@ -235,6 +235,14 @@ const ACTION_COPY: Record<string, ActionCopy> = {
     ko: "기존 콘텐츠 버전 일괄 생성",
     en: "Ran the legacy content-version backfill",
   },
+  "POST /admin/content-catalog/package-import/plan": {
+    ko: "카탈로그 가져오기 계획(모의 실행) 시작",
+    en: "Started a catalog import plan (dry run)",
+  },
+  "POST /admin/content-catalog/package-import/import": {
+    ko: "카탈로그 가져오기 실행",
+    en: "Started a catalog import",
+  },
   "POST /admin/content-catalog/generation-jobs": {
     ko: "콘텐츠 생성 작업 등록",
     en: "Queued a content-generation job",
@@ -322,6 +330,7 @@ export const AUDIT_OBJECT_TYPES: readonly [value: string, label: string][] = [
   ["quizzes", "문제"],
   ["quiz_batch", "문제 일괄 추가"],
   ["content_cleanup", "콘텐츠 일괄 정리"],
+  ["catalog_import_job", "카탈로그 가져오기"],
   ["generated_content", "AI 생성 검수"],
   ["generated-content", "AI 생성 삭제"],
   ["content_version", "콘텐츠 버전 검수·게시"],
