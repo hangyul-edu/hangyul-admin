@@ -56,6 +56,27 @@ describe("UsersPage", () => {
     listUsers.mockReset();
   });
 
+  it("marks a person who withdrew and signed up again with how many times", async () => {
+    const row = {
+      email: "back@talkhangyul.co.kr", name: "돌아온 학습자", nickname: null,
+      phone_masked: null, role: "member", status: "active", subscription_status: null,
+      plan_id: null, plan_name: null, created_at: "2026-07-01T00:00:00Z", deactivated_at: null,
+    };
+    listUsers.mockResolvedValue({
+      items: [
+        { ...row, user_id: "usr_back", reregistration_count: 2 },
+        { ...row, user_id: "usr_new", name: "새 학습자", reregistration_count: 0 },
+      ],
+      total: 2,
+      page: 1,
+      page_size: 25,
+    });
+    renderPage();
+    expect(await screen.findByText("재가입 2회")).toBeInTheDocument();
+    // Only the one who came back carries the badge.
+    expect(screen.getAllByText(/재가입 \d+회/)).toHaveLength(1);
+  });
+
   it("renders users from the API with masked phone and status badges", async () => {
     listUsers.mockResolvedValue({
       items: [
@@ -72,6 +93,7 @@ describe("UsersPage", () => {
           plan_name: "월간 프리미엄",
           created_at: "2026-07-01T00:00:00Z",
           deactivated_at: null,
+          reregistration_count: 0,
         },
       ],
       total: 1,
@@ -115,6 +137,7 @@ describe("UsersPage", () => {
           plan_name: null,
           created_at: "2026-07-01T00:00:00Z",
           deactivated_at: null,
+          reregistration_count: 0,
         },
       ],
       total: 1,
@@ -177,6 +200,7 @@ describe("UsersPage", () => {
           plan_name: null,
           created_at: "2026-09-11T03:09:35Z",
           deactivated_at: null,
+          reregistration_count: 0,
         },
       ],
       total: 1,
@@ -200,7 +224,7 @@ describe("UsersPage", () => {
     expect(
       screen.getByText(/로그인되어 있던 모든 기기에서 즉시 로그아웃되고/),
     ).toBeInTheDocument();
-    expect(screen.getByText(/관리자는 이 상태를 되돌릴 수 없으며/)).toBeInTheDocument();
+    expect(screen.getByText(/관리자는 이 상태를 되돌릴 수 없습니다/)).toBeInTheDocument();
   });
 
   it("offers the same words in the filter that the table prints", async () => {

@@ -71,13 +71,14 @@ const META: Record<AccountStatus, AccountStatusMeta> = {
        It deliberately does NOT claim the member's data is deleted.
        `delete_account` flips the status, revokes every session and cancels the
        subscription at period end; the row, payment records and learning
-       records are all kept. Email and phone keep their unique slots, which is
-       what stops the same person re-registering
-       (tests/integration/test_account_deletion_safety.py). Saying the data was
+       records are all kept. Its email / phone / nickname are released so the
+       same person can sign up again as a new account (the originals are kept
+       for the admin: 계정 이력 on the detail page,
+       tests/integration/test_reregistration.py). Saying the data was
        removed would tell an admin that a member's records are gone while they
        are still in the database. */
     description:
-      "회원이 직접 탈퇴한 상태입니다. 모든 기기에서 로그아웃되고 다시 로그인할 수 없습니다. 관리자는 이 상태를 되돌릴 수 없으며, 이메일과 전화번호는 그대로 남아 있어 같은 정보로 다시 가입할 수 없습니다.",
+      "회원이 직접 탈퇴한 상태입니다. 모든 기기에서 로그아웃되고 다시 로그인할 수 없습니다. 관리자는 이 상태를 되돌릴 수 없습니다. 같은 이메일·전화번호로 새 계정으로 다시 가입할 수 있으며, 이전 계정은 상세 화면의 계정 이력에서 확인할 수 있습니다.",
     documented: true,
   },
   pending_verification: {

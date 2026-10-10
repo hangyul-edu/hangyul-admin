@@ -65,6 +65,7 @@ function member(overrides: Record<string, unknown> = {}) {
       league_season_id: null, attendance_days_30d: 0,
     },
     coupons: [],
+    person_id: "usr_target", reregistration_count: 0, accounts: [],
     ...overrides,
   } as never;
 }

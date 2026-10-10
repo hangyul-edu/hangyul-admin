@@ -87,11 +87,17 @@ describe("the descriptions match what the backend does", () => {
 
   it("does not claim a withdrawal deletes the member's data", () => {
     // `DELETE /auth/account` flips the status and revokes tokens. It deletes
-    // nothing, despite its own OpenAPI text saying it does — and the email and
-    // phone keep their unique slots, which is what blocks re-registration.
+    // nothing, despite its own OpenAPI text saying it does.
     const text = accountStatusDescription("deactivated") ?? "";
     expect(text).not.toMatch(/삭제(됩니다|되며|하고)/);
-    expect(text).toContain("그대로 남아");
+  });
+
+  it("says the person can sign up again, and where the old account is", () => {
+    // Withdrawal releases the email / phone for a new signup; the admin keeps
+    // the old account under 계정 이력.
+    const text = accountStatusDescription("deactivated") ?? "";
+    expect(text).toContain("다시 가입할 수 있으며");
+    expect(text).toContain("계정 이력");
   });
 });
 

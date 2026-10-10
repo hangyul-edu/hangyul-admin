@@ -41,6 +41,15 @@ function member(overrides: Record<string, unknown> = {}) {
     social_providers: [], has_password: true, created_at: "2026-01-01T00:00:00Z",
     deactivated_at: null, subscription: null, recent_invoices: [], coupons: [],
     devices: [], friends_count: 0, notifications_unread: 0,
+    person_id: "usr_t", reregistration_count: 0,
+    accounts: [
+      {
+        user_id: "usr_t", status: "active", is_this_account: true,
+        created_at: "2026-01-01T00:00:00Z", deactivated_at: null,
+        email: "t@talkhangyul.co.kr", nickname: "t", phone_masked: null,
+        social_logins: [], study_minutes: 0, points_total: 0,
+      },
+    ],
     onboarding: {
       purpose: "topik", speaking_level: null, topik_target: "4",
       daily_sentence_goal: 5, daily_question_goal: 20,
@@ -80,6 +89,48 @@ beforeEach(() => {
 });
 
 describe("개요", () => {
+  it("lists every account of a person who withdrew and signed up again", async () => {
+    /* Withdrawing releases the account's identifiers so the person can sign
+       up again as a new account. The member app starts them fresh; the admin
+       keeps the chain, each withdrawn account under the email it had. */
+    userDetail.mockResolvedValue(
+      member({
+        person_id: "usr_old",
+        reregistration_count: 1,
+        accounts: [
+          {
+            user_id: "usr_old", status: "deactivated", is_this_account: false,
+            created_at: "2025-03-01T00:00:00Z", deactivated_at: "2026-01-01T00:00:00Z",
+            email: "t@talkhangyul.co.kr", nickname: "옛닉", phone_masked: "010-****-5678",
+            social_logins: ["google"], study_minutes: 125, points_total: 3400,
+          },
+          {
+            user_id: "usr_t", status: "active", is_this_account: true,
+            created_at: "2026-01-01T00:00:00Z", deactivated_at: null,
+            email: "t@talkhangyul.co.kr", nickname: "t", phone_masked: null,
+            social_logins: [], study_minutes: 0, points_total: 0,
+          },
+        ],
+      }),
+    );
+    renderPage();
+    expect(await screen.findByText("계정 이력 · 재가입 1회")).toBeInTheDocument();
+    const old = screen.getByRole("link", { name: "t@talkhangyul.co.kr" });
+    expect(old).toHaveAttribute("href", "/users/usr_old");
+    expect(screen.getByText("옛닉")).toBeInTheDocument();
+    expect(screen.getByText("010-****-5678")).toBeInTheDocument();
+    expect(screen.getByText("google")).toBeInTheDocument();
+    expect(screen.getByText("3,400P")).toBeInTheDocument();
+    expect(screen.getByText("현재 보는 계정")).toBeInTheDocument();
+  });
+
+  it("has no account history for a person with a single account", async () => {
+    renderPage();
+    await screen.findByText("계정 정보");
+    expect(screen.queryByText(/계정 이력/)).not.toBeInTheDocument();
+  });
+
+
   it("shows the learner's current state, not their signup answers", async () => {
     renderPage();
     expect(await screen.findByText("계정 정보")).toBeInTheDocument();

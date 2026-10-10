@@ -150,6 +150,23 @@ export interface AdminUserSummary {
   plan_name: string | null;
   created_at: string;
   deactivated_at: string | null;
+  /** How many times this person signed up again after withdrawing. */
+  reregistration_count: number;
+}
+
+/** One of a person's accounts; a withdrawn one with the identifiers it had. */
+export interface AdminPersonAccount {
+  user_id: string;
+  status: string;
+  is_this_account: boolean;
+  created_at: string;
+  deactivated_at: string | null;
+  email: string;
+  nickname: string | null;
+  phone_masked: string | null;
+  social_logins: string[];
+  study_minutes: number;
+  points_total: number;
 }
 
 export interface Page<T> {
@@ -245,6 +262,11 @@ export interface AdminUserDetail {
   }[];
   friends_count: number;
   notifications_unread: number;
+  /** The person this account belongs to across withdrawals and re-signups. */
+  person_id: string;
+  reregistration_count: number;
+  /** Every account of that person, oldest first (this one included). */
+  accounts: AdminPersonAccount[];
 }
 
 export interface UserListParams {

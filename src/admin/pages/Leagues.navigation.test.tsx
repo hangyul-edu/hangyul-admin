@@ -121,6 +121,9 @@ const USER = {
   devices: [],
   friend_count: 0,
   unread_notifications: 0,
+  person_id: "usr_mina",
+  reregistration_count: 0,
+  accounts: [],
 };
 
 /** Reports the current path so the round trip can be asserted on. */

@@ -96,7 +96,17 @@ export function UsersPage() {
           .join(" · ");
         return (
           <div>
-            <div className="hgadm-cell-main">{label}</div>
+            <div className="hgadm-cell-main">
+              {label}
+              {/* A person who withdrew and signed up again: the detail
+                  page's 계정 이력 lists every account. */}
+              {u.reregistration_count > 0 && (
+                <>
+                  {" "}
+                  <Badge tone="info">재가입 {u.reregistration_count}회</Badge>
+                </>
+              )}
+            </div>
             {details && <div className="hgadm-cell-sub">{details}</div>}
           </div>
         );

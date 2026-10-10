@@ -3,11 +3,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { adminApi } from "../api";
-import type { AdminTier } from "../api";
+import type { AdminPersonAccount, AdminTier } from "../api";
 import { errorMessage } from "../../lib/http";
 import { useToast, useToastError } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
 import { backNavigationState, useBackTarget } from "../lib/navigation";
+import type { BackTarget, NavigationState } from "../lib/navigation";
 import {
   Badge,
   Button,
@@ -322,6 +323,7 @@ export function UserDetailPage() {
       </div>
 
       {tab === "overview" && (
+        <>
         <div className="hgadm-grid-2">
           <div className="hgadm-card">
             <div className="hgadm-card__head">
@@ -412,6 +414,12 @@ export function UserDetailPage() {
             </div>
           </div>
         </div>
+        {/* Only for a person with more than one account: for everyone else
+            it would be this account again, in a table. */}
+        {user.accounts.length > 1 && (
+          <AccountHistory accounts={user.accounts} count={user.reregistration_count} back={back} />
+        )}
+        </>
       )}
 
       {tab === "onboarding" && (
@@ -778,6 +786,83 @@ export function UserDetailPage() {
             : "사용자가 직접 탈퇴한 계정은 관리자가 되살릴 수 없습니다."}
         </p>
       )}
+    </div>
+  );
+}
+
+/** Every account this person has had, oldest first. Withdrawing releases an
+    account's email / phone / nickname so the person can sign up again as a new
+    account (the member app starts them fresh); the admin keeps the whole chain,
+    with each withdrawn account shown under the identifiers it had. */
+function AccountHistory({
+  accounts,
+  count,
+  back,
+}: {
+  accounts: AdminPersonAccount[];
+  count: number;
+  /** Moving between one person's accounts keeps this page's own back link. */
+  back: BackTarget;
+}) {
+  return (
+    // Spaced from the cards above like they are from each other (the grid gap).
+    <div className="hgadm-card hgadm-section" style={{ marginTop: 18 }}>
+      <div className="hgadm-card__head">
+        <div className="hgadm-card__title">
+          계정 이력 · 재가입 {count}회
+        </div>
+      </div>
+      <div className="hgadm-table-wrap">
+        <table className="hgadm-table">
+          <thead>
+            <tr>
+              <th>계정</th>
+              <th>상태</th>
+              <th>가입일시</th>
+              <th>탈퇴일시</th>
+              <th>전화번호</th>
+              <th>로그인 수단</th>
+              <th className="num">학습 시간</th>
+              <th className="num">포인트</th>
+            </tr>
+          </thead>
+          <tbody>
+            {accounts.map((a) => (
+              <tr key={a.user_id}>
+                <td>
+                  {a.is_this_account ? (
+                    <div className="hgadm-cell-main">
+                      {a.email} <Badge tone="brand">현재 보는 계정</Badge>
+                    </div>
+                  ) : (
+                    <Link
+                      className="hgadm-cell-main"
+                      to={`/users/${a.user_id}`}
+                      state={{ from: back } satisfies NavigationState}
+                    >
+                      {a.email}
+                    </Link>
+                  )}
+                  {a.nickname && <div className="hgadm-cell-sub">{a.nickname}</div>}
+                </td>
+                <td>
+                  <Badge tone={accountStatusTone(a.status)} dot>
+                    {accountStatusLabel(a.status)}
+                  </Badge>
+                </td>
+                <td>
+                  <Timestamp at={a.created_at} />
+                </td>
+                <td>{a.deactivated_at ? <Timestamp at={a.deactivated_at} /> : "—"}</td>
+                <td className="hgadm-cell-mono">{a.phone_masked ?? "—"}</td>
+                <td>{a.social_logins.join(", ") || "—"}</td>
+                <td className="num">{formatDuration(a.study_minutes * 60)}</td>
+                <td className="num">{a.points_total.toLocaleString()}P</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
