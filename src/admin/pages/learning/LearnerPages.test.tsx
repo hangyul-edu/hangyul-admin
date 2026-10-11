@@ -97,12 +97,13 @@ describe("LearningOverviewPage", () => {
     };
     api.overview.mockResolvedValue(overview);
     wrap(<LearningOverviewPage />, "/learning");
-    expect(await screen.findByText(/집계가 최신이 아닙니다/)).toBeInTheDocument();
-    expect(screen.getAllByText("대상 데이터 없음").length).toBeGreaterThan(0);
+    expect(await screen.findByText(/통계가 최신이 아니에요/)).toBeInTheDocument();
+    expect(screen.getAllByText("아직 데이터 없음").length).toBeGreaterThan(0);
     expect(screen.queryByText("0.0%")).not.toBeInTheDocument();
-    expect(screen.getByText("75.0%")).toBeInTheDocument();
-    expect(screen.getByText("(3/4)")).toBeInTheDocument();
-    expect(screen.getByText(/\+50\.0%p/)).toBeInTheDocument();
+    // Headline card and its row in 학습 성과 both show it.
+    expect(screen.getAllByText("75.0%").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("3 / 4").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/\+50\.0%p/).length).toBeGreaterThan(0);
     expect(screen.getByText(/상대 \+200\.0%/)).toBeInTheDocument();
   });
 });
@@ -174,7 +175,7 @@ describe("LearnerDetailPage", () => {
     api.growth.mockResolvedValue(growth);
     wrap(<LearnerDetailPage />, "/learning/learners/usr_1");
     await userEvent.click(await screen.findByRole("tab", { name: "성장 비교" }));
-    expect(await screen.findByText(/비교 불가 — 학습자 모델 버전이 다릅니다/)).toBeInTheDocument();
+    expect(await screen.findByText(/비교할 수 없음 — 학습자 모델 버전이 다릅니다/)).toBeInTheDocument();
     expect(screen.queryByText(/\+40\.0%p/)).not.toBeInTheDocument();
     expect(screen.getByText("새 증거 1")).toBeInTheDocument();
     // The skill is named; its id never shows.

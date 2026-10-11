@@ -93,11 +93,11 @@ describe("AiOpsPage", () => {
 
   it("hides the toggle without ai:write and says transcripts are restricted", async () => {
     renderPage();
-    expect(await screen.findByText("맞춤화 요청 해석")).toBeInTheDocument();
+    expect(await screen.findByText("맞춤 요청 해석")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "끄기" })).not.toBeInTheDocument();
-    expect(await screen.findByText("대화 원문은 transcripts:read 권한이 필요합니다.")).toBeInTheDocument();
+    expect(await screen.findByText("대화 원문은 보이지 않아요")).toBeInTheDocument();
     // Empty reliability sample and empty tables say so, never 0%.
-    expect((await screen.findAllByText("대상 데이터 없음")).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText("아직 데이터 없음")).length).toBeGreaterThan(0);
     expect(screen.queryByText("0.0%")).not.toBeInTheDocument();
   });
 

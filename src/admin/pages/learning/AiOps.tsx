@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Cpu } from "lucide-react";
 import { learningApi } from "../../learningApi";
 import type { AiFeature, AiUsageGroup, TutorTurnRow } from "../../learningApi";
 import { RatioView, pct } from "../../components/learning";
@@ -18,25 +19,39 @@ import {
   Textarea,
 } from "../../components/kit";
 import type { Column } from "../../components/kit";
+import { Notice, PageHero, Panel } from "../../components/insights";
 import { useUrlFilters } from "../../lib/urlFilters";
 import { useAdminAuth } from "../../auth";
 import { useToast, useToastError } from "../../../hooks/toast";
 import { formatDateTime } from "../../lib/format";
 
 const FEATURE_LABEL: Record<string, string> = {
-  "customization.interpret": "맞춤화 요청 해석",
-  "tutor.explain": "튜터 설명",
-  "custom_practice.generate": "맞춤 연습 생성",
+  "customization.interpret": "맞춤 요청 해석",
+  "tutor.explain": "AI 튜터 설명",
+  "custom_practice.generate": "맞춤 연습 만들기",
   "content_factory.generate": "콘텐츠 일괄 생성",
   "proficiency.score_conversation": "회화 실력 평가 채점",
   "proficiency.score_writing": "TOPIK 쓰기 채점",
 };
 
+const FEATURE_HINT: Record<string, string> = {
+  "customization.interpret": "회원이 말로 한 요청(주제·난이도)을 학습 설정으로 바꿔요",
+  "tutor.explain": "문제를 풀다 막힌 회원에게 힌트와 설명을 줘요",
+  "custom_practice.generate": "검수된 문항이 모자랄 때 연습 문항을 새로 만들어요",
+  "content_factory.generate": "관리자가 요청한 콘텐츠를 한꺼번에 만들어요",
+  "proficiency.score_conversation": "회화 평가 답변을 채점해요",
+  "proficiency.score_writing": "TOPIK 쓰기 답안을 채점해요",
+};
+
+const DISABLED_REASON: Record<string, string> = {
+  disabled_by_default: "기본으로 꺼져 있어요",
+};
+
 const ROUTE_LABEL: Record<string, string> = {
   stored_hint: "저장된 힌트",
-  stored_explanation: "저장된 해설",
-  grounded_generation: "근거 기반 생성",
-  fallback: "대체 응답",
+  stored_explanation: "검수된 해설",
+  grounded_generation: "자료를 근거로 새로 작성",
+  fallback: "기본 안내",
   refused: "정답 노출 차단",
 };
 
@@ -47,14 +62,12 @@ function usd(cents: number): string {
 export function AiOpsPage() {
   return (
     <div>
-      <div className="hgadm-page-head">
-        <div>
-          <h1>AI 운영·튜터 품질</h1>
-          <div className="hgadm-page-head__desc">
-            AI 기능별 사용 여부와 예산, 모델 호출의 신뢰성·지연·비용, 튜터 응답의 사람 검수 결과를 확인합니다. AI 기능을 꺼도 기본 학습은 계속됩니다.
-          </div>
-        </div>
-      </div>
+      <PageHero
+        icon={Cpu}
+        eyebrow="학습 인사이트 · 맞춤 학습·AI"
+        title="AI 기능·비용"
+        description="AI 기능을 켜고 끄고, 비용과 오류를 확인하고, AI 튜터의 답변이 정확한지 검수해요. AI 기능을 꺼도 기본 학습은 그대로 이용할 수 있어요."
+      />
       <FeaturesSection />
       <UsageSection />
       <TutorSection />
@@ -75,7 +88,7 @@ function FeaturesSection() {
   const update = useMutation({
     mutationFn: (f: AiFeature) => learningApi.updateAiFeature(f.feature, { enabled: !f.enabled, reason }),
     onSuccess: (r) => {
-      toast.success(r.enabled ? "기능을 켰습니다." : "기능을 껐습니다.");
+      toast.success(r.enabled ? "기능을 켰어요." : "기능을 껐어요.");
       setEditing(null);
       setReason("");
       void qc.invalidateQueries({ queryKey: ["admin", "learning", "ai-features"] });
@@ -88,8 +101,8 @@ function FeaturesSection() {
       header: "기능",
       render: (f) => (
         <div>
-          <div>{FEATURE_LABEL[f.feature] ?? f.feature}</div>
-          <div className="hgadm-cell-sub hgadm-cell-mono">{f.feature} · {f.tier}</div>
+          <div className="hgadm-cell-main">{FEATURE_LABEL[f.feature] ?? f.feature}</div>
+          <div className="hgadm-cell-sub">{FEATURE_HINT[f.feature] ?? <span className="hgadm-cell-mono">{f.feature}</span>}</div>
         </div>
       ),
     },
@@ -98,12 +111,14 @@ function FeaturesSection() {
       header: "상태",
       render: (f) => (
         <div>
-          <Badge tone={f.enabled ? "success" : "neutral"}>{f.enabled ? "켜짐" : "꺼짐"}</Badge>
-          {f.disabled_reason && <div className="hgadm-cell-sub">{f.disabled_reason}</div>}
+          <Badge tone={f.enabled ? "success" : "neutral"} dot>
+            {f.enabled ? "켜짐" : "꺼짐"}
+          </Badge>
+          {f.disabled_reason && <div className="hgadm-cell-sub">{DISABLED_REASON[f.disabled_reason] ?? f.disabled_reason}</div>}
         </div>
       ),
     },
-    { key: "user", header: "학습자별 일일 한도", numeric: true, render: (f) => (f.per_user_daily_cents ? usd(f.per_user_daily_cents) : "제한 없음") },
+    { key: "user", header: "회원 1명 하루 한도", numeric: true, render: (f) => (f.per_user_daily_cents ? usd(f.per_user_daily_cents) : "제한 없음") },
     { key: "month", header: "월 한도", numeric: true, render: (f) => (f.monthly_cents ? usd(f.monthly_cents) : "제한 없음") },
     { key: "spent", header: "이번 달 사용 (추정)", numeric: true, render: (f) => usd(f.month_to_date_cents_estimated) },
     {
@@ -118,19 +133,20 @@ function FeaturesSection() {
     },
   ];
   return (
-    <div className="hgadm-card">
-      <h2>AI 기능 제어</h2>
+    <Panel
+      title="AI 기능 켜고 끄기"
+      description={
+        q.data
+          ? `기능마다 쓸 수 있는 금액 한도가 있어요. 금액은 단가표(${q.data.rate_card_version}) 기준 추정치이며 통화는 ${q.data.currency}예요.`
+          : undefined
+      }
+    >
       {q.isLoading ? (
         <LoadingState />
       ) : q.isError || !q.data ? (
         <ErrorState message="AI 기능 설정을 불러오지 못했습니다." onRetry={() => void q.refetch()} />
       ) : (
-        <>
-          <div className="hgadm-cell-sub" style={{ marginBottom: 8 }}>
-            금액은 단가표({q.data.rate_card_version}) 기준 추정치이며 통화는 {q.data.currency}입니다.
-          </div>
-          <DataTable rows={q.data.features} rowKey={(f) => f.feature} columns={columns} empty="대상 데이터 없음" />
-        </>
+        <DataTable rows={q.data.features} rowKey={(f) => f.feature} columns={columns} empty="아직 데이터 없음" />
       )}
       {editing && (
         <Modal
@@ -153,12 +169,17 @@ function FeaturesSection() {
             </>
           }
         >
-          <Field label="사유" required hint="관리자 활동 내역에 기록됩니다.">
+          <p className="hgins-cta__hint" style={{ margin: "0 0 12px" }}>
+            {editing.enabled
+              ? "끄면 이 기능을 쓰는 화면은 AI 없이 동작하는 기본 방식으로 바뀌어요."
+              : "켜면 바로 회원에게 적용되고, 한도 안에서 비용이 발생해요."}
+          </p>
+          <Field label="사유" required hint="관리자 활동 내역에 남아요. 3자 이상 입력하세요.">
             <Input value={reason} onChange={(e) => setReason(e.target.value)} aria-label="사유" />
           </Field>
         </Modal>
       )}
-    </div>
+    </Panel>
   );
 }
 
@@ -171,10 +192,10 @@ function UsageSection() {
   const columns: Column<AiUsageGroup>[] = [
     { key: "feature", header: "기능", render: (g) => FEATURE_LABEL[g.feature] ?? g.feature },
     { key: "model", header: "모델·프롬프트", render: (g) => <span className="hgadm-cell-mono">{g.model} · {g.prompt_version ?? "—"}</span> },
-    { key: "calls", header: "호출", numeric: true, render: (g) => g.calls.toLocaleString() },
-    { key: "err", header: "오류율", numeric: true, render: (g) => (g.error_rate === null ? "대상 데이터 없음" : pct(g.error_rate)) },
+    { key: "calls", header: "호출 수", numeric: true, render: (g) => g.calls.toLocaleString() },
+    { key: "err", header: "오류율", numeric: true, render: (g) => (g.error_rate === null ? "아직 데이터 없음" : pct(g.error_rate)) },
     { key: "retry", header: "재시도", numeric: true, render: (g) => g.retries },
-    { key: "lat", header: "지연 p50/p95 (ms)", numeric: true, render: (g) => `${g.latency_ms_p50 ?? "—"} / ${g.latency_ms_p95 ?? "—"}` },
+    { key: "lat", header: "응답 시간 보통/느릴 때 (ms)", numeric: true, render: (g) => `${g.latency_ms_p50 ?? "—"} / ${g.latency_ms_p95 ?? "—"}` },
     {
       key: "cost",
       header: "비용 (추정)",
@@ -182,7 +203,7 @@ function UsageSection() {
       render: (g) => (
         <div>
           {usd(g.cost_cents_estimated)}
-          {g.calls_cost_unavailable > 0 && <div className="hgadm-cell-sub">비용 미확인 {g.calls_cost_unavailable}건</div>}
+          {g.calls_cost_unavailable > 0 && <div className="hgadm-cell-sub">비용 확인 안 됨 {g.calls_cost_unavailable}건</div>}
         </div>
       ),
     },
@@ -197,15 +218,26 @@ function UsageSection() {
     },
   ];
   return (
-    <div className="hgadm-card">
-      <h2>사용량·신뢰성</h2>
-      <div className="hgadm-toolbar">
-        <Select value={String(days)} aria-label="기간" onChange={(e) => f.patch({ days: e.target.value })} style={{ width: 140 }}>
-          <option value="7">최근 7일</option>
-          <option value="30">최근 30일</option>
-          <option value="90">최근 90일</option>
-        </Select>
-      </div>
+    <Panel
+      title="사용량·오류"
+      description="기능과 모델별로 얼마나 불렀고, 얼마나 실패했고, 얼마가 들었는지예요."
+      actions={
+        <div className="hgins-seg" role="radiogroup" aria-label="기간">
+          {[7, 30, 90].map((n) => (
+            <button
+              key={n}
+              type="button"
+              role="radio"
+              aria-checked={days === n}
+              className={`hgins-seg__btn${days === n ? " is-on" : ""}`}
+              onClick={() => f.patch({ days: String(n) })}
+            >
+              최근 {n}일
+            </button>
+          ))}
+        </div>
+      }
+    >
       {q.isLoading ? (
         <LoadingState />
       ) : q.isError || !q.data ? (
@@ -216,14 +248,15 @@ function UsageSection() {
             rows={q.data.groups}
             rowKey={(g) => `${g.feature}-${g.model}-${g.prompt_version}`}
             columns={columns}
-            empty="대상 데이터 없음"
+            empty="이 기간에 AI를 호출한 기록이 없어요"
           />
-          <div className="hgadm-cell-sub" style={{ marginTop: 8 }}>
-            비용은 단가표({q.data.rate_card_version}) 기준 추정치이며, 공급사 청구 금액과 대조되지 않았습니다. 게이트웨이 도입 이전·기능 미지정 호출: {q.data.legacy_unattributed.calls.toLocaleString()}건, {usd(q.data.legacy_unattributed.cost_cents)} (추정).
-          </div>
+          <p className="hgins-cta__hint" style={{ marginTop: 10 }}>
+            비용은 단가표({q.data.rate_card_version}) 기준 추정치로, 실제 청구 금액과 다를 수 있어요. 기능이 정해지지 않은 예전 호출{" "}
+            {q.data.legacy_unattributed.calls.toLocaleString()}건 · {usd(q.data.legacy_unattributed.cost_cents)} (추정)은 위 표에 포함되지 않아요.
+          </p>
         </>
       )}
-    </div>
+    </Panel>
   );
 }
 
@@ -251,11 +284,11 @@ function TutorSection() {
   });
   const showText = turns.data?.transcripts_included ?? false;
   const columns: Column<TutorTurnRow>[] = [
-    { key: "when", header: "시각", render: (t) => formatDateTime(t.created_at) },
-    { key: "mode", header: "모드", render: (t) => (t.mode === "hint_only" ? "힌트 전용" : "설명") },
+    { key: "when", header: "일시", render: (t) => formatDateTime(t.created_at) },
+    { key: "mode", header: "요청", render: (t) => (t.mode === "hint_only" ? "힌트만" : "설명") },
     {
       key: "route",
-      header: "경로",
+      header: "답한 방법",
       render: (t) => (
         <div>
           <Badge tone={t.route === "refused" || t.route === "fallback" ? "warning" : "info"}>{ROUTE_LABEL[t.route] ?? t.route}</Badge>
@@ -266,12 +299,12 @@ function TutorSection() {
     },
     { key: "model", header: "모델", render: (t) => <span className="hgadm-cell-mono">{t.model ?? "—"} {t.prompt_version ?? ""}</span> },
     { key: "err", header: "콘텐츠 오류 의심", render: (t) => (t.suspected_content_error ? <Badge tone="danger">의심</Badge> : "—") },
-    { key: "fb", header: "학습자 평가", render: (t) => (t.learner_feedback === "up" ? "👍" : t.learner_feedback === "down" ? "👎" : "—") },
+    { key: "fb", header: "회원 반응", render: (t) => (t.learner_feedback === "up" ? "👍" : t.learner_feedback === "down" ? "👎" : "—") },
     ...(showText
       ? [
           {
             key: "text",
-            header: "질문 / 응답 (마스킹)",
+            header: "질문 / 답변 (개인정보 가림)",
             render: (t: TutorTurnRow) => (
               <div style={{ maxWidth: 360 }}>
                 <div>{t.question}</div>
@@ -294,38 +327,55 @@ function TutorSection() {
   ];
   const r = reliability.data;
   return (
-    <div className="hgadm-card">
-      <h2>튜터 품질</h2>
+    <Panel
+      title="AI 튜터 답변 검수"
+      description="사람이 직접 확인한 답변을 기준으로 튜터가 얼마나 정확한지 봐요. 회원의 👍는 만족도일 뿐, 정확하다는 근거는 아니에요."
+    >
       {reliability.isLoading ? (
         <LoadingState />
       ) : reliability.isError || !r ? (
-        <ErrorState message="튜터 신뢰도를 불러오지 못했습니다." onRetry={() => void reliability.refetch()} />
+        <ErrorState message="튜터 정확도를 불러오지 못했습니다." onRetry={() => void reliability.refetch()} />
       ) : (
-        <div style={{ marginBottom: 12 }}>
-          <div>
-            사람 검수 기준 정확·근거 비율: <RatioView ratio={r.overall} /> · 정답 노출 판정 {r.overall.leaks}건
+        <div className="hgins-facts" style={{ marginBottom: 14 }}>
+          <div className="hgins-fact">
+            <div className="hgins-fact__label">정확하고 근거 있는 답변</div>
+            <div className="hgins-fact__value">
+              <RatioView ratio={r.overall} />
+            </div>
+            <div className="hgins-fact__hint">사람이 검수한 답변 기준</div>
           </div>
-          <ul>
-            {Object.entries(r.by_route).map(([routeKey, v]) => (
-              <li key={routeKey}>
-                {ROUTE_LABEL[routeKey] ?? routeKey}: <RatioView ratio={v} /> · 노출 {v.leaks}건
-              </li>
-            ))}
-          </ul>
-          <div className="hgadm-cell-sub">
-            학습자 만족도(별도 지표): 👍 {r.learner_satisfaction.up} · 👎 {r.learner_satisfaction.down}. 좋아요는 정확성의 근거가 아닙니다.
+          <div className={`hgins-fact${r.overall.leaks ? " hgins-fact--bad" : ""}`}>
+            <div className="hgins-fact__label">정답을 알려 준 답변</div>
+            <div className="hgins-fact__value">{r.overall.leaks.toLocaleString()}건</div>
+            <div className="hgins-fact__hint">힌트에서 정답이 노출된 경우</div>
           </div>
+          <div className="hgins-fact">
+            <div className="hgins-fact__label">회원 반응</div>
+            <div className="hgins-fact__value">
+              👍 {r.learner_satisfaction.up} · 👎 {r.learner_satisfaction.down}
+            </div>
+            <div className="hgins-fact__hint">만족도 (정확도와 별개)</div>
+          </div>
+          {Object.entries(r.by_route).map(([routeKey, v]) => (
+            <div className="hgins-fact" key={routeKey}>
+              <div className="hgins-fact__label">{ROUTE_LABEL[routeKey] ?? routeKey}</div>
+              <div className="hgins-fact__value">
+                <RatioView ratio={v} compact />
+              </div>
+              <div className="hgins-fact__hint">정답 노출 {v.leaks}건</div>
+            </div>
+          ))}
         </div>
       )}
       <div className="hgadm-toolbar">
-        <label>
-          <input type="checkbox" checked={flagged} onChange={(e) => f.patch({ flagged: e.target.checked ? "1" : null, tpage: null })} /> 주의 필요만
+        <label className="hgadm-checkbox">
+          <input type="checkbox" checked={flagged} onChange={(e) => f.patch({ flagged: e.target.checked ? "1" : null, tpage: null })} /> 살펴볼 답변만
         </label>
-        <label>
-          <input type="checkbox" checked={unreviewed} onChange={(e) => f.patch({ unreviewed: e.target.checked ? "1" : null, tpage: null })} /> 미검수만
+        <label className="hgadm-checkbox">
+          <input type="checkbox" checked={unreviewed} onChange={(e) => f.patch({ unreviewed: e.target.checked ? "1" : null, tpage: null })} /> 아직 검수 안 한 답변만
         </label>
-        <Select value={route} aria-label="경로" onChange={(e) => f.patch({ route: e.target.value, tpage: null })} style={{ width: 160 }}>
-          <option value="">모든 경로</option>
+        <Select value={route} aria-label="경로" onChange={(e) => f.patch({ route: e.target.value, tpage: null })} style={{ width: 190 }}>
+          <option value="">모든 답변 방법</option>
           {Object.entries(ROUTE_LABEL).map(([k, label]) => (
             <option key={k} value={k}>
               {label}
@@ -336,20 +386,20 @@ function TutorSection() {
       {turns.isLoading ? (
         <LoadingState />
       ) : turns.isError || !turns.data ? (
-        <ErrorState message="튜터 응답 목록을 불러오지 못했습니다." onRetry={() => void turns.refetch()} />
+        <ErrorState message="튜터 답변 목록을 불러오지 못했습니다." onRetry={() => void turns.refetch()} />
       ) : (
         <>
           {!turns.data.transcripts_included && (
-            <div className="hgadm-cell-sub" style={{ marginBottom: 8 }}>
-              대화 원문은 transcripts:read 권한이 필요합니다.
-            </div>
+            <Notice tone="info" title="대화 원문은 보이지 않아요">
+              질문과 답변 내용을 보려면 대화 원문 조회 권한(transcripts:read)이 필요해요.
+            </Notice>
           )}
-          <DataTable rows={turns.data.items} rowKey={(t) => t.turn_id} columns={columns} empty="대상 데이터 없음" />
+          <DataTable rows={turns.data.items} rowKey={(t) => t.turn_id} columns={columns} empty="아직 데이터 없음" />
           <Pagination page={page} pageSize={25} total={turns.data.total} onPageChange={(p) => f.patch({ tpage: String(p) })} />
         </>
       )}
       {reviewing && <TurnReviewModal turn={reviewing} onClose={() => setReviewing(null)} />}
-    </div>
+    </Panel>
   );
 }
 
@@ -365,7 +415,7 @@ function TurnReviewModal({ turn, onClose }: { turn: TutorTurnRow; onClose: () =>
     mutationFn: () =>
       learningApi.reviewTutorTurn(turn.turn_id, { correct, grounded, leaked_answer: leaked, note: note || undefined }),
     onSuccess: () => {
-      toast.success("검수 결과를 저장했습니다.");
+      toast.success("검수 결과를 저장했어요.");
       void qc.invalidateQueries({ queryKey: ["admin", "learning", "tutor-reliability"] });
       void qc.invalidateQueries({ queryKey: ["admin", "learning", "tutor-turns"] });
       onClose();
@@ -375,7 +425,7 @@ function TurnReviewModal({ turn, onClose }: { turn: TutorTurnRow; onClose: () =>
   return (
     <Modal
       open
-      title="튜터 응답 검수"
+      title="튜터 답변 검수"
       onClose={onClose}
       footer={
         <>
@@ -391,13 +441,13 @@ function TurnReviewModal({ turn, onClose }: { turn: TutorTurnRow; onClose: () =>
       <div className="hgadm-cell-sub" style={{ marginBottom: 8 }}>
         {formatDateTime(turn.created_at)} · {ROUTE_LABEL[turn.route] ?? turn.route}
       </div>
-      <Field label="정확한가요?">
+      <Field label="내용이 정확한가요?">
         <Switch checked={correct} onChange={setCorrect} label="정확함" />
       </Field>
-      <Field label="자료와 검수된 해설에 근거했나요?">
+      <Field label="학습 자료나 검수된 해설에 근거했나요?">
         <Switch checked={grounded} onChange={setGrounded} label="근거 있음" />
       </Field>
-      <Field label="힌트가 정답을 노출했나요?">
+      <Field label="힌트에서 정답을 알려 줬나요?">
         <Switch checked={leaked} onChange={setLeaked} label="정답 노출" />
       </Field>
       <Field label="메모">

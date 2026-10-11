@@ -12,14 +12,16 @@ import { useToastError } from "../../../hooks/toast";
 import { Badge, Button, DataTable, ErrorState, LoadingState, Pagination, SearchBox, Select } from "../../components/kit";
 import type { BadgeTone, Column } from "../../components/kit";
 import { downloadExport } from "../../components/learning";
+import { PageHero, Panel } from "../../components/insights";
+import { Award, Download } from "lucide-react";
 
 const PAGE_SIZE = 25;
 
-export const STATUS_LABEL: Record<ProficiencyRow["status"], { text: string; tone: BadgeTone }> = {
-  unassessed: { text: "평가 전", tone: "neutral" },
-  insufficient_evidence: { text: "근거 수집 중", tone: "info" },
-  provisional: { text: "임시 배치", tone: "warning" },
-  confirmed: { text: "확인됨", tone: "success" },
+export const STATUS_LABEL: Record<ProficiencyRow["status"], { text: string; tone: BadgeTone; hint: string }> = {
+  unassessed: { text: "평가 전", tone: "neutral", hint: "아직 실력 평가를 하지 않았어요" },
+  insufficient_evidence: { text: "근거 모으는 중", tone: "info", hint: "레벨을 정하기엔 평가가 더 필요해요" },
+  provisional: { text: "임시 레벨", tone: "warning", hint: "배치 평가로 정한 레벨이에요" },
+  confirmed: { text: "레벨 확정", tone: "success", hint: "평가 기준을 모두 통과했어요" },
 };
 
 export function levelText(track: ProficiencyTrack, n: number | null | undefined): string {
@@ -39,7 +41,7 @@ export function GrowthCell({ growth }: { growth: ProficiencyRow["growth"] }) {
   );
 }
 
-/** 실력 판정 — learners' confirmed levels, promotion progress and growth. */
+/** 레벨 판정 — learners' confirmed levels, promotion progress and growth. */
 export function ProficiencyLearnersPage() {
   const f = useUrlFilters();
   const navigate = useNavigate();
@@ -100,7 +102,7 @@ export function ProficiencyLearnersPage() {
     },
     {
       key: "level",
-      header: track === "topik" ? "확인 급수 (임시)" : "확인 레벨 (임시)",
+      header: track === "topik" ? "확정 급수" : "확정 레벨",
       render: (r) => (
         <div>
           <div className="hgadm-cell-main">{levelText(track, r.confirmed_level)}</div>
@@ -110,7 +112,7 @@ export function ProficiencyLearnersPage() {
     },
     {
       key: "coverage",
-      header: "필수 역량 확인",
+      header: "다음 레벨 필수 역량",
       render: (r) =>
         r.coverage ? (
           <div>
@@ -123,25 +125,25 @@ export function ProficiencyLearnersPage() {
           <span className="hgadm-cell-sub">—</span>
         ),
     },
-    { key: "growth", header: `${period}일 변화`, render: (r) => <GrowthCell growth={r.growth} /> },
+    { key: "growth", header: `최근 ${period}일 성장`, render: (r) => <GrowthCell growth={r.growth} /> },
     {
       key: "fresh",
-      header: "최근 유효 평가",
+      header: "마지막 평가",
       render: (r) => (
         <div>
           <div>{r.last_eligible_at ? formatDateTime(r.last_eligible_at) : "없음"}</div>
-          {r.stalled && <Badge tone="warning">정체</Badge>}
+          {r.stalled && <Badge tone="warning">30일째 제자리</Badge>}
         </div>
       ),
     },
     {
       key: "blocking",
-      header: "주요 막힌 조건",
+      header: "다음 레벨까지 남은 것",
       render: (r) => (r.main_blocking_label ? r.main_blocking_label.ko : <span className="hgadm-cell-sub">—</span>),
     },
     {
       key: "issues",
-      header: "평가 문제",
+      header: "평가 오류",
       numeric: true,
       render: (r) => (r.assessment_issues ? <Badge tone="danger">{r.assessment_issues}</Badge> : "0"),
     },
@@ -149,39 +151,52 @@ export function ProficiencyLearnersPage() {
 
   return (
     <div>
-      <div className="hgadm-page-head">
-        <div>
-          <h1>실력 판정</h1>
-          <div className="hgadm-page-head__desc">
-            맞춤 학습 실력 평가로만 판정한 레벨과 다음 레벨까지의 진행입니다. 강의·체크포인트·포인트·문제 수는 반영되지
-            않습니다. &quot;필수 역량 확인&quot;은 통과 확률이 아니라 확인된 역량의 비율이며, 성장은 같은 목표·정책 안의
-            %p 변화입니다. <Link to="/learning/proficiency-policy">판정 기준 보기</Link>
-          </div>
-        </div>
-        {can("exports:create") && can("learners:read") && (
-          <Button onClick={exportCsv}>CSV 내보내기</Button>
-        )}
-      </div>
+      <PageHero
+        icon={Award}
+        eyebrow="학습 인사이트 · 학습자"
+        title="레벨 판정"
+        description={
+          <>
+            실력 평가만으로 정한 회원의 레벨과, 다음 레벨까지 얼마나 왔는지예요. 강의 시청·포인트·푼 문제 수는 레벨에
+            반영되지 않아요. &quot;다음 레벨 필수 역량&quot;은 합격 확률이 아니라 이미 확인된 역량의 비율이에요.{" "}
+            <Link to="/learning/proficiency-policy">판정 기준 보기</Link>
+          </>
+        }
+        actions={
+          can("exports:create") && can("learners:read") ? (
+            <Button onClick={exportCsv}>
+              <Download size={15} strokeWidth={2} aria-hidden />
+              CSV 내보내기
+            </Button>
+          ) : undefined
+        }
+      />
 
       {cohort.data && (
-        <div className="hgadm-card hgadm-prof-cohort">
-          <div className="hgadm-cell-sub">
-            {cohort.data.note.ko} 기록 있는 학습자 {cohort.data.denominator.toLocaleString()}명 · 기록 없음{" "}
-            {cohort.data.learners_without_record.toLocaleString()}명
-          </div>
-          <div className="hgadm-prof-chips">
+        <Panel
+          title={`${track === "topik" ? "TOPIK" : "회화"} 레벨 분포`}
+          description={`${cohort.data.note.ko} 기록 있는 회원 ${cohort.data.denominator.toLocaleString()}명 · 기록 없는 회원 ${cohort.data.learners_without_record.toLocaleString()}명`}
+        >
+          <div className="hgins-facts">
             {Object.entries(STATUS_LABEL).map(([key, v]) => (
-              <Badge key={key} tone={v.tone}>
-                {v.text} {(cohort.data.by_status[key] ?? 0).toLocaleString()}
-              </Badge>
-            ))}
-            {Object.entries(cohort.data.confirmed_by_level).map(([lv, n]) => (
-              <Badge key={lv} tone="neutral">
-                {levelText(track, Number(lv))} {n}
-              </Badge>
+              <div key={key} className={`hgins-fact${key === "confirmed" ? " hgins-fact--good" : ""}`}>
+                <div className="hgins-fact__label">{v.text}</div>
+                <div className="hgins-fact__value">{(cohort.data.by_status[key] ?? 0).toLocaleString()}명</div>
+                <div className="hgins-fact__hint">{v.hint}</div>
+              </div>
             ))}
           </div>
-        </div>
+          {Object.keys(cohort.data.confirmed_by_level).length > 0 && (
+            <div className="hgadm-prof-chips" style={{ marginTop: 12 }}>
+              <span className="hgins-cta__hint">확정 레벨별</span>
+              {Object.entries(cohort.data.confirmed_by_level).map(([lv, n]) => (
+                <Badge key={lv} tone="neutral">
+                  {levelText(track, Number(lv))} {n}명
+                </Badge>
+              ))}
+            </div>
+          )}
+        </Panel>
       )}
 
       <div className="hgadm-card">
@@ -193,9 +208,9 @@ export function ProficiencyLearnersPage() {
           </Select>
           <Select aria-label="상태" value={status} onChange={(e) => f.patch({ status: e.target.value, page: null })} style={{ width: 130 }}>
             <option value="">전체 상태</option>
-            <option value="confirmed">확인됨</option>
-            <option value="provisional">임시 배치</option>
-            <option value="insufficient_evidence">근거 수집 중</option>
+            <option value="confirmed">레벨 확정</option>
+            <option value="provisional">임시 레벨</option>
+            <option value="insufficient_evidence">근거 모으는 중</option>
           </Select>
           <Select aria-label="확인 레벨" value={level} onChange={(e) => f.patch({ level: e.target.value, page: null })} style={{ width: 120 }}>
             <option value="">전체 레벨</option>
@@ -205,17 +220,17 @@ export function ProficiencyLearnersPage() {
               </option>
             ))}
           </Select>
-          <Select aria-label="주의 필요" value={flag} onChange={(e) => f.patch({ flag: e.target.value, page: null })} style={{ width: 150 }}>
-            <option value="">전체</option>
-            <option value="provisional">임시 배치</option>
-            <option value="insufficient">근거 부족</option>
-            <option value="stalled">진행 정체(30일)</option>
-            <option value="errors">평가 오류·대기</option>
+          <Select aria-label="주의 필요" value={flag} onChange={(e) => f.patch({ flag: e.target.value, page: null })} style={{ width: 205 }}>
+            <option value="">살펴볼 회원 전체</option>
+            <option value="provisional">임시 레벨인 회원</option>
+            <option value="insufficient">평가가 부족한 회원</option>
+            <option value="stalled">30일째 제자리인 회원</option>
+            <option value="errors">평가 오류·대기가 있는 회원</option>
           </Select>
-          <Select aria-label="성장 기간" value={period} onChange={(e) => f.patch({ period: e.target.value, page: null })} style={{ width: 110 }}>
-            <option value="7">7일</option>
-            <option value="30">30일</option>
-            <option value="90">90일</option>
+          <Select aria-label="성장 기간" value={period} onChange={(e) => f.patch({ period: e.target.value, page: null })} style={{ width: 140 }}>
+            <option value="7">최근 7일 성장</option>
+            <option value="30">최근 30일 성장</option>
+            <option value="90">최근 90일 성장</option>
           </Select>
         </div>
         {query.isLoading && <LoadingState />}
@@ -228,10 +243,10 @@ export function ProficiencyLearnersPage() {
               rowKey={(r) => r.user_id}
               onRowClick={(r) =>
                 navigate(`/learning/proficiency/${r.user_id}?track=${track}`, {
-                  state: originFrom("실력 판정", `${location.pathname}${location.search}`),
+                  state: originFrom("레벨 판정", `${location.pathname}${location.search}`),
                 })
               }
-              empty="조건에 맞는 학습자가 없습니다."
+              empty="조건에 맞는 회원이 없어요. 필터를 바꿔 보세요."
             />
             <Pagination page={page} pageSize={PAGE_SIZE} total={query.data.total} onPageChange={(p) => f.patch({ page: String(p) })} />
           </>

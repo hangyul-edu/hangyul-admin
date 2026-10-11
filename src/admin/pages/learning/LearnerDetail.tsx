@@ -88,7 +88,7 @@ const dimension = (d: string) => DIMENSION_LABEL[d] ?? d;
 
 export function LearnerDetailPage() {
   const { userId = "" } = useParams();
-  const back = useBackTarget({ to: "/learning/learners", label: "학습자 성장" });
+  const back = useBackTarget({ to: "/learning/learners", label: "학습 현황" });
   const [tab, setTab] = useState<Tab>("overview");
   const [skillFilter, setSkillFilter] = useState<string>("");
   // The name of a skill picked from a screen whose list may not include it.

@@ -72,7 +72,7 @@ describe("DataHealthPage", () => {
   it("says everything is fine only when it is", async () => {
     dataHealth.mockResolvedValue(healthy());
     renderPage();
-    expect(await screen.findByText(/모든 집계가 정상입니다/)).toBeInTheDocument();
+    expect(await screen.findByText(/모든 집계가 정상이에요/)).toBeInTheDocument();
   });
 
   it("warns when a projection lags, errors or a check found a discrepancy", async () => {
@@ -81,9 +81,9 @@ describe("DataHealthPage", () => {
     d.recent_runs[0] = { ...d.recent_runs[0], kind: "reconciliation", discrepancies: [{ metric: "attempts", source: 3, events: 2 }] };
     dataHealth.mockResolvedValue(d);
     renderPage();
-    expect(await screen.findByText("확인 필요")).toBeInTheDocument();
-    expect(screen.queryByText(/모든 집계가 정상입니다/)).not.toBeInTheDocument();
-    expect(screen.getAllByText(/미처리 이벤트 42건/).length).toBeGreaterThan(0);
+    expect(await screen.findByText("확인이 필요해요")).toBeInTheDocument();
+    expect(screen.queryByText(/모든 집계가 정상이에요/)).not.toBeInTheDocument();
+    expect(screen.getAllByText(/밀린 이벤트 42건/).length).toBeGreaterThan(0);
     expect(screen.getByText(/불일치가 발견된 점검 1건/)).toBeInTheDocument();
     expect(screen.getByText("boom")).toBeInTheDocument();
   });
@@ -93,7 +93,7 @@ describe("DataHealthPage", () => {
     d.consumers[0] = { ...d.consumers[0], last_success_at: null };
     dataHealth.mockResolvedValue(d);
     renderPage();
-    expect(await screen.findByText("확인 필요")).toBeInTheDocument();
+    expect(await screen.findByText("확인이 필요해요")).toBeInTheDocument();
     expect(screen.getAllByText(/15분 넘게 갱신 안 됨/).length).toBeGreaterThan(0);
   });
 });

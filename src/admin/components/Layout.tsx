@@ -1,21 +1,16 @@
 import { useMemo, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import {
-  Activity,
-  Award,
   Bell,
   BookOpen,
   Bot,
   CalendarRange,
-  Cpu,
   GraduationCap,
   LineChart,
   ListChecks,
-  Route as RouteIcon,
   Clapperboard,
   Clock,
   CreditCard,
-  DatabaseZap,
   HelpCircle,
   Image as ImageIcon,
   LayoutDashboard,
@@ -24,6 +19,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   MessagesSquare,
+  PackagePlus,
   PenLine,
   Receipt,
   Repeat,
@@ -31,6 +27,7 @@ import {
   ScrollText,
   ShieldCheck,
   SlidersHorizontal,
+  Sparkles,
   Ticket,
   Trophy,
   UserRound,
@@ -49,6 +46,12 @@ interface NavItem {
   label: string;
   /** Any of these scopes shows the item. */
   scopes: string[];
+  /**
+   * Further pages this one item stands for (shown as tabs on each of them).
+   * The item stays lit on them, shows for anyone who can open one, and links
+   * to the first page the admin can open.
+   */
+  also?: { to: string; scope: string }[];
 }
 
 interface NavGroup {
@@ -107,21 +110,38 @@ const NAV: NavGroup[] = [
       { to: "/quizzes", icon: HelpCircle, label: "문제(TOPIK)", scopes: ["content:read"] },
       { to: "/ai-content", icon: Bot, label: "AI 생성 검수", scopes: ["content:read"] },
       // Super-admin only: admins:manage is the scope only that tier holds.
-      { to: "/catalog-import", icon: DatabaseZap, label: "카탈로그 가져오기", scopes: ["admins:manage"] },
+      { to: "/content-updates", icon: PackagePlus, label: "콘텐츠 업데이트", scopes: ["admins:manage"] },
     ],
   },
   {
-    label: "학습 분석",
+    // Nine pages used to sit here as nine items. Related ones now share one
+    // item and are tabs of each other (components/insights INSIGHT_SECTIONS).
+    label: "학습 인사이트",
     items: [
-      { to: "/learning", icon: LineChart, label: "학습 개요", scopes: ["analytics:read"] },
-      { to: "/learning/learners", icon: GraduationCap, label: "학습자 성장", scopes: ["learners:read"] },
-      { to: "/learning/proficiency", icon: Award, label: "실력 판정", scopes: ["learners:read"] },
-      { to: "/learning/proficiency-policy", icon: Scale, label: "판정 기준·검증", scopes: ["analytics:read"] },
-      { to: "/learning/cohorts", icon: CalendarRange, label: "코호트·재방문", scopes: ["analytics:read"] },
-      { to: "/learning/content", icon: ListChecks, label: "콘텐츠 품질·검수", scopes: ["content:read"] },
-      { to: "/learning/recommendations", icon: RouteIcon, label: "추천·맞춤화 진단", scopes: ["analytics:read"] },
-      { to: "/learning/ai", icon: Cpu, label: "AI 운영·튜터 품질", scopes: ["ai:read"] },
-      { to: "/learning/data-health", icon: Activity, label: "데이터 상태", scopes: ["ops:read"] },
+      { to: "/learning", icon: LineChart, label: "한눈에 보기", scopes: ["analytics:read"] },
+      {
+        to: "/learning/learners",
+        icon: GraduationCap,
+        label: "학습자",
+        scopes: ["learners:read"],
+        also: [{ to: "/learning/proficiency", scope: "learners:read" }],
+      },
+      { to: "/learning/content", icon: ListChecks, label: "콘텐츠 품질", scopes: ["content:read"] },
+      {
+        to: "/learning/recommendations",
+        icon: Sparkles,
+        label: "맞춤 학습·AI",
+        scopes: ["analytics:read"],
+        also: [{ to: "/learning/ai", scope: "ai:read" }],
+      },
+      { to: "/learning/cohorts", icon: CalendarRange, label: "재방문 분석", scopes: ["analytics:read"] },
+      {
+        to: "/learning/proficiency-policy",
+        icon: Scale,
+        label: "기준·데이터 상태",
+        scopes: ["analytics:read"],
+        also: [{ to: "/learning/data-health", scope: "ops:read" }],
+      },
     ],
   },
   {
@@ -163,10 +183,16 @@ export function AdminLayout() {
   const { pathname } = useLocation();
   // Resolved once against every target, not per link: "most specific wins"
   // is a decision about the whole menu, and a link cannot make it alone.
-  const activeTo = useMemo(
-    () => activeNavTarget(pathname, NAV.flatMap((group) => group.items.map((i) => i.to))),
-    [pathname],
-  );
+  // A page an item stands for (`also`) counts as that item's own path.
+  const activeTo = useMemo(() => {
+    const owner = new Map<string, string>();
+    for (const item of NAV.flatMap((group) => group.items)) {
+      owner.set(item.to, item.to);
+      for (const page of item.also ?? []) owner.set(page.to, item.to);
+    }
+    const best = activeNavTarget(pathname, [...owner.keys()]);
+    return best === null ? null : owner.get(best) ?? null;
+  }, [pathname]);
 
   return (
     <div className="hgadm-frame">
@@ -211,8 +237,10 @@ export function AdminLayout() {
         </div>
         <nav className="hgadm-nav" id="hgadm-nav" aria-label="관리자 메뉴">
           {NAV.map((group) => {
-            const visible = group.items.filter((item) =>
-              item.scopes.some((scope) => can(scope)),
+            const visible = group.items.filter(
+              (item) =>
+                item.scopes.some((scope) => can(scope)) ||
+                (item.also ?? []).some((page) => can(page.scope)),
             );
             if (visible.length === 0) return null;
             return (
@@ -221,10 +249,14 @@ export function AdminLayout() {
                 {visible.map((item) => {
                   const Icon = item.icon;
                   const isActive = item.to === activeTo;
+                  // The first of the item's pages this admin can open.
+                  const href = item.scopes.some((scope) => can(scope))
+                    ? item.to
+                    : (item.also ?? []).find((page) => can(page.scope))?.to ?? item.to;
                   return (
                     <Link
                       key={item.to}
-                      to={item.to}
+                      to={href}
                       className={`hgadm-nav__link ${isActive ? "active" : ""}`}
                       // Set here rather than left to NavLink, which derives it
                       // from its own prefix match — the same match that lit two

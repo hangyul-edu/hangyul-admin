@@ -50,7 +50,7 @@ export function ProficiencyDetailPage() {
   const { userId = "" } = useParams();
   const f = useUrlFilters();
   const track = (f.value("track") || "conversation") as ProficiencyTrack;
-  const back = useBackTarget({ to: "/learning/proficiency", label: "실력 판정" });
+  const back = useBackTarget({ to: "/learning/proficiency", label: "레벨 판정" });
   const [tab, setTab] = useState<Tab>("overview");
   const detail = useQuery({
     queryKey: ["admin", "proficiency", "learner", userId],

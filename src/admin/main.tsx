@@ -8,6 +8,7 @@ import { AdminErrorBoundary } from "./components/ErrorBoundary";
 import { AdminApp } from "./App";
 import "../styles/theme.css";
 import "./styles/admin.css";
+import "./styles/insights.css";
 
 const queryClient = new QueryClient({
   defaultOptions: {

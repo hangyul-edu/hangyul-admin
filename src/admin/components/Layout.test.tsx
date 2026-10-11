@@ -4,6 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { AdminLayout, activeNavTarget } from "./Layout";
 
+/** Scopes the signed-in admin lacks (everything else is allowed). */
+let denied: string[] = [];
 vi.mock("../auth", () => ({
   useAdminAuth: () => ({
     status: "signed-in",
@@ -11,7 +13,7 @@ vi.mock("../auth", () => ({
           admin_role: "super_admin", scopes: ["users:read", "ops:read", "audit:read"] },
     login: vi.fn(),
     logout: vi.fn(),
-    can: () => true,
+    can: (scope: string) => !denied.includes(scope),
   }),
 }));
 
@@ -26,6 +28,7 @@ function renderLayout(at = "/users") {
           <Route path="/leagues" element={<div>LEAGUES PAGE</div>} />
           <Route path="/leagues/unassigned" element={<div>UNASSIGNED PAGE</div>} />
           <Route path="/leagues/:seasonId/:groupId" element={<div>LEAGUE DETAIL</div>} />
+          <Route path="/learning/proficiency/:userId" element={<div>PROFICIENCY DETAIL</div>} />
         </Route>
       </Routes>
     </MemoryRouter>,
@@ -122,6 +125,36 @@ describe("admin sidebar", () => {
 
     expect(nav.getByRole("link", { name: "진행 중인 리그" }).className).toContain("active");
     expect(nav.getByRole("link", { name: "리그 미배정 회원" }).className).not.toContain("active");
+  });
+
+  it("keeps one 학습 인사이트 item lit across the pages it joins as tabs", () => {
+    /* 학습 현황 and 레벨 판정 are one menu item (학습자); the second page is
+       not under the first's path, so plain prefix matching would light
+       nothing on it. */
+    renderLayout("/learning/proficiency/usr_1");
+    const nav = within(sidebar());
+
+    expect(nav.getByRole("link", { name: "학습자" }).className).toContain("active");
+    expect(nav.getByRole("link", { name: "한눈에 보기" }).className).not.toContain("active");
+    expect(nav.queryByRole("link", { name: "레벨 판정" })).not.toBeInTheDocument();
+  });
+
+  it("links a joined item to the first of its pages the admin can open", () => {
+    // An AI operator without analytics:read cannot open 맞춤 학습, only AI 기능·비용.
+    denied = ["analytics:read"];
+    try {
+      renderLayout("/");
+      expect(within(sidebar()).getByRole("link", { name: "맞춤 학습·AI" })).toHaveAttribute("href", "/learning/ai");
+    } finally {
+      denied = [];
+    }
+  });
+
+  it("names the content package import for what it does", () => {
+    renderLayout("/");
+    const link = within(sidebar()).getByRole("link", { name: "콘텐츠 업데이트" });
+    expect(link).toHaveAttribute("href", "/content-updates");
+    expect(within(sidebar()).queryByText("카탈로그 가져오기")).not.toBeInTheDocument();
   });
 
   it("does not let the dashboard claim every page", () => {

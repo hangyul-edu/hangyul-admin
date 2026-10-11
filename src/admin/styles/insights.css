@@ -1,0 +1,806 @@
+/* ==========================================================================
+   학습 인사이트 · 콘텐츠 업데이트
+   Page hero, section tabs, KPI cards with judged trends, period picker,
+   panels, help popovers, notices, empty states, and the update stepper.
+   Admin palette only: blue + cool neutrals, green/red for good/bad — no amber.
+   ========================================================================== */
+
+/* ---- Hero ---- */
+.hgins-hero {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+.hgins-hero__icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  color: #fff;
+  background: var(--brand-gradient);
+  box-shadow: var(--shadow-brand);
+}
+.hgins-hero__text {
+  flex: 1 1 420px;
+  min-width: min(100%, 320px);
+}
+.hgins-hero__eyebrow {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--brand-600);
+  margin-bottom: 2px;
+}
+.hgins-hero h1 {
+  font-size: 24px;
+  letter-spacing: -0.025em;
+  margin: 0 0 4px;
+}
+.hgins-hero__desc {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 13.5px;
+  line-height: 1.6;
+  max-width: 72ch;
+}
+.hgins-hero__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* ---- Section tabs (segmented) ---- */
+.hgins-tabs {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 18px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.hgins-tab {
+  padding: 7px 16px;
+  border-radius: 9px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink-3);
+  text-decoration: none;
+  transition: background 0.14s, color 0.14s, box-shadow 0.14s;
+}
+.hgins-tab:hover {
+  color: var(--ink);
+}
+.hgins-tab.is-active {
+  background: var(--surface);
+  color: var(--brand-600);
+  box-shadow: var(--ad-shadow);
+}
+.hgins-tab:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* ---- Panels ---- */
+.hgadm-la .hgins-panel {
+  padding: 20px 22px;
+}
+.hgins-panel__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.hgins-panel__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+}
+.hgins-panel__desc {
+  margin: 3px 0 0;
+  font-size: 12.5px;
+  color: var(--ink-3);
+  line-height: 1.55;
+  max-width: 80ch;
+}
+.hgins-panel__actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.hgins-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  margin-bottom: 16px;
+}
+.hgins-grid > .hgadm-card {
+  margin-bottom: 0;
+}
+
+/* ---- KPI cards ---- */
+.hgins-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.hgins-kpi {
+  position: relative;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 16px 18px 15px;
+  box-shadow: var(--ad-shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.hgins-kpi__top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+.hgins-kpi__icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: var(--brand-50);
+  color: var(--brand-600);
+  flex: none;
+}
+.hgins-kpi__label {
+  min-width: 0;
+}
+.hgins-kpi__value {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+.hgins-kpi__value .hgins-nodata {
+  font-size: 15px;
+  font-weight: 700;
+}
+.hgins-kpi__foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-height: 22px;
+}
+.hgins-kpi__sub {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+/* ---- Trend chip ---- */
+.hgins-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 8px 2px 6px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.hgins-trend--good {
+  color: var(--ad-success);
+  background: var(--ad-success-soft);
+}
+.hgins-trend--bad {
+  color: var(--ad-danger);
+  background: var(--ad-danger-soft);
+}
+.hgins-trend--flat {
+  color: var(--ad-neutral);
+  background: var(--ad-neutral-soft);
+}
+.hgins-change {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.hgins-change__rel {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.hgins-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---- Ratios and no-data ---- */
+.hgins-ratio {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.hgins-ratio strong {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.hgins-ratio__base {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.hgins-nodata {
+  color: var(--ink-3);
+  font-size: 12.5px;
+}
+.hgins-nodata--block {
+  padding: 14px 0 4px;
+}
+
+/* ---- Metric label + help popover ---- */
+.hgins-metric {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.hgins-metric__name {
+  font-weight: 700;
+  color: var(--ink);
+}
+.hgins-help {
+  position: relative;
+  display: inline-flex;
+}
+.hgins-help__btn {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+  padding: 0;
+}
+.hgins-help__btn:hover,
+.hgins-help__btn[aria-expanded="true"] {
+  color: var(--brand-600);
+  background: var(--brand-50);
+}
+.hgins-help__btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.hgins-help__pop {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 6px);
+  left: -8px;
+  width: min(360px, 80vw);
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--ad-shadow-md);
+  font-size: 12.5px;
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--ink-2);
+  text-align: left;
+  white-space: normal;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.hgins-metric__meaning {
+  display: block;
+  color: var(--ink);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.hgins-defs {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 4px 10px;
+  margin: 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.hgins-defs dt {
+  color: var(--ink-3);
+  font-weight: 600;
+}
+.hgins-defs dd {
+  margin: 0;
+}
+.hgins-defs__missing {
+  display: block;
+  color: var(--ink-3);
+}
+
+/* ---- Period picker ---- */
+.hgins-period {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.hgins-seg {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  box-shadow: var(--ad-shadow-sm);
+}
+.hgins-seg__btn {
+  border: 0;
+  background: transparent;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.hgins-seg__btn:hover {
+  background: var(--surface-3);
+}
+.hgins-seg__btn.is-on {
+  background: var(--brand-500);
+  color: #fff;
+}
+.hgins-seg__btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.hgins-period__custom {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.hgins-period__custom input {
+  width: 150px;
+}
+.hgins-period__caption {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Notices ---- */
+.hgins-notice {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 13px 16px;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  border: 1px solid;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.hgins-notice > svg {
+  flex: none;
+  margin-top: 1px;
+}
+.hgins-notice__title {
+  font-weight: 700;
+}
+.hgins-notice__body {
+  color: var(--ink-2);
+}
+.hgins-notice--info {
+  background: var(--ad-info-soft);
+  border-color: var(--brand-200);
+  color: var(--brand-700);
+}
+.hgins-notice--warn {
+  background: #f5f7ff;
+  border-color: #c7d2fe;
+  color: #3730a3;
+}
+.hgins-notice--danger {
+  background: var(--ad-danger-soft);
+  border-color: #fecaca;
+  color: #991b1b;
+}
+.hgins-notice--success {
+  background: var(--ad-success-soft);
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+/* ---- Empty state ---- */
+.hgins-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  padding: 28px 16px;
+}
+.hgins-empty__icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--surface-3);
+  color: var(--ink-3);
+  margin-bottom: 4px;
+}
+.hgins-empty__title {
+  font-weight: 700;
+  color: var(--ink-2);
+}
+.hgins-empty__body {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  max-width: 52ch;
+}
+
+/* ---- Metric list (overview health groups) ---- */
+.hgins-mlist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.hgins-mlist > li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+.hgins-mlist > li:first-child {
+  border-top: 0;
+  padding-top: 2px;
+}
+.hgins-mlist__meaning {
+  grid-column: 1;
+  font-size: 12px;
+  color: var(--ink-3);
+  line-height: 1.5;
+}
+.hgins-mlist__value {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+.hgins-mlist__link {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--brand-600);
+  text-decoration: none;
+}
+.hgins-mlist__link:hover {
+  text-decoration: underline;
+}
+
+/* ---- Facts (definition rows inside panels) ---- */
+.hgins-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+.hgins-fact {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+.hgins-fact__label {
+  font-size: 12px;
+  color: var(--ink-3);
+  font-weight: 600;
+}
+.hgins-fact__value {
+  margin-top: 3px;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.hgins-fact__hint {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.hgins-fact--good .hgins-fact__value {
+  color: var(--ad-success);
+}
+.hgins-fact--bad .hgins-fact__value {
+  color: var(--ad-danger);
+}
+.hgins-fact--brand .hgins-fact__value {
+  color: var(--brand-600);
+}
+
+/* ---- Collapsible technical details ---- */
+.hgins-more {
+  margin-top: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+.hgins-more > summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 11px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.hgins-more > summary::-webkit-details-marker {
+  display: none;
+}
+.hgins-more > summary::after {
+  content: "";
+  margin-left: auto;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--ink-3);
+  border-bottom: 2px solid var(--ink-3);
+  transform: rotate(45deg);
+  transition: transform 0.15s;
+}
+.hgins-more[open] > summary::after {
+  transform: rotate(225deg);
+}
+.hgins-more > summary:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: 12px;
+}
+.hgins-more__body {
+  padding: 4px 14px 14px;
+}
+
+/* ---- Stepper (콘텐츠 업데이트) ---- */
+.hgins-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  list-style: none;
+  margin: 0 0 18px;
+  padding: 0;
+  counter-reset: step;
+}
+.hgins-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink-3);
+}
+.hgins-step__num {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 2px solid var(--line-strong);
+  font-size: 12.5px;
+  flex: none;
+}
+.hgins-step__sub {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-3);
+}
+.hgins-step.is-current {
+  border-color: var(--brand-300);
+  background: var(--brand-50);
+  color: var(--brand-700);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+}
+.hgins-step.is-current .hgins-step__num {
+  border-color: var(--brand-500);
+  background: var(--brand-500);
+  color: #fff;
+}
+.hgins-step.is-done {
+  color: var(--ink);
+}
+.hgins-step.is-done .hgins-step__num {
+  border-color: var(--ad-success);
+  background: var(--ad-success);
+  color: #fff;
+}
+
+/* Status banner at the top of 콘텐츠 업데이트 */
+.hgins-status {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  padding: 20px 22px;
+  margin-bottom: 16px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  background: linear-gradient(135deg, #ffffff 0%, #f6f9ff 100%);
+  box-shadow: var(--ad-shadow-card);
+}
+.hgins-status__side {
+  min-width: 0;
+}
+.hgins-status__label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-3);
+}
+.hgins-status__value {
+  margin-top: 3px;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.hgins-status__hint {
+  margin-top: 2px;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.hgins-status__arrow {
+  color: var(--ink-3);
+}
+.hgins-status__verdict {
+  justify-self: end;
+}
+.hgins-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.hgins-pill--ok {
+  color: #166534;
+  background: var(--ad-success-soft);
+}
+.hgins-pill--new {
+  color: var(--brand-700);
+  background: var(--brand-100);
+}
+.hgins-pill--bad {
+  color: #991b1b;
+  background: var(--ad-danger-soft);
+}
+.hgins-pill--busy {
+  color: var(--ad-pending);
+  background: var(--ad-pending-soft);
+}
+
+/* Live progress list while a job runs */
+.hgins-progress {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.hgins-progress li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.hgins-progress li.is-done {
+  color: var(--ink-2);
+}
+.hgins-progress li.is-now {
+  color: var(--brand-700);
+  font-weight: 700;
+}
+.hgins-progress__dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 2px solid var(--line-strong);
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+.hgins-progress li.is-done .hgins-progress__dot {
+  border-color: var(--ad-success);
+  background: var(--ad-success);
+  color: #fff;
+}
+.hgins-progress li.is-now .hgins-progress__dot {
+  border-color: var(--brand-500);
+  border-top-color: transparent;
+  animation: hgins-spin 0.9s linear infinite;
+}
+@keyframes hgins-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hgins-progress li.is-now .hgins-progress__dot {
+    animation: none;
+  }
+}
+
+.hgins-list {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  line-height: 1.6;
+}
+.hgins-cta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+.hgins-cta__hint {
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+@media (max-width: 820px) {
+  .hgins-steps {
+    grid-template-columns: 1fr;
+  }
+  .hgins-status {
+    grid-template-columns: 1fr;
+  }
+  .hgins-status__arrow {
+    display: none;
+  }
+  .hgins-status__verdict {
+    justify-self: start;
+  }
+}

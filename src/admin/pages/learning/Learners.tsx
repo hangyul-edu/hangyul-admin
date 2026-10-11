@@ -16,7 +16,9 @@ import {
   Select,
 } from "../../components/kit";
 import type { Column } from "../../components/kit";
+import { GraduationCap } from "lucide-react";
 import { TRACK_LABEL } from "../../components/learning";
+import { PageHero } from "../../components/insights";
 
 const PAGE_SIZE = 25;
 
@@ -56,16 +58,16 @@ export function LearnersPage() {
       ),
     },
     { key: "last", header: "마지막 학습", render: (r) => formatDateTime(r.last_study_at) },
-    { key: "evidence", header: "누적 평가 증거", numeric: true, render: (r) => r.evidence_count.toLocaleString() },
+    { key: "evidence", header: "실력 평가 기록", numeric: true, render: (r) => r.evidence_count.toLocaleString() },
     {
       key: "overdue",
-      header: "기한 지난 복습",
+      header: "밀린 복습",
       numeric: true,
       render: (r) => (r.overdue_reviews ? <Badge tone="warning">{r.overdue_reviews}</Badge> : "0"),
     },
     {
       key: "labels",
-      header: "상태 메모",
+      header: "참고",
       render: (r) =>
         r.labels.length ? (
           <span style={{ display: "inline-flex", gap: 4, flexWrap: "wrap" }}>
@@ -83,15 +85,12 @@ export function LearnersPage() {
 
   return (
     <div>
-      <div className="hgadm-page-head">
-        <div>
-          <h1>학습자 성장</h1>
-          <div className="hgadm-page-head__desc">
-            적응형 세션을 이용한 학습자 목록입니다. 이메일은 가려져 있고, 조회 기록이 남습니다. 학습하지 않은 기간은
-            실력 하락의 증거가 아니므로 &quot;최근 평가 증거 없음&quot;처럼 사실만 표시합니다.
-          </div>
-        </div>
-      </div>
+      <PageHero
+        icon={GraduationCap}
+        eyebrow="학습 인사이트 · 학습자"
+        title="학습 현황"
+        description="맞춤 학습을 이용하는 회원의 최근 학습과 복습 상태예요. 회원을 누르면 개인별 성장 기록이 열려요. 이메일은 가려서 보여 주고, 조회한 기록이 남아요. 쉰 기간은 실력이 떨어졌다는 뜻이 아니라서 사실만 표시해요."
+      />
       <div className="hgadm-card">
         <div className="hgadm-toolbar">
           <SearchBox value={q} placeholder="사용자 ID 또는 닉네임" onSearch={(next) => f.patch({ q: next, page: null })} />
@@ -136,7 +135,7 @@ export function LearnersPage() {
             style={{ width: 170 }}
           >
             <option value="">복습 상태 전체</option>
-            <option value="true">기한 지난 복습 있음</option>
+            <option value="true">밀린 복습 있음</option>
           </Select>
         </div>
         {query.isLoading && <LoadingState />}
@@ -149,10 +148,10 @@ export function LearnersPage() {
               rowKey={(r) => r.user_id}
               onRowClick={(r) =>
                 navigate(`/learning/learners/${r.user_id}`, {
-                  state: originFrom("학습자 성장", `${location.pathname}${location.search}`),
+                  state: originFrom("학습 현황", `${location.pathname}${location.search}`),
                 })
               }
-              empty="조건에 맞는 학습자가 없습니다."
+              empty="조건에 맞는 회원이 없어요. 필터를 바꿔 보세요."
             />
             <Pagination
               page={page}

@@ -106,7 +106,7 @@ describe("실력 판정 list", () => {
     expect(screen.getAllByText("2/4 (50%)")).toHaveLength(2);
     expect(screen.getByText(/평균을 내지 않습니다/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "주의 필요" }));
-    await userEvent.click(await screen.findByRole("option", { name: "진행 정체(30일)" }));
+    await userEvent.click(await screen.findByRole("option", { name: "30일째 제자리인 회원" }));
     expect(screen.getByTestId("loc").textContent).toContain("flag=stalled");
     expect(api.learners).toHaveBeenLastCalledWith(expect.objectContaining({ flag: "stalled" }));
   });
@@ -114,7 +114,7 @@ describe("실력 판정 list", () => {
   it("hides the export without export permission", async () => {
     api.learners.mockResolvedValue({ items: [], total: 0, page: 1, page_size: 25 });
     wrap(<ProficiencyLearnersPage />, "/learning/proficiency", "/learning/proficiency");
-    expect(await screen.findByText("조건에 맞는 학습자가 없습니다.")).toBeInTheDocument();
+    expect(await screen.findByText("조건에 맞는 회원이 없어요. 필터를 바꿔 보세요.")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "CSV 내보내기" })).not.toBeInTheDocument();
   });
 });

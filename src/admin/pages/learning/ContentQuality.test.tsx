@@ -121,7 +121,7 @@ describe("ContentQualityPage", () => {
     expect(screen.getByText("70")).toBeInTheDocument();
   });
 
-  it("shows 대상 데이터 없음 for a ratio with no eligible data", async () => {
+  it("shows 아직 데이터 없음 for a ratio with no eligible data", async () => {
     api.content.mockResolvedValue({
       items: [
         {
@@ -153,7 +153,7 @@ describe("ContentQualityPage", () => {
       open_issues: 0,
     });
     renderAt("/learning/content?tab=diagnostics");
-    expect(await screen.findByText("대상 데이터 없음")).toBeInTheDocument();
+    expect(await screen.findByText("아직 데이터 없음")).toBeInTheDocument();
     expect(screen.queryByText("0.0%")).not.toBeInTheDocument();
     // The item reads as what it says, never as its key or version id.
     expect(screen.getByText("다음을 읽고 알맞은 것을 고르십시오.")).toBeInTheDocument();

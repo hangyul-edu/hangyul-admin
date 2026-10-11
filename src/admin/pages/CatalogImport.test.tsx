@@ -1,7 +1,7 @@
 /**
- * The catalog-import page: the import stays locked until a fresh, successful
- * plan exists, and the confirmation needs the exact database name and the
- * backup box before anything is sent.
+ * 콘텐츠 업데이트 (the catalog import): applying stays locked until a fresh,
+ * successful preview exists, and the confirmation needs the exact database
+ * name and the backup box before anything is sent.
  */
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
@@ -84,8 +84,29 @@ describe("CatalogImportPage", () => {
   it("keeps the import locked until there is a plan", async () => {
     overviewMock.mockResolvedValue(overview([]));
     renderPage();
-    expect(await screen.findByText("먼저 가져오기 계획을 만드세요.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "가져오기 실행…" })).toBeDisabled();
+    expect(await screen.findByText("먼저 미리보기로 바뀌는 내용을 확인하세요.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "앱에 반영하기…" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "미리보기 시작" })).toBeEnabled();
+  });
+
+  it("shows what the preview would change, and that the app is not yet up to date", async () => {
+    overviewMock.mockResolvedValue(overview([planJob()]));
+    renderPage();
+    const preview = await screen.findByTestId("catalog-plan");
+    expect(preview).toHaveTextContent("새로 추가");
+    expect(preview).toHaveTextContent("11,373");
+    expect(screen.getByText("업데이트 가능")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "다시 미리보기" })).toBeInTheDocument();
+  });
+
+  it("follows a running preview step by step", async () => {
+    const running = planJob({ status: "running", step: "target", finished_at: null });
+    overviewMock.mockResolvedValue({ ...overview([running]), active_job: running });
+    renderPage();
+    const progress = await screen.findByRole("list", { name: "진행 상황" });
+    expect(progress).toHaveTextContent("앱 데이터베이스 확인 (진행 중)");
+    expect(screen.getByText("미리보기 중")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "앱에 반영하기…" })).toBeDisabled();
   });
 
   it("sends the import only after the exact name and the backup confirmation", async () => {
@@ -94,8 +115,8 @@ describe("CatalogImportPage", () => {
     const user = userEvent.setup();
     renderPage();
 
-    await user.click(await screen.findByRole("button", { name: "가져오기 실행…" }));
-    const go = screen.getByRole("button", { name: "가져오기" });
+    await user.click(await screen.findByRole("button", { name: "앱에 반영하기…" }));
+    const go = screen.getByRole("button", { name: "반영하기" });
     expect(go).toBeDisabled();
 
     await user.type(screen.getByLabelText("데이터베이스 이름"), "hangyul");
@@ -128,7 +149,7 @@ describe("importBlocker", () => {
   const base = overview([]);
 
   it("refuses a failed, conflicting, stale or empty plan", () => {
-    expect(importBlocker(planJob({ status: "failed" }), base)).toMatch("성공한 계획");
+    expect(importBlocker(planJob({ status: "failed" }), base)).toMatch("미리보기가 성공해야");
     const conflicting = planJob();
     conflicting.result.plan = { ok: false, counts: { conflict: 1 }, conflicts: ["x"], dependency_failures: [] };
     expect(importBlocker(conflicting, base)).toMatch("충돌");
@@ -136,7 +157,7 @@ describe("importBlocker", () => {
     expect(importBlocker(old, base)).toMatch("1시간");
     const empty = planJob();
     empty.result.plan = { ok: true, counts: { skip: 11373 }, conflicts: [], dependency_failures: [] };
-    expect(importBlocker(empty, base)).toMatch("가져올 것이 없어요");
+    expect(importBlocker(empty, base)).toMatch("반영할 내용이 없어요");
     expect(importBlocker(planJob(), base)).toBeNull();
   });
 });

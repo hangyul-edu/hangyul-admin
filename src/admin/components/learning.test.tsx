@@ -7,6 +7,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { learningApi } from "../learningApi";
 import { MetricLabel } from "./learning";
@@ -63,11 +64,37 @@ describe("MetricLabel", () => {
     expect(metricDefinitions).toHaveBeenCalled();
   });
 
-  it("does not request the dictionary without analytics:read, and says why", () => {
+  it("does not request the dictionary without analytics:read, and says why", async () => {
     scopes = ["learners:read"];
     renderLabel();
     expect(metricDefinitions).not.toHaveBeenCalled();
+    // The explanation sits behind the label's "?".
+    await userEvent.click(screen.getByRole("button", { name: /설명 보기/ }));
     expect(screen.queryByText(/불러오는 중/)).not.toBeInTheDocument();
     expect(screen.getByText(/학습 통계 조회 권한/)).toBeInTheDocument();
+  });
+
+  it("puts a known metric's plain name first, with its meaning and exact definition behind the ?", async () => {
+    scopes = ["analytics:read"];
+    metricDefinitions.mockResolvedValue({
+      reporting_timezone: "Asia/Seoul",
+      metrics: [
+        {
+          metric_id: "independent_accuracy", version: 2, label_ko: "독립 정답률",
+          numerator: "첫 시도 정답 수", denominator: "첫 시도 수", inclusion: "", exclusion: "",
+          window: "28일", timezone: "Asia/Seoul", source: "attempts", freshness: "실시간", limitations: "",
+        },
+      ] as never,
+    });
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={qc}>
+        <MetricLabel metric="independent_accuracy@2" />
+      </QueryClientProvider>,
+    );
+    expect(screen.getByText("스스로 맞힌 비율")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "스스로 맞힌 비율 설명 보기" }));
+    expect(screen.getByText(/힌트나 정답 보기 없이/)).toBeInTheDocument();
+    expect(await screen.findByText("첫 시도 정답 수 ÷ 첫 시도 수")).toBeInTheDocument();
   });
 });

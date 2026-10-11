@@ -111,33 +111,33 @@ describe("RecommendationsPage", () => {
     renderPage();
     expect(await screen.findByText("레벨 범위 밖")).toBeInTheDocument();
     expect(screen.getByText("선수 기술 미충족")).toBeInTheDocument();
-    expect(screen.getAllByText("대상 데이터 없음").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("아직 데이터 없음").length).toBeGreaterThan(0);
     expect(screen.queryByText("0.0%")).not.toBeInTheDocument();
   });
 
   it("hides the simulation panel without learners:read", async () => {
     renderPage();
     await screen.findByText("레벨 범위 밖");
-    expect(screen.queryByText(/시뮬레이션 — 저장되지 않음/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/미리보기 — 저장되지 않음/)).not.toBeInTheDocument();
   });
 
   it("labels the simulation panel as not saved when shown", async () => {
     scopes = ["analytics:read", "learners:read"];
     renderPage();
-    expect(await screen.findByText("시뮬레이션 — 저장되지 않음")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "시뮬레이션 실행" })).toBeDisabled();
+    expect(await screen.findByText("미리보기 — 저장되지 않음")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "미리 구성해 보기" })).toBeDisabled();
   });
 
   it("picks the learner and topics by name and shows results without ids", async () => {
     scopes = ["analytics:read", "learners:read"];
     renderPage();
-    await screen.findByText("시뮬레이션 — 저장되지 않음");
+    await screen.findByText("미리보기 — 저장되지 않음");
     expect(screen.queryByText(/ID/)).not.toBeInTheDocument();
 
     await userEvent.type(screen.getByPlaceholderText("닉네임으로 검색"), "지수{Enter}");
     await userEvent.click(await screen.findByRole("button", { name: /지수 · ji•••@example\.com/ }));
     await userEvent.click(await screen.findByRole("checkbox", { name: "여행" }));
-    await userEvent.click(screen.getByRole("button", { name: "시뮬레이션 실행" }));
+    await userEvent.click(screen.getByRole("button", { name: "미리 구성해 보기" }));
 
     await waitFor(() =>
       expect(learningApi.simulate).toHaveBeenCalledWith(

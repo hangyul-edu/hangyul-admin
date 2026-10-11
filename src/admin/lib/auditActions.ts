@@ -236,12 +236,12 @@ const ACTION_COPY: Record<string, ActionCopy> = {
     en: "Ran the legacy content-version backfill",
   },
   "POST /admin/content-catalog/package-import/plan": {
-    ko: "카탈로그 가져오기 계획(모의 실행) 시작",
-    en: "Started a catalog import plan (dry run)",
+    ko: "콘텐츠 업데이트 미리보기 시작",
+    en: "Started a content update preview (dry run)",
   },
   "POST /admin/content-catalog/package-import/import": {
-    ko: "카탈로그 가져오기 실행",
-    en: "Started a catalog import",
+    ko: "콘텐츠 업데이트 반영",
+    en: "Applied a content update",
   },
   "POST /admin/content-catalog/generation-jobs": {
     ko: "콘텐츠 생성 작업 등록",
@@ -330,7 +330,7 @@ export const AUDIT_OBJECT_TYPES: readonly [value: string, label: string][] = [
   ["quizzes", "문제"],
   ["quiz_batch", "문제 일괄 추가"],
   ["content_cleanup", "콘텐츠 일괄 정리"],
-  ["catalog_import_job", "카탈로그 가져오기"],
+  ["catalog_import_job", "콘텐츠 업데이트"],
   ["generated_content", "AI 생성 검수"],
   ["generated-content", "AI 생성 삭제"],
   ["content_version", "콘텐츠 버전 검수·게시"],
@@ -350,7 +350,7 @@ export const AUDIT_OBJECT_TYPES: readonly [value: string, label: string][] = [
   ["learner", "학습자 기록 조회"],
   ["tutor_turns", "튜터 대화 조회"],
   ["analytics_export", "학습 통계 내보내기"],
-  ["learning-analytics", "학습 분석"],
+  ["learning-analytics", "학습 인사이트"],
   ["learner_proficiency", "학습자 실력 판정"],
   ["proficiency_rating", "평가 기준 채점"],
 ];

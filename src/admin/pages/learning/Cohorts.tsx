@@ -1,12 +1,14 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { CSSProperties } from "react";
+import { CalendarRange, Download } from "lucide-react";
 import { learningApi } from "../../learningApi";
 import type { CohortRow, Ratio } from "../../learningApi";
 import { useUrlFilters } from "../../lib/urlFilters";
 import { useAdminAuth } from "../../auth";
 import { useToast, useToastError } from "../../../hooks/toast";
-import { Button, DataTable, EmptyState, ErrorState, Input, LoadingState, Select } from "../../components/kit";
+import { Button, DataTable, ErrorState, Input, LoadingState } from "../../components/kit";
 import type { Column } from "../../components/kit";
+import { EmptyHint, PageHero, Panel } from "../../components/insights";
 import { MetricLabel, RatioView, downloadExport } from "../../components/learning";
 import { errorMessage } from "../../../lib/http";
 
@@ -23,7 +25,7 @@ function RetentionCell({ ratio, notYet }: { ratio: Ratio; notYet: number }) {
       <span className="hgadm-heat" style={heatStyle(ratio)}>
         <RatioView ratio={ratio} />
       </span>
-      {notYet > 0 && <div className="hgadm-cell-sub">아직 판정 불가 {notYet.toLocaleString()}명</div>}
+      {notYet > 0 && <div className="hgadm-cell-sub">아직 날짜가 안 된 회원 {notYet.toLocaleString()}명</div>}
     </div>
   );
 }
@@ -55,105 +57,97 @@ export function CohortsPage() {
   });
 
   const columns: Column<CohortRow>[] = [
-    { key: "cohort", header: "코호트 (첫 학습 기간)", render: (c) => c.cohort },
+    { key: "cohort", header: granularity === "month" ? "처음 학습한 달" : "처음 학습한 주", render: (c) => c.cohort },
     {
       key: "size",
-      header: "인원",
+      header: "회원 수",
       numeric: true,
-      render: (c) => (c.size === null ? <span className="hgadm-cell-sub">비공개</span> : c.size.toLocaleString()),
+      render: (c) =>
+        c.size === null ? <span className="hgins-nodata" title="5명 미만은 개인을 특정할 수 없도록 숨겨요">숨김</span> : `${c.size.toLocaleString()}명`,
     },
-    {
-      key: "d1",
-      header: "D1",
-      render: (c) => <RetentionCell ratio={c.d1} notYet={c.d1_not_yet_eligible} />,
-    },
-    {
-      key: "d7",
-      header: "D7",
-      render: (c) => <RetentionCell ratio={c.d7} notYet={c.d7_not_yet_eligible} />,
-    },
-    {
-      key: "d30",
-      header: "D30",
-      render: (c) => <RetentionCell ratio={c.d30} notYet={c.d30_not_yet_eligible} />,
-    },
+    { key: "d1", header: "다음 날 재방문", render: (c) => <RetentionCell ratio={c.d1} notYet={c.d1_not_yet_eligible} /> },
+    { key: "d7", header: "7일 뒤 재방문", render: (c) => <RetentionCell ratio={c.d7} notYet={c.d7_not_yet_eligible} /> },
+    { key: "d30", header: "30일 뒤 재방문", render: (c) => <RetentionCell ratio={c.d30} notYet={c.d30_not_yet_eligible} /> },
   ];
 
   return (
     <div>
-      <div className="hgadm-page-head">
-        <div>
-          <h1>코호트·재방문</h1>
-          <div className="hgadm-page-head__desc">
-            첫 학습일 기준 코호트별 D1·D7·D30 재방문율입니다. 아직 해당 일수가 지나지 않은 학습자는 분모에서 제외됩니다.
+      <PageHero
+        icon={CalendarRange}
+        eyebrow="학습 인사이트"
+        title="재방문 분석"
+        description="처음 학습을 시작한 시기별로 회원을 묶어, 다음 날·7일 뒤·30일 뒤에도 다시 학습했는지 보여 줘요. 칸 색이 진할수록 다시 온 회원이 많아요. 아직 그날이 오지 않은 회원은 계산에서 빼요."
+        actions={
+          can("exports:create") ? (
+            <Button variant="secondary" loading={exporter.isPending} onClick={() => exporter.mutate()}>
+              <Download size={15} strokeWidth={2} aria-hidden />
+              CSV 내보내기
+            </Button>
+          ) : undefined
+        }
+      />
+
+      <Panel
+        title="시작 시기별 재방문"
+        description={
+          query.data
+            ? `${query.data.timezone} 기준${
+                query.data.small_cell_suppression !== null
+                  ? ` · 개인을 특정할 수 없도록 표본 ${query.data.small_cell_suppression}명 미만인 칸은 숨겨요`
+                  : " · 학습자 조회 권한이 있어 작은 표본도 그대로 보여요"
+              }`
+            : undefined
+        }
+        actions={
+          <div className="hgins-period" style={{ margin: 0 }}>
+            <div className="hgins-seg" role="radiogroup" aria-label="묶는 단위">
+              {(
+                [
+                  ["week", "주 단위"],
+                  ["month", "월 단위"],
+                ] as const
+              ).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  role="radio"
+                  aria-checked={granularity === value}
+                  className={`hgins-seg__btn${granularity === value ? " is-on" : ""}`}
+                  onClick={() => f.patch({ granularity: value })}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className="hgins-period__custom">
+              <Input type="date" aria-label="시작일" value={start} onChange={(e) => f.patch({ start: e.target.value || null })} />
+              <span aria-hidden>–</span>
+              <Input type="date" aria-label="종료일" value={end} onChange={(e) => f.patch({ end: e.target.value || null })} />
+            </div>
           </div>
-        </div>
-        {can("exports:create") && (
-          <Button variant="secondary" loading={exporter.isPending} onClick={() => exporter.mutate()}>
-            CSV 내보내기
-          </Button>
-        )}
-      </div>
-
-      <div className="hgadm-card">
-        <div className="hgadm-toolbar">
-          <label className="hgadm-window-field">
-            <span className="hgadm-cell-sub">시작일</span>
-            <Input
-              type="date"
-              aria-label="시작일"
-              value={start}
-              onChange={(e) => f.patch({ start: e.target.value || null })}
-              style={{ width: 150 }}
-            />
-          </label>
-          <label className="hgadm-window-field">
-            <span className="hgadm-cell-sub">종료일</span>
-            <Input
-              type="date"
-              aria-label="종료일"
-              value={end}
-              onChange={(e) => f.patch({ end: e.target.value || null })}
-              style={{ width: 150 }}
-            />
-          </label>
-          <Select
-            aria-label="코호트 단위"
-            value={granularity}
-            onChange={(e) => f.patch({ granularity: e.target.value })}
-            style={{ width: 120 }}
-          >
-            <option value="week">주 단위</option>
-            <option value="month">월 단위</option>
-          </Select>
-        </div>
-
+        }
+      >
         {query.isLoading ? (
           <LoadingState />
         ) : query.isError ? (
           <ErrorState message={errorMessage(query.error)} onRetry={() => void query.refetch()} />
         ) : !query.data || query.data.cohorts.length === 0 ? (
-          <EmptyState title="대상 데이터 없음" desc="선택한 기간에 첫 학습을 시작한 학습자가 없습니다." />
+          <EmptyHint title="이 기간에 처음 학습을 시작한 회원이 없어요">기간을 넓히거나 다른 기간을 선택해 보세요.</EmptyHint>
         ) : (
           <>
-            <div className="hgadm-cell-sub" style={{ marginBottom: 8 }}>
-              정의: {query.data.definition} · 시간대 {query.data.timezone}
-              {query.data.small_cell_suppression !== null
-                ? ` · 표본 ${query.data.small_cell_suppression}명 미만인 칸은 비공개로 표시됩니다`
-                : " · 표본 크기 비공개 처리 없음 (학습자 조회 권한)"}
-            </div>
-            <div className="hgadm-toolbar" aria-label="지표 정의">
+            <div className="hgadm-toolbar" aria-label="지표 설명">
               <MetricLabel metric="return_retention_d1" />
               <MetricLabel metric="return_retention_d7" />
               <MetricLabel metric="return_retention_d30" />
             </div>
             <DataTable columns={columns} rows={query.data.cohorts} rowKey={(c) => c.cohort} />
+            <p className="hgins-cta__hint" style={{ marginTop: 10 }}>
+              {query.data.definition}
+            </p>
           </>
         )}
-        <div className="hgadm-cell-sub" style={{ marginTop: 8 }}>
-          기간 비교는 인과를 입증하지 않습니다. 코호트 구성과 학습 조건이 다를 수 있습니다.
-        </div>
-      </div>
+      </Panel>
+      <p className="hgins-cta__hint">시기끼리 비교해도 원인까지 알 수는 없어요. 시기마다 회원 구성과 학습 조건이 다를 수 있어요.</p>
     </div>
   );
 }

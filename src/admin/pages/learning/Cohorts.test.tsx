@@ -65,21 +65,21 @@ describe("CohortsPage", () => {
     scopes = ["analytics:read"];
   });
 
-  it("shows suppressed cells as 비공개, never as a percentage", async () => {
+  it("shows suppressed cells as hidden, never as a percentage", async () => {
     cohorts.mockResolvedValue(suppressedData);
     renderPage();
     expect(await screen.findByText("2026-09-01")).toBeInTheDocument();
-    expect(screen.getByText("비공개")).toBeInTheDocument();
-    expect(screen.getAllByText(/비공개 \(표본 5 미만\)/).length).toBeGreaterThan(0);
+    expect(screen.getByText("숨김")).toBeInTheDocument();
+    expect(screen.getAllByText(/표본이 적어 숨김/).length).toBeGreaterThan(0);
     expect(screen.queryByText(/%$/)).not.toBeInTheDocument();
-    expect(screen.getByText(/표본 5명 미만인 칸은 비공개/)).toBeInTheDocument();
+    expect(screen.getByText(/표본 5명 미만인 칸은 숨겨요/)).toBeInTheDocument();
   });
 
   it("shows how many members are not yet eligible", async () => {
     cohorts.mockResolvedValue(suppressedData);
     renderPage();
-    expect(await screen.findByText("아직 판정 불가 2명")).toBeInTheDocument();
-    expect(screen.getByText("아직 판정 불가 3명")).toBeInTheDocument();
+    expect(await screen.findByText("아직 날짜가 안 된 회원 2명")).toBeInTheDocument();
+    expect(screen.getByText("아직 날짜가 안 된 회원 3명")).toBeInTheDocument();
   });
 
   it("renders a value with its sample size when eligible", async () => {
@@ -96,7 +96,7 @@ describe("CohortsPage", () => {
     });
     renderPage();
     expect(await screen.findByText("50.0%")).toBeInTheDocument();
-    expect(screen.getByText(/\(5\/10\)/)).toBeInTheDocument();
+    expect(screen.getByText("5 / 10")).toBeInTheDocument();
   });
 
   it("hides the export button without exports:create", async () => {

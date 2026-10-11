@@ -19,6 +19,8 @@ import {
   Textarea,
 } from "../../components/kit";
 import type { Column } from "../../components/kit";
+import { ListChecks } from "lucide-react";
+import { Notice, PageHero, Panel } from "../../components/insights";
 import { useUrlFilters } from "../../lib/urlFilters";
 import { useAdminAuth } from "../../auth";
 import { useToast, useToastError } from "../../../hooks/toast";
@@ -69,27 +71,26 @@ export function ContentQualityPage() {
   const tab = (f.value("tab", "coverage") as Tab) || "coverage";
   return (
     <div>
-      <div className="hgadm-page-head">
-        <div>
-          <h1>콘텐츠 품질·검수</h1>
-          <div className="hgadm-page-head__desc">
-            검수·게시된 콘텐츠 재고와 부족 신호, 문항별 실제 학습 결과, 검수 대기열을 확인합니다.
-          </div>
-        </div>
-      </div>
-      <div className="hgadm-tabs" role="tablist">
+      <PageHero
+        icon={ListChecks}
+        eyebrow="학습 인사이트"
+        title="콘텐츠 품질"
+        description="학습에 쓸 콘텐츠가 레벨마다 충분한지, 회원이 실제로 풀어 본 결과 이상한 문항은 없는지, 검수를 기다리는 콘텐츠는 무엇인지 확인해요."
+      />
+      <div className="hgins-tabs" role="tablist" aria-label="콘텐츠 품질 보기">
         {(
           [
-            ["coverage", "커버리지"],
-            ["diagnostics", "문항 진단"],
-            ["queue", "검수 대기열"],
+            ["coverage", "콘텐츠 재고"],
+            ["diagnostics", "문항별 학습 결과"],
+            ["queue", "검수할 콘텐츠"],
           ] as const
         ).map(([key, label]) => (
           <button
             key={key}
             role="tab"
             aria-selected={tab === key}
-            className={`hgadm-tab ${tab === key ? "active" : ""}`}
+            className={`hgins-tab${tab === key ? " is-active" : ""}`}
+            style={{ border: 0, cursor: "pointer", background: tab === key ? undefined : "transparent" }}
             onClick={() => f.patch({ tab: key, page: null })}
           >
             {label}
@@ -111,61 +112,90 @@ function CoverageTab() {
   if (q.isError || !q.data) return <ErrorState message="커버리지를 불러오지 못했습니다." onRetry={() => void q.refetch()} />;
   const c = q.data;
   const weakest = c.skills.slice(0, 15);
+  const shortBands = c.bands.filter((b) => b.status === "short");
+  const eligible = c.bands.reduce((sum, b) => sum + b.eligible, 0);
+  const approved = c.bands.reduce((sum, b) => sum + b.approved, 0);
   return (
     <>
-      <div className="hgadm-card">
-        <h2>수준별 재고</h2>
-        <div className="hgadm-cell-sub" style={{ marginBottom: 8 }}>
-          필요량 = 세션당 신규 {c.assumptions.new_items_per_session} × 주 {c.assumptions.sessions_per_week}회 × {c.assumptions.variation_weeks}주 × 맞춤화 여유 {c.assumptions.customization_headroom} = {c.assumptions.required_new_items}개 ({c.model_version}). 예정된 복습은 신규 수요에 포함하지 않습니다.
+      <div className="hgins-facts" style={{ marginBottom: 16 }}>
+        <div className={`hgins-fact ${shortBands.length ? "hgins-fact--bad" : "hgins-fact--good"}`}>
+          <div className="hgins-fact__label">콘텐츠가 부족한 레벨</div>
+          <div className="hgins-fact__value">{shortBands.length ? `${shortBands.length}개` : "없음"}</div>
+          <div className="hgins-fact__hint">
+            {shortBands.length
+              ? shortBands.map((b) => `${TRACK_LABEL[b.track] ?? b.track} ${b.band}`).join(", ")
+              : "모든 레벨이 4주 분량 이상이에요"}
+          </div>
         </div>
+        <div className="hgins-fact">
+          <div className="hgins-fact__label">학습에 쓸 수 있는 콘텐츠</div>
+          <div className="hgins-fact__value">{eligible.toLocaleString()}개</div>
+          <div className="hgins-fact__hint">그중 검수 승인 {approved.toLocaleString()}개</div>
+        </div>
+        <div className={`hgins-fact${c.eligible_without_skill_link ? " hgins-fact--bad" : ""}`}>
+          <div className="hgins-fact__label">학습 기술이 연결 안 된 콘텐츠</div>
+          <div className="hgins-fact__value">{c.eligible_without_skill_link.toLocaleString()}개</div>
+          <div className="hgins-fact__hint">연결되기 전까지 학습에 나오지 않아요</div>
+        </div>
+      </div>
+      <Panel
+        title="레벨별 콘텐츠 재고"
+        description={
+          <>
+            필요량은 한 회원이 {c.assumptions.variation_weeks}주 동안 새 문항을 겹치지 않게 공부하는 데 드는 양이에요 (학습 1회 새 문항{" "}
+            {c.assumptions.new_items_per_session}개 × 주 {c.assumptions.sessions_per_week}회 × {c.assumptions.variation_weeks}주 × 맞춤 여유{" "}
+            {c.assumptions.customization_headroom} = {c.assumptions.required_new_items}개). 복습은 새 문항이 아니라서 빼고 계산해요.
+          </>
+        }
+      >
         <DataTable
           rows={c.bands}
           rowKey={(b) => `${b.track}-${b.band}`}
           columns={[
-            { key: "track", header: "트랙", render: (b) => TRACK_LABEL[b.track] ?? b.track },
-            { key: "band", header: "수준", numeric: true, render: (b) => b.band },
-            { key: "eligible", header: "제공 가능", numeric: true, render: (b) => b.eligible.toLocaleString() },
+            { key: "track", header: "과정", render: (b) => TRACK_LABEL[b.track] ?? b.track },
+            { key: "band", header: "레벨", numeric: true, render: (b) => b.band },
+            { key: "eligible", header: "학습에 쓸 수 있음", numeric: true, render: (b) => b.eligible.toLocaleString() },
             { key: "approved", header: "검수 승인", numeric: true, render: (b) => b.approved.toLocaleString() },
             { key: "legacy", header: "기존(미검수)", numeric: true, render: (b) => b.legacy_unreviewed.toLocaleString() },
             { key: "auto", header: "자동 게시", numeric: true, render: (b) => b.auto_published.toLocaleString() },
             { key: "required", header: "필요량", numeric: true, render: (b) => b.required_new_items.toLocaleString() },
-            { key: "shortage", header: "부족분", numeric: true, render: (b) => b.shortage.toLocaleString() },
+            {
+              key: "shortage",
+              header: "모자란 양",
+              numeric: true,
+              render: (b) => (b.shortage ? <strong style={{ color: "var(--ad-danger)" }}>{b.shortage.toLocaleString()}</strong> : "—"),
+            },
             {
               key: "status",
               header: "상태",
-              render: (b) => <Badge tone={b.status === "short" ? "warning" : "success"}>{b.status === "short" ? "부족" : "충분"}</Badge>,
+              render: (b) => <Badge tone={b.status === "short" ? "danger" : "success"}>{b.status === "short" ? "부족" : "충분"}</Badge>,
             },
           ]}
         />
-      </div>
-      <div className="hgadm-grid-2">
-        <div className="hgadm-card">
-          <h2>게시 문항이 적은 기술</h2>
+      </Panel>
+      <div className="hgins-grid">
+        <Panel title="문항이 적은 학습 기술" description="공개된 문항이 가장 적은 기술부터 보여 줘요. 새 콘텐츠를 만들 때 우선순위로 쓰세요.">
           <DataTable
             rows={weakest}
             rowKey={(s) => s.skill_id}
-            empty="대상 데이터 없음"
+            empty="아직 데이터 없음"
             columns={[
-              { key: "name", header: "기술", render: (s) => s.name_ko },
-              { key: "n", header: "게시 버전", numeric: true, render: (s) => s.published_versions },
+              { key: "name", header: "학습 기술", render: (s) => s.name_ko },
+              { key: "n", header: "공개된 문항", numeric: true, render: (s) => s.published_versions },
             ]}
           />
-        </div>
-        <div className="hgadm-card">
-          <h2>상태별 버전</h2>
+        </Panel>
+        <Panel title="검수 상태별 콘텐츠" description="콘텐츠 버전이 어떤 단계에 몇 개 있는지예요.">
           <Dl
-            items={[
-              ["기술 연결 없는 제공 가능 문항", `${c.eligible_without_skill_link.toLocaleString()}개 (세션에 제공되지 않음)`],
-              ...c.lifecycle.map(
-                (l) =>
-                  [
-                    `${LIFECYCLE_LABEL[l.lifecycle] ?? l.lifecycle} · ${REVIEW_STATUS_LABEL[l.review_status] ?? l.review_status}`,
-                    l.count.toLocaleString(),
-                  ] as [string, string],
-              ),
-            ]}
+            items={c.lifecycle.map(
+              (l) =>
+                [
+                  `${LIFECYCLE_LABEL[l.lifecycle] ?? l.lifecycle} · ${REVIEW_STATUS_LABEL[l.review_status] ?? l.review_status}`,
+                  `${l.count.toLocaleString()}개`,
+                ] as [string, string],
+            )}
           />
-        </div>
+        </Panel>
       </div>
     </>
   );
@@ -199,17 +229,17 @@ function DiagnosticsTab() {
         </div>
       ),
     },
-    { key: "exp", header: "노출", numeric: true, render: (r) => r.exposures.toLocaleString() },
-    { key: "acc", header: "독립 정답률", render: (r) => <RatioView ratio={r.independent_accuracy} /> },
-    { key: "assist", header: "도움 사용 첫 시도", numeric: true, render: (r) => r.assisted_first_attempts },
+    { key: "exp", header: "출제 횟수", numeric: true, render: (r) => r.exposures.toLocaleString() },
+    { key: "acc", header: "스스로 맞힌 비율", render: (r) => <RatioView ratio={r.independent_accuracy} /> },
+    { key: "assist", header: "도움 받은 첫 시도", numeric: true, render: (r) => r.assisted_first_attempts },
     {
       key: "diff",
-      header: "난이도 (편집 / 관측)",
+      header: "난이도 (예상 / 실제)",
       render: (r) => `${pct(r.editorial_difficulty, 0)} / ${pct(r.observed_difficulty, 0)}`,
     },
     {
       key: "choices",
-      header: "선택 분포",
+      header: "고른 답 (✓ 정답)",
       render: (r) =>
         Object.keys(r.choice_distribution).length === 0 ? (
           <span className="hgadm-cell-sub">—</span>
@@ -230,41 +260,49 @@ function DiagnosticsTab() {
     },
   ];
   return (
-    <div className="hgadm-card">
+    <Panel
+      title="문항별 학습 결과"
+      description="회원이 실제로 풀어 본 결과예요. 예상보다 훨씬 어렵거나, 한 오답에 답이 몰리는 문항은 내용을 다시 확인해 보세요. 예상 난이도는 작성자가 정한 값, 실제 난이도는 스스로 틀린 비율이에요."
+    >
       <div className="hgadm-toolbar">
         <Select value={track} aria-label="트랙" onChange={(e) => f.patch({ track: e.target.value, page: null })} style={{ width: 140 }}>
-          <option value="">전체 트랙</option>
+          <option value="">전체 과정</option>
           <option value="conversation">회화</option>
           <option value="topik">TOPIK</option>
         </Select>
-        <Select value={String(minExposures)} aria-label="최소 노출" onChange={(e) => f.patch({ min_exposures: e.target.value, page: null })} style={{ width: 160 }}>
-          <option value="1">노출 1회 이상</option>
-          <option value="10">노출 10회 이상</option>
-          <option value="30">노출 30회 이상</option>
+        <Select value={String(minExposures)} aria-label="최소 노출" onChange={(e) => f.patch({ min_exposures: e.target.value, page: null })} style={{ width: 180 }}>
+          <option value="1">1번 이상 출제된 문항</option>
+          <option value="10">10번 이상 출제된 문항</option>
+          <option value="30">30번 이상 출제된 문항</option>
         </Select>
-        <Select value={sort} aria-label="정렬" onChange={(e) => f.patch({ sort: e.target.value, page: null })} style={{ width: 140 }}>
-          <option value="exposures">노출순</option>
-          <option value="band">수준순</option>
+        <Select value={sort} aria-label="정렬" onChange={(e) => f.patch({ sort: e.target.value, page: null })} style={{ width: 150 }}>
+          <option value="exposures">많이 출제된 순</option>
+          <option value="band">레벨 순</option>
         </Select>
       </div>
       {q.isLoading ? (
         <LoadingState />
       ) : q.isError || !q.data ? (
-        <ErrorState message="문항 진단을 불러오지 못했습니다." onRetry={() => void q.refetch()} />
+        <ErrorState message="문항별 결과를 불러오지 못했습니다." onRetry={() => void q.refetch()} />
       ) : (
         <>
           <div className="hgadm-cell-sub" style={{ marginBottom: 8 }}>
-            미해결 신고 {q.data.open_issues.toLocaleString()}건 · 검수 상태별:{" "}
-            {Object.entries(q.data.review_backlog)
-              .map(([k, n]) => `${REVIEW_STATUS_LABEL[k] ?? k} ${n.toLocaleString()}`)
-              .join(", ") || "대상 데이터 없음"}
-            . 편집 난이도는 작성자가 정한 값이고, 관측 난이도는 1 − 독립 정답률입니다.
+            처리 안 된 신고 {q.data.open_issues.toLocaleString()}건
+            {Object.keys(q.data.review_backlog).length > 0 &&
+              ` · ${Object.entries(q.data.review_backlog)
+                .map(([k, n]) => `${REVIEW_STATUS_LABEL[k] ?? k} ${n.toLocaleString()}`)
+                .join(", ")}`}
           </div>
-          <DataTable rows={q.data.items} rowKey={(r) => r.version_id} columns={columns} empty="대상 데이터 없음" />
+          <DataTable
+            rows={q.data.items}
+            rowKey={(r) => r.version_id}
+            columns={columns}
+            empty="아직 회원이 푼 문항이 없어요"
+          />
           <Pagination page={page} pageSize={25} total={q.data.total} onPageChange={(p) => f.patch({ page: String(p) })} />
         </>
       )}
-    </div>
+    </Panel>
   );
 }
 
@@ -303,12 +341,12 @@ function QueueTab() {
         </div>
       ),
     },
-    { key: "track", header: "트랙·수준", render: (v) => `${TRACK_LABEL[v.track] ?? v.track} ${v.band}` },
-    { key: "life", header: "상태", render: (v) => <Badge tone="info">{LIFECYCLE_LABEL[v.lifecycle] ?? v.lifecycle}</Badge> },
+    { key: "track", header: "과정·레벨", render: (v) => `${TRACK_LABEL[v.track] ?? v.track} ${v.band}` },
+    { key: "life", header: "단계", render: (v) => <Badge tone="info">{LIFECYCLE_LABEL[v.lifecycle] ?? v.lifecycle}</Badge> },
     { key: "review", header: "검수", render: (v) => REVIEW_STATUS_LABEL[v.review_status] ?? v.review_status },
     {
       key: "valid",
-      header: "자동 검증",
+      header: "자동 검사",
       render: (v) =>
         v.validation_passed === null ? "—" : <Badge tone={v.validation_passed ? "success" : "danger"}>{v.validation_passed ? "통과" : "실패"}</Badge>,
     },
@@ -332,7 +370,13 @@ function QueueTab() {
     },
   ];
   return (
-    <div className="hgadm-card">
+    <Panel
+      title="검수할 콘텐츠"
+      description="공개 전에 사람이 확인해야 하는 콘텐츠예요. 행을 누르면 내용·정답·검수 기록을 보고 승인하거나 게시할 수 있어요."
+    >
+      <Notice tone="info" title="채점형 문항은 정답을 보기 전에 먼저 풀어 보세요">
+        상세를 열면 정답이 보여요. &quot;블라인드 풀이&quot;로 먼저 풀어 정답 키가 맞는지 확인하면 게시 조건이 채워져요.
+      </Notice>
       <div className="hgadm-toolbar">
         <Select value={lifecycle} aria-label="상태" onChange={(e) => f.patch({ lifecycle: e.target.value, page: null })} style={{ width: 140 }}>
           <option value="in_review">검수 중</option>
@@ -351,18 +395,15 @@ function QueueTab() {
           <option value="rejected">반려됨</option>
         </Select>
         <Select value={track} aria-label="트랙" onChange={(e) => f.patch({ track: e.target.value, page: null })} style={{ width: 140 }}>
-          <option value="">전체 트랙</option>
+          <option value="">전체 과정</option>
           <option value="conversation">회화</option>
           <option value="topik">TOPIK</option>
         </Select>
       </div>
-      <div className="hgadm-cell-sub" style={{ marginBottom: 8 }}>
-        상세를 열면 정답을 보게 됩니다. 채점형 문항의 블라인드 풀이는 상세를 열기 전에 먼저 제출하세요.
-      </div>
       {q.isLoading ? (
         <LoadingState />
       ) : q.isError || !q.data ? (
-        <ErrorState message="검수 대기열을 불러오지 못했습니다." onRetry={() => void q.refetch()} />
+        <ErrorState message="검수할 콘텐츠를 불러오지 못했습니다." onRetry={() => void q.refetch()} />
       ) : (
         <>
           <DataTable
@@ -370,14 +411,14 @@ function QueueTab() {
             rowKey={(v) => v.version_id}
             columns={columns}
             onRowClick={(v) => setDetailId(v.version_id)}
-            empty="대상 데이터 없음"
+            empty="이 조건에 해당하는 콘텐츠가 없어요"
           />
           <Pagination page={page} pageSize={25} total={q.data.total} onPageChange={(p) => f.patch({ page: String(p) })} />
         </>
       )}
       {detailId && <VersionModal versionId={detailId} onClose={() => setDetailId(null)} />}
       {blindId && <BlindSolveModal versionId={blindId} onClose={() => setBlindId(null)} />}
-    </div>
+    </Panel>
   );
 }
 
@@ -489,7 +530,7 @@ function VersionModal({ versionId, onClose }: { versionId: string; onClose: () =
 
   const v: ContentVersionDetail | undefined = q.data;
   return (
-    <Modal open title="콘텐츠 버전 상세" size="xl" onClose={onClose}>
+    <Modal open title="콘텐츠 상세" size="xl" onClose={onClose}>
       {q.isLoading ? (
         <LoadingState />
       ) : q.isError || !v ? (
@@ -509,7 +550,7 @@ function VersionModal({ versionId, onClose }: { versionId: string; onClose: () =
           />
           <h3>학습자에게 보이는 내용</h3>
           {renderPayload(v.public_payload)}
-          <h3>정답 키</h3>
+          <h3>정답</h3>
           <pre className="hgadm-cell-mono" style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(v.answer_key, null, 2)}</pre>
           <h3>해설·힌트</h3>
           {v.explanations.length === 0 ? (
@@ -523,15 +564,15 @@ function VersionModal({ versionId, onClose }: { versionId: string; onClose: () =
               ))}
             </ul>
           )}
-          <h3>연결 기술</h3>
+          <h3>연결된 학습 기술</h3>
           <div>
             {v.skills.length === 0
-              ? "없음 (세션에 제공되지 않음)"
+              ? "없음 (연결되기 전까지 학습에 나오지 않아요)"
               : v.skills
                   .map((s) => `${s.name_ko ?? "(이름 없는 기술)"} (${s.role === "primary" ? "주" : "보조"}/${DIMENSION_LABEL[s.dimension] ?? s.dimension})`)
                   .join(", ")}
           </div>
-          <h3>자동 검증</h3>
+          <h3>자동 검사</h3>
           {v.validation.slice(0, 1).map((r, i) => (
             <div key={i}>
               <Badge tone={r.passed ? "success" : "danger"}>{r.passed ? "통과" : "실패"}</Badge> {r.validator} · {formatDateTime(r.ran_at)}
@@ -567,7 +608,7 @@ function VersionModal({ versionId, onClose }: { versionId: string; onClose: () =
               </li>
             ))}
           </ul>
-          <h3>게시 가능 여부 ({v.publication_check.policy})</h3>
+          <h3>게시 조건</h3>
           {v.publication_check.allowed ? (
             <Badge tone="success">게시 가능</Badge>
           ) : (

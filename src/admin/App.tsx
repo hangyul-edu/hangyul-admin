@@ -1,4 +1,4 @@
-import { Navigate, Outlet, Route, createBrowserRouter, createRoutesFromElements, RouterProvider } from "react-router-dom";
+import { Navigate, Route, createBrowserRouter, createRoutesFromElements, RouterProvider } from "react-router-dom";
 import type { ReactNode } from "react";
 import { Compass, Lock } from "lucide-react";
 import { useAdminAuth } from "./auth";
@@ -34,6 +34,7 @@ import { LectureWorkspacePage } from "./pages/LectureWorkspace";
 import { SentencesPage } from "./pages/Sentences";
 import { QuizzesPage } from "./pages/Quizzes";
 import { AiContentPage } from "./pages/AiContent";
+import { InsightsShell } from "./components/insights";
 import { LearningOverviewPage } from "./pages/learning/Overview";
 import { LearnersPage } from "./pages/learning/Learners";
 import { LearnerDetailPage } from "./pages/learning/LearnerDetail";
@@ -132,8 +133,9 @@ const router = createBrowserRouter(
             seeing for anyone who can read ops, and the form itself is what
             gates on ops:write. */}
         <Route path="/notification-settings" element={<RequireScope scope="ops:read"><NotificationSettingsPage /></RequireScope>} />
-        {/* Learning-analytics pages share one scoped wrapper for their card spacing. */}
-        <Route element={<div className="hgadm-la"><Outlet /></div>}>
+        {/* 학습 인사이트 pages (and 콘텐츠 업데이트) share one wrapper: card
+            spacing, and the tabs that join related pages. */}
+        <Route element={<InsightsShell />}>
         <Route path="/learning" element={<RequireScope scope="analytics:read"><LearningOverviewPage /></RequireScope>} />
         <Route path="/learning/learners" element={<RequireScope scope="learners:read"><LearnersPage /></RequireScope>} />
         <Route path="/learning/learners/:userId" element={<RequireScope scope="learners:read"><LearnerDetailPage /></RequireScope>} />
@@ -145,7 +147,9 @@ const router = createBrowserRouter(
         <Route path="/learning/recommendations" element={<RequireScope scope="analytics:read"><RecommendationsPage /></RequireScope>} />
         <Route path="/learning/ai" element={<RequireScope scope="ai:read"><AiOpsPage /></RequireScope>} />
         <Route path="/learning/data-health" element={<RequireScope scope="ops:read"><DataHealthPage /></RequireScope>} />
-        <Route path="/catalog-import" element={<RequireScope scope="admins:manage"><CatalogImportPage /></RequireScope>} />
+        <Route path="/content-updates" element={<RequireScope scope="admins:manage"><CatalogImportPage /></RequireScope>} />
+        {/* The page's old address, from bookmarks and earlier docs. */}
+        <Route path="/catalog-import" element={<Navigate to="/content-updates" replace />} />
         </Route>
         <Route path="/settings" element={<RequireScope scope="settings:read"><SystemSettingsPage /></RequireScope>} />
         <Route path="/audit-logs" element={<RequireScope scope="audit:read"><AuditLogsPage /></RequireScope>} />

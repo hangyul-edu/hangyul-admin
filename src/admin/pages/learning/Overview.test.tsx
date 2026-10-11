@@ -97,16 +97,36 @@ describe("LearningOverviewPage drill-down links", () => {
   it("offers the learners drill-down only to a tier that can open it", async () => {
     scopes = ["analytics:read", "content:read"]; // analyst
     renderPage();
-    await screen.findByText("시작된 세션");
+    await screen.findByText("학습 성과");
     expect(detailLinks()).not.toContain("/learning/learners?review_overdue=true");
     expect(detailLinks()).toContain("/learning/cohorts");
     expect(detailLinks()).toContain("/learning/content");
   });
 
+  it("judges a change by the metric's good direction, not by its sign", async () => {
+    scopes = ["analytics:read"];
+    const change = (metric: string, pp: number) => ({
+      metric: `${metric}@1`, status: "ok" as const, baseline: ratio(metric), current: ratio(metric),
+      absolute_pp: pp, relative_pct: pp * 2, note: null,
+    });
+    vi.mocked(learningApi.overview).mockResolvedValue({
+      ...OVERVIEW,
+      changes: {
+        independent_accuracy: change("independent_accuracy", 4), // up is good
+        assistance_rate: change("assistance_rate", 4), // up is bad
+      },
+    });
+    renderPage();
+    await screen.findByText("학습 성과");
+    const verdicts = screen.getAllByText("+4.0%p").map((el) => el.closest(".hgins-trend")?.className);
+    expect(verdicts).toContainEqual(expect.stringContaining("hgins-trend--good"));
+    expect(verdicts).toContainEqual(expect.stringContaining("hgins-trend--bad"));
+  });
+
   it("keeps it for a tier with learners:read", async () => {
     scopes = ["analytics:read", "content:read", "learners:read"];
     renderPage();
-    await screen.findByText("시작된 세션");
+    await screen.findByText("학습 성과");
     expect(detailLinks()).toContain("/learning/learners?review_overdue=true");
   });
 });
