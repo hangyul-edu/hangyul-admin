@@ -1,0 +1,63 @@
+/* Checkpoint content written on the checkpoint (pages/lectures/CheckpointContent). */
+
+.hgadm-cpc {
+  display: grid;
+  gap: 10px;
+}
+.hgadm-cpc .hgadm-field {
+  margin-bottom: 0;
+}
+.hgadm-cpc__row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+.hgadm-cpc__choice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+.hgadm-cpc__choice .hgadm-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.hgadm-cpc__key {
+  width: 16px;
+  font-weight: 800;
+  color: var(--ink-2);
+  text-align: center;
+}
+.hgadm-cpc__more {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+  padding: 0 12px;
+}
+.hgadm-cpc__more > summary {
+  cursor: pointer;
+  padding: 9px 0;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+.hgadm-cpc__more[open] {
+  padding-bottom: 12px;
+}
+.hgadm-cpc__more[open] > summary {
+  margin-bottom: 4px;
+}
+.hgadm-cpc__more > :not(summary) + :not(summary) {
+  margin-top: 10px;
+}
+
+.hgadm-cpe__linked {
+  margin-bottom: 10px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--brand-200);
+  background: var(--brand-50);
+  color: var(--brand-700);
+  font-size: 12.5px;
+  line-height: 1.5;
+}

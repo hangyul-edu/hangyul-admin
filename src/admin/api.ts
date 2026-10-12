@@ -780,6 +780,14 @@ export interface AdminCheckpoint {
   needs_review: boolean;
   /** At or past the end of the current video, so it would never fire. */
   out_of_range: boolean;
+  /**
+   * The content was written on this checkpoint and belongs to the lecture.
+   * False for an older checkpoint linking shared catalogue content.
+   */
+  content_owned?: boolean;
+  /** The full sentence / question, for editing in place. */
+  sentence?: AdminSentence | null;
+  quiz?: AdminQuiz | null;
 }
 
 export interface AdminCheckpointList {
@@ -791,8 +799,15 @@ export interface AdminCheckpointList {
 }
 
 /** Exactly one of sentence_id / quiz_id; the server derives interaction_type from it. */
+/**
+ * Exactly one of: `sentence` / `quiz` — the content itself, stored as the
+ * lecture's own — or `sentence_id` / `quiz_id`, keeping a link to shared
+ * catalogue content (older checkpoints whose content was not edited).
+ */
 export interface AdminCheckpointWrite {
   at_second: number;
+  sentence?: Record<string, unknown>;
+  quiz?: Record<string, unknown>;
   sentence_id?: string;
   quiz_id?: string;
 }

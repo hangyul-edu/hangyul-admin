@@ -7,8 +7,23 @@ import { StreamVideo } from "../../../components/StreamVideo";
 import { formatPrecise, parseTime, roundTime } from "../../lib/videoFile";
 import { errorMessage } from "../../../lib/http";
 import { useToast, useToastError } from "../../../hooks/toast";
-import { Badge, Button, ConfirmDialog, ErrorState, LoadingState, SearchBox } from "../../components/kit";
+import { Badge, Button, ConfirmDialog, ErrorState, LoadingState } from "../../components/kit";
 import type { BadgeTone } from "../../components/kit";
+import type { QuizDraft } from "../Quizzes";
+import type { SentenceForm } from "./CheckpointContent";
+import {
+  CopyFromCatalog,
+  QuizFields,
+  SentenceFields,
+  emptyQuiz,
+  emptySentence,
+  quizBody,
+  quizFormFrom,
+  quizProblem,
+  sentenceBody,
+  sentenceFormFrom,
+  sentenceProblem,
+} from "./CheckpointContent";
 
 /** The two modals a lecture can pause for (COU-006 conversation, COU-011 TOPIK). */
 type ContentKind = "sentence" | "quiz";
@@ -19,20 +34,18 @@ const KIND_BY_TRACK: Record<string, ContentKind> = {
   track_topik: "quiz",
 };
 
-const KIND_COPY: Record<ContentKind, { add: string; noun: string; picker: string; hint: string; search: string }> = {
+const KIND_COPY: Record<ContentKind, { add: string; noun: string; heading: string; hint: string }> = {
   sentence: {
     add: "이 지점에 회화 문장 추가",
     noun: "회화 문장",
-    picker: "따라 말할 문장",
-    hint: "학습자는 이 지점에서 문장을 듣고 따라 말합니다. 문장 콘텐츠에 등록한 문장 중에서 고르세요.",
-    search: "한국어·번역 검색",
+    heading: "따라 말할 문장",
+    hint: "학습자는 이 지점에서 문장을 듣고 따라 말해요. 여기서 쓴 문장은 이 강의 전용이라 문장 관리 목록에는 나오지 않아요.",
   },
   quiz: {
     add: "이 지점에 TOPIK 문제 추가",
     noun: "TOPIK 문제",
-    picker: "풀 문제",
-    hint: "학습자는 이 지점에서 문제를 풉니다. 객관식은 선택형, 주관식·쓰기 문제는 답안 입력 모달로 열립니다.",
-    search: "문제 내용 검색",
+    heading: "풀 문제",
+    hint: "학습자는 이 지점에서 문제를 풀어요. 객관식은 선택형, 단답형·서술형은 답안 입력 모달로 열려요. 여기서 쓴 문제는 이 강의 전용이에요.",
   },
 };
 
@@ -55,9 +68,14 @@ interface Draft {
   checkpointId: string | null;
   /** Seconds into the video, to the hundredth — taken from the preview, never typed. */
   at: number;
-  contentId: string;
-  contentLabel: string;
-  contentDetail: string;
+  /** The checkpoint's content, written here (one of the two, by lecture kind). */
+  sentence: SentenceForm | null;
+  quiz: QuizDraft | null;
+  /**
+   * An older checkpoint's link to shared catalogue content, kept while its
+   * content is not edited; editing it makes the lecture its own copy.
+   */
+  linkedId: string | null;
 }
 
 const kindOf = (c: AdminCheckpoint): ContentKind => (c.sentence_id ? "sentence" : "quiz");
@@ -176,21 +194,30 @@ export function CheckpointEditor({ lecture, canWrite }: { lecture: AdminLecture;
 
   function startAdd() {
     pause();
-    setDraft({ checkpointId: null, at: roundTime(now), contentId: "", contentLabel: "", contentDetail: "" });
+    setDraft({
+      checkpointId: null,
+      at: roundTime(now),
+      sentence: kind === "sentence" ? emptySentence() : null,
+      quiz: kind === "quiz" ? emptyQuiz() : null,
+      linkedId: null,
+    });
   }
 
   function select(checkpoint: AdminCheckpoint) {
     pause();
     seek(checkpoint.at_second);
-    const fits = kindOf(checkpoint) === kind;
+    // Content of the other kind (from before checkpoints followed the
+    // lecture) has to be replaced, so the editor starts it empty.
+    const fits = kindOf(checkpoint) === kind && !checkpoint.content_archived;
+    const sentence = fits && checkpoint.sentence ? sentenceFormFrom(checkpoint.sentence) : null;
+    const quiz = fits && checkpoint.quiz ? quizFormFrom(checkpoint.quiz) : null;
     setDraft({
       checkpointId: checkpoint.checkpoint_id,
       at: roundTime(checkpoint.at_second),
-      // Content of the other kind (from before checkpoints followed the
-      // lecture) has to be replaced, so the editor starts it empty.
-      contentId: fits ? (checkpoint.sentence_id ?? checkpoint.quiz_id ?? "") : "",
-      contentLabel: fits ? (checkpoint.content_label ?? "") : "",
-      contentDetail: fits ? (checkpoint.content_detail ?? "") : "",
+      sentence: kind === "sentence" ? sentence ?? emptySentence() : null,
+      quiz: kind === "quiz" ? quiz ?? emptyQuiz() : null,
+      linkedId:
+        fits && !checkpoint.content_owned ? (checkpoint.sentence_id ?? checkpoint.quiz_id ?? null) : null,
     });
   }
 
@@ -227,10 +254,14 @@ export function CheckpointEditor({ lecture, canWrite }: { lecture: AdminLecture;
 
   const save = useMutation({
     mutationFn: (d: Draft) => {
-      const body: AdminCheckpointWrite = {
-        at_second: d.at,
-        ...(kind === "sentence" ? { sentence_id: d.contentId } : { quiz_id: d.contentId }),
-      };
+      const content: Omit<AdminCheckpointWrite, "at_second"> = d.linkedId
+        ? kind === "sentence"
+          ? { sentence_id: d.linkedId }
+          : { quiz_id: d.linkedId }
+        : kind === "sentence"
+          ? { sentence: sentenceBody(d.sentence ?? emptySentence()) }
+          : { quiz: quizBody(d.quiz ?? emptyQuiz()) };
+      const body: AdminCheckpointWrite = { at_second: d.at, ...content };
       return d.checkpointId
         ? adminApi.replaceCheckpoint(lecture.lecture_id, d.checkpointId, body)
         : adminApi.createCheckpoint(lecture.lecture_id, body);
@@ -259,7 +290,14 @@ export function CheckpointEditor({ lecture, canWrite }: { lecture: AdminLecture;
     ? items.find((c) => c.checkpoint_id !== draft.checkpointId && Math.abs(c.at_second - draft.at) < MIN_GAP_SECONDS)
     : undefined;
   const inside = !!draft && draft.at >= 0 && draft.at < duration;
-  const canSave = !!draft && inside && !clash && !!draft.contentId;
+  const contentProblem = !draft
+    ? null
+    : draft.linkedId
+      ? null
+      : kind === "sentence"
+        ? sentenceProblem(draft.sentence ?? emptySentence())
+        : quizProblem(draft.quiz ?? emptyQuiz());
+  const canSave = !!draft && inside && !clash && contentProblem === null;
 
   if (list.isPending) return <LoadingState />;
   if (list.isError) return <ErrorState message={errorMessage(list.error)} onRetry={() => void list.refetch()} />;
@@ -397,6 +435,7 @@ export function CheckpointEditor({ lecture, canWrite }: { lecture: AdminLecture;
               canWrite={canWrite}
               saving={save.isPending}
               canSave={canSave}
+              contentProblem={contentProblem}
               onChange={setDraft}
               onMove={moveDraft}
               onPreview={() => previewTo(draft.at)}
@@ -417,7 +456,11 @@ export function CheckpointEditor({ lecture, canWrite }: { lecture: AdminLecture;
       <ConfirmDialog
         open={deleting !== null}
         title="체크포인트 삭제"
-        message={`${deleting ? formatPrecise(deleting.at_second) : ""} 지점의 체크포인트를 삭제할까요? 연결된 문장·문제는 삭제되지 않습니다.`}
+        message={`${deleting ? formatPrecise(deleting.at_second) : ""} 지점의 체크포인트를 삭제할까요? ${
+          deleting?.content_owned
+            ? "이 체크포인트에서 만든 문장·문제도 함께 보관 처리돼요."
+            : "연결된 공용 문장·문제는 그대로 남아요."
+        }`}
         danger
         confirmLabel="삭제"
         loading={remove.isPending}
@@ -523,7 +566,7 @@ function CheckpointList({
     return (
       <div className="hgadm-cpe__empty">
         아직 체크포인트가 없어요. 영상을 재생하거나 타임라인을 끌어 원하는 지점으로 이동한 뒤, ‘{copy.add}’를
-        누르세요. 이 강의는 {copy.noun}를 모달로 띄웁니다.
+        누르고 그 자리에서 {copy.noun}를 바로 쓰면 돼요. 미리 다른 메뉴에서 만들어 둘 필요가 없어요.
       </div>
     );
   }
@@ -547,6 +590,9 @@ function CheckpointList({
                   <Badge tone="warning">영상 교체 후 확인 필요</Badge>
                 ) : null}
                 {c.content_archived && <Badge tone="danger">보관된 콘텐츠 — 교체 필요</Badge>}
+                {c.content_owned === false && !c.content_archived && kindOf(c) === kind && (
+                  <Badge tone="neutral">공용 콘텐츠 연결</Badge>
+                )}
               </span>
             </button>
             <Button size="sm" variant="ghost" onClick={() => onPreview(c)} aria-label={`${formatPrecise(c.at_second)} 미리보기`}>
@@ -568,6 +614,7 @@ function DraftPanel({
   canWrite,
   saving,
   canSave,
+  contentProblem,
   onChange,
   onMove,
   onPreview,
@@ -583,6 +630,7 @@ function DraftPanel({
   canWrite: boolean;
   saving: boolean;
   canSave: boolean;
+  contentProblem: string | null;
   onChange: (draft: Draft) => void;
   onMove: (to: number) => void;
   onPreview: () => void;
@@ -632,27 +680,41 @@ function DraftPanel({
         )}
       </Group>
 
-      <Group label={copy.picker} hint={copy.hint}>
-        {draft.contentId ? (
-          <div className="hgadm-cp__picked">
-            <div className="hgadm-cp__picked-body">
-              <span className="hgadm-cp__option-label">{draft.contentLabel || "(삭제된 콘텐츠)"}</span>
-              {draft.contentDetail && <span className="hgadm-cp__option-detail">{draft.contentDetail}</span>}
-            </div>
-            {canWrite && (
-              <Button size="sm" onClick={() => onChange({ ...draft, contentId: "", contentLabel: "", contentDetail: "" })}>
-                변경
-              </Button>
-            )}
+      <Group label={copy.heading} hint={copy.hint}>
+        {draft.linkedId && (
+          <div className="hgadm-cpe__linked" role="note">
+            공용 {kind === "sentence" ? "문장" : "문제"}이 연결된 체크포인트예요. 내용을 고치면 이 강의 전용 사본으로
+            저장되고, 공용 {kind === "sentence" ? "문장" : "문제"}은 그대로 남아요.
           </div>
+        )}
+        {kind === "sentence" ? (
+          <SentenceFields
+            form={draft.sentence ?? emptySentence()}
+            readOnly={!canWrite}
+            // Editing the content detaches it from the shared row it linked.
+            onChange={(sentence) => onChange({ ...draft, sentence, linkedId: null })}
+          />
         ) : (
-          <ContentPicker
-            kind={kind}
-            placeholder={copy.search}
-            onPick={(id, label, detail) => onChange({ ...draft, contentId: id, contentLabel: label, contentDetail: detail })}
+          <QuizFields
+            draft={draft.quiz ?? emptyQuiz()}
+            readOnly={!canWrite}
+            onChange={(quiz) => onChange({ ...draft, quiz, linkedId: null })}
           />
         )}
+        {canWrite && (
+          <details className="hgadm-cpc__more">
+            <summary>기존 {kind === "sentence" ? "문장" : "문제"}에서 불러오기</summary>
+            <p className="hgadm-field__hint">고르면 내용이 위 칸에 복사돼요. 복사본은 이 강의 전용이고, 원본은 그대로예요.</p>
+            <CopyFromCatalog
+              kind={kind}
+              onSentence={(s) => onChange({ ...draft, sentence: { ...sentenceFormFrom(s) }, linkedId: null })}
+              onQuiz={(q) => onChange({ ...draft, quiz: quizFormFrom(q), linkedId: null })}
+            />
+          </details>
+        )}
       </Group>
+
+      {canWrite && contentProblem && <p className="hgadm-field__hint">{contentProblem}</p>}
 
       <div className="hgadm-cpe__draft-actions">
         {onDelete && canWrite && (
@@ -747,84 +809,3 @@ function Group({ label, hint, children }: { label: string; hint?: string; childr
   );
 }
 
-interface PickerOption {
-  id: string;
-  label: string;
-  /** A sentence's translation, or a question's choices. */
-  detail: string;
-  tags: string[];
-}
-
-function ContentPicker({
-  kind,
-  placeholder,
-  onPick,
-}: {
-  kind: ContentKind;
-  placeholder: string;
-  onPick: (id: string, label: string, detail: string) => void;
-}) {
-  const [q, setQ] = useState("");
-  const sentences = useQuery({
-    queryKey: ["admin", "checkpoint-picker", "sentence", q],
-    queryFn: () => adminApi.listSentences({ q: q || undefined, page: 1, page_size: 10 }),
-    enabled: kind === "sentence",
-  });
-  const quizzes = useQuery({
-    queryKey: ["admin", "checkpoint-picker", "quiz", q],
-    queryFn: () => adminApi.listQuizzes({ q: q || undefined, limit: 10, offset: 0 }),
-    enabled: kind === "quiz",
-  });
-  const active = kind === "sentence" ? sentences : quizzes;
-  const total = active.data?.total ?? 0;
-  const options: PickerOption[] =
-    kind === "sentence"
-      ? (sentences.data?.items ?? []).map((s) => ({ id: s.sentence_id, label: s.korean, detail: s.translation, tags: [] }))
-      : (quizzes.data?.items ?? []).map((quiz) => ({
-          id: quiz.quiz_id,
-          label: quiz.prompt,
-          detail: quiz.choices.map((c) => `${c.key}) ${c.text}`).join("   "),
-          tags: [quiz.answer_format === "single_choice" ? "객관식" : "주관식/쓰기", quiz.topik_question_type ?? ""].filter(Boolean),
-        }));
-  return (
-    <div className="hgadm-cp__picker">
-      <SearchBox value={q} placeholder={placeholder} onSearch={setQ} />
-      {active.isPending ? (
-        <LoadingState />
-      ) : active.isError ? (
-        <ErrorState message={errorMessage(active.error)} onRetry={() => void active.refetch()} />
-      ) : options.length === 0 ? (
-        <div className="hgadm-cp__none">
-          {q ? `‘${q}’에 맞는 ${kind === "sentence" ? "문장이" : "문제가"} 없어요.` : `등록된 ${kind === "sentence" ? "문장이" : "문제가"} 없어요.`}
-        </div>
-      ) : (
-        <>
-          <ul className="hgadm-cp__options">
-            {options.map((o) => (
-              <li key={o.id}>
-                <button type="button" className="hgadm-cp__option" onClick={() => onPick(o.id, o.label, o.detail)}>
-                  <span className="hgadm-cp__option-label">{o.label}</span>
-                  {o.detail && <span className="hgadm-cp__option-detail">{o.detail}</span>}
-                  {o.tags.length > 0 && (
-                    <span className="hgadm-cp__option-meta">
-                      {o.tags.map((tag) => (
-                        <span key={tag} className="hgadm-cp__tag">
-                          {tag}
-                        </span>
-                      ))}
-                    </span>
-                  )}
-                </button>
-              </li>
-            ))}
-          </ul>
-          {total > options.length && (
-            <div className="hgadm-cp__count">
-              {total}개 중 {options.length}개를 보여 주고 있어요. 검색어로 좁혀 보세요.
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  );
-}

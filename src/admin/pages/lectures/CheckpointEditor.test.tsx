@@ -63,6 +63,27 @@ const SPEAKING: AdminCheckpoint = {
   needs_review: false,
   out_of_range: false,
 };
+/** A checkpoint whose sentence was written on it (the lecture's own). */
+const OWNED: AdminCheckpoint = {
+  ...SPEAKING,
+  sentence_id: "sen_owned_01",
+  content_owned: true,
+  sentence: {
+    sentence_id: "sen_owned_01",
+    korean: "반갑습니다",
+    display_text: null,
+    translation: "Nice to meet you.",
+    translation_language: "en",
+    romanization: null,
+    topic: null,
+    level: 1,
+    grammar_points: [],
+    blanks_json: null,
+    has_audio: true,
+    audio_voice: "ko-KR-ai-warm",
+    is_ai_generated: false,
+  },
+};
 const QUESTION: AdminCheckpoint = {
   ...SPEAKING,
   checkpoint_id: "cp_q",
@@ -152,12 +173,19 @@ describe("CheckpointEditor", () => {
     expect(screen.queryByRole("button", { name: /TOPIK 문제 추가/ })).toBeNull();
 
     await userEvent.click(screen.getByRole("button", { name: "+ 이 지점에 회화 문장 추가 (1:23.60)" }));
-    await userEvent.click(await screen.findByRole("button", { name: /감사합니다/ }));
-    expect(screen.getByText("Thank you.")).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: "저장" }));
+    // Written right here — no catalogue search first.
+    const save = screen.getByRole("button", { name: "저장" });
+    expect(save).toBeDisabled();
+    await userEvent.type(screen.getByLabelText("따라 말할 한국어 문장"), "감사합니다");
+    await userEvent.type(screen.getByLabelText("뜻 (영어)"), "Thank you.");
+    await userEvent.click(save);
 
     await waitFor(() => expect(adminApi.createCheckpoint).toHaveBeenCalledTimes(1));
-    expect(adminApi.createCheckpoint).toHaveBeenCalledWith("lec_1", { at_second: 83.6, sentence_id: "sen_thanks_01" });
+    const [lectureId, body] = vi.mocked(adminApi.createCheckpoint).mock.calls[0];
+    expect(lectureId).toBe("lec_1");
+    expect(body.at_second).toBe(83.6);
+    expect(body.sentence_id).toBeUndefined();
+    expect(body.sentence).toMatchObject({ korean: "감사합니다", translation: "Thank you.", level: 1 });
     expect(adminApi.listQuizzes).not.toHaveBeenCalled();
   });
 
@@ -168,13 +196,89 @@ describe("CheckpointEditor", () => {
     playTo(el, 120.257);
 
     await userEvent.click(screen.getByRole("button", { name: "+ 이 지점에 TOPIK 문제 추가 (2:00.26)" }));
-    expect(await screen.findByText(/1\) 안녕하세요/)).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: /알맞은 인사말/ }));
+    await userEvent.type(screen.getByLabelText("문제"), "알맞은 인사말을 고르십시오.");
+    await userEvent.type(screen.getByLabelText("보기 1"), "안녕하세요");
+    await userEvent.type(screen.getByLabelText("보기 2"), "감사합니다");
+    await userEvent.click(screen.getByRole("radio", { name: "정답: 보기 2" }));
     await userEvent.click(screen.getByRole("button", { name: "저장" }));
 
     await waitFor(() => expect(adminApi.createCheckpoint).toHaveBeenCalledTimes(1));
-    expect(adminApi.createCheckpoint).toHaveBeenCalledWith("lec_1", { at_second: 120.26, quiz_id: "quz_hello_01" });
+    const [, body] = vi.mocked(adminApi.createCheckpoint).mock.calls[0];
+    expect(body.at_second).toBe(120.26);
+    expect(body.quiz).toMatchObject({
+      answer_format: "single_choice",
+      prompt: "알맞은 인사말을 고르십시오.",
+      // Empty choice rows are not sent.
+      choices: [
+        { key: "1", text: "안녕하세요" },
+        { key: "2", text: "감사합니다" },
+      ],
+      correct_choice: "2",
+    });
     expect(adminApi.listSentences).not.toHaveBeenCalled();
+  });
+
+  it("says what is missing before a question can be saved", async () => {
+    withItems([QUESTION]);
+    renderEditor(TOPIK);
+    await video();
+    await userEvent.click(screen.getByRole("button", { name: /TOPIK 문제 추가/ }));
+    expect(screen.getByText("문제(지시문)를 입력하세요.")).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText("문제"), "고르십시오.");
+    expect(screen.getByText("보기를 2개 이상 입력하세요.")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("radio", { name: "단답형" }));
+    expect(screen.getByText("정답을 입력하세요.")).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText("빈칸 1 정답"), "학교");
+    expect(screen.getByRole("button", { name: "저장" })).toBeEnabled();
+  });
+
+  it("edits the checkpoint's own sentence in place", async () => {
+    withItems([OWNED]);
+    renderEditor();
+    await video();
+    await userEvent.click(screen.getByRole("button", { name: "1:15.00 회화 · 따라 말하기 체크포인트" }));
+    const translation = screen.getByLabelText("뜻 (영어)");
+    expect(translation).toHaveValue("Nice to meet you.");
+    await userEvent.clear(translation);
+    await userEvent.type(translation, "Glad to meet you.");
+    await userEvent.click(screen.getByRole("button", { name: "저장" }));
+
+    await waitFor(() => expect(adminApi.replaceCheckpoint).toHaveBeenCalledTimes(1));
+    const [, cpId, body] = vi.mocked(adminApi.replaceCheckpoint).mock.calls[0];
+    expect(cpId).toBe("cp_1");
+    expect(body.sentence_id).toBeUndefined();
+    expect(body.sentence).toMatchObject({ korean: "반갑습니다", translation: "Glad to meet you.", level: 1 });
+  });
+
+  it("turns a linked shared sentence into the lecture's own copy once it is edited", async () => {
+    withItems([{ ...SPEAKING, sentence: OWNED.sentence }]);
+    renderEditor();
+    await video();
+    await userEvent.click(screen.getByRole("button", { name: "1:15.00 회화 · 따라 말하기 체크포인트" }));
+    expect(screen.getByRole("note")).toHaveTextContent("이 강의 전용 사본으로");
+    await userEvent.type(screen.getByLabelText("따라 말할 한국어 문장"), "!");
+    await userEvent.click(screen.getByRole("button", { name: "저장" }));
+
+    await waitFor(() => expect(adminApi.replaceCheckpoint).toHaveBeenCalledTimes(1));
+    const [, , body] = vi.mocked(adminApi.replaceCheckpoint).mock.calls[0];
+    expect(body.sentence_id).toBeUndefined();
+    expect(body.sentence).toMatchObject({ korean: "반갑습니다!" });
+  });
+
+  it("can start from an existing sentence, copied rather than linked", async () => {
+    renderEditor();
+    const el = await video();
+    playTo(el, 40);
+    await userEvent.click(screen.getByRole("button", { name: /회화 문장 추가/ }));
+    await userEvent.click(screen.getByText("기존 문장에서 불러오기"));
+    await userEvent.click(await screen.findByRole("button", { name: /감사합니다/ }));
+    expect(screen.getByLabelText("따라 말할 한국어 문장")).toHaveValue("감사합니다");
+    await userEvent.click(screen.getByRole("button", { name: "저장" }));
+
+    await waitFor(() => expect(adminApi.createCheckpoint).toHaveBeenCalledTimes(1));
+    const [, body] = vi.mocked(adminApi.createCheckpoint).mock.calls[0];
+    expect(body.sentence_id).toBeUndefined();
+    expect(body.sentence).toMatchObject({ korean: "감사합니다", translation: "Thank you." });
   });
 
   it("fine-tunes a checkpoint by tenths of a second and saves it", async () => {
@@ -235,7 +339,8 @@ describe("CheckpointEditor", () => {
     const el = await video();
     playTo(el, 75.6);
     await userEvent.click(screen.getByRole("button", { name: /회화 문장 추가/ }));
-    await userEvent.click(await screen.findByRole("button", { name: /감사합니다/ }));
+    await userEvent.type(screen.getByLabelText("따라 말할 한국어 문장"), "감사합니다");
+    await userEvent.type(screen.getByLabelText("뜻 (영어)"), "Thank you.");
     expect(screen.getByText("1:15.00의 체크포인트와 1초 이상 떨어져야 해요.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "저장" })).toBeDisabled();
   });
@@ -247,8 +352,8 @@ describe("CheckpointEditor", () => {
     expect(screen.getByText("강의 종류와 맞지 않음 — 교체 필요")).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: /알맞은 인사말/ }));
-    // The question cannot stay on a conversation lecture: the editor offers sentences.
-    expect(await screen.findByRole("button", { name: /감사합니다/ })).toBeInTheDocument();
+    // The question cannot stay on a conversation lecture: the editor asks for a sentence.
+    expect(await screen.findByLabelText("따라 말할 한국어 문장")).toHaveValue("");
     expect(screen.getByRole("button", { name: "저장" })).toBeDisabled();
   });
 

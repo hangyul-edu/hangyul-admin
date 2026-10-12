@@ -10,6 +10,7 @@ import "../styles/theme.css";
 import "./styles/admin.css";
 import "./styles/insights.css";
 import "./styles/bulkImport.css";
+import "./styles/checkpointContent.css";
 
 const queryClient = new QueryClient({
   defaultOptions: {
