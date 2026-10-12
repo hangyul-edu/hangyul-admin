@@ -628,7 +628,10 @@ export interface Plan {
   slot: OfferSlot | null;
   badge_text: PlanBadge;
   badge_published: boolean;
-  live_subscribers: number;
+  /** Subscribed now: in the free trial or paid. */
+  active_subscribers: number;
+  /** Everyone who ever started a trial on it or paid for it, current and former. */
+  total_subscribers: number;
 }
 
 /** Longest badge text per language (the server's limit). */

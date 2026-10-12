@@ -4598,3 +4598,11 @@ a.hgadm-recent--link:hover {
   line-height: 14px;
   white-space: nowrap;
 }
+.hgadm-offer__counts {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+.hgadm-offer__counts b {
+  color: var(--ink);
+}

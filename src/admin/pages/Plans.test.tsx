@@ -43,12 +43,19 @@ function plan(over: Partial<Plan> & Pick<Plan, "plan_id" | "interval">): Plan {
     slot: { audience: "default", interval: over.interval, optional: false },
     badge_text: { ko: "", en: "" },
     badge_published: false,
-    live_subscribers: 0,
+    active_subscribers: 0,
+    total_subscribers: 0,
     ...over,
   };
 }
 
-const MONTHLY = plan({ plan_id: "plan_monthly", name: "Monthly", interval: "month", live_subscribers: 3 });
+const MONTHLY = plan({
+  plan_id: "plan_monthly",
+  name: "Monthly",
+  interval: "month",
+  active_subscribers: 3,
+  total_subscribers: 1250,
+});
 const YEARLY = plan({
   plan_id: "plan_yearly",
   name: "Yearly",
@@ -110,7 +117,10 @@ describe("요금제 관리", () => {
     expect(screen.queryByRole("button", { name: "보관" })).toBeNull();
     expect(within(card("Monthly — New member")).getByText("꺼짐")).toBeInTheDocument();
     expect(within(card("Monthly")).getByText("판매 중")).toBeInTheDocument();
-    expect(within(card("Monthly")).getByText("3명")).toBeInTheDocument();
+    // Active now and cumulative to date, both shown.
+    const counts = card("Monthly").querySelector(".hgadm-offer__counts") as HTMLElement;
+    expect(counts).toHaveTextContent("현재 3명");
+    expect(counts).toHaveTextContent("누적 1,250명");
   });
 
   it("states the free trial once, as a per-member policy, not per plan", async () => {
@@ -206,12 +216,13 @@ describe("요금제 관리", () => {
 
   it("lists an older plan that still renews, read-only", async () => {
     listPlans.mockResolvedValue({
-      plans: [MONTHLY, YEARLY, NEW_MONTHLY, NEW_YEARLY, plan({ plan_id: "plan_old", name: "Old", interval: "month", slot: null, live_subscribers: 2 })],
+      plans: [MONTHLY, YEARLY, NEW_MONTHLY, NEW_YEARLY, plan({ plan_id: "plan_old", name: "Old", interval: "month", slot: null, active_subscribers: 2, total_subscribers: 9 })],
       trial_days: 7,
     });
     renderPage();
     const row = (await screen.findByText("Old")).closest("tr")!;
     expect(within(row).getByText("2명")).toBeInTheDocument();
+    expect(within(row).getByText("9명")).toBeInTheDocument();
     expect(within(row).queryByRole("button")).toBeNull();
   });
 });

@@ -93,6 +93,20 @@ function PriceSummary({ plan }: { plan: Plan }) {
   );
 }
 
+/** Active now and cumulative to date, side by side. */
+function SubscriberCounts({ plan }: { plan: Plan }) {
+  return (
+    <span className="hgadm-offer__counts">
+      <span title="지금 구독 중인 회원 (무료 체험·유료, 해지 예약 포함)">
+        현재 <b>{plan.active_subscribers.toLocaleString()}명</b>
+      </span>
+      <span title="무료 체험을 시작했거나 결제한 적이 있는 모든 회원 (지금은 구독하지 않는 회원 포함)">
+        누적 <b>{plan.total_subscribers.toLocaleString()}명</b>
+      </span>
+    </span>
+  );
+}
+
 function OfferCard({ plan, canWrite, onEdit }: { plan: Plan; canWrite: boolean; onEdit: () => void }) {
   const offered = plan.status === "active";
   const interval = plan.slot?.interval ?? plan.interval;
@@ -137,7 +151,7 @@ function OfferCard({ plan, canWrite, onEdit }: { plan: Plan; canWrite: boolean; 
         </div>
         <div className="hgadm-offer__line">
           <span className="hgadm-offer__key">구독자</span>
-          <span>{plan.live_subscribers.toLocaleString()}명</span>
+          <SubscriberCounts plan={plan} />
         </div>
       </div>
     </div>
@@ -289,9 +303,9 @@ function PlanEditor({ plan, onClose }: { plan: Plan; onClose: () => void }) {
             onChange={(e) => setD({ ...d, promo_price_cents: e.target.value })}
           />
         </Field>
-        {priceChanged && plan.live_subscribers > 0 && (
+        {priceChanged && plan.active_subscribers > 0 && (
           <p className="span-2 hgadm-field__hint" role="note">
-            바뀐 가격은 새로 구독하는 회원부터 적용돼요. 지금 구독 중인 {plan.live_subscribers.toLocaleString()}명은 가입할 때의
+            바뀐 가격은 새로 구독하는 회원부터 적용돼요. 지금 구독 중인 {plan.active_subscribers.toLocaleString()}명은 가입할 때의
             가격으로 계속 갱신됩니다.
           </p>
         )}
@@ -397,7 +411,8 @@ export function PlansPage() {
       numeric: true,
       render: (p) => `${formatMoney(p.promo_price_cents ?? p.price_cents, p.currency)} / ${p.interval === "year" ? "년" : "월"}`,
     },
-    { key: "subs", header: "구독자", numeric: true, render: (p) => `${p.live_subscribers.toLocaleString()}명` },
+    { key: "active", header: "현재 구독자", numeric: true, render: (p) => `${p.active_subscribers.toLocaleString()}명` },
+    { key: "total", header: "누적 구독자", numeric: true, render: (p) => `${p.total_subscribers.toLocaleString()}명` },
   ];
 
   return (
