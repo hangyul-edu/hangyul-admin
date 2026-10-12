@@ -7,7 +7,8 @@ import { errorMessage } from "../../lib/http";
 import { CONVERSATION_LEVELS } from "../../lib/levels";
 import { useToast, useToastError } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
-import { BatchAddButton } from "../components/BatchAddButton";
+import { BulkImportButton } from "../components/BulkImportButton";
+import type { FieldDoc } from "../components/BulkImportButton";
 import { ContentCleanupButton } from "../components/ContentCleanupButton";
 import {
   Badge,
@@ -60,6 +61,19 @@ const BATCH_TEMPLATE = JSON.stringify(
   null,
   2,
 );
+
+/** The upload format, for the import dialog's field reference. */
+const SENTENCE_FIELDS: FieldDoc[] = [
+  { name: "korean", need: "필수", meaning: "학습할 한국어 문장 (최대 500자)", example: "오늘 날씨가 좋아요." },
+  { name: "translation", need: "필수", meaning: "문장의 뜻", example: "The weather is nice today." },
+  { name: "level", need: "선택", meaning: "회화 레벨 1–10, 없으면 1", example: "2" },
+  { name: "topic", need: "선택", meaning: "주제 (영문 소문자 권장)", example: "daily" },
+  { name: "romanization", need: "선택", meaning: "로마자 발음 표기", example: "oneul nalssiga joayo" },
+  { name: "grammar_points", need: "선택", meaning: "이 문장에서 배우는 문법 목록", example: '["-아요/어요"]' },
+  { name: "display_text", need: "선택", meaning: "빈칸을 표시해 학습자에게 보여 줄 문장", example: "오늘 ___가 좋아요." },
+  { name: "blanks_json", need: "선택", meaning: "빈칸 위치: start(몇 번째 글자부터), length(몇 글자), answer(정답)", example: '[{"start":3,"length":2,"answer":"날씨"}]' },
+  { name: "translation_language", need: "선택", meaning: "번역 언어, 없으면 en", example: "en" },
+];
 
 const EMPTY: SentenceDraft = {
   korean: "",
@@ -241,10 +255,13 @@ export function SentencesPage() {
                 invalidateKeys={[["admin", "sentences"], ["admin", "sentence-topics"]]}
               />
             )}
-            <BatchAddButton
+            <BulkImportButton
+              noun="문장"
               title="문장 일괄 추가"
-              hint="단건 등록과 같은 필드(korean·translation 필수)를 담은 JSON 배열을 붙여넣으세요."
+              fields={SENTENCE_FIELDS}
               template={BATCH_TEMPLATE}
+              templateFilename="문장-예시.json"
+              check={adminApi.checkSentencesBatch}
               submit={adminApi.createSentencesBatch}
               invalidateKeys={[["admin", "sentences"], ["admin", "sentence-topics"]]}
             />

@@ -9,6 +9,7 @@ import { AdminApp } from "./App";
 import "../styles/theme.css";
 import "./styles/admin.css";
 import "./styles/insights.css";
+import "./styles/bulkImport.css";
 
 const queryClient = new QueryClient({
   defaultOptions: {

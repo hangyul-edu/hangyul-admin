@@ -169,6 +169,25 @@ export interface AdminPersonAccount {
   points_total: number;
 }
 
+/** What `…/batch/check` found for one uploaded item. */
+export interface BulkCheckRow {
+  index: number;
+  ok: boolean;
+  summary: string;
+  errors: string[];
+  warnings: string[];
+  duplicate: "in_file" | "existing" | null;
+  duplicate_of: number | null;
+}
+
+export interface BulkCheckResult {
+  total: number;
+  ready: number;
+  invalid: number;
+  duplicates: number;
+  rows: BulkCheckRow[];
+}
+
 export interface Page<T> {
   items: T[];
   total: number;
@@ -1311,6 +1330,9 @@ export const adminApi = {
     http.post<{ created: number; items: AdminSentence[] }>("/admin/sentences/batch", {
       items,
     }),
+  /** Per-row check of an upload; saves nothing. */
+  checkSentencesBatch: (items: Record<string, unknown>[]) =>
+    http.post<BulkCheckResult>("/admin/sentences/batch/check", { items }),
   updateSentence: (sentenceId: string, body: Partial<AdminSentence>) =>
     http.patch<AdminSentence>(`/admin/sentences/${sentenceId}`, body),
   deleteSentence: (sentenceId: string) =>
@@ -1328,6 +1350,9 @@ export const adminApi = {
     http.post<{ created: number; items: AdminQuiz[] }>("/admin/quizzes/batch", {
       items,
     }),
+  /** Per-row check of an upload; saves nothing. */
+  checkQuizzesBatch: (items: Record<string, unknown>[]) =>
+    http.post<BulkCheckResult>("/admin/quizzes/batch/check", { items }),
   replaceQuiz: (quizId: string, body: Record<string, unknown>) =>
     http.put<AdminQuiz>(`/admin/quizzes/${quizId}`, body),
   /** A listening question's MP3 (what members hear); `durationMs` as the browser measured it. */

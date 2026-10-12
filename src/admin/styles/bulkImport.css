@@ -1,0 +1,95 @@
+/* JSON bulk import (components/BulkImportButton): drop zone, helpers, review table. */
+
+.hgbulk-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 34px 20px;
+  border: 2px dashed var(--line-strong);
+  border-radius: 16px;
+  background: var(--surface-2);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.hgbulk-drop:hover,
+.hgbulk-drop.is-over {
+  border-color: var(--brand-400);
+  background: var(--brand-50);
+}
+.hgbulk-drop:focus-within {
+  box-shadow: var(--focus-ring);
+}
+.hgbulk-drop__icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  color: #fff;
+  background: var(--brand-gradient);
+  box-shadow: var(--shadow-brand);
+  margin-bottom: 4px;
+}
+.hgbulk-drop__title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.hgbulk-drop__hint {
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+.hgbulk-help {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.hgbulk-fields td {
+  vertical-align: top;
+  font-size: 13px;
+}
+.hgbulk-fields td:first-child {
+  white-space: nowrap;
+}
+
+.hgbulk-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.hgbulk-rows {
+  max-height: 46vh;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.hgbulk-rows thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface-3);
+}
+.hgbulk-rows td {
+  vertical-align: top;
+  font-size: 13px;
+}
+
+.hgbulk-issues {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  line-height: 1.55;
+}
+.hgbulk-issues li.is-error {
+  color: var(--ad-danger);
+}

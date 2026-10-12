@@ -50,12 +50,14 @@ const ACTION_COPY: Record<string, ActionCopy> = {
   // ---- Sentences ---------------------------------------------------------
   "POST /admin/sentences": { ko: "문장 등록", en: "Created a sentence" },
   "POST /admin/sentences/batch": { ko: "문장 일괄 등록", en: "Bulk-created sentences" },
+  "POST /admin/sentences/batch/check": { ko: "문장 일괄 추가 파일 확인 (저장 안 함)", en: "Checked a sentence upload (nothing saved)" },
   "PATCH /admin/sentences/{sentence_id}": { ko: "문장 수정", en: "Updated a sentence" },
   "DELETE /admin/sentences/{sentence_id}": { ko: "문장 삭제", en: "Deleted a sentence" },
 
   // ---- Questions ---------------------------------------------------------
   "POST /admin/quizzes": { ko: "문제 등록", en: "Created a question" },
   "POST /admin/quizzes/batch": { ko: "문제 일괄 등록", en: "Bulk-created questions" },
+  "POST /admin/quizzes/batch/check": { ko: "문제 일괄 추가 파일 확인 (저장 안 함)", en: "Checked a question upload (nothing saved)" },
   "PUT /admin/quizzes/{quiz_id}": { ko: "문제 전체 수정", en: "Replaced a question" },
   "DELETE /admin/quizzes/{quiz_id}": { ko: "문제 삭제", en: "Deleted a question" },
   "PUT /admin/quizzes/{quiz_id}/audio": { ko: "듣기 음원 업로드", en: "Uploaded listening audio" },

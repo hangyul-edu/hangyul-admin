@@ -9,7 +9,8 @@ import { TOPIK_GRADES } from "../../lib/levels";
 import { sanitizeHtml } from "../../lib/sanitizeHtml";
 import { useToast, useToastError } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
-import { BatchAddButton } from "../components/BatchAddButton";
+import { BulkImportButton } from "../components/BulkImportButton";
+import type { FieldDoc } from "../components/BulkImportButton";
 import { ContentCleanupButton } from "../components/ContentCleanupButton";
 import {
   Badge,
@@ -72,6 +73,28 @@ const BATCH_TEMPLATE = JSON.stringify(
   null,
   2,
 );
+
+/** The upload format, for the import dialog's field reference. */
+const QUIZ_FIELDS: FieldDoc[] = [
+  { name: "answer_format", need: "필수", meaning: "답 형식: single_choice(객관식) · short_answer(단답형) · free_response(서술형)", example: "single_choice" },
+  { name: "prompt", need: "필수", meaning: "지시문 (문제 위에 나오는 안내)", example: "빈칸에 들어갈 말로 가장 알맞은 것을 고르십시오." },
+  { name: "level", need: "필수", meaning: "TOPIK 급수 1–6", example: "2" },
+  { name: "content_html", need: "선택", meaning: "지문·본문 (HTML)", example: "<p>주말에 친구를 (   ).</p>" },
+  { name: "choices", need: "객관식 필수", meaning: "보기 2개 이상: key(번호)와 text(내용)", example: '[{"key":"1","text":"만납니다"}]' },
+  { name: "correct_choice", need: "객관식 필수", meaning: "정답 보기의 key", example: "1" },
+  { name: "blanks", need: "단답형 필수", meaning: "빈칸: label(ㄱ·ㄴ 등)과 answer(정답)", example: '[{"label":"ㄱ","answer":"있으면"}]' },
+  { name: "answer_max_length", need: "서술형 필수", meaning: "답안 최대 글자 수", example: "300" },
+  { name: "scoring_criteria", need: "채점형 필수", meaning: "채점 기준 목록 (서술형·정답 없는 빈칸)", example: '["주제에 맞게 썼는가"]' },
+  { name: "max_score", need: "채점형 필수", meaning: "만점", example: "10" },
+  { name: "topik_section", need: "선택", meaning: "영역: listening · reading · writing", example: "reading" },
+  { name: "topik_question_type", need: "선택", meaning: "문제 유형 (영역과 맞아야 함)", example: "reading_01" },
+  { name: "material_kind", need: "선택", meaning: "자료 종류: text(기본) · table · audio · image", example: "text" },
+  { name: "image_url", need: "그림 자료 필수", meaning: "그림 주소", example: "https://…/q1.png" },
+  { name: "audio_duration_ms", need: "선택", meaning: "듣기 길이 (밀리초). 듣기 파일은 추가한 뒤 문제에서 올려요", example: "12000" },
+  { name: "explanation", need: "선택", meaning: "해설", example: "'친구를 만납니다'가 자연스럽습니다." },
+  { name: "hint", need: "선택", meaning: "힌트", example: "—" },
+  { name: "prompt_translation", need: "선택", meaning: "지시문 번역", example: "Choose the best answer." },
+];
 
 export interface QuizDraft {
   answer_format: string;
@@ -373,10 +396,13 @@ export function QuizzesPage() {
                 invalidateKeys={[["admin", "quizzes"]]}
               />
             )}
-            <BatchAddButton
-              title="문제 일괄 추가"
-              hint="단건 생성과 같은 필드(answer_format·prompt·level 필수, 형식별 필드 포함)를 담은 JSON 배열을 붙여넣으세요."
+            <BulkImportButton
+              noun="문제"
+              title="TOPIK 문제 일괄 추가"
+              fields={QUIZ_FIELDS}
               template={BATCH_TEMPLATE}
+              templateFilename="TOPIK-문제-예시.json"
+              check={adminApi.checkQuizzesBatch}
               submit={adminApi.createQuizzesBatch}
               invalidateKeys={[["admin", "quizzes"]]}
             />
