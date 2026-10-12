@@ -495,6 +495,22 @@ export function UserDetailPage() {
               ) : (
                 <span className="hgadm-muted">활성 구독이 없습니다.</span>
               )}
+              {user.free_trial && (
+                <>
+                  <hr className="hgadm-divider" />
+                  <Dl
+                    items={[
+                      [
+                        "무료 체험",
+                        user.free_trial.available
+                          ? "사용 가능 (회원당 1회)"
+                          : `사용함 · ${formatDateTime(user.free_trial.started_at)} ~ ${formatDateTime(user.free_trial.ended_at)}`,
+                      ],
+                      ["신규 회원 요금", user.free_trial.new_member ? "대상 (체험·결제 이력 없음)" : "대상 아님"],
+                    ]}
+                  />
+                </>
+              )}
             </div>
           </div>
           <div className="hgadm-card">

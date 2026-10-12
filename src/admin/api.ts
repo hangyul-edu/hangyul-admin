@@ -226,6 +226,14 @@ export interface AdminUserDetail {
     canceled_at: string | null;
     created_at: string;
   } | null;
+  /** The person's one free trial (any of their accounts) and whether
+   *  new-member prices apply to them. */
+  free_trial: {
+    available: boolean;
+    started_at: string | null;
+    ended_at: string | null;
+    new_member: boolean;
+  };
   recent_invoices: {
     invoice_id: string;
     plan_name: string;
@@ -590,21 +598,51 @@ export interface AdminRetryResult {
 export const ENTITLEMENTS = ["premium_courses", "ai_tutor", "offline_download", "premium_content"] as const;
 export type Entitlement = (typeof ENTITLEMENTS)[number];
 
+/** A plan card's promotional ribbon, in each app language. */
+export interface PlanBadge {
+  ko: string;
+  en: string;
+}
+
+/** The fixed place a plan is sold in: the standard or the new-member price
+ *  for an interval. `optional` slots can be switched off. */
+export interface OfferSlot {
+  audience: "default" | "new_user";
+  interval: "month" | "year";
+  optional: boolean;
+}
+
 export interface Plan {
   plan_id: string;
   name: string;
-  description: string | null;
   price_cents: number;
   currency: string;
-  interval: string;
-  trial_days: number;
+  interval: "month" | "year";
   promo_price_cents: number | null;
-  features: string[];
   entitlements: Entitlement[];
   audience: string;
-  status: string;
-  is_public: boolean;
-  priority: number;
+  /** `active` = on offer; `archived` = not sold (keeps renewing its subscribers). */
+  status: "active" | "archived";
+  version: number;
+  /** null for an older plan outside the slots, which only renews its subscribers. */
+  slot: OfferSlot | null;
+  badge_text: PlanBadge;
+  badge_published: boolean;
+  live_subscribers: number;
+}
+
+/** Longest badge text per language (the server's limit). */
+export const BADGE_MAX_LENGTH = 20;
+
+export interface PlanUpdate {
+  name?: string;
+  price_cents?: number;
+  promo_price_cents?: number | null;
+  entitlements?: Entitlement[];
+  badge_text?: PlanBadge;
+  badge_published?: boolean;
+  /** New-member slots only: offer the price (true) or the standard one (false). */
+  offered?: boolean;
 }
 
 // ---- Coupons ---------------------------------------------------------------
@@ -1197,13 +1235,10 @@ export const adminApi = {
     http.post<AdminRetryResult>(`/admin/commerce/invoices/${encodeURIComponent(invoiceId)}/retry`, {}),
 
   // Plans
-  listPlans: () => http.get<{ plans: Plan[] }>("/admin/subscriptions/plans"),
-  createPlan: (body: Partial<Plan> & { plan_id: string; name: string }) =>
-    http.post<Plan>("/admin/subscriptions/plans", body),
-  updatePlan: (planId: string, body: Partial<Plan>) =>
+  /** The four offer slots' plans in order, then older plans still renewing. */
+  listPlans: () => http.get<{ plans: Plan[]; trial_days: number }>("/admin/subscriptions/plans"),
+  updatePlan: (planId: string, body: PlanUpdate) =>
     http.patch<Plan>(`/admin/subscriptions/plans/${planId}`, body),
-  archivePlan: (planId: string) =>
-    http.post<Plan>(`/admin/subscriptions/plans/${planId}/archive`),
 
   // Coupons
   listCouponBatches: (params: Query) =>

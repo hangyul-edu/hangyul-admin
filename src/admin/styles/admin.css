@@ -4512,3 +4512,89 @@ a.hgadm-recent--link:hover {
 .hgadm-prof-chart__seg--2 polyline {
   fill: none;
 }
+
+/* ---------- 요금제 관리: the fixed offer slots ---------- */
+.hgadm-offer-trial {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 18px;
+  background: var(--brand-50);
+  border-color: var(--brand-200);
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.hgadm-offer-trial b {
+  color: var(--ink);
+  font-size: 14px;
+}
+.hgadm-offer-group__title {
+  margin: 0 0 2px;
+  font-size: 16px;
+  font-weight: 800;
+}
+.hgadm-offer-group__desc {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.hgadm-offer--off .hgadm-card__body {
+  opacity: 0.6;
+}
+.hgadm-offer__price {
+  margin-bottom: 14px;
+}
+.hgadm-offer__amount {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.hgadm-offer__monthly {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.hgadm-offer__line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 34px;
+  font-size: 13px;
+}
+.hgadm-offer__key {
+  flex: 0 0 64px;
+  color: var(--ink-3);
+}
+.hgadm-offer__ribbon-preview {
+  margin-top: 8px;
+}
+
+/* The plan card's ribbon as the app draws it (global.css .plan__ribbon):
+   Rectangle 4985 art turned a quarter, bold 15px white label. */
+.hgadm-ribbon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  width: 150px;
+  height: 27px;
+}
+.hgadm-ribbon__art {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 27px;
+  height: 150px;
+  transform: translate(-50%, -50%) rotate(-90deg) scale(-1, 1);
+}
+.hgadm-ribbon__text {
+  position: relative;
+  z-index: 1;
+  padding-left: 11px;
+  color: #fff;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 14px;
+  white-space: nowrap;
+}

@@ -177,12 +177,7 @@ const ACTION_COPY: Record<string, ActionCopy> = {
   },
 
   // ---- Plans -------------------------------------------------------------
-  "POST /admin/subscriptions/plans": { ko: "요금제 생성", en: "Created a plan" },
   "PATCH /admin/subscriptions/plans/{plan_id}": { ko: "요금제 수정", en: "Updated a plan" },
-  "POST /admin/subscriptions/plans/{plan_id}/archive": {
-    ko: "요금제 보관 처리",
-    en: "Archived a plan",
-  },
 
   // ---- Notifications -----------------------------------------------------
   "POST /admin/notifications/announcement": {
