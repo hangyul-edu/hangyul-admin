@@ -4538,11 +4538,12 @@ a.hgadm-recent--link:hover {
   font-size: 13px;
   color: var(--ink-3);
 }
-.hgadm-offer--off .hgadm-card__body {
-  opacity: 0.6;
-}
-.hgadm-offer__price {
-  margin-bottom: 14px;
+.hgadm-offer__price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
 }
 .hgadm-offer__amount {
   font-size: 22px;
@@ -4567,6 +4568,37 @@ a.hgadm-recent--link:hover {
 }
 .hgadm-offer__ribbon-preview {
   margin-top: 8px;
+}
+
+/* Badge picker: each preset as its two ribbons, then "직접 입력". */
+.hgadm-badge-choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 8px;
+}
+.hgadm-badge-choice {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+}
+.hgadm-badge-choice--on {
+  border-color: var(--brand-500);
+  background: var(--brand-50);
+}
+.hgadm-badge-choice input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--brand-500);
+  cursor: pointer;
+}
+.hgadm-badge-choice__custom {
+  font-size: 13.5px;
+  font-weight: 600;
 }
 
 /* The plan card's ribbon as the app draws it (global.css .plan__ribbon):
