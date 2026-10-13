@@ -157,4 +157,15 @@ describe("dashboard alerts", () => {
       expect(screen.getByText(message).closest("a")).toHaveAttribute("href");
     }
   });
+
+  it("opens the invoices tab for the unpaid-invoice alert", async () => {
+    scopes = ["users:read", "content:read", "commerce:read"];
+    renderPage();
+
+    // /payments alone lands on the 결제 tab, not on the invoices it is about.
+    expect((await screen.findByText("미납 청구서 12건")).closest("a")).toHaveAttribute(
+      "href",
+      "/payments?tab=invoices",
+    );
+  });
 });

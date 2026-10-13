@@ -60,7 +60,8 @@ const ALERT_ROUTES: Record<string, { to: string; scope: string }> = {
   webhook_dlq: { to: "/payments", scope: "commerce:read" },
   outbox_stuck: { to: "/payments", scope: "commerce:read" },
   payments_failed_24h: { to: "/payments", scope: "commerce:read" },
-  invoices_unpaid: { to: "/payments", scope: "commerce:read" },
+  // The page opens on its 결제 tab; unpaid invoices live on the other one.
+  invoices_unpaid: { to: "/payments?tab=invoices", scope: "commerce:read" },
   generated_pending_review: { to: "/ai-content", scope: "content:read" },
 };
 
