@@ -12,10 +12,10 @@ import type { AdminTier } from "../api";
  */
 export const ADMIN_TIERS: { value: AdminTier; label: string; desc: string }[] = [
   { value: "super_admin", label: "최고 관리자", desc: "모든 권한 + 관리자 계정 관리" },
-  { value: "operator", label: "운영자", desc: "관리자 관리·연동 설정 변경·실력 레벨 정정을 제외한 모든 권한" },
+  { value: "operator", label: "운영자", desc: "관리자 관리·연동 설정 변경·실력 레벨 정정·콘텐츠 전체 삭제·콘텐츠 업데이트를 제외한 모든 권한" },
   { value: "content_manager", label: "콘텐츠 관리자", desc: "콘텐츠 편집·검수·게시 + 사용자 조회 + 학습 통계" },
   { value: "support_agent", label: "고객지원", desc: "사용자·학습 기록 조회 + 운영 콘텐츠 + 커머스 조회" },
-  { value: "content_publisher", label: "콘텐츠 게시 담당", desc: "콘텐츠 검수·게시·회수 + 학습 통계" },
+  { value: "content_publisher", label: "콘텐츠 게시 담당", desc: "콘텐츠 편집·검수·게시·회수 + 학습 통계" },
   { value: "educator", label: "교육 검수자", desc: "콘텐츠 검수 + 학습자 학습 기록 조회 + 평가 응답 기준 채점" },
   { value: "analyst", label: "분석가", desc: "집계 학습 통계·내보내기 (개인 식별 기록 제외)" },
   { value: "viewer", label: "뷰어", desc: "전체 읽기 전용 (대화 원문·내보내기 제외)" },
