@@ -805,7 +805,7 @@ export interface AdminLecture {
   series_title: string | null;
   course_title: string | null;
   title: string;
-  /** The lesson's Korean description (other languages in `translations`). */
+  /** The lesson's English (base) description; other languages in `translations`. */
   description: string;
   kind: string;
   duration_seconds: number;
@@ -864,7 +864,6 @@ export interface AdminCheckpointList {
   items: AdminCheckpoint[];
 }
 
-/** Exactly one of sentence_id / quiz_id; the server derives interaction_type from it. */
 /**
  * Exactly one of: `sentence` / `quiz` — the content itself, stored as the
  * lecture's own — or `sentence_id` / `quiz_id`, keeping a link to shared
@@ -1263,7 +1262,7 @@ export const adminApi = {
     http.post<AdminRetryResult>(`/admin/commerce/invoices/${encodeURIComponent(invoiceId)}/retry`, {}),
 
   // Plans
-  /** The four offer slots' plans in order, then older plans still renewing. */
+  /** The monthly and yearly plans, then older plans still renewing. */
   listPlans: () =>
     http.get<PlanList>("/admin/subscriptions/plans"),
   updatePlan: (planId: string, body: PlanUpdate) =>
@@ -1299,10 +1298,8 @@ export const adminApi = {
   listBanners: () => http.get<{ items: AdminBanner[] }>("/admin/banners"),
   createBanner: (body: Partial<AdminBanner>) =>
     http.post<AdminBanner>("/admin/banners", body),
-  updateBanner: (
-    bannerId: string,
-    body: Partial<AdminBanner> & { clear_window?: boolean; clear_action_url?: boolean },
-  ) => http.patch<AdminBanner>(`/admin/banners/${bannerId}`, body),
+  updateBanner: (bannerId: string, body: Partial<AdminBanner>) =>
+    http.patch<AdminBanner>(`/admin/banners/${bannerId}`, body),
   reorderBanners: (bannerIds: string[]) =>
     http.post<{ items: AdminBanner[] }>("/admin/banners/reorder", {
       banner_ids: bannerIds,
