@@ -5,12 +5,12 @@
  * must get a plain answer rather than a request that 403s and a
  * "loading…" line that never resolves.
  */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { learningApi } from "../learningApi";
-import { MetricLabel } from "./learning";
+import { MetricLabel, StaleNotice } from "./learning";
 
 vi.mock("../learningApi", async () => {
   const actual = await vi.importActual<typeof import("../learningApi")>("../learningApi");
@@ -96,5 +96,19 @@ describe("MetricLabel", () => {
     await userEvent.click(screen.getByRole("button", { name: "스스로 맞힌 비율 설명 보기" }));
     expect(screen.getByText(/힌트나 정답 보기 없이/)).toBeInTheDocument();
     expect(await screen.findByText("첫 시도 정답 수 ÷ 첫 시도 수")).toBeInTheDocument();
+  });
+});
+
+describe("StaleNotice", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("shows the last run on the portal's KST clock, whatever the viewer's timezone", () => {
+    // Somewhere other than Seoul, or a KST assertion passes for the wrong reason.
+    vi.stubEnv("TZ", "America/New_York");
+    // 15:30 UTC on 6 September is 00:30 on 7 September in Seoul.
+    render(<StaleNotice stale lastSuccess="2026-09-06T15:30:00Z" lag={0} />);
+    expect(screen.getByText(/마지막 집계 2026\. 09\. 07\./)).toBeInTheDocument();
   });
 });

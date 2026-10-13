@@ -11,6 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import { learningApi } from "../learningApi";
 import type { Change, MetricDefinition, Ratio } from "../learningApi";
 import { useAdminAuth } from "../auth";
+import { formatDateTime } from "../lib/format";
 import { useUrlFilters } from "../lib/urlFilters";
 import { metricGuide } from "../lib/metricGuide";
 import { HelpTip, Notice, TrendChip, trendOf } from "./insights";
@@ -222,7 +223,7 @@ export function StaleNotice({ stale, lastSuccess, lag }: { stale: boolean; lastS
   if (!stale) return null;
   return (
     <Notice tone="warn" title="통계가 최신이 아니에요">
-      마지막 집계 {lastSuccess ? new Date(lastSuccess).toLocaleString("ko-KR") : "기록 없음"}
+      마지막 집계 {lastSuccess ? formatDateTime(lastSuccess) : "기록 없음"}
       {lag > 0 ? ` · 아직 반영되지 않은 활동 ${lag.toLocaleString()}건` : ""}. 활동·재방문 수치는 실제보다 늦게 보일 수 있어요.
     </Notice>
   );
