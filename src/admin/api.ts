@@ -610,7 +610,7 @@ export interface OfferSlot {
   interval: "month" | "year";
 }
 
-/** A plan's web price in one currency (minor units: whole won for KRW, cents
+/** A plan's price in one currency (minor units: whole won for KRW, cents
  *  for USD). Each currency's prices are versioned on their own. */
 export interface PlanPrice {
   currency: string;
@@ -671,8 +671,6 @@ export interface PlanList {
   price_currencies: string[];
   trial_days: number;
   badge_presets: BadgePreset[];
-  /** App-store billing: not integrated — every price here is a web price. */
-  store_billing: "not_integrated";
 }
 
 // ---- Coupons ---------------------------------------------------------------

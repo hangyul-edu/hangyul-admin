@@ -1,8 +1,8 @@
 /**
  * 요금제 관리 shows the two plans on sale (no creating or archiving plans, no
- * plan per currency, no per-plan access), each with a web price per currency
- * (KRW, USD), the free trial as a per-member policy, monthly equivalents for
- * yearly prices, that app-store prices are separate, and edits each
+ * plan per currency, no per-plan access), each with a price per currency
+ * (KRW, USD) and who is offered it, the free trial as a per-member policy,
+ * monthly equivalents for yearly prices, and edits each
  * currency's list, sale and new-member price and the badge — a preset or
  * custom text, published or hidden. The API is stubbed, so these assertions
  * are about what the page shows and sends.
@@ -92,7 +92,7 @@ const PRESETS: BadgePreset[] = [
 ];
 
 function list(plans: Plan[]): PlanList {
-  return { plans, price_currencies: ["KRW", "USD"], trial_days: 7, badge_presets: PRESETS, store_billing: "not_integrated" };
+  return { plans, price_currencies: ["KRW", "USD"], trial_days: 7, badge_presets: PRESETS };
 }
 
 function renderPage() {
@@ -146,7 +146,7 @@ describe("요금제 관리", () => {
   it("shows the two plans on sale, with no way to create or archive one or grant per-plan access", async () => {
     renderPage();
     await screen.findByText("Monthly");
-    expect(screen.getByRole("heading", { name: "판매 중인 요금제 · 웹 결제 가격" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "판매 중인 요금제" })).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "수정" })).toHaveLength(2);
     expect(screen.queryByRole("button", { name: /새 요금제/ })).toBeNull();
     expect(screen.queryByRole("button", { name: "보관" })).toBeNull();
@@ -160,13 +160,10 @@ describe("요금제 관리", () => {
     expect(counts).toHaveTextContent("누적 1,250명");
   });
 
-  it("says these are web prices and that app-store prices are managed in the stores", async () => {
+  it("says which currency each billing country pays in", async () => {
     renderPage();
     await screen.findByText("Monthly");
-    expect(screen.getByText("앱스토어 결제 미연동")).toBeInTheDocument();
-    expect(screen.getByText(/스토어 상품 가격은 각 스토어 콘솔에서 관리되고/)).toBeInTheDocument();
-    expect(screen.getByText(/대한민국은 원화\(KRW\), 그 밖의 국가는 미국 달러\(USD\)/)).toBeInTheDocument();
-  });
+    expect(screen.getByText(/대한민국은 원화\(KRW\), 그 밖의 국가는 미국 달러\(USD\)/)).toBeInTheDocument();  });
 
   it("states the free trial once, as a per-member policy, not per plan", async () => {
     renderPage();

@@ -13,14 +13,13 @@ import { formatMoney, isZeroDecimal } from "../lib/format";
  * 요금제 관리 — the monthly and the yearly plan the app's purchase screen sells.
  *
  * Plans are never created or deleted here, and there is no plan per currency:
- * each plan carries a web price in every currency it is sold in (KRW for
+ * each plan carries a price in every currency it is sold in (KRW for
  * members whose billing country is South Korea, USD for everyone else). For
  * each currency an admin sets the list price, an optional sale price and an
  * optional new-member price, and picks or writes the plan's promotional
  * ribbon. Both plans unlock the same full access (they differ in billing
  * period and price). The free trial is the member's (once, always the same
- * length), so it is shown as policy. These are web prices only — app-store
- * in-app billing, which would be priced in the stores, is not integrated.
+ * length), so it is shown as policy.
  */
 
 const INTERVAL_LABEL = { month: "월간 (1개월)", year: "연간 (12개월)" } as const;
@@ -483,8 +482,7 @@ function PlanEditor({
         <div />
 
         <p className="span-2 hgadm-field__hint" role="note">
-          웹 결제 가격이에요. 회원은 결제 국가의 통화로 가격을 보고 결제해요 (대한민국은 원화, 그 밖의 국가는 미국 달러).
-          앱스토어·구글 플레이 인앱 결제는 연동되어 있지 않으며, 연동되면 스토어 가격은 각 스토어에서 따로 관리돼요.
+          회원은 결제 국가의 통화로 가격을 보고 결제해요 (대한민국은 원화, 그 밖의 국가는 미국 달러).
         </p>
 
         {currencies.map((currency) => (
@@ -644,19 +642,12 @@ export function PlansPage() {
           </div>
 
           <section className="hgadm-section">
-            <h2 className="hgadm-offer-group__title">판매 중인 요금제 · 웹 결제 가격</h2>
+            <h2 className="hgadm-offer-group__title">판매 중인 요금제</h2>
             <p className="hgadm-offer-group__desc">
               회원은 직접 확인한 결제 국가의 통화로 가격을 보고 결제해요 — 대한민국은 원화(KRW), 그 밖의 국가는 미국 달러(USD).
               국적은 결제 국가를 제안할 때만 쓰이고, 접속 위치·전화번호·앱 언어로는 바뀌지 않아요. 신규 회원가는 무료 체험이나 결제를
               한 번도 하지 않은 회원에게 일반 가격 대신 보여요.
             </p>
-            {query.data.store_billing === "not_integrated" && (
-              <p className="hgadm-offer-group__desc" role="note">
-                <Badge tone="neutral">앱스토어 결제 미연동</Badge> 여기의 가격은 모두 웹 결제(토스페이먼츠) 가격이에요. App Store·Google
-                Play 인앱 결제는 연동되어 있지 않으며, 연동되면 스토어 상품 가격은 각 스토어 콘솔에서 관리되고 이 화면의 가격과는
-                별개예요.
-              </p>
-            )}
             <div className="hgadm-grid-2">
               {onSale.map((p) => (
                 <OfferCard
