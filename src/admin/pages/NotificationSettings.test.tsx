@@ -122,13 +122,16 @@ describe("NotificationSettingsPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("explains that the clock comes from the phone country, not the app language", async () => {
+  it("explains that the clock comes from the synced device timezone, not the phone or language", async () => {
     getDailyReminder.mockResolvedValue(DEFAULTS);
     renderPage();
 
-    expect(await screen.findByText("기준은 휴대폰 인증 국가")).toBeInTheDocument();
+    expect(await screen.findByText("기준은 앱이 동기화한 기기 시간대")).toBeInTheDocument();
     expect(
-      screen.getByText(/앱 언어 설정이나 기기 타임존은 사용하지 않습니다/),
+      screen.getByText(/휴대폰 번호의 국가나 앱 언어 설정은 사용하지 않습니다/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/기기 시간대가 동기화되지 않은 사용자는 UTC 기준으로 발송됩니다/),
     ).toBeInTheDocument();
     // Language localization is called out as a separate concern.
     expect(screen.getByText("언어는 별개")).toBeInTheDocument();

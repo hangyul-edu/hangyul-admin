@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Globe2, Info, Languages, Phone } from "lucide-react";
+import { Globe2, Info, Languages, Smartphone } from "lucide-react";
 import { adminApi } from "../api";
 import { useAdminAuth } from "../auth";
 import { errorMessage } from "../../lib/http";
@@ -213,15 +213,18 @@ export function NotificationSettingsPage() {
             <div className="hgadm-card__title">발송 시각이 정해지는 방식</div>
           </div>
           <div className="hgadm-card__body">
-            <NoteRow icon={<Phone size={16} strokeWidth={2} />} title="기준은 휴대폰 인증 국가">
+            <NoteRow
+              icon={<Smartphone size={16} strokeWidth={2} />}
+              title="기준은 앱이 동기화한 기기 시간대"
+            >
               위 시각은 UTC 절대 시각이 아니라 <strong>각 사용자의 현지 시각</strong>입니다.
-              현지 시각의 기준은 그 사용자가 <strong>인증한 휴대폰 번호의 국가</strong>이며,
-              앱 언어 설정이나 기기 타임존은 사용하지 않습니다.
+              현지 시각의 기준은 앱이 동기화한 <strong>사용자 기기의 시간대</strong>이며,
+              휴대폰 번호의 국가나 앱 언어 설정은 사용하지 않습니다.
             </NoteRow>
             <NoteRow icon={<Info size={16} strokeWidth={2} />} title="예시">
-              <span className="hgadm-cell-mono">{saved || DEFAULT_TIME}</span> 설정 시 +82(한국)
-              번호 사용자는 한국 시간, +33(프랑스) 번호 사용자는 프랑스 시간 기준으로 같은
-              시각에 받습니다. 국가를 알 수 없는 번호는 UTC 기준으로 발송됩니다.
+              <span className="hgadm-cell-mono">{saved || DEFAULT_TIME}</span> 설정 시 한국에 있는
+              사용자는 한국 시간, 프랑스로 여행 중인 사용자는 프랑스 시간 기준으로 같은 시각에
+              받습니다. 아직 기기 시간대가 동기화되지 않은 사용자는 UTC 기준으로 발송됩니다.
             </NoteRow>
             <NoteRow icon={<Languages size={16} strokeWidth={2} />} title="언어는 별개">
               알림 <strong>문구</strong>는 각 사용자의 앱 언어를 따릅니다. 언어를 영어로 바꿔도

@@ -1037,9 +1037,9 @@ export interface AdminNotice {
 
 /**
  * The one admin-owned send time for the daily study reminder. `HH:MM` is a
- * wall-clock time read on each recipient's OWN clock — the timezone of the
- * country their verified phone number belongs to — never a UTC instant and
- * never derived from their app language.
+ * wall-clock time read on each recipient's OWN clock — the device timezone the
+ * app syncs (UTC until one is synced) — never a UTC instant and never derived
+ * from their phone number or app language.
  */
 export interface DailyReminderSettings {
   daily_reminder_time: string;
