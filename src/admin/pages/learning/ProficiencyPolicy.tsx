@@ -198,7 +198,7 @@ export function ProficiencyPolicyPage() {
         <Panel
           title={
             <span className="hgadm-row" style={{ gap: 6 }}>
-              <CheckCircle2 size={17} color="var(--ad-success)" aria-hidden /> 레벨 판정에 쓰는 활동
+              <CheckCircle2 size={17} color="var(--hgadm-success)" aria-hidden /> 레벨 판정에 쓰는 활동
             </span>
           }
           description="이 활동의 결과만 실력의 근거로 써요."
@@ -208,7 +208,7 @@ export function ProficiencyPolicyPage() {
         <Panel
           title={
             <span className="hgadm-row" style={{ gap: 6 }}>
-              <XCircle size={17} color="var(--ad-danger)" aria-hidden /> 절대 증거가 되지 않는 활동
+              <XCircle size={17} color="var(--hgadm-danger)" aria-hidden /> 절대 증거가 되지 않는 활동
             </span>
           }
           description="많이 했다고 레벨이 오르지는 않아요. 활동량은 실력의 근거가 아니에요."

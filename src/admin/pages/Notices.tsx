@@ -181,7 +181,7 @@ export function NoticesPage() {
                   size={14}
                   strokeWidth={2}
                   aria-label="고정됨"
-                  style={{ color: "var(--ad-primary)", flexShrink: 0 }}
+                  style={{ color: "var(--hgadm-primary)", flexShrink: 0 }}
                 />
               )}
               {ko?.title ?? "(제목 없음)"}

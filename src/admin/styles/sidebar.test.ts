@@ -47,13 +47,13 @@ describe("collapsible sidebar", () => {
 
   it("defaults to the expanded width with labels shown", () => {
     const { expanded } = mount();
-    expect(expanded.getPropertyValue("--nav-width")).toBe("var(--ad-sidebar-w)");
+    expect(expanded.getPropertyValue("--nav-width")).toBe("var(--hgadm-sidebar-w)");
     expect(expanded.getPropertyValue("--nav-label-display")).toBe("block");
   });
 
   it("narrows to an icon rail when collapsed", () => {
     const { collapsed } = mount();
-    expect(collapsed.getPropertyValue("--nav-width")).toBe("var(--ad-sidebar-w-collapsed)");
+    expect(collapsed.getPropertyValue("--nav-width")).toBe("var(--hgadm-sidebar-w-collapsed)");
     expect(collapsed.getPropertyValue("--nav-label-display")).toBe("none");
     // Centred icons rather than left-aligned text rows.
     expect(collapsed.getPropertyValue("--nav-link-justify")).toBe("center");
@@ -85,7 +85,7 @@ describe("collapsible sidebar", () => {
     // The breakpoint must set the same custom properties rather than restate
     // widths and display values of its own.
     const breakpoint = code.slice(code.indexOf("@media (max-width: 1024px)"));
-    expect(breakpoint).toContain("--nav-width: var(--ad-sidebar-w-collapsed)");
+    expect(breakpoint).toContain("--nav-width: var(--hgadm-sidebar-w-collapsed)");
     expect(breakpoint).toContain("--nav-label-display: none");
     // …and it hides the control, which cannot widen the layout at that size.
     expect(breakpoint).toMatch(/\.hgadm-sidebar__collapse\s*\{\s*display:\s*none/);

@@ -163,7 +163,7 @@ function CoverageTab() {
               key: "shortage",
               header: "모자란 양",
               numeric: true,
-              render: (b) => (b.shortage ? <strong style={{ color: "var(--ad-danger)" }}>{b.shortage.toLocaleString()}</strong> : "—"),
+              render: (b) => (b.shortage ? <strong style={{ color: "var(--hgadm-danger)" }}>{b.shortage.toLocaleString()}</strong> : "—"),
             },
             {
               key: "status",

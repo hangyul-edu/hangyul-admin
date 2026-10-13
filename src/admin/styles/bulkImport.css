@@ -91,5 +91,5 @@
   line-height: 1.55;
 }
 .hgbulk-issues li.is-error {
-  color: var(--ad-danger);
+  color: var(--hgadm-danger);
 }

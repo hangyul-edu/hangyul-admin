@@ -7,11 +7,11 @@
    ============================================================ */
 
 :root {
-  --ad-sidebar-w: 256px;
+  --hgadm-sidebar-w: 256px;
   /* Icon-only rail: 34px brand mark + breathing room on each side. */
-  --ad-sidebar-w-collapsed: 64px;
-  --ad-topbar-h: 60px;
-  --ad-content-max: 1320px;
+  --hgadm-sidebar-w-collapsed: 64px;
+  --hgadm-topbar-h: 60px;
+  --hgadm-content-max: 1320px;
 
   /* ---- Admin palette: premium blue + cool neutral (NO orange) ----
      The admin is a separate entry (admin.html) that loads theme.css then this
@@ -55,27 +55,27 @@
   --warning-bg: #eff6ff;
 
   /* Semantic (use going forward; no amber/orange) */
-  --ad-primary: #2563eb;
-  --ad-primary-soft: #eff6ff;
-  --ad-success: #16a34a;
-  --ad-success-soft: #dcfce7;
-  --ad-danger: #dc2626;
-  --ad-danger-soft: #fee2e2;
-  --ad-info-soft: #eff6ff;
-  --ad-pending: #7c3aed; /* violet */
-  --ad-pending-soft: #ede9fe;
-  --ad-neutral: #64748b;
-  --ad-neutral-soft: #f1f5f9;
+  --hgadm-primary: #2563eb;
+  --hgadm-primary-soft: #eff6ff;
+  --hgadm-success: #16a34a;
+  --hgadm-success-soft: #dcfce7;
+  --hgadm-danger: #dc2626;
+  --hgadm-danger-soft: #fee2e2;
+  --hgadm-info-soft: #eff6ff;
+  --hgadm-pending: #7c3aed; /* violet */
+  --hgadm-pending-soft: #ede9fe;
+  --hgadm-neutral: #64748b;
+  --hgadm-neutral-soft: #f1f5f9;
 
   /* Spacing / radius / shadow scale */
-  --ad-radius-sm: 8px;
-  --ad-radius: 12px;
-  --ad-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
-  --ad-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
-  --ad-shadow-md: 0 8px 24px rgba(15, 23, 42, 0.1);
+  --hgadm-radius-sm: 8px;
+  --hgadm-radius: 12px;
+  --hgadm-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --hgadm-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --hgadm-shadow-md: 0 8px 24px rgba(15, 23, 42, 0.1);
   /* Layered elevation for a more refined, tactile surface system */
-  --ad-shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 16px -6px rgba(15, 23, 42, 0.08);
-  --ad-shadow-lift: 0 2px 6px rgba(15, 23, 42, 0.06), 0 14px 32px -12px rgba(15, 23, 42, 0.18);
+  --hgadm-shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 16px -6px rgba(15, 23, 42, 0.08);
+  --hgadm-shadow-lift: 0 2px 6px rgba(15, 23, 42, 0.06), 0 14px 32px -12px rgba(15, 23, 42, 0.18);
 }
 
 /* ---------- Global polish ---------- */
@@ -146,7 +146,7 @@ body {
 .hgadm-content {
   flex: 1;
   padding: 24px 28px 48px;
-  max-width: var(--ad-content-max);
+  max-width: var(--hgadm-content-max);
   width: 100%;
   margin: 0 auto;
 }
@@ -157,7 +157,7 @@ body {
      and switched on by two independent triggers: the user's toggle
      (.is-collapsed) and the narrow-viewport breakpoint. Without this the two
      would be duplicate rule blocks that drift apart. */
-  --nav-width: var(--ad-sidebar-w);
+  --nav-width: var(--hgadm-sidebar-w);
   --nav-label-display: block;
   --nav-link-justify: flex-start;
   --nav-link-padding: 9px 12px;
@@ -179,7 +179,7 @@ body {
 }
 /* Collapsed: the user asked for the space back. */
 .hgadm-sidebar.is-collapsed {
-  --nav-width: var(--ad-sidebar-w-collapsed);
+  --nav-width: var(--hgadm-sidebar-w-collapsed);
   --nav-label-display: none;
   --nav-link-justify: center;
   --nav-link-padding: 10px;
@@ -211,7 +211,7 @@ body {
   transition: background 0.14s ease, color 0.14s ease;
 }
 .hgadm-sidebar__collapse:hover {
-  background: var(--ad-neutral-soft);
+  background: var(--hgadm-neutral-soft);
   color: var(--ink-2);
 }
 
@@ -255,7 +255,7 @@ body {
   transition: background 0.14s ease;
 }
 .hgadm-sidebar__brand-link:hover {
-  background: var(--ad-neutral-soft);
+  background: var(--hgadm-neutral-soft);
 }
 /* Matches the focus treatment the admin's buttons already use. */
 .hgadm-sidebar__brand-link:focus-visible {
@@ -306,12 +306,12 @@ body {
   display: var(--nav-label-display);
 }
 .hgadm-nav__link:hover {
-  background: var(--ad-neutral-soft);
+  background: var(--hgadm-neutral-soft);
   color: var(--ink);
 }
 .hgadm-nav__link.active {
-  background: var(--ad-primary-soft);
-  color: var(--ad-primary);
+  background: var(--hgadm-primary-soft);
+  color: var(--hgadm-primary);
   font-weight: 700;
 }
 .hgadm-nav__link.active::before {
@@ -323,10 +323,10 @@ body {
   width: 3px;
   height: 18px;
   border-radius: 0 3px 3px 0;
-  background: var(--ad-primary);
+  background: var(--hgadm-primary);
 }
 .hgadm-nav__link.active .hgadm-nav__icon {
-  color: var(--ad-primary);
+  color: var(--hgadm-primary);
 }
 .hgadm-nav__icon {
   width: 20px;
@@ -343,7 +343,7 @@ body {
 
 /* ---------- Topbar ---------- */
 .hgadm-topbar {
-  height: var(--ad-topbar-h);
+  height: var(--hgadm-topbar-h);
   background: rgba(255, 255, 255, 0.72);
   backdrop-filter: saturate(1.5) blur(12px);
   -webkit-backdrop-filter: saturate(1.5) blur(12px);
@@ -371,7 +371,7 @@ body {
   border-radius: 999px;
   border: 1px solid var(--border);
   background: var(--surface);
-  box-shadow: var(--ad-shadow-sm);
+  box-shadow: var(--hgadm-shadow-sm);
 }
 .hgadm-topbar__who {
   line-height: 1.25;
@@ -482,7 +482,7 @@ body {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--r-md);
-  box-shadow: var(--ad-shadow-card);
+  box-shadow: var(--hgadm-shadow-card);
 }
 .hgadm-card__body {
   padding: 20px;
@@ -518,7 +518,7 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--r-md);
   padding: 17px 18px;
-  box-shadow: var(--ad-shadow-card);
+  box-shadow: var(--hgadm-shadow-card);
   overflow: hidden;
   transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
 }
@@ -533,7 +533,7 @@ body {
 }
 .hgadm-stat:hover {
   transform: translateY(-2px);
-  box-shadow: var(--ad-shadow-lift);
+  box-shadow: var(--hgadm-shadow-lift);
   border-color: var(--brand-200);
 }
 .hgadm-stat:hover::before {
@@ -608,7 +608,7 @@ body {
   background: var(--surface);
   border-color: var(--border-strong);
   color: var(--ink);
-  box-shadow: var(--ad-shadow-sm);
+  box-shadow: var(--hgadm-shadow-sm);
 }
 .hgadm-btn--secondary:hover:not(:disabled) {
   background: var(--surface-2);
@@ -654,7 +654,7 @@ body {
   border: 2px solid currentColor;
   border-right-color: transparent;
   border-radius: 50%;
-  animation: ad-spin 0.7s linear infinite;
+  animation: hgadm-spin 0.7s linear infinite;
 }
 
 /* ---------- Badges ---------- */
@@ -956,10 +956,10 @@ body {
   background: var(--surface);
   border: 1px solid var(--border-strong);
   border-radius: 10px;
-  box-shadow: var(--ad-shadow-md);
+  box-shadow: var(--hgadm-shadow-md);
   overflow-y: auto;
   outline: none;
-  animation: ad-pop 0.12s ease;
+  animation: hgadm-pop 0.12s ease;
 }
 .hgadm-dropdown-option {
   display: flex;
@@ -979,14 +979,14 @@ body {
   white-space: nowrap;
 }
 .hgadm-dropdown-option.active {
-  background: var(--ad-neutral-soft);
+  background: var(--hgadm-neutral-soft);
 }
 .hgadm-dropdown-option[aria-selected="true"] {
-  color: var(--ad-primary);
+  color: var(--hgadm-primary);
   font-weight: 600;
 }
 .hgadm-dropdown-option[aria-selected="true"].active {
-  background: var(--ad-primary-soft);
+  background: var(--hgadm-primary-soft);
 }
 .hgadm-dropdown-option[aria-disabled="true"] {
   color: var(--ink-3);
@@ -994,7 +994,7 @@ body {
 }
 .hgadm-dropdown-option__check {
   flex: none;
-  color: var(--ad-primary);
+  color: var(--hgadm-primary);
 }
 .hgadm-form-grid {
   display: grid;
@@ -1159,18 +1159,18 @@ body {
   place-items: center;
   z-index: 100;
   padding: 24px;
-  animation: ad-fade 0.15s ease;
+  animation: hgadm-fade 0.15s ease;
 }
 .hgadm-modal {
   background: var(--surface);
   border-radius: var(--r-lg);
-  box-shadow: var(--ad-shadow-lift);
+  box-shadow: var(--hgadm-shadow-lift);
   width: 100%;
   max-width: 520px;
   max-height: min(85vh, 900px);
   display: flex;
   flex-direction: column;
-  animation: ad-pop 0.18s ease;
+  animation: hgadm-pop 0.18s ease;
 }
 .hgadm-modal--sm {
   max-width: 416px;
@@ -1236,12 +1236,12 @@ body {
   display: grid;
   place-items: center;
   margin-bottom: 4px;
-  color: var(--ad-primary);
+  color: var(--hgadm-primary);
   background: var(--brand-gradient-soft);
   box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.1);
 }
 .hgadm-confirm__icon--danger {
-  color: var(--ad-danger);
+  color: var(--hgadm-danger);
   background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
   box-shadow: inset 0 0 0 1px rgba(220, 38, 38, 0.12);
 }
@@ -1348,7 +1348,7 @@ body {
   display: grid;
   place-items: center;
   background: var(--brand-gradient-soft);
-  color: var(--ad-primary);
+  color: var(--hgadm-primary);
   margin-bottom: 2px;
   box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.08);
 }
@@ -1369,7 +1369,7 @@ body {
   border: 3px solid var(--brand-200);
   border-top-color: var(--brand-500);
   border-radius: 50%;
-  animation: ad-spin 0.8s linear infinite;
+  animation: hgadm-spin 0.8s linear infinite;
 }
 
 /* ---------- Toasts (admin bundle defines its own) ---------- */
@@ -1396,7 +1396,7 @@ body {
   border-radius: var(--r-full);
   padding: 10px 18px;
   box-shadow: var(--shadow-lg);
-  animation: ad-pop 0.18s ease;
+  animation: hgadm-pop 0.18s ease;
   max-width: 480px;
 }
 .hg-toast--success .hg-toast__icon {
@@ -1458,7 +1458,7 @@ body {
   align-items: center;
   min-height: 160px;
   padding: 12px;
-  border-radius: var(--ad-radius-sm);
+  border-radius: var(--hgadm-radius-sm);
   background: var(--surface-3);
 }
 /* Exactly the image's box, so fractions of it are fractions of the image. */
@@ -1554,7 +1554,7 @@ body {
    4pt corners and the card's shadow. */
 .hgadm-crop__band {
   padding: 9px 12.4px 10px;
-  border-radius: var(--ad-radius-sm);
+  border-radius: var(--hgadm-radius-sm);
   background: #fff8f1;
 }
 .hgadm-crop__card {
@@ -1579,7 +1579,7 @@ body {
 .hgadm-crop__reset {
   justify-self: start;
   border: 1px solid var(--border);
-  border-radius: var(--ad-radius-sm);
+  border-radius: var(--hgadm-radius-sm);
   background: var(--surface);
   padding: 4px 10px;
   font-size: 12.5px;
@@ -1597,7 +1597,7 @@ body {
   color: var(--ink-2);
 }
 .hgadm-crop__ok {
-  color: var(--ad-success);
+  color: var(--hgadm-success);
 }
 .hgadm-crop__warn {
   color: var(--warning);
@@ -1644,7 +1644,7 @@ body {
 .hgadm-kicker__name {
   font-size: 15px;
   font-weight: 700;
-  color: var(--ad-primary);
+  color: var(--hgadm-primary);
 }
 .hgadm-kicker__period {
   font-size: 13px;
@@ -1677,7 +1677,7 @@ body {
   align-items: center;
   padding: 12px 14px;
   border: 1px solid var(--border);
-  border-radius: var(--ad-radius);
+  border-radius: var(--hgadm-radius);
   background: var(--surface-2);
 }
 .hgadm-lookup__who {
@@ -1690,7 +1690,7 @@ body {
   text-decoration: none;
 }
 .hgadm-lookup__name:hover {
-  color: var(--ad-primary);
+  color: var(--hgadm-primary);
   text-decoration: underline;
 }
 .hgadm-lookup__league {
@@ -1700,7 +1700,7 @@ body {
   gap: 4px 14px;
   padding: 8px 12px;
   border: 1px solid var(--border);
-  border-radius: var(--ad-radius-sm);
+  border-radius: var(--hgadm-radius-sm);
   background: var(--surface);
   color: inherit;
   text-decoration: none;
@@ -1708,7 +1708,7 @@ body {
 }
 .hgadm-lookup__league:hover {
   border-color: var(--brand-300);
-  box-shadow: var(--ad-shadow-sm);
+  box-shadow: var(--hgadm-shadow-sm);
 }
 .hgadm-lookup__league-name {
   display: inline-flex;
@@ -1742,7 +1742,7 @@ body {
   gap: 8px 12px;
   padding: 8px 12px;
   border: 1px dashed var(--border-strong);
-  border-radius: var(--ad-radius-sm);
+  border-radius: var(--hgadm-radius-sm);
 }
 .hgadm-lookup__none-text {
   font-size: 13px;
@@ -1754,7 +1754,7 @@ body {
   gap: 2px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--ad-primary);
+  color: var(--hgadm-primary);
   text-decoration: none;
 }
 .hgadm-lookup__link:hover {
@@ -1856,10 +1856,10 @@ body {
 }
 .hgadm-schedule__remaining {
   font-weight: 700;
-  color: var(--ad-primary);
+  color: var(--hgadm-primary);
 }
 .hgadm-schedule__remaining.is-ended {
-  color: var(--ad-danger);
+  color: var(--hgadm-danger);
 }
 
 /* The waiting queue reads as a stat but behaves as a link, so it gets the
@@ -1870,19 +1870,19 @@ body {
   align-items: flex-end;
   padding: 4px 8px;
   margin: -4px -8px;
-  border-radius: var(--ad-radius-sm);
+  border-radius: var(--hgadm-radius-sm);
   color: inherit;
   text-decoration: none;
   transition: background 0.14s ease;
 }
 .hgadm-season__waiting:hover {
-  background: var(--ad-primary-soft);
+  background: var(--hgadm-primary-soft);
 }
 .hgadm-season__waiting .hgadm-season__stat-value {
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  color: var(--ad-primary);
+  color: var(--hgadm-primary);
 }
 
 /* ---------- Tier chip ----------
@@ -1946,10 +1946,10 @@ body {
   color: var(--ink-3);
 }
 .hgadm-fact--promote .hgadm-fact__value {
-  color: var(--ad-success);
+  color: var(--hgadm-success);
 }
 .hgadm-fact--demote .hgadm-fact__value {
-  color: var(--ad-danger);
+  color: var(--hgadm-danger);
 }
 
 /* ---------- Active-league season header ----------
@@ -1961,9 +1961,9 @@ body {
   margin-bottom: 18px;
   padding: 16px 20px;
   border: 1px solid var(--border);
-  border-radius: var(--ad-radius);
+  border-radius: var(--hgadm-radius);
   background: var(--surface);
-  box-shadow: var(--ad-shadow-card);
+  box-shadow: var(--hgadm-shadow-card);
 }
 .hgadm-season__row {
   display: flex;
@@ -2327,7 +2327,7 @@ a.hgadm-recent--link:hover {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--r-xl);
-  box-shadow: var(--ad-shadow-lift);
+  box-shadow: var(--hgadm-shadow-lift);
   padding: 38px 34px;
   width: 100%;
   max-width: 400px;
@@ -2366,17 +2366,17 @@ a.hgadm-recent--link:hover {
 }
 
 /* ---------- Animations ---------- */
-@keyframes ad-spin {
+@keyframes hgadm-spin {
   to {
     transform: rotate(360deg);
   }
 }
-@keyframes ad-fade {
+@keyframes hgadm-fade {
   from {
     opacity: 0;
   }
 }
-@keyframes ad-pop {
+@keyframes hgadm-pop {
   from {
     opacity: 0;
     transform: translateY(6px) scale(0.98);
@@ -2388,7 +2388,7 @@ a.hgadm-recent--link:hover {
   /* Below this width the sidebar is collapsed for lack of room, not by
      choice — same properties, so the look cannot drift from .is-collapsed. */
   .hgadm-sidebar {
-    --nav-width: var(--ad-sidebar-w-collapsed);
+    --nav-width: var(--hgadm-sidebar-w-collapsed);
     --nav-label-display: none;
     --nav-link-justify: center;
     --nav-link-padding: 10px;
@@ -2506,7 +2506,7 @@ a.hgadm-recent--link:hover {
   padding: 12px 16px;
   margin-bottom: 16px;
   border-radius: 12px;
-  background: var(--ad-pending-soft);
+  background: var(--hgadm-pending-soft);
   border: 1px solid #c4b5fd;
   color: #4c1d95;
   font-size: 13px;
@@ -2529,13 +2529,13 @@ a.hgadm-recent--link:hover {
 /* The list */
 .hgadm-cfg__list {
   position: sticky;
-  top: calc(var(--ad-topbar-h) + 16px);
-  max-height: calc(100vh - var(--ad-topbar-h) - 32px);
+  top: calc(var(--hgadm-topbar-h) + 16px);
+  max-height: calc(100vh - var(--hgadm-topbar-h) - 32px);
   overflow-y: auto;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--r-md);
-  box-shadow: var(--ad-shadow-card);
+  box-shadow: var(--hgadm-shadow-card);
   padding: 8px;
 }
 .hgadm-cfg__list-group {
@@ -2566,7 +2566,7 @@ a.hgadm-recent--link:hover {
   transition: background 0.12s ease, color 0.12s ease;
 }
 .hgadm-cfg__item:hover {
-  background: var(--ad-neutral-soft);
+  background: var(--hgadm-neutral-soft);
   color: var(--ink);
 }
 .hgadm-cfg__item:focus-visible {
@@ -2574,8 +2574,8 @@ a.hgadm-recent--link:hover {
   box-shadow: var(--focus-ring);
 }
 .hgadm-cfg__item.is-active {
-  background: var(--ad-primary-soft);
-  color: var(--ad-primary);
+  background: var(--hgadm-primary-soft);
+  color: var(--hgadm-primary);
   font-weight: 700;
 }
 .hgadm-cfg__item--overview {
@@ -2596,7 +2596,7 @@ a.hgadm-recent--link:hover {
   flex-shrink: 0;
   font-size: 11px;
   font-weight: 700;
-  color: var(--ad-pending);
+  color: var(--hgadm-pending);
 }
 .hgadm-cfg__item-chevron {
   display: none;
@@ -2613,12 +2613,12 @@ a.hgadm-recent--link:hover {
   background: var(--line-strong);
 }
 .hgadm-cfg__dot--active {
-  background: var(--ad-success);
-  box-shadow: 0 0 0 3px var(--ad-success-soft);
+  background: var(--hgadm-success);
+  box-shadow: 0 0 0 3px var(--hgadm-success-soft);
 }
 .hgadm-cfg__dot--incomplete {
-  background: var(--ad-pending);
-  box-shadow: 0 0 0 3px var(--ad-pending-soft);
+  background: var(--hgadm-pending);
+  box-shadow: 0 0 0 3px var(--hgadm-pending-soft);
 }
 .hgadm-cfg__dot--off {
   background: var(--ink-3);
@@ -2638,16 +2638,16 @@ a.hgadm-recent--link:hover {
   border-radius: 999px;
   font-size: 12px;
   font-weight: 700;
-  background: var(--ad-neutral-soft);
+  background: var(--hgadm-neutral-soft);
   color: var(--ink-2);
   white-space: nowrap;
 }
 .hgadm-cfg__pill--active {
-  background: var(--ad-success-soft);
+  background: var(--hgadm-success-soft);
   color: #15803d;
 }
 .hgadm-cfg__pill--incomplete {
-  background: var(--ad-pending-soft);
+  background: var(--hgadm-pending-soft);
   color: #6d28d9;
 }
 
@@ -2656,7 +2656,7 @@ a.hgadm-recent--link:hover {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--r-md);
-  box-shadow: var(--ad-shadow-card);
+  box-shadow: var(--hgadm-shadow-card);
   padding: 24px 28px 0;
   min-width: 0;
 }
@@ -2704,7 +2704,7 @@ a.hgadm-recent--link:hover {
   padding: 12px 14px;
   margin-bottom: 16px;
   border-radius: 12px;
-  background: var(--ad-pending-soft);
+  background: var(--hgadm-pending-soft);
   font-size: 13px;
   color: #4c1d95;
 }
@@ -2782,7 +2782,7 @@ a.hgadm-recent--link:hover {
   font: inherit;
   font-size: 13.5px;
   font-weight: 700;
-  color: var(--ad-primary);
+  color: var(--hgadm-primary);
   cursor: pointer;
 }
 .hgadm-cfg__head {
@@ -2847,7 +2847,7 @@ a.hgadm-recent--link:hover {
   margin-top: 2px;
 }
 .hgadm-cfg__notice--warning {
-  background: var(--ad-pending-soft);
+  background: var(--hgadm-pending-soft);
   color: #4c1d95;
 }
 
@@ -2935,7 +2935,7 @@ a.hgadm-recent--link:hover {
   color: var(--ink);
 }
 .hgadm-cfg__req {
-  color: var(--ad-danger);
+  color: var(--hgadm-danger);
   margin-left: 2px;
 }
 .hgadm-cfg__tag {
@@ -2946,27 +2946,27 @@ a.hgadm-recent--link:hover {
   font-size: 11px;
   font-weight: 600;
   color: var(--ink-3);
-  background: var(--ad-neutral-soft);
+  background: var(--hgadm-neutral-soft);
 }
 .hgadm-cfg__tag--brand {
-  color: var(--ad-primary);
-  background: var(--ad-primary-soft);
+  color: var(--hgadm-primary);
+  background: var(--hgadm-primary-soft);
 }
 .hgadm-cfg__tag--danger {
   color: #b91c1c;
-  background: var(--ad-danger-soft);
+  background: var(--hgadm-danger-soft);
 }
 .hgadm-cfg__tag--restart {
   color: #6d28d9;
-  background: var(--ad-pending-soft);
+  background: var(--hgadm-pending-soft);
 }
 .hgadm-cfg__tag--restart.is-pending {
   color: #fff;
-  background: var(--ad-pending);
+  background: var(--hgadm-pending);
 }
 .hgadm-cfg__tag--changed {
   color: #fff;
-  background: var(--ad-primary);
+  background: var(--hgadm-primary);
 }
 .hgadm-cfg__field .hgadm-input,
 .hgadm-cfg__field .hgadm-textarea {
@@ -2975,13 +2975,13 @@ a.hgadm-recent--link:hover {
 }
 .hgadm-cfg__field.is-changed .hgadm-input,
 .hgadm-cfg__field.is-changed .hgadm-textarea {
-  border-color: var(--ad-primary);
-  box-shadow: 0 0 0 3px var(--ad-primary-soft);
+  border-color: var(--hgadm-primary);
+  box-shadow: 0 0 0 3px var(--hgadm-primary-soft);
 }
 .hgadm-cfg__field.has-error .hgadm-input,
 .hgadm-cfg__field.has-error .hgadm-textarea {
-  border-color: var(--ad-danger);
-  box-shadow: 0 0 0 3px var(--ad-danger-soft);
+  border-color: var(--hgadm-danger);
+  box-shadow: 0 0 0 3px var(--hgadm-danger-soft);
 }
 .hgadm-cfg__num {
   max-width: 200px !important;
@@ -3031,7 +3031,7 @@ a.hgadm-recent--link:hover {
   cursor: pointer;
 }
 .hgadm-cfg__eye:hover:not(:disabled) {
-  background: var(--ad-neutral-soft);
+  background: var(--hgadm-neutral-soft);
   color: var(--ink);
 }
 .hgadm-cfg__eye:disabled {
@@ -3065,7 +3065,7 @@ a.hgadm-recent--link:hover {
   font: inherit;
   font-size: 12.5px;
   font-weight: 600;
-  color: var(--ad-primary);
+  color: var(--hgadm-primary);
   cursor: pointer;
 }
 .hgadm-cfg__textbtn:hover:not(:disabled) {
@@ -3087,8 +3087,8 @@ a.hgadm-recent--link:hover {
   max-width: 560px;
   padding: 9px 12px;
   border-radius: 10px;
-  border: 1px dashed var(--ad-primary);
-  background: var(--ad-primary-soft);
+  border: 1px dashed var(--hgadm-primary);
+  background: var(--hgadm-primary-soft);
   font-size: 13px;
   color: var(--ink-2);
 }
@@ -3143,7 +3143,7 @@ a.hgadm-recent--link:hover {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--ad-primary);
+  background: var(--hgadm-primary);
   flex-shrink: 0;
 }
 .hgadm-cfg__bar-sub {
@@ -3349,10 +3349,10 @@ a.hgadm-recent--link:hover {
   cursor: pointer;
 }
 .hgadm-model__option.is-active {
-  background: var(--ad-primary-soft);
+  background: var(--hgadm-primary-soft);
 }
 .hgadm-model__option[aria-selected="true"] .hgadm-model__id {
-  color: var(--ad-primary);
+  color: var(--hgadm-primary);
   font-weight: 700;
 }
 .hgadm-model__option--custom {
@@ -3364,7 +3364,7 @@ a.hgadm-recent--link:hover {
   flex-shrink: 0;
   display: grid;
   place-items: center;
-  color: var(--ad-primary);
+  color: var(--hgadm-primary);
 }
 .hgadm-model__option-main {
   display: flex;
@@ -3396,11 +3396,11 @@ a.hgadm-recent--link:hover {
   white-space: nowrap;
 }
 .hgadm-model__badge--current {
-  background: var(--ad-primary);
+  background: var(--hgadm-primary);
   color: #fff;
 }
 .hgadm-model__badge--warn {
-  background: var(--ad-pending-soft);
+  background: var(--hgadm-pending-soft);
   color: #6d28d9;
 }
 .hgadm-model__note {
@@ -3439,7 +3439,7 @@ a.hgadm-recent--link:hover {
   padding: 16px;
   border-radius: 12px;
   border: 1px solid var(--border);
-  background: linear-gradient(180deg, var(--ad-primary-soft) 0%, var(--surface) 70%);
+  background: linear-gradient(180deg, var(--hgadm-primary-soft) 0%, var(--surface) 70%);
 }
 .hgadm-models__head {
   display: flex;
@@ -3458,21 +3458,16 @@ a.hgadm-recent--link:hover {
   font-weight: 800;
 }
 .hgadm-models__head h3 svg {
-  color: var(--ad-primary);
+  color: var(--hgadm-primary);
 }
 .hgadm-models__spin {
   animation: hgadm-spin 0.9s linear infinite;
-}
-@keyframes hgadm-spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 .hgadm-models__off {
   margin: 0 0 10px;
   padding: 8px 10px;
   border-radius: 8px;
-  background: var(--ad-neutral-soft);
+  background: var(--hgadm-neutral-soft);
   font-size: 12.5px;
   color: var(--ink-2);
 }
@@ -3591,9 +3586,9 @@ a.hgadm-recent--link:hover {
 }
 .hgadm-provider__option.is-selected {
   background: var(--surface);
-  border-color: var(--ad-primary);
-  box-shadow: var(--ad-shadow-sm);
-  color: var(--ad-primary);
+  border-color: var(--hgadm-primary);
+  box-shadow: var(--hgadm-shadow-sm);
+  color: var(--hgadm-primary);
 }
 .hgadm-provider__option:focus-visible {
   outline: none;
@@ -3612,7 +3607,7 @@ a.hgadm-recent--link:hover {
   font-weight: 600;
 }
 .hgadm-model__badge--fit {
-  background: var(--ad-success-soft);
+  background: var(--hgadm-success-soft);
   color: #15803d;
 }
 .hgadm-model__option.is-disabled {
@@ -3641,13 +3636,13 @@ a.hgadm-recent--link:hover {
   cursor: pointer;
 }
 .hgadm-model__incompatible-toggle:hover {
-  background: var(--ad-neutral-soft);
+  background: var(--hgadm-neutral-soft);
 }
 .hgadm-models__provider-chip {
   padding: 1px 8px;
   border-radius: 999px;
-  background: var(--ad-primary-soft);
-  color: var(--ad-primary);
+  background: var(--hgadm-primary-soft);
+  color: var(--hgadm-primary);
   font-size: 11.5px;
   font-weight: 700;
 }
@@ -3684,7 +3679,7 @@ a.hgadm-recent--link:hover {
   min-width: 0;
   padding: 12px 14px;
   border: 1px solid var(--border);
-  border-radius: var(--ad-radius);
+  border-radius: var(--hgadm-radius);
   background: var(--surface);
   color: var(--ink);
   font: inherit;
@@ -3713,8 +3708,8 @@ a.hgadm-recent--link:hover {
   white-space: nowrap;
 }
 .hgadm-lw__step.is-current {
-  border-color: var(--ad-primary);
-  background: var(--ad-primary-soft);
+  border-color: var(--hgadm-primary);
+  background: var(--hgadm-primary-soft);
 }
 .hgadm-lw__step.is-current::after {
   content: "";
@@ -3724,7 +3719,7 @@ a.hgadm-recent--link:hover {
   bottom: -1px;
   height: 3px;
   border-radius: 3px 3px 0 0;
-  background: var(--ad-primary);
+  background: var(--hgadm-primary);
 }
 .hgadm-lw__step.is-waiting:not(.is-current) {
   opacity: 0.65;
@@ -3747,11 +3742,11 @@ a.hgadm-recent--link:hover {
   font-weight: 700;
 }
 .hgadm-lw__step.is-done .hgadm-lw__step-no {
-  background: var(--ad-success-soft);
-  color: var(--ad-success);
+  background: var(--hgadm-success-soft);
+  color: var(--hgadm-success);
 }
 .hgadm-lw__step.is-active .hgadm-lw__step-no {
-  background: var(--ad-primary);
+  background: var(--hgadm-primary);
   color: #fff;
 }
 .hgadm-lw__drop {
@@ -3786,7 +3781,7 @@ a.hgadm-recent--link:hover {
 .hgadm-lw__bar span {
   display: block;
   height: 100%;
-  background: var(--ad-primary);
+  background: var(--hgadm-primary);
   transition: width 0.2s;
 }
 .hgadm-lw__bar span.is-indeterminate {
@@ -3804,8 +3799,8 @@ a.hgadm-recent--link:hover {
   flex-wrap: wrap;
   margin-top: 12px;
   padding: 10px 12px;
-  border-radius: var(--ad-radius-sm);
-  background: var(--ad-info-soft);
+  border-radius: var(--hgadm-radius-sm);
+  background: var(--hgadm-info-soft);
   font-size: 13px;
 }
 .hgadm-lw__history {
@@ -3830,18 +3825,18 @@ a.hgadm-recent--link:hover {
   padding: 0;
   border: 0;
   background: none;
-  color: var(--ad-primary);
+  color: var(--hgadm-primary);
   font: inherit;
   cursor: pointer;
 }
 .hgadm-lw__error {
-  color: var(--ad-danger);
+  color: var(--hgadm-danger);
   font-size: 12.5px;
 }
 .hgadm-lw__locked {
   padding: 28px 20px;
   border: 1px dashed var(--border-strong);
-  border-radius: var(--ad-radius);
+  border-radius: var(--hgadm-radius);
   color: var(--ink-3);
   font-size: 13.5px;
   text-align: center;
@@ -3851,7 +3846,7 @@ a.hgadm-recent--link:hover {
 .hgadm-cpe__warn {
   margin-bottom: 12px;
   padding: 10px 12px;
-  border-radius: var(--ad-radius-sm);
+  border-radius: var(--hgadm-radius-sm);
   background: #fff7ed;
   color: #9a3412;
   font-size: 13px;
@@ -3872,7 +3867,7 @@ a.hgadm-recent--link:hover {
   justify-content: center;
   height: min(62vh, 560px);
   min-height: 240px;
-  border-radius: var(--ad-radius);
+  border-radius: var(--hgadm-radius);
   background: #0f172a;
   overflow: hidden;
 }
@@ -3933,7 +3928,7 @@ a.hgadm-recent--link:hover {
   height: 18px;
   margin-left: -2px;
   border-radius: 2px;
-  background: var(--ad-primary);
+  background: var(--hgadm-primary);
   pointer-events: none;
 }
 .hgadm-cpe__markers {
@@ -3954,8 +3949,8 @@ a.hgadm-recent--link:hover {
   border: 2px solid #fff;
   border-radius: 50% 50% 50% 0;
   transform: rotate(135deg);
-  background: var(--ad-primary);
-  box-shadow: var(--ad-shadow-sm);
+  background: var(--hgadm-primary);
+  box-shadow: var(--hgadm-shadow-sm);
   cursor: pointer;
 }
 .hgadm-cpe__marker.is-speak {
@@ -4006,7 +4001,7 @@ a.hgadm-recent--link:hover {
 .hgadm-cpe__empty {
   padding: 20px;
   border: 1px dashed var(--border-strong);
-  border-radius: var(--ad-radius);
+  border-radius: var(--hgadm-radius);
   color: var(--ink-3);
   font-size: 13px;
   line-height: 1.6;
@@ -4018,7 +4013,7 @@ a.hgadm-recent--link:hover {
   max-height: 520px;
   overflow-y: auto;
   border: 1px solid var(--border);
-  border-radius: var(--ad-radius);
+  border-radius: var(--hgadm-radius);
 }
 .hgadm-cpe__item {
   display: flex;
@@ -4034,7 +4029,7 @@ a.hgadm-recent--link:hover {
   cursor: pointer;
 }
 .hgadm-cpe__item:hover {
-  background: var(--ad-primary-soft);
+  background: var(--hgadm-primary-soft);
 }
 .hgadm-cpe__time {
   flex: none;
@@ -4052,7 +4047,7 @@ a.hgadm-recent--link:hover {
 .hgadm-cpe__draft {
   padding: 16px;
   border: 1px solid var(--border);
-  border-radius: var(--ad-radius);
+  border-radius: var(--hgadm-radius);
   background: var(--surface-2);
 }
 .hgadm-cpe__draft-title {
@@ -4118,7 +4113,7 @@ a.hgadm-recent--link:hover {
   max-height: 320px;
   overflow-y: auto;
   border: 1px solid var(--border);
-  border-radius: var(--ad-radius-sm);
+  border-radius: var(--hgadm-radius-sm);
   background: var(--surface);
 }
 .hgadm-cp__option {
@@ -4140,7 +4135,7 @@ a.hgadm-recent--link:hover {
 .hgadm-cp__option:hover,
 .hgadm-cp__option:focus-visible {
   outline: none;
-  background: var(--ad-primary-soft);
+  background: var(--hgadm-primary-soft);
 }
 .hgadm-cp__option-label {
   color: var(--ink);
@@ -4157,7 +4152,7 @@ a.hgadm-recent--link:hover {
 .hgadm-cp__none {
   padding: 16px 12px;
   border: 1px dashed var(--border-strong);
-  border-radius: var(--ad-radius-sm);
+  border-radius: var(--hgadm-radius-sm);
   color: var(--ink-3);
   font-size: 13px;
   text-align: center;
@@ -4176,7 +4171,7 @@ a.hgadm-recent--link:hover {
 .hgadm-series__empty {
   padding: 24px 16px;
   border: 1px dashed var(--border-strong);
-  border-radius: var(--ad-radius);
+  border-radius: var(--hgadm-radius);
   color: var(--ink-3);
   font-size: 13.5px;
   text-align: center;
@@ -4194,7 +4189,7 @@ a.hgadm-recent--link:hover {
   flex-direction: column;
   min-width: 0;
   border: 1px solid var(--border);
-  border-radius: var(--ad-radius);
+  border-radius: var(--hgadm-radius);
   background: var(--surface);
   overflow: hidden;
 }
@@ -4238,8 +4233,8 @@ a.hgadm-recent--link:hover {
   height: 26px;
   padding: 0 6px;
   border-radius: 999px;
-  background: var(--ad-primary-soft);
-  color: var(--ad-primary);
+  background: var(--hgadm-primary-soft);
+  color: var(--hgadm-primary);
   font-size: 12.5px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -4267,7 +4262,7 @@ a.hgadm-recent--link:hover {
   padding: 0;
   list-style: none;
   border: 1px solid var(--border);
-  border-radius: var(--ad-radius);
+  border-radius: var(--hgadm-radius);
 }
 .hgadm-order-list__row {
   display: flex;
@@ -4288,7 +4283,7 @@ a.hgadm-recent--link:hover {
 .hgadm-lang {
   margin-bottom: 14px;
   border: 1px solid var(--border);
-  border-radius: var(--ad-radius);
+  border-radius: var(--hgadm-radius);
   overflow: hidden;
 }
 .hgadm-lang__tabs {
@@ -4312,9 +4307,9 @@ a.hgadm-recent--link:hover {
   cursor: pointer;
 }
 .hgadm-lang__tab.is-active {
-  border-bottom-color: var(--ad-primary);
+  border-bottom-color: var(--hgadm-primary);
   background: var(--surface);
-  color: var(--ad-primary);
+  color: var(--hgadm-primary);
 }
 .hgadm-lang__tab:focus-visible {
   outline: none;
@@ -4325,7 +4320,7 @@ a.hgadm-recent--link:hover {
   font-weight: 500;
 }
 .hgadm-lang__done {
-  color: var(--ad-success);
+  color: var(--hgadm-success);
 }
 .hgadm-lang__empty {
   color: var(--ink-3);
@@ -4342,7 +4337,7 @@ a.hgadm-recent--link:hover {
 }
 /* The English title still holds Korean text left from before English became the base. */
 .hgadm-lang__standin {
-  color: var(--ad-warning, #b45309);
+  color: var(--hgadm-warning, #b45309);
 }
 /* A title with its "영어 제목 필요" badge beside it. */
 .hgadm-title-row {
@@ -4366,13 +4361,13 @@ a.hgadm-recent--link:hover {
   aspect-ratio: 16 / 9;
   object-fit: cover;
   border: 1px solid var(--border);
-  border-radius: var(--ad-radius-sm);
+  border-radius: var(--hgadm-radius-sm);
   background: var(--surface-3);
 }
 /* The lecture form, when the chosen course has no series to file into. */
 .hgadm-lf__noseries {
   padding: 10px 12px;
-  border-radius: var(--ad-radius-sm);
+  border-radius: var(--hgadm-radius-sm);
   background: #fff7ed;
   color: #9a3412;
   font-size: 13px;
