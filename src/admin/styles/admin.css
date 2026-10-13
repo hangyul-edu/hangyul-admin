@@ -4602,27 +4602,23 @@ a.hgadm-recent--link:hover {
 }
 
 /* The plan card's ribbon as the app draws it (global.css .plan__ribbon):
-   Rectangle 4985 art turned a quarter, bold 15px white label. */
+   as wide as its bold 15px white label, up to 158px, with the notched tail. */
 .hgadm-ribbon {
   position: relative;
   display: inline-flex;
   align-items: center;
   flex: none;
-  width: 150px;
+  box-sizing: border-box;
+  max-width: 158px;
   height: 27px;
-}
-.hgadm-ribbon__art {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 27px;
-  height: 150px;
-  transform: translate(-50%, -50%) rotate(-90deg) scale(-1, 1);
+  padding: 0 22px 0 11px;
+  background: #ff6700;
+  border-radius: 1.5px 0 0 1.5px;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 11px) 50%, 100% 100%, 0 100%);
 }
 .hgadm-ribbon__text {
   position: relative;
-  z-index: 1;
-  padding-left: 11px;
+  overflow: hidden;
   color: #fff;
   font-family: var(--font-body);
   font-weight: 700;

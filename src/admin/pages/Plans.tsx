@@ -8,7 +8,6 @@ import { useAdminAuth } from "../auth";
 import { Badge, Button, DataTable, ErrorState, Field, Input, LoadingState, Modal, Switch } from "../components/kit";
 import type { Column } from "../components/kit";
 import { formatMoney } from "../lib/format";
-import payRibbon from "../../assets/brand/pay-ribbon.svg";
 
 /**
  * 요금제 관리 — the monthly and the yearly plan the app's purchase screen sells.
@@ -36,28 +35,24 @@ function discountPercent(price: number, discounted: number | null): number {
 }
 
 /**
- * The ribbon exactly as the app's plan card draws it (pay-ribbon art, 150×27,
- * bold 15px white text). `onOverflow` reports whether the text runs past the
- * ribbon's tail, which the app would clip.
+ * The ribbon exactly as the app's plan card draws it: as wide as its bold
+ * 15px white text, up to the widest the card allows. `onOverflow` reports
+ * whether the text is wider than that, which the app would cut off.
  */
 function RibbonPreview({ text, onOverflow }: { text: string; onOverflow?: (over: boolean) => void }) {
   const textRef = useRef<HTMLSpanElement>(null);
   useLayoutEffect(() => {
     const el = textRef.current;
-    if (el && onOverflow) onOverflow(el.offsetLeft + el.scrollWidth > RIBBON_TEXT_LIMIT);
+    if (el && onOverflow) onOverflow(el.scrollWidth > el.clientWidth);
   }, [text, onOverflow]);
   return (
     <span className="hgadm-ribbon" aria-label={`배지 미리보기: ${text}`}>
-      <img className="hgadm-ribbon__art" src={payRibbon} alt="" aria-hidden="true" />
       <span className="hgadm-ribbon__text" ref={textRef}>
         {text}
       </span>
     </span>
   );
 }
-
-/** Where the ribbon's swallow-tail notch starts: text past it is cut off. */
-const RIBBON_TEXT_LIMIT = 136;
 
 /** One price as the app shows it: the charge, the struck list price and the
  *  saving, and for a yearly plan what it comes to per month. */

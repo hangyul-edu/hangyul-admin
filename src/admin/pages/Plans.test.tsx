@@ -68,7 +68,7 @@ const YEARLY = plan({
 });
 const PRESETS: BadgePreset[] = [
   { key: "launch_special", text: { ko: "런칭 기념 특별 할인", en: "Launch special" } },
-  { key: "best_value", text: { ko: "가장 알뜰한 선택", en: "Best value" } },
+  { key: "most_popular", text: { ko: "가장 인기 있는 플랜", en: "Most popular" } },
 ];
 
 function renderPage() {
@@ -183,11 +183,11 @@ describe("요금제 관리", () => {
     renderPage();
     await screen.findByText("Monthly");
     await user.click(within(card("Monthly")).getByRole("button", { name: "수정" }));
-    await user.click(screen.getByRole("radio", { name: "가장 알뜰한 선택 / Best value" }));
+    await user.click(screen.getByRole("radio", { name: "가장 인기 있는 플랜 / Most popular" }));
     await user.click(screen.getByRole("checkbox", { name: "배지 게시" }));
     await user.click(screen.getByRole("button", { name: "저장" }));
     expect(updatePlan.mock.calls[0][1]).toMatchObject({
-      badge_text: { ko: "가장 알뜰한 선택", en: "Best value" },
+      badge_text: { ko: "가장 인기 있는 플랜", en: "Most popular" },
       badge_published: true,
     });
   });
