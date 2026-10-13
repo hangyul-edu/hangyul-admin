@@ -95,6 +95,9 @@ export function DashboardPage() {
   const visibleAlerts = (data?.alerts ?? []).filter(
     (alert) => can(ALERT_ROUTES[alert.code]?.scope ?? "users:read"),
   );
+  // Revenue is reported in ONE currency — whichever most settled payments use.
+  // Payments in the other currency are not converted or added, so every
+  // revenue figure names its currency and says the rest is left out.
   const currency = data.revenue.currency;
 
   return (
@@ -160,9 +163,9 @@ export function DashboardPage() {
           sub={`체험 ${data.subscriptions.trialing} · 해지 예약 ${data.subscriptions.canceling}`}
         />
         <Stat
-          label="이번 달 매출"
+          label={`이번 달 매출 (${currency})`}
           value={formatMoney(data.revenue.this_month_cents, currency)}
-          sub={`${monthLabel(data.revenue.this_month)} 1일부터 · 오늘 ${formatMoney(data.revenue.today_cents, currency)}`}
+          sub={`${monthLabel(data.revenue.this_month)} 1일부터 · 오늘 ${formatMoney(data.revenue.today_cents, currency)} · 다른 통화 결제 제외`}
         />
         <Stat
           label="오늘 학습 활동"
@@ -186,7 +189,8 @@ export function DashboardPage() {
           <div>
             <div className="hgadm-card__title">월별 매출</div>
             <div className="hgadm-cell-sub" style={{ marginTop: 2 }}>
-              한국 시간(KST) 달력 월 기준 결제 금액. 마지막 달은 아직 진행 중입니다.
+              한국 시간(KST) 달력 월 기준 {currency} 결제 금액. 다른 통화 결제는 포함하지
+              않습니다. 마지막 달은 아직 진행 중입니다.
             </div>
           </div>
           <div className="hgadm-row">
@@ -236,10 +240,17 @@ export function DashboardPage() {
           ) : series.isError ? (
             <ErrorState message={errorMessage(series.error)} />
           ) : (
-            <TimeseriesChart
-              points={series.data.points}
-              money={metric === "revenue" ? currency : null}
-            />
+            <>
+              <TimeseriesChart
+                points={series.data.points}
+                money={metric === "revenue" ? currency : null}
+              />
+              {metric === "revenue" && (
+                <div className="hgadm-cell-sub" style={{ marginTop: 8 }}>
+                  {currency} 결제 금액입니다. 다른 통화 결제는 포함하지 않습니다.
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

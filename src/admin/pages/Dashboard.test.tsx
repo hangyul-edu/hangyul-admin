@@ -238,7 +238,7 @@ describe("DashboardPage revenue", () => {
   it("shows this month's revenue instead of a rolling 30-day figure", async () => {
     renderPage();
 
-    expect(await screen.findByText("이번 달 매출")).toBeInTheDocument();
+    expect(await screen.findByText("이번 달 매출 (USD)")).toBeInTheDocument();
     expect(screen.queryByText("최근 30일 매출")).not.toBeInTheDocument();
     // 480,000 cents of USD, shown as dollars behind a plain $.
     expect(screen.getByText("US$4,800.00")).toBeInTheDocument();
@@ -257,7 +257,25 @@ describe("DashboardPage revenue", () => {
     // Seoul or at 09:00, which is nine hours of ambiguity every day.
     expect(await screen.findByText("한국 시간(KST)")).toBeInTheDocument();
     expect(
-      screen.getByText(/한국 시간\(KST\) 달력 월 기준 결제 금액/),
+      screen.getByText(/한국 시간\(KST\) 달력 월 기준 USD 결제 금액/),
+    ).toBeInTheDocument();
+  });
+
+  it("names the one reporting currency and says other currencies are left out", async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    // The server sums one currency only; a KRW+USD month must not read as a
+    // grand total, so the KPI, the monthly chart and the daily series all say so.
+    expect(await screen.findByText("이번 달 매출 (USD)")).toBeInTheDocument();
+    expect(screen.getByText(/· 다른 통화 결제 제외$/)).toBeInTheDocument();
+    expect(
+      within(monthlyCard()).getByText(/다른 통화 결제는 포함하지 않습니다/),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "결제 금액" }));
+    expect(
+      await screen.findByText("USD 결제 금액입니다. 다른 통화 결제는 포함하지 않습니다."),
     ).toBeInTheDocument();
   });
 
