@@ -204,9 +204,9 @@ describe("DashboardPage revenue", () => {
     } as never);
     renderPage();
 
-    const amount = await screen.findByText("$155.88");
+    const amount = await screen.findByText("US$155.88");
     const row = amount.closest(".hgadm-recent")!;
-    expect(row.querySelector(".hgadm-recent__primary")?.textContent).toContain("$155.88");
+    expect(row.querySelector(".hgadm-recent__primary")?.textContent).toContain("US$155.88");
     expect(row.querySelector(".hgadm-recent__lead")?.textContent).toBe("김하늘");
     expect(row.querySelector(".hgadm-recent__rest")?.textContent).toBe("프리미엄 연간");
   });
@@ -232,7 +232,7 @@ describe("DashboardPage revenue", () => {
     renderPage();
 
     // The money is the point of the row; the rest degrades without dropping it.
-    expect(await screen.findByText("$4.99")).toBeInTheDocument();
+    expect(await screen.findByText("US$4.99")).toBeInTheDocument();
   });
 
   it("shows this month's revenue instead of a rolling 30-day figure", async () => {
@@ -241,7 +241,7 @@ describe("DashboardPage revenue", () => {
     expect(await screen.findByText("이번 달 매출")).toBeInTheDocument();
     expect(screen.queryByText("최근 30일 매출")).not.toBeInTheDocument();
     // 480,000 cents of USD, shown as dollars behind a plain $.
-    expect(screen.getByText("$4,800.00")).toBeInTheDocument();
+    expect(screen.getByText("US$4,800.00")).toBeInTheDocument();
   });
 
   it("names the month the figure covers, using the server's value", async () => {

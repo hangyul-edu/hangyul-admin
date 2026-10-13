@@ -4569,6 +4569,36 @@ a.hgadm-recent--link:hover {
 .hgadm-offer__ribbon-preview {
   margin-top: 8px;
 }
+/* One currency's prices on a plan card, and its block in the editor. */
+.hgadm-offer__currency {
+  padding: 10px 0 2px;
+  border-top: 1px solid var(--line);
+}
+.hgadm-offer__currency:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+.hgadm-offer__currency-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+.hgadm-offer__unsold {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.hgadm-currency {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.hgadm-currency legend {
+  padding: 0 4px;
+}
 
 /* Badge picker: each preset as its two ribbons, then "직접 입력". */
 .hgadm-badge-choices {

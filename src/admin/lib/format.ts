@@ -143,25 +143,35 @@ export function toMajorUnits(cents: number, currency: string): number {
   return ZERO_DECIMAL.has(currency.toUpperCase()) ? cents : cents / 100;
 }
 
+/** Symbols that name their currency unambiguously: USD is always "US$". */
+const UNAMBIGUOUS_SYMBOL: Record<string, string> = { KRW: "₩", USD: "US$" };
+
 /**
  * Minor units → a currency string, formatted the way the money is priced.
  *
- * Everything is billed in USD: the plan catalogue is USD, an invoice copies its
- * plan's currency and a payment copies its invoice's, so amounts arrive here as
- * cents and read back as dollars. Nothing is converted — the number is already
- * in the currency it says it is.
+ * Plans are priced in KRW and USD (a price per currency in each plan); an
+ * invoice is in its subscription's currency and a payment in its invoice's,
+ * so the currency always comes from the row. Nothing is converted — the
+ * number is already in the currency it says it is.
  *
- * The locale is `en-US`, not the portal's Korean, because `ko-KR` renders USD
- * as `US$12.99`; the dollar sign belongs on its own. The currency still comes
- * from the row rather than being assumed, so a legacy amount in anything else
- * is labelled honestly instead of being silently relabelled as dollars —
- * including the zero-decimal currencies, where treating the stored integer as
- * cents would divide the amount by a hundred.
+ * With both currencies on one screen a bare `$` would be ambiguous, so USD
+ * always reads `US$12.99` and KRW `₩12,900`. Any other code is labelled as
+ * what it is rather than relabelled — including the zero-decimal currencies,
+ * where treating the stored integer as cents would divide the amount by a
+ * hundred.
  */
 export function formatMoney(cents: number, currency: string): string {
   const code = currency.toUpperCase();
   const zeroDecimal = ZERO_DECIMAL.has(code);
   const amount = zeroDecimal ? cents : cents / 100;
+  const symbol = UNAMBIGUOUS_SYMBOL[code];
+  if (symbol) {
+    const number = new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: zeroDecimal ? 0 : 2,
+      maximumFractionDigits: zeroDecimal ? 0 : 2,
+    }).format(Math.abs(amount));
+    return `${amount < 0 ? "-" : ""}${symbol}${number}`;
+  }
   try {
     return new Intl.NumberFormat("en-US", {
       style: "currency",

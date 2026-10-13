@@ -610,20 +610,33 @@ export interface OfferSlot {
   interval: "month" | "year";
 }
 
-export interface Plan {
-  plan_id: string;
-  name: string;
+/** A plan's web price in one currency (minor units: whole won for KRW, cents
+ *  for USD). Each currency's prices are versioned on their own. */
+export interface PlanPrice {
+  currency: string;
   /** List price, shown struck through under a lower one. */
   price_cents: number;
-  currency: string;
-  interval: "month" | "year";
-  /** The regular price while a promotion runs; null = the list price. */
+  /** The sale price — the regular charge while set; null = the list price. */
   promo_price_cents: number | null;
   /** What new members (never trialled or paid) pay instead; null = the regular price. */
   new_member_price_cents: number | null;
+  version: number;
+  /** Derived by the server: the regular charge and its monthly equivalent. */
+  current_total_cents: number;
+  current_monthly_cents: number;
+  original_monthly_cents: number;
+  new_member_monthly_cents: number | null;
+  discount_percent: number;
+}
+
+export interface Plan {
+  plan_id: string;
+  name: string;
+  interval: "month" | "year";
+  /** One per currency the plan is sold in; a missing currency is not sold. */
+  prices: PlanPrice[];
   /** `active` = on offer; `archived` = not sold (keeps renewing its subscribers). */
   status: "active" | "archived";
-  version: number;
   /** null for an older plan outside the slots, which only renews its subscribers. */
   slot: OfferSlot | null;
   badge_text: PlanBadge;
@@ -637,13 +650,29 @@ export interface Plan {
 /** Longest badge text per language (the server's limit). */
 export const BADGE_MAX_LENGTH = 20;
 
+/** A currency's prices, sent whole. */
+export interface PlanPriceInput {
+  price_cents: number;
+  promo_price_cents: number | null;
+  new_member_price_cents: number | null;
+}
+
 export interface PlanUpdate {
   name?: string;
-  price_cents?: number;
-  promo_price_cents?: number | null;
-  new_member_price_cents?: number | null;
+  /** By currency; only the currencies sent change, null stops selling in one. */
+  prices?: Record<string, PlanPriceInput | null>;
   badge_text?: PlanBadge;
   badge_published?: boolean;
+}
+
+export interface PlanList {
+  plans: Plan[];
+  /** The currencies a plan can be priced in, in display order. */
+  price_currencies: string[];
+  trial_days: number;
+  badge_presets: BadgePreset[];
+  /** App-store billing: not integrated — every price here is a web price. */
+  store_billing: "not_integrated";
 }
 
 // ---- Coupons ---------------------------------------------------------------
@@ -1238,7 +1267,7 @@ export const adminApi = {
   // Plans
   /** The four offer slots' plans in order, then older plans still renewing. */
   listPlans: () =>
-    http.get<{ plans: Plan[]; trial_days: number; badge_presets: BadgePreset[] }>("/admin/subscriptions/plans"),
+    http.get<PlanList>("/admin/subscriptions/plans"),
   updatePlan: (planId: string, body: PlanUpdate) =>
     http.patch<Plan>(`/admin/subscriptions/plans/${planId}`, body),
 
