@@ -13,7 +13,7 @@ import type { Change, MetricDefinition, Ratio } from "../learningApi";
 import { useAdminAuth } from "../auth";
 import { useUrlFilters } from "../lib/urlFilters";
 import { metricGuide } from "../lib/metricGuide";
-import { HelpTip, Notice, PeriodPicker, TrendChip, trendOf } from "./insights";
+import { HelpTip, Notice, TrendChip, trendOf } from "./insights";
 
 const STATUS_TEXT: Record<string, string> = {
   no_eligible_data: "아직 데이터 없음",
@@ -170,11 +170,6 @@ export function MetricLabel({ metric, children }: { metric: string; children?: R
       </HelpTip>
     </span>
   );
-}
-
-/** The period picker (kept under its old name for the pages that use it). */
-export function WindowControls({ withComparison = true }: { withComparison?: boolean }) {
-  return <PeriodPicker withComparison={withComparison} />;
 }
 
 export function windowParams(f: ReturnType<typeof useUrlFilters>, withComparison = true) {
