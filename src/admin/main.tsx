@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ApiError } from "../lib/http";
+import { ApiError, showServerErrorText } from "../lib/http";
 import { ToastProvider } from "../hooks/toast";
 import { AdminAuthProvider } from "./auth";
 import { AdminErrorBoundary } from "./components/ErrorBoundary";
@@ -11,6 +11,10 @@ import "./styles/admin.css";
 import "./styles/insights.css";
 import "./styles/bulkImport.css";
 import "./styles/checkpointContent.css";
+
+// Operators see the server's own reason for a failure, not the member app's
+// wording (most admin-only errors have none).
+showServerErrorText();
 
 const queryClient = new QueryClient({
   defaultOptions: {
