@@ -155,4 +155,15 @@ describe("SentencesPage editor", () => {
     expect(update.mock.calls[0][1].korean).toBeUndefined();
     expect(update.mock.calls[0][1].translation).toBe(blanked.translation);
   });
+
+  it("says a delete removes saved rows but only unlinks study history", async () => {
+    // The server cascades saved_sentences and sets sentence_id to null on
+    // study history and speech attempts; the copy must not claim more.
+    renderPage();
+    await userEvent.click(await screen.findByRole("button", { name: "삭제" }));
+    expect(
+      await screen.findByText(/저장한 문장 기록은 삭제되고, 학습 이력·발음 시도는 남지만/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/학습 이력·저장 기록도 함께 삭제됩니다/)).not.toBeInTheDocument();
+  });
 });

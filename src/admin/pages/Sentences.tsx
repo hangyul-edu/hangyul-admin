@@ -233,7 +233,8 @@ export function SentencesPage() {
           <h1>문장 관리</h1>
           <div className="hgadm-page-head__desc">
             학습 문장 목록입니다. 오디오는 TTS가 자동 생성하므로 별도 업로드가
-            필요 없습니다. 삭제 시 사용자 학습 이력도 함께 삭제됩니다.
+            필요 없습니다. 삭제 시 사용자의 저장 기록도 함께 삭제되고, 학습 이력은 남지만
+            이 문장과의 연결이 끊어집니다.
           </div>
         </div>
         {canWrite && (
@@ -429,7 +430,7 @@ export function SentencesPage() {
       <ConfirmDialog
         open={deleting !== null}
         title="문장 삭제"
-        message={`'${deleting?.korean ?? ""}' 문장을 영구 삭제할까요? 이 문장에 대한 사용자 학습 이력·저장 기록도 함께 삭제됩니다.`}
+        message={`'${deleting?.korean ?? ""}' 문장을 영구 삭제할까요? 사용자가 저장한 문장 기록은 삭제되고, 학습 이력·발음 시도는 남지만 이 문장과의 연결이 끊어집니다.`}
         danger
         confirmLabel="삭제"
         loading={remove.isPending}
