@@ -160,10 +160,12 @@ describe("요금제 관리", () => {
     expect(counts).toHaveTextContent("누적 1,250명");
   });
 
-  it("says which currency each billing country pays in", async () => {
+  it("says the phone number's calling code decides the currency and card", async () => {
     renderPage();
     await screen.findByText("Monthly");
-    expect(screen.getByText(/대한민국은 원화\(KRW\), 그 밖의 국가는 미국 달러\(USD\)/)).toBeInTheDocument();  });
+    expect(screen.getByText(/\+82 번호는 원화\(KRW\)로 국내 카드,\s+그 밖의 번호는 미국 달러\(USD\)로 해외 카드/)).toBeInTheDocument();
+    expect(screen.queryByText(/결제 국가/)).not.toBeInTheDocument();
+  });
 
   it("states the free trial once, as a per-member policy, not per plan", async () => {
     renderPage();

@@ -14,7 +14,7 @@ import { formatMoney, isZeroDecimal } from "../lib/format";
  *
  * Plans are never created or deleted here, and there is no plan per currency:
  * each plan carries a price in every currency it is sold in (KRW for
- * members whose billing country is South Korea, USD for everyone else). For
+ * members whose phone number is +82, USD for everyone else). For
  * each currency an admin sets the list price, an optional sale price and an
  * optional new-member price, and picks or writes the plan's promotional
  * ribbon. Both plans unlock the same full access (they differ in billing
@@ -24,10 +24,10 @@ import { formatMoney, isZeroDecimal } from "../lib/format";
 
 const INTERVAL_LABEL = { month: "월간 (1개월)", year: "연간 (12개월)" } as const;
 
-/** Who is offered each currency's price (the billing country decides it). */
+/** Who is offered each currency's price (the phone number's calling code decides it). */
 const CURRENCY_AUDIENCE: Record<string, string> = {
-  KRW: "원화 · 결제 국가가 대한민국인 회원",
-  USD: "미국 달러 · 그 밖의 결제 국가 회원",
+  KRW: "원화 · +82 휴대폰 번호 회원",
+  USD: "미국 달러 · 그 밖의 휴대폰 번호 회원",
 };
 
 /** What every subscription includes, whichever plan. */
@@ -482,7 +482,7 @@ function PlanEditor({
         <div />
 
         <p className="span-2 hgadm-field__hint" role="note">
-          회원은 결제 국가의 통화로 가격을 보고 결제해요 (대한민국은 원화, 그 밖의 국가는 미국 달러).
+          회원은 휴대폰 번호의 국가번호에 따라 정해진 통화로 가격을 보고 결제해요 (+82는 원화, 그 밖의 번호는 미국 달러).
         </p>
 
         {currencies.map((currency) => (
@@ -644,8 +644,8 @@ export function PlansPage() {
           <section className="hgadm-section">
             <h2 className="hgadm-offer-group__title">판매 중인 요금제</h2>
             <p className="hgadm-offer-group__desc">
-              회원은 직접 확인한 결제 국가의 통화로 가격을 보고 결제해요 — 대한민국은 원화(KRW), 그 밖의 국가는 미국 달러(USD).
-              국적은 결제 국가를 제안할 때만 쓰이고, 접속 위치·전화번호·앱 언어로는 바뀌지 않아요. 신규 회원가는 무료 체험이나 결제를
+              회원은 휴대폰 번호의 국가번호에 따라 정해진 통화로 가격을 보고 결제해요 — +82 번호는 원화(KRW)로 국내 카드,
+              그 밖의 번호는 미국 달러(USD)로 해외 카드. 국적·접속 위치·앱 언어로는 바뀌지 않아요. 신규 회원가는 무료 체험이나 결제를
               한 번도 하지 않은 회원에게 일반 가격 대신 보여요.
             </p>
             <div className="hgadm-grid-2">
