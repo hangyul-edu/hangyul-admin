@@ -50,9 +50,10 @@ export function leagueName(tier: string, ordinal: number): string {
 export function leagueDate(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  // The league runs on US Eastern time; a week that opens at 00:00 there is
-  // still the previous day in UTC, so formatting anywhere else would name the
-  // wrong start date.
+  // The league runs on US Eastern time; a week that closes late on Sunday there
+  // is already Monday in UTC and in Seoul (and a zone west of ET would put the
+  // Monday 00:00 start on Sunday), so formatting anywhere else would name the
+  // wrong date.
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/New_York",
     year: "numeric",
