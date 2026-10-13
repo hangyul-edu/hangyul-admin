@@ -28,6 +28,17 @@ import {
 } from "../lib/format";
 import type { Column } from "../components/kit";
 
+/**
+ * A batch's own words. The shared `statusLabel` reads `active` as the
+ * subscription's "이용 중", but an active batch is one whose unused codes can
+ * still be redeemed — nothing is "in use".
+ */
+const BATCH_STATUS_LABELS: Record<string, string> = { active: "발행됨" };
+
+function batchStatusLabel(status: string): string {
+  return BATCH_STATUS_LABELS[status] ?? statusLabel(status);
+}
+
 export function CouponsPage() {
   const [params, setParams] = useSearchParams();
   const tab = params.get("tab") === "coupons" ? "coupons" : "batches";
@@ -136,7 +147,7 @@ function BatchesTab() {
     {
       key: "status",
       header: "상태",
-      render: (b) => <Badge tone={statusTone(b.status)}>{statusLabel(b.status)}</Badge>,
+      render: (b) => <Badge tone={statusTone(b.status)}>{batchStatusLabel(b.status)}</Badge>,
     },
     { key: "created", header: "생성일", render: (b) => formatDateTime(b.created_at) },
     {
