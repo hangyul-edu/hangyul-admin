@@ -37,6 +37,7 @@ import {
   ROLE_LABELS,
 } from "../lib/adminTiers";
 import { personName, personNameWithEmail } from "../lib/adminIdentity";
+import { providerLabel, signInMethods } from "../lib/signInMethods";
 import { TierChip } from "../components/TierChip";
 
 /**
@@ -344,12 +345,7 @@ export function UserDetailPage() {
                   ["가입일시", <Timestamp key="created" at={user.created_at} />],
                   [
                     "로그인 수단",
-                    [
-                      user.has_password ? "이메일" : null,
-                      ...user.social_providers,
-                    ]
-                      .filter(Boolean)
-                      .join(", "),
+                    signInMethods(user.has_password, user.social_providers).join(", ") || "—",
                   ],
                   ["마케팅 수신", user.marketing_opt_in ? "동의" : "거부"],
                   [
@@ -871,7 +867,7 @@ function AccountHistory({
                 </td>
                 <td>{a.deactivated_at ? <Timestamp at={a.deactivated_at} /> : "—"}</td>
                 <td className="hgadm-cell-mono">{a.phone_masked ?? "—"}</td>
-                <td>{a.social_logins.join(", ") || "—"}</td>
+                <td>{a.social_logins.map(providerLabel).join(", ") || "—"}</td>
                 <td className="num">{formatDuration(a.study_minutes * 60)}</td>
                 <td className="num">{a.points_total.toLocaleString()}P</td>
               </tr>

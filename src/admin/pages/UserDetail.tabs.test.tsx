@@ -119,7 +119,7 @@ describe("개요", () => {
     expect(old).toHaveAttribute("href", "/users/usr_old");
     expect(screen.getByText("옛닉")).toBeInTheDocument();
     expect(screen.getByText("010-****-5678")).toBeInTheDocument();
-    expect(screen.getByText("google")).toBeInTheDocument();
+    expect(screen.getByText("Google")).toBeInTheDocument(); // by name, not "google"
     expect(screen.getByText("3,400P")).toBeInTheDocument();
     expect(screen.getByText("현재 보는 계정")).toBeInTheDocument();
   });

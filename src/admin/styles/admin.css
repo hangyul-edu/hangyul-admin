@@ -766,6 +766,13 @@ body {
   color: var(--ink-3);
   margin-top: 1px;
 }
+/* A row of short labels in one cell (a member's sign-in methods). */
+.hgadm-cell-tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
 .hgadm-cell-mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 12px;

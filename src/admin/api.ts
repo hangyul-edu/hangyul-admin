@@ -150,6 +150,11 @@ export interface AdminUserSummary {
   plan_name: string | null;
   created_at: string;
   deactivated_at: string | null;
+  /** Whether the account can sign in with email and password. */
+  has_password: boolean;
+  /** Linked social sign-ins (google, apple, kakao, facebook, line); a withdrawn
+   *  account's are the ones it had. */
+  social_providers: string[];
   /** How many times this person signed up again after withdrawing. */
   reregistration_count: number;
 }

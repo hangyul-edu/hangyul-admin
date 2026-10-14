@@ -61,6 +61,7 @@ describe("UsersPage", () => {
       email: "back@talkhangyul.co.kr", name: "돌아온 학습자", nickname: null,
       phone_masked: null, role: "member", status: "active", subscription_status: null,
       plan_id: null, plan_name: null, created_at: "2026-07-01T00:00:00Z", deactivated_at: null,
+      has_password: true, social_providers: [],
     };
     listUsers.mockResolvedValue({
       items: [
@@ -83,6 +84,8 @@ describe("UsersPage", () => {
         {
           user_id: "usr_1",
           email: "learner@talkhangyul.co.kr",
+          has_password: true,
+          social_providers: ["line", "kakao"],
           name: "학습자",
           nickname: "hangyul-fan",
           phone_masked: "+821••••1234",
@@ -119,6 +122,10 @@ describe("UsersPage", () => {
     expect(screen.getAllByText("활성").length).toBeGreaterThan(0);
     expect(screen.queryByText("이용 중")).not.toBeInTheDocument();
     expect(screen.getByText(/1건 중 1–1/)).toBeInTheDocument();
+    // How the member signs in, by name: email first, then the social sign-ins.
+    expect(screen.getByRole("columnheader", { name: "로그인 수단" })).toBeInTheDocument();
+    for (const method of ["이메일", "카카오", "LINE"]) expect(screen.getByText(method)).toBeInTheDocument();
+    expect(screen.queryByText("line")).not.toBeInTheDocument();
   });
 
   it("falls back to the email when a user has no name", async () => {
@@ -127,6 +134,8 @@ describe("UsersPage", () => {
         {
           user_id: "usr_2",
           email: "nameless@talkhangyul.co.kr",
+          has_password: false,
+          social_providers: [],
           name: "",
           nickname: null,
           phone_masked: null,
@@ -190,6 +199,8 @@ describe("UsersPage", () => {
         {
           user_id: "usr_1",
           email: "learner@talkhangyul.co.kr",
+          has_password: true,
+          social_providers: ["line", "kakao"],
           name: "학습자",
           nickname: null,
           phone_masked: null,

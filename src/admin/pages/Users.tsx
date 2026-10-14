@@ -26,6 +26,7 @@ import {
 import type { Column } from "../components/kit";
 import { ROLE_LABELS } from "../lib/adminTiers";
 import { personName } from "../lib/adminIdentity";
+import { signInMethods } from "../lib/signInMethods";
 import {
   DOCUMENTED_ACCOUNT_STATUSES,
   accountStatusDescription,
@@ -116,6 +117,24 @@ export function UsersPage() {
       key: "phone",
       header: "전화번호",
       render: (u) => <span className="hgadm-cell-mono">{u.phone_masked ?? "—"}</span>,
+    },
+    {
+      key: "signin",
+      header: "로그인 수단",
+      render: (u) => {
+        const methods = signInMethods(u.has_password, u.social_providers);
+        return methods.length ? (
+          <span className="hgadm-cell-tags">
+            {methods.map((m) => (
+              <Badge key={m} tone="neutral">
+                {m}
+              </Badge>
+            ))}
+          </span>
+        ) : (
+          "—"
+        );
+      },
     },
     {
       key: "role",
