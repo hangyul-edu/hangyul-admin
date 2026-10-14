@@ -1,7 +1,8 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ApiError, showServerErrorText } from "../lib/http";
+import { ApiError, setErrorAudience } from "../lib/http";
+import { setCurrentLanguage } from "../i18n/current";
 import { ToastProvider } from "../hooks/toast";
 import { AdminAuthProvider } from "./auth";
 import { AdminErrorBoundary } from "./components/ErrorBoundary";
@@ -12,9 +13,9 @@ import "./styles/insights.css";
 import "./styles/bulkImport.css";
 import "./styles/checkpointContent.css";
 
-// Operators see the server's own reason for a failure, not the member app's
-// wording (most admin-only errors have none).
-showServerErrorText();
+// The portal is Korean; its errors are worded for operators (i18n/apiErrors).
+setCurrentLanguage("ko");
+setErrorAudience("admin");
 
 const queryClient = new QueryClient({
   defaultOptions: {

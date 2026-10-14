@@ -43,7 +43,10 @@ describe("ListeningAudioField", () => {
 
   it("shows the server's reason when the file is rejected", async () => {
     vi.mocked(adminApi.uploadQuizAudio).mockRejectedValue(
-      new ApiError(422, "validation_error", "MP3 파일이 중간에 잘려 있어요"),
+      new ApiError(422, "validation_error", "MP3 파일이 중간에 잘려 있어요", {
+        reason: "audio_file_invalid",
+        problem: "MP3 파일이 중간에 잘려 있어요",
+      }),
     );
     const onUploaded = renderField("quz_1");
     await userEvent.upload(

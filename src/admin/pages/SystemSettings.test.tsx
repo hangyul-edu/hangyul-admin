@@ -424,9 +424,13 @@ describe("SystemSettingsPage — AI models", () => {
     const d = await screen.findByRole("form", { name: "AI 사용·모델 선택" });
     const summary = await within(d).findByRole("region", { name: "현재 사용 중인 모델" });
     await within(summary).findByText("claude-sonnet-5");
-    api.aiModels.mockRejectedValueOnce(new ApiError(502, "upstream", "제공사 응답 없음"));
+    api.aiModels.mockRejectedValueOnce(
+      new ApiError(503, "llm.provider_unavailable", "제공사 응답 없음", { problem: "제공사 응답 없음" }),
+    );
     await userEvent.click(within(summary).getByRole("button", { name: /모델 목록 새로고침/ }));
-    expect(await within(summary).findByText(/모델 정보를 불러오지 못했습니다: .*제공사 응답 없음/)).toBeInTheDocument();
+    expect(
+      await within(summary).findByText("모델 정보를 불러오지 못했습니다: AI 제공사에 연결하지 못했어요: 제공사 응답 없음"),
+    ).toBeInTheDocument();
     expect(api.aiModels).toHaveBeenLastCalledWith(true);
   });
 });

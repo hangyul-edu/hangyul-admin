@@ -208,11 +208,7 @@ describe("NotificationSettingsPage", () => {
     const user = userEvent.setup();
     getDailyReminder.mockResolvedValue(DEFAULTS);
     updateDailyReminder.mockRejectedValue(
-      new ApiError(
-        422,
-        "unprocessable_entity",
-        "`daily_reminder_time` must be a 24-hour HH:MM time.",
-      ),
+      new ApiError(422, "validation_error", "One or more fields failed validation."),
     );
     renderPage();
 
@@ -222,7 +218,7 @@ describe("NotificationSettingsPage", () => {
     await user.click(screen.getByRole("button", { name: "저장" }));
 
     expect(
-      await screen.findByText("`daily_reminder_time` must be a 24-hour HH:MM time."),
+      await screen.findByText("입력한 내용을 다시 확인해 주세요."),
     ).toBeInTheDocument();
     expect(timeInput().value).toBe("20:00");
   });
