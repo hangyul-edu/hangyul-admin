@@ -56,3 +56,15 @@ export function personNameWithEmail(person: NamedPerson | null | undefined): str
   const email = person.email?.trim();
   return email && email !== label ? `${label} (${email})` : label;
 }
+
+/**
+ * What goes under the name in a table cell: the nickname and the email,
+ * leaving out whichever is already the label (an account without a name is
+ * labelled by its email, which is then not printed twice).
+ */
+export function personDetails(person: NamedPerson & { nickname?: string | null }): string[] {
+  const label = personName(person);
+  return [person.nickname, person.email].filter(
+    (part): part is string => Boolean(part?.trim()) && part !== label,
+  );
+}

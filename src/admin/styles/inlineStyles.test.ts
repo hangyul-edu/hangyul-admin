@@ -19,7 +19,7 @@ const DYNAMIC_STYLES: Record<string, number> = {
   "components/kit.tsx": 1, // dropdown menu coordinates
   "components/learning.tsx": 1, // bar width
   "pages/Dashboard.tsx": 1, // chart tooltip position
-  "pages/Leagues.tsx": 1, // fill ratio
+  "pages/leagues/LeaguesPage.tsx": 1, // capacity fill ratio
   "pages/lectures/CheckpointEditor.tsx": 4, // playhead and marker positions
   "pages/lectures/LectureVideoPanel.tsx": 1, // upload progress
 };

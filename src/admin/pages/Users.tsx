@@ -25,7 +25,6 @@ import {
 } from "../components/kit";
 import type { Column } from "../components/kit";
 import { ROLE_LABELS } from "../lib/adminTiers";
-import { personName } from "../lib/adminIdentity";
 import { signInMethods } from "../lib/signInMethods";
 import {
   DOCUMENTED_ACCOUNT_STATUSES,
@@ -33,6 +32,7 @@ import {
   accountStatusLabel,
   accountStatusTone,
 } from "../lib/accountStatus";
+import { PersonCell } from "../components/PersonCell";
 
 export function UsersPage() {
   const filters = useUrlFilters();
@@ -88,30 +88,15 @@ export function UsersPage() {
          the app, so it stays beside the email rather than replacing either.
          An account with no name falls back to the email instead of the
          "(닉네임 없음)" placeholder this used to print. */
-      render: (u) => {
-        const label = personName(u);
-        // Drop the email from the sub-line when it IS the label, so a user
-        // without a name is not printed twice.
-        const details = [u.nickname, u.email === label ? null : u.email]
-          .filter(Boolean)
-          .join(" · ");
-        return (
-          <div>
-            <div className="hgadm-cell-main">
-              {label}
-              {/* A person who withdrew and signed up again: the detail
-                  page's 계정 이력 lists every account. */}
-              {u.reregistration_count > 0 && (
-                <>
-                  {" "}
-                  <Badge tone="info">재가입 {u.reregistration_count}회</Badge>
-                </>
-              )}
-            </div>
-            {details && <div className="hgadm-cell-sub">{details}</div>}
-          </div>
-        );
-      },
+      render: (u) => (
+        <PersonCell
+          person={u}
+          truncate={false}
+          // A person who withdrew and signed up again: the detail page's 계정
+          // 이력 lists every account.
+          badge={u.reregistration_count > 0 && <Badge tone="info">재가입 {u.reregistration_count}회</Badge>}
+        />
+      ),
     },
     {
       key: "phone",
