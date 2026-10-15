@@ -16,12 +16,8 @@ function withKorean(item: { title: string; translations?: CatalogTranslation[] }
 import type { LanguageDraft } from "../../components/LanguageFields";
 import { TopikTypeSelect } from "../../components/TopikTypeSelect";
 import { ImageDropzone } from "../../components/ImageDropzone";
+import { TRACKS, TRACK_LABEL } from "../../lib/tracks";
 
-export const TRACKS = [
-  ["track_conversation", "회화"],
-  ["track_topik", "TOPIK"],
-] as const;
-export const TRACK_LABEL: Record<string, string> = Object.fromEntries(TRACKS);
 
 interface LectureDraft {
   course_id: string;

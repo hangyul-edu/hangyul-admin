@@ -26,7 +26,8 @@ import type { Column } from "../components/kit";
 import { formatClock } from "../lib/videoFile";
 import { StandInBadge, koreanTitle } from "../components/LanguageFields";
 import { MoveButtons, OrderNumber, useReorder } from "../components/ordering";
-import { LectureFormModal, TRACKS, TRACK_LABEL } from "./lectures/LectureFormModal";
+import { LectureFormModal } from "./lectures/LectureFormModal";
+import { TRACKS, TRACK_LABEL } from "../lib/tracks";
 
 /**
  * The lecture catalogue. A lecture is one video: adding one asks for its
