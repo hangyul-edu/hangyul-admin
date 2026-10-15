@@ -94,15 +94,16 @@ export function Badge({
  * Tables never print the raw enum ("grace_period", "trial_ending") to an
  * admin. Every label here is written from the state's
  * documented meaning, and states that differ stay distinct: `open`(청구서 발행,
- * 아직 결제 전) is not `unpaid`(납부 기한이 지난 미납), and `cancelled`(이미 해지됨)
- * is not the `cancel_at_period_end` flag(기간 말 해지 예약), which the tables show
- * separately.
+ * 아직 결제 전) is not `unpaid`(납부 기한이 지난 미납). A subscription has no
+ * cancelled status: cancelling sets the `cancel_at_period_end` flag(기간 말
+ * 해지 예약), which the tables show separately — `canceling` is that flag as a
+ * filter value.
  *
  * An unknown value falls through to itself, so a status added on the server
  * shows up verbatim rather than disappearing.
  */
 const STATUS_LABELS: Record<string, string> = {
-  // 구독 — /subscriptions/me 가 문서화한 9개 실효 상태.
+  // 구독 — /subscriptions/me 가 문서화한 8개 실효 상태, 그리고 해지 예약 필터.
   trial: "무료 체험",
   trial_ending: "체험 종료 임박",
   active: "이용 중",
@@ -110,10 +111,11 @@ const STATUS_LABELS: Record<string, string> = {
   payment_failed: "결제 실패",
   grace_period: "유예 기간",
   suspended: "이용 중지",
-  cancelled: "해지됨",
   expired: "만료",
+  canceling: "해지 예정",
   // 결제 / 청구서
   succeeded: "결제 성공",
+  cancelled: "취소됨",
   failed: "실패",
   refunded: "환불됨",
   paid: "결제 완료",

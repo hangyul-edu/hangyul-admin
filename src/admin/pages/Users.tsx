@@ -231,7 +231,7 @@ export function UsersPage() {
             <option value="active">구독 중</option>
             <option value="trial">체험 중</option>
             <option value="grace_period">유예 기간</option>
-            <option value="cancelled">해지</option>
+            <option value="canceling">해지 예정</option>
             <option value="none">구독 없음</option>
           </Select>
         </div>

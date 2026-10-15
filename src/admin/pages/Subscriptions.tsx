@@ -27,8 +27,9 @@ const STATUSES = [
   "payment_failed",
   "grace_period",
   "suspended",
-  "cancelled",
   "expired",
+  // Not a status: a cancellation scheduled at period end.
+  "canceling",
 ];
 
 export function SubscriptionsPage() {
