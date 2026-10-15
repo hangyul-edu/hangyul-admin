@@ -52,3 +52,25 @@ export function saveSidebarCollapsed(collapsed: boolean): void {
     /* preference is best-effort — never break navigation over it */
   }
 }
+
+// Sidebar groups the admin folded away. Same rules as above: a display
+// preference, kept across sign-outs, and best-effort when storage is missing.
+const NAV_GROUPS_KEY = "hangyul.admin.navgroups.v1";
+
+/** Labels of the sidebar groups last left folded. */
+export function loadFoldedNavGroups(): string[] {
+  try {
+    const parsed: unknown = JSON.parse(localStorage.getItem(NAV_GROUPS_KEY) ?? "[]");
+    return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveFoldedNavGroups(labels: string[]): void {
+  try {
+    localStorage.setItem(NAV_GROUPS_KEY, JSON.stringify(labels));
+  } catch {
+    /* best-effort */
+  }
+}

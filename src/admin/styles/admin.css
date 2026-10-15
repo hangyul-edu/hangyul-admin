@@ -160,7 +160,7 @@ body {
   --nav-width: var(--hgadm-sidebar-w);
   --nav-label-display: block;
   --nav-link-justify: flex-start;
-  --nav-link-padding: 9px 12px;
+  --nav-link-padding: 8px 12px;
   --brand-justify: flex-start;
   --brand-pad-x: 18px;
   --collapse-push: auto;
@@ -277,14 +277,66 @@ body {
   flex-direction: column;
   gap: 2px;
 }
+/* A group heading folds its items away. Hidden in the icon rail, where every
+   item shows. The current page's group is disabled (it cannot fold), so its
+   caret is not drawn — nothing to offer. */
 .hgadm-nav__group {
   display: var(--nav-label-display);
-  margin: 16px 10px 4px;
+  width: calc(100% - 8px);
+  margin: 12px 4px 2px;
+  padding: 4px 6px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  font: inherit;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  text-align: left;
   color: var(--ink-muted);
+  cursor: pointer;
+}
+.hgadm-nav__group > span {
+  vertical-align: middle;
+}
+.hgadm-nav__group:hover:not(:disabled) {
+  color: var(--ink-2);
+  background: var(--hgadm-neutral-soft);
+}
+.hgadm-nav__group:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.hgadm-nav__group:disabled {
+  cursor: default;
+}
+/* Quiet until it matters: drawn on hover/focus, and always for a folded
+   group so the admin can see something is tucked away. */
+.hgadm-nav__group-caret {
+  float: right;
+  margin-top: 1px;
+  opacity: 0;
+  transition: transform 0.15s ease, opacity 0.12s ease;
+}
+.hgadm-nav__group:hover .hgadm-nav__group-caret,
+.hgadm-nav__group:focus-visible .hgadm-nav__group-caret,
+.hgadm-nav__group[aria-expanded="false"] .hgadm-nav__group-caret {
+  opacity: 1;
+}
+.hgadm-nav__group[aria-expanded="false"] .hgadm-nav__group-caret {
+  transform: rotate(-90deg);
+}
+.hgadm-nav__group:disabled .hgadm-nav__group-caret {
+  visibility: hidden;
+}
+.hgadm-nav__items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.hgadm-nav__items[hidden] {
+  display: none;
 }
 .hgadm-nav__link {
   position: relative;

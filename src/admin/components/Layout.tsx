@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import {
   Bell,
   BookOpen,
   Bot,
   CalendarRange,
+  ChevronDown,
   GraduationCap,
   LineChart,
   ListChecks,
@@ -37,7 +38,7 @@ import {
 } from "lucide-react";
 import { useAdminAuth } from "../auth";
 import { ADMIN_TIER_LABEL } from "../lib/adminTiers";
-import { loadSidebarCollapsed, saveSidebarCollapsed } from "../lib/storage";
+import { loadFoldedNavGroups, loadSidebarCollapsed, saveFoldedNavGroups, saveSidebarCollapsed } from "../lib/storage";
 import { Button, ConfirmDialog } from "./kit";
 
 interface NavItem {
@@ -178,6 +179,10 @@ export function AdminLayout() {
   // Lazy initialiser so the stored preference is read once, before first
   // paint — the sidebar never renders wide and then snaps narrow.
   const [collapsed, setCollapsed] = useState(loadSidebarCollapsed);
+  // Groups the admin folded away (expanded sidebar only; the icon rail always
+  // shows every item). The group holding the current page never folds.
+  const [folded, setFolded] = useState<string[]>(loadFoldedNavGroups);
+  const navRef = useRef<HTMLElement>(null);
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const { pathname } = useLocation();
@@ -193,6 +198,19 @@ export function AdminLayout() {
     const best = activeNavTarget(pathname, [...owner.keys()]);
     return best === null ? null : owner.get(best) ?? null;
   }, [pathname]);
+
+  // A deep link to a page low in the menu lands with its item in view. Runs
+  // again once the admin's scopes arrive, since they decide what is listed.
+  useEffect(() => {
+    const active = navRef.current?.querySelector<HTMLElement>('[aria-current="page"]');
+    active?.scrollIntoView?.({ block: "nearest" });
+  }, [activeTo, me]);
+
+  function toggleGroup(label: string) {
+    const next = folded.includes(label) ? folded.filter((l) => l !== label) : [...folded, label];
+    setFolded(next);
+    saveFoldedNavGroups(next);
+  }
 
   return (
     <div className="hgadm-frame">
@@ -235,7 +253,7 @@ export function AdminLayout() {
             )}
           </button>
         </div>
-        <nav className="hgadm-nav" id="hgadm-nav" aria-label="관리자 메뉴">
+        <nav className="hgadm-nav" id="hgadm-nav" aria-label="관리자 메뉴" ref={navRef}>
           {NAV.map((group) => {
             const visible = group.items.filter(
               (item) =>
@@ -243,9 +261,25 @@ export function AdminLayout() {
                 (item.also ?? []).some((page) => can(page.scope)),
             );
             if (visible.length === 0) return null;
+            const holdsActive = visible.some((item) => item.to === activeTo);
+            const open = collapsed || holdsActive || !folded.includes(group.label);
+            const listId = `hgadm-nav-${group.label}`;
             return (
               <div key={group.label}>
-                <div className="hgadm-nav__group">{group.label}</div>
+                <button
+                  type="button"
+                  className="hgadm-nav__group"
+                  aria-expanded={open}
+                  aria-controls={listId}
+                  // The current page's group stays open: folding it would hide
+                  // where you are.
+                  disabled={holdsActive}
+                  onClick={() => toggleGroup(group.label)}
+                >
+                  <span>{group.label}</span>
+                  <ChevronDown size={13} strokeWidth={2.25} className="hgadm-nav__group-caret" aria-hidden />
+                </button>
+                <div id={listId} className="hgadm-nav__items" hidden={!open}>
                 {visible.map((item) => {
                   const Icon = item.icon;
                   const isActive = item.to === activeTo;
@@ -279,6 +313,7 @@ export function AdminLayout() {
                     </Link>
                   );
                 })}
+                </div>
               </div>
             );
           })}

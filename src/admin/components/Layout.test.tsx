@@ -197,6 +197,48 @@ describe("admin sidebar", () => {
   });
 });
 
+describe("admin sidebar groups", () => {
+  beforeEach(() => localStorage.clear());
+  const group = (label: string) => within(sidebar()).getByRole("button", { name: label });
+
+  it("folds a group away and opens it again", async () => {
+    const user = userEvent.setup();
+    renderLayout("/users");
+    expect(group("운영")).toHaveAttribute("aria-expanded", "true");
+    await user.click(group("운영"));
+    expect(group("운영")).toHaveAttribute("aria-expanded", "false");
+    expect(within(sidebar()).queryByRole("link", { name: "공지" })).not.toBeInTheDocument();
+    await user.click(group("운영"));
+    expect(within(sidebar()).getByRole("link", { name: "공지" })).toBeInTheDocument();
+  });
+
+  it("remembers folded groups across a remount", async () => {
+    const user = userEvent.setup();
+    const { unmount } = renderLayout("/users");
+    await user.click(group("시스템"));
+    unmount();
+    renderLayout("/users");
+    expect(group("시스템")).toHaveAttribute("aria-expanded", "false");
+    expect(within(sidebar()).queryByRole("link", { name: "관리자 계정" })).not.toBeInTheDocument();
+  });
+
+  it("never folds the group holding the current page", async () => {
+    localStorage.setItem("hangyul.admin.navgroups.v1", JSON.stringify(["사용자"]));
+    renderLayout("/users");
+    expect(group("사용자")).toBeDisabled();
+    expect(group("사용자")).toHaveAttribute("aria-expanded", "true");
+    expect(within(sidebar()).getByRole("link", { name: "사용자 관리" })).toBeInTheDocument();
+  });
+
+  it("shows every item in the icon rail, folded or not", async () => {
+    const user = userEvent.setup();
+    localStorage.setItem("hangyul.admin.navgroups.v1", JSON.stringify(["운영"]));
+    renderLayout("/users");
+    await user.click(toggle());
+    expect(within(sidebar()).getByRole("link", { name: "공지" })).toBeInTheDocument();
+  });
+});
+
 describe("admin brand", () => {
   beforeEach(() => localStorage.clear());
 
