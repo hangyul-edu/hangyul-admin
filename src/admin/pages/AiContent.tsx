@@ -29,6 +29,7 @@ import {
 } from "../lib/format";
 import type { Column } from "../components/kit";
 import { topikTypeLabel } from "../lib/topik";
+import { useTopicNames } from "../lib/topicNames";
 
 /** `GeneratedContentKind` on the backend — the values the list filters on. */
 const SENTENCE_KIND = "conversation_sentence";
@@ -78,6 +79,7 @@ export function AiContentPage() {
       }),
   });
 
+  const { topicName } = useTopicNames();
   const detail = useQuery({
     queryKey: ["admin", "generated-detail", detailId],
     queryFn: () => adminApi.getGenerated(detailId!),
@@ -312,7 +314,7 @@ export function AiContentPage() {
               items={[
                 ["생성일", formatDateTime(detail.data.created_at)],
                 ["생성 경로", detail.data.source],
-                ["주제", detail.data.topic],
+                ["주제", detail.data.topic ? topicName(detail.data.topic) : null],
                 ["TOPIK 유형", detail.data.topik_question_type ? topikTypeLabel(detail.data.topik_question_type) : null],
                 ["언어", detail.data.language],
                 ["요청 사용자", detail.data.created_by_user_id],

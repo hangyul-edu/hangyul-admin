@@ -26,6 +26,7 @@ import {
   Textarea,
 } from "../components/kit";
 import type { Column } from "../components/kit";
+import { SENTENCE_TOPICS_KEY, useTopicNames } from "../lib/topicNames";
 
 interface SentenceDraft {
   korean: string;
@@ -101,12 +102,8 @@ export function SentencesPage() {
   const aiOnly = filters.value("is_ai_generated");
   const page = filters.number("page", 1);
 
-  const topics = useQuery({
-    queryKey: ["admin", "sentence-topics"],
-    queryFn: adminApi.sentenceTopics,
-  });
   // A curriculum topic reads as its Korean name; the code stays in the tooltip.
-  const topicName = (code: string) => topics.data?.labels?.[code] ?? code;
+  const { topics, topicName, isNamed } = useTopicNames();
 
   const query = useQuery({
     queryKey: ["admin", "sentences", { q, level, topic, aiOnly, page }],
@@ -123,7 +120,7 @@ export function SentencesPage() {
 
   function refresh() {
     void qc.invalidateQueries({ queryKey: ["admin", "sentences"] });
-    void qc.invalidateQueries({ queryKey: ["admin", "sentence-topics"] });
+    void qc.invalidateQueries({ queryKey: SENTENCE_TOPICS_KEY });
   }
 
   const save = useMutation({
@@ -262,7 +259,7 @@ export function SentencesPage() {
                   ["speech_attempts_preserved", "발음 시도"],
                   ["saved_sentences_preserved", "저장된 문장"],
                 ]}
-                invalidateKeys={[["admin", "sentences"], ["admin", "sentence-topics"]]}
+                invalidateKeys={[["admin", "sentences"], [...SENTENCE_TOPICS_KEY]]}
               />
             )}
             <BulkImportButton
@@ -273,7 +270,7 @@ export function SentencesPage() {
               templateFilename="문장-예시.json"
               check={adminApi.checkSentencesBatch}
               submit={adminApi.createSentencesBatch}
-              invalidateKeys={[["admin", "sentences"], ["admin", "sentence-topics"]]}
+              invalidateKeys={[["admin", "sentences"], [...SENTENCE_TOPICS_KEY]]}
             />
             <Button
               variant="primary"
@@ -300,7 +297,7 @@ export function SentencesPage() {
             onChange={(e) => filters.patch({ topic: e.target.value, page: null })}
           >
             <option value="">주제: 전체</option>
-            {topics.data?.topics.map((t) => (
+            {topics.map((t) => (
               <option key={t} value={t}>
                 {topicName(t)}
               </option>
@@ -401,12 +398,21 @@ export function SentencesPage() {
               />
             </Field>
             <div className="hgadm-form-grid">
-              <Field label="주제">
+              <Field
+                label="주제"
+                hint={
+                  draft.topic.trim()
+                    ? isNamed(draft.topic.trim())
+                      ? topicName(draft.topic.trim())
+                      : "새 주제 — 커리큘럼에 이름이 없어 코드로 표시돼요"
+                    : "영문 코드 (예: cafe, travel)"
+                }
+              >
                 <Input
                   value={draft.topic}
                   maxLength={80}
                   onChange={(e) => setDraft({ ...draft, topic: e.target.value })}
-                  placeholder="daily, food, travel …"
+                  placeholder="cafe, travel …"
                 />
               </Field>
               <Field label="레벨" required>

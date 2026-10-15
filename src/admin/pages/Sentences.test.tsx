@@ -97,6 +97,20 @@ describe("SentencesPage filters", () => {
     await waitFor(() => expect(screen.getByTestId("loc").textContent).toContain("topic=cafe"));
   });
 
+  it("names the topic being typed, or says it is new", async () => {
+    const user = userEvent.setup();
+    sentenceTopics.mockResolvedValue({ topics: ["cafe"], labels: { cafe: "카페", sustainability: "지속 가능한 생활" } } as never);
+    renderPage();
+    await waitFor(() => expect(filterOrder().length).toBe(3));
+    await user.click(screen.getByRole("button", { name: /문장 추가/ }));
+    const topic = screen.getByRole("textbox", { name: /^주제/ });
+    await user.type(topic, "sustainability");
+    expect(screen.getByText("지속 가능한 생활")).toBeInTheDocument();
+    await user.clear(topic);
+    await user.type(topic, "brand_new");
+    expect(screen.getByText(/새 주제/)).toBeInTheDocument();
+  });
+
   it("still writes the same query parameter when a level is picked", async () => {
     const user = userEvent.setup();
     renderPage();
