@@ -1404,7 +1404,8 @@ export const adminApi = {
   // Sentences
   listSentences: (params: Query) =>
     http.get<Page<AdminSentence>>("/admin/sentences", params),
-  sentenceTopics: () => http.get<{ topics: string[] }>("/admin/sentences/topics"),
+  /** `labels`: Korean names of the topics the curriculum defines; others show as their code. */
+  sentenceTopics: () => http.get<{ topics: string[]; labels?: Record<string, string> }>("/admin/sentences/topics"),
   createSentence: (body: Partial<AdminSentence> & { korean: string; translation: string }) =>
     http.post<AdminSentence>("/admin/sentences", body),
   createSentencesBatch: (items: Record<string, unknown>[]) =>

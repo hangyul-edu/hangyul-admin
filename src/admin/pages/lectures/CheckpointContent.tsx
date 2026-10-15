@@ -16,6 +16,8 @@ import { errorMessage } from "../../../lib/http";
 import { Button, ErrorState, Input, LoadingState, SearchBox, Select, Textarea } from "../../components/kit";
 import type { QuizDraft } from "../Quizzes";
 import { criteriaGraded, draftFromQuiz, draftToBody } from "../Quizzes";
+import { TopikTypeSelect } from "../../components/TopikTypeSelect";
+import { typeForSection } from "../../lib/topik";
 
 // ---- Sentence ----------------------------------------------------------------
 
@@ -412,7 +414,12 @@ export function QuizFields({
               value={draft.topik_section}
               disabled={readOnly}
               aria-label="TOPIK 영역"
-              onChange={(e) => set({ topik_section: e.target.value })}
+              onChange={(e) =>
+                set({
+                  topik_section: e.target.value,
+                  topik_question_type: typeForSection(draft.topik_question_type, e.target.value),
+                })
+              }
             >
               <option value="">해당 없음</option>
               <option value="listening">듣기</option>
@@ -421,12 +428,13 @@ export function QuizFields({
             </Select>
           </Labeled>
         </div>
-        <Labeled label="문제 유형" hint="예: reading_03 (영역과 맞아야 해요)">
-          <Input
+        <Labeled label="문제 유형" hint="영역을 고르면 그 영역의 유형만 보여요.">
+          <TopikTypeSelect
             value={draft.topik_question_type}
-            readOnly={readOnly}
+            section={draft.topik_section}
+            disabled={readOnly}
             aria-label="문제 유형"
-            onChange={(e) => set({ topik_question_type: e.target.value })}
+            onChange={(code) => set({ topik_question_type: code })}
           />
         </Labeled>
         <Labeled label="힌트">

@@ -15,6 +15,7 @@ function withKorean(item: { title: string; translations?: CatalogTranslation[] }
   return ko && ko !== item.title ? `${item.title} (${ko})` : item.title;
 }
 import type { LanguageDraft } from "../../components/LanguageFields";
+import { TopikTypeSelect } from "../../components/TopikTypeSelect";
 
 export const TRACKS = [
   ["track_conversation", "회화"],
@@ -225,11 +226,10 @@ export function LectureFormModal({
           </Select>
         </Field>
         {track === "track_topik" && (
-          <Field label="TOPIK 문제 유형" hint="예: reading_03 — 강의 후 문제 연습의 유형">
-            <Input
+          <Field label="TOPIK 문제 유형" hint="강의 후 문제 연습의 유형">
+            <TopikTypeSelect
               value={draft.topik_question_type}
-              maxLength={24}
-              onChange={(e) => setDraft({ ...draft, topik_question_type: e.target.value })}
+              onChange={(code) => setDraft({ ...draft, topik_question_type: code })}
             />
           </Field>
         )}

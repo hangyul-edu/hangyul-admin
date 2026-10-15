@@ -114,7 +114,8 @@ describe("LectureFormModal", () => {
 
   it("sends an emptied TOPIK question type as null so the server clears it", async () => {
     renderForm(LECTURE);
-    await userEvent.clear(screen.getByLabelText(/TOPIK 문제 유형/));
+    await userEvent.click(screen.getByLabelText(/TOPIK 문제 유형/));
+    await userEvent.click(screen.getByRole("option", { name: "선택 안 함" }));
     await userEvent.click(screen.getByRole("button", { name: "저장" }));
 
     await waitFor(() => expect(adminApi.updateLecture).toHaveBeenCalledTimes(1));

@@ -105,6 +105,8 @@ export function SentencesPage() {
     queryKey: ["admin", "sentence-topics"],
     queryFn: adminApi.sentenceTopics,
   });
+  // A curriculum topic reads as its Korean name; the code stays in the tooltip.
+  const topicName = (code: string) => topics.data?.labels?.[code] ?? code;
 
   const query = useQuery({
     queryKey: ["admin", "sentences", { q, level, topic, aiOnly, page }],
@@ -179,7 +181,14 @@ export function SentencesPage() {
     {
       key: "topic",
       header: "주제",
-      render: (s) => (s.topic ? <Badge tone="info">{s.topic}</Badge> : "—"),
+      render: (s) =>
+        s.topic ? (
+          <span title={s.topic}>
+            <Badge tone="info">{topicName(s.topic)}</Badge>
+          </span>
+        ) : (
+          "—"
+        ),
     },
     {
       key: "source",
@@ -293,7 +302,7 @@ export function SentencesPage() {
             <option value="">주제: 전체</option>
             {topics.data?.topics.map((t) => (
               <option key={t} value={t}>
-                {t}
+                {topicName(t)}
               </option>
             ))}
           </Select>

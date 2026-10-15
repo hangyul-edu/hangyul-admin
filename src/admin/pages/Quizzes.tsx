@@ -28,6 +28,8 @@ import {
   Textarea,
 } from "../components/kit";
 import type { Column } from "../components/kit";
+import { TopikTypeSelect } from "../components/TopikTypeSelect";
+import { TOPIK_SECTIONS, topikSectionLabel, topikTypeLabel, typeForSection } from "../lib/topik";
 
 const FORMATS = [
   ["single_choice", "객관식"],
@@ -35,11 +37,6 @@ const FORMATS = [
   ["free_response", "서술형"],
 ] as const;
 const FORMAT_LABEL = Object.fromEntries(FORMATS);
-const SECTIONS = [
-  ["listening", "듣기"],
-  ["reading", "읽기"],
-  ["writing", "쓰기"],
-] as const;
 
 const BATCH_TEMPLATE = JSON.stringify(
   [
@@ -316,9 +313,9 @@ export function QuizzesPage() {
       render: (quiz) =>
         quiz.topik_section ? (
           <div>
-            <Badge tone="info">{quiz.topik_section}</Badge>
+            <Badge tone="info">{topikSectionLabel(quiz.topik_section)}</Badge>
             {quiz.topik_question_type && (
-              <div className="hgadm-cell-sub">{quiz.topik_question_type}</div>
+              <div className="hgadm-cell-sub">{topikTypeLabel(quiz.topik_question_type)}</div>
             )}
           </div>
         ) : (
@@ -442,7 +439,7 @@ export function QuizzesPage() {
             onChange={(e) => filters.patch({ topik_section: e.target.value, page: null })}
           >
             <option value="">영역: 전체</option>
-            {SECTIONS.map(([value, label]) => (
+            {TOPIK_SECTIONS.map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
               </option>
@@ -608,22 +605,27 @@ export function QuizzesPage() {
               <Field label="TOPIK 영역">
                 <Select
                   value={draft.topik_section}
-                  onChange={(e) => setDraft({ ...draft, topik_section: e.target.value })}
+                  onChange={(e) =>
+                    setDraft({
+                      ...draft,
+                      topik_section: e.target.value,
+                      topik_question_type: typeForSection(draft.topik_question_type, e.target.value),
+                    })
+                  }
                 >
                   <option value="">해당 없음</option>
-                  {SECTIONS.map(([value, label]) => (
+                  {TOPIK_SECTIONS.map(([value, label]) => (
                     <option key={value} value={value}>
                       {label}
                     </option>
                   ))}
                 </Select>
               </Field>
-              <Field label="TOPIK 문제 유형" hint="예: reading_03">
-                <Input
+              <Field label="TOPIK 문제 유형" hint="영역을 고르면 그 영역의 유형만 보여요.">
+                <TopikTypeSelect
                   value={draft.topik_question_type}
-                  onChange={(e) =>
-                    setDraft({ ...draft, topik_question_type: e.target.value })
-                  }
+                  section={draft.topik_section}
+                  onChange={(code) => setDraft({ ...draft, topik_question_type: code })}
                 />
               </Field>
               <Field label="TOPIK 급수" required hint="1~6급 (회화 레벨과 다른 척도)">

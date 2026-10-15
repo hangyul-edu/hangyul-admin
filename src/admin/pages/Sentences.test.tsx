@@ -85,6 +85,18 @@ describe("SentencesPage filters", () => {
     expect(toolbar.querySelectorAll(".hgadm-select").length).toBe(3);
   });
 
+  it("names a curriculum topic in Korean and filters by its code", async () => {
+    const user = userEvent.setup();
+    sentenceTopics.mockResolvedValue({ topics: ["cafe", "daily"], labels: { cafe: "카페" } } as never);
+    renderPage();
+    await waitFor(() => expect(filterOrder().length).toBe(3));
+    const toolbar = document.querySelector(".hgadm-toolbar") as HTMLElement;
+    await user.click(within(toolbar).getByText("주제: 전체"));
+    expect(await screen.findByRole("option", { name: "daily" })).toBeInTheDocument();
+    await user.click(screen.getByRole("option", { name: "카페" }));
+    await waitFor(() => expect(screen.getByTestId("loc").textContent).toContain("topic=cafe"));
+  });
+
   it("still writes the same query parameter when a level is picked", async () => {
     const user = userEvent.setup();
     renderPage();

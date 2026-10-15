@@ -28,6 +28,7 @@ import {
   formatDateTime,
 } from "../lib/format";
 import type { Column } from "../components/kit";
+import { topikTypeLabel } from "../lib/topik";
 
 /** `GeneratedContentKind` on the backend — the values the list filters on. */
 const SENTENCE_KIND = "conversation_sentence";
@@ -152,7 +153,7 @@ export function AiContentPage() {
         <div>
           <Badge tone="info">{KIND_LABEL[g.content_kind] ?? g.content_kind}</Badge>
           {g.topik_question_type && (
-            <div className="hgadm-cell-sub">{g.topik_question_type}</div>
+            <div className="hgadm-cell-sub">{topikTypeLabel(g.topik_question_type)}</div>
           )}
         </div>
       ),
@@ -312,7 +313,7 @@ export function AiContentPage() {
                 ["생성일", formatDateTime(detail.data.created_at)],
                 ["생성 경로", detail.data.source],
                 ["주제", detail.data.topic],
-                ["TOPIK 유형", detail.data.topik_question_type],
+                ["TOPIK 유형", detail.data.topik_question_type ? topikTypeLabel(detail.data.topik_question_type) : null],
                 ["언어", detail.data.language],
                 ["요청 사용자", detail.data.created_by_user_id],
                 [
