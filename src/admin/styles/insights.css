@@ -120,7 +120,8 @@
 .hgins-grid {
   display: grid;
   gap: 16px;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  /* min(): a column never asks for more than the screen has. */
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
   margin-bottom: 16px;
 }
 .hgins-grid > .hgadm-card {
@@ -350,6 +351,8 @@
 }
 .hgins-seg {
   display: inline-flex;
+  flex-wrap: wrap;
+  max-width: 100%;
   padding: 3px;
   gap: 2px;
   background: var(--surface);
@@ -802,5 +805,27 @@
   }
   .hgins-status__verdict {
     justify-self: start;
+  }
+}
+
+/* Phones: a period picker or a long code chip wraps instead of pushing the
+   page sideways. */
+@media (max-width: 720px) {
+  .hgins-panel__actions,
+  .hgins-panel__actions .hgins-period {
+    max-width: 100%;
+  }
+  .hgins-period__custom {
+    max-width: 100%;
+  }
+  .hgins-period__custom input {
+    width: auto;
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .hgadm-prof-chips .hgadm-badge {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 }

@@ -196,8 +196,7 @@ export function BannersPage() {
           {query.data.items.map((banner, index) => (
             <div
               key={banner.banner_id}
-              className="hgadm-card"
-              style={{ display: "flex", gap: 16, padding: 14, alignItems: "center" }}
+              className="hgadm-card hgadm-banner-row"
             >
               <OrderNumber position={index + 1} />
               {/* As the app shows it: the card's 15:8 with the chosen crop. */}
@@ -207,7 +206,7 @@ export function BannersPage() {
                 alt={banner.alt_text}
                 imgStyle={banner.image_crop ? croppedImageStyle(banner.image_crop) : undefined}
               />
-              <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="hgadm-banner-row__info">
                 <div className="hgadm-row hgadm-row--wrap">
                   <Badge tone={banner.is_active ? "success" : "neutral"} dot>
                     {banner.is_active ? "노출 중" : "비활성"}

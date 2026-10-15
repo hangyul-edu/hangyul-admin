@@ -1760,6 +1760,18 @@ body {
   color: var(--warning);
 }
 /* List thumbnail: the card as the app shows it (15:8, chosen crop). */
+/* One banner in the list: order, preview, details, controls on one row
+   (on a phone the details take their own line under the preview). */
+.hgadm-banner-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px;
+}
+.hgadm-banner-row__info {
+  flex: 1;
+  min-width: 0;
+}
 .hgadm-crop-thumb {
   position: relative;
   flex-shrink: 0;
@@ -2580,15 +2592,41 @@ a.hgadm-recent--link:hover {
   .hgadm-content {
     padding: 20px 16px 40px;
   }
+  /* minmax(0, …): a plain 1fr track grows to its widest unbreakable content
+     (a long email, a row of buttons) and pushed cards past a phone screen. */
   .hgadm-form-grid,
   .hgadm-grid-2 {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .hgadm-form-grid .span-2 {
     grid-column: span 1;
   }
   .hgadm-dl {
-    grid-template-columns: 130px 1fr;
+    grid-template-columns: minmax(0, 130px) minmax(0, 1fr);
+  }
+}
+
+/* Phones: nothing may push the page sideways. Rows of controls wrap instead
+   of holding their desktop width. */
+@media (max-width: 720px) {
+  .hgadm-page-head__actions {
+    max-width: 100%;
+  }
+  .hgadm-card__head {
+    flex-wrap: wrap;
+  }
+  .hgadm-card__head > .hgadm-row {
+    flex-wrap: wrap;
+    max-width: 100%;
+  }
+  .hgadm-dl {
+    grid-template-columns: minmax(0, 96px) minmax(0, 1fr);
+  }
+  .hgadm-banner-row {
+    flex-wrap: wrap;
+  }
+  .hgadm-banner-row__info {
+    flex-basis: 100%;
   }
 }
 
