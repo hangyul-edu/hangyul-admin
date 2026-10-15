@@ -124,7 +124,6 @@ export function AuditLogsPage() {
           <Select
             value={actorType}
             onChange={(e) => filters.patch({ actor_type: e.target.value, page: null })}
-            style={{ width: 150 }}
           >
             <option value="">수행자: 전체</option>
             <option value="admin">관리자</option>
@@ -133,7 +132,6 @@ export function AuditLogsPage() {
           <Select
             value={objectType}
             onChange={(e) => filters.patch({ object_type: e.target.value, page: null })}
-            style={{ width: 170 }}
           >
             <option value="">대상: 전체</option>
             {AUDIT_OBJECT_TYPES.map(([value, label]) => (

@@ -289,7 +289,6 @@ export function SentencesPage() {
           <Select
             value={topic}
             onChange={(e) => filters.patch({ topic: e.target.value, page: null })}
-            style={{ minWidth: 150 }}
           >
             <option value="">주제: 전체</option>
             {topics.data?.topics.map((t) => (
@@ -301,7 +300,6 @@ export function SentencesPage() {
           <Select
             value={level}
             onChange={(e) => filters.patch({ level: e.target.value, page: null })}
-            style={{ width: 120 }}
           >
             <option value="">레벨: 전체</option>
             {CONVERSATION_LEVELS.map((l) => (
@@ -313,7 +311,6 @@ export function SentencesPage() {
           <Select
             value={aiOnly}
             onChange={(e) => filters.patch({ is_ai_generated: e.target.value, page: null })}
-            style={{ width: 140 }}
           >
             <option value="">출처: 전체</option>
             <option value="true">AI 생성</option>

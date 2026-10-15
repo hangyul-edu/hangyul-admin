@@ -396,7 +396,6 @@ function CouponSearchTab() {
             setStatus(e.target.value);
             setPage(1);
           }}
-          style={{ width: 140 }}
         >
           <option value="">상태: 전체</option>
           {["unused", "redeemed", "revoked"].map((s) => (
@@ -411,7 +410,6 @@ function CouponSearchTab() {
             setBatchId(e.target.value);
             setPage(1);
           }}
-          style={{ minWidth: 200 }}
         >
           <option value="">발행 묶음: 전체</option>
           {batches.data?.items.map((b) => (

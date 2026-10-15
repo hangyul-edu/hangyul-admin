@@ -488,7 +488,6 @@ function PaymentsTab() {
             setStatus(e.target.value);
             setPage(1);
           }}
-          style={{ width: 140 }}
         >
           <option value="">상태: 전체</option>
           {["succeeded", "failed", "refunded"].map((s) => (
@@ -616,7 +615,6 @@ function InvoicesTab() {
             setStatus(e.target.value);
             setPage(1);
           }}
-          style={{ width: 140 }}
         >
           <option value="">상태: 전체</option>
           {["open", "paid", "unpaid", "refunded", "void"].map((s) => (

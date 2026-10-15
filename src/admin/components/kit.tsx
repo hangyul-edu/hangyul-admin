@@ -3,7 +3,7 @@
 import { Children, isValidElement, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { ButtonHTMLAttributes, CSSProperties, InputHTMLAttributes, KeyboardEvent as ReactKeyboardEvent, ReactNode, TextareaHTMLAttributes } from "react";
-import { AlertCircle, AlertTriangle, Check, ChevronDown, Inbox, Search as SearchIcon, X } from "lucide-react";
+import { AlertCircle, AlertTriangle, Check, ChevronDown, ChevronsLeft, ChevronsRight, ImageOff, Inbox, Search as SearchIcon, X } from "lucide-react";
 import { formatDateTimeParts } from "../lib/format";
 
 /* ---------- Button ---------- */
@@ -411,7 +411,18 @@ export function Select({
         onClick={() => (open ? close(false) : openMenu())}
         onKeyDown={onTriggerKey}
       >
-        <span>{selectedLabel}</span>
+        <span className="hgadm-select-trigger__label">
+          <span className="hgadm-select-trigger__value">{selectedLabel}</span>
+          {/* Invisible copies of every text option share the value's grid cell,
+              so a filter that sizes to its content is as wide as its longest
+              option and does not jump as the choice changes. The text lives
+              in a pseudo-element: never announced, never matched as page text. */}
+          {options.map((o, i) =>
+            typeof o.label === "string" ? (
+              <span key={i} className="hgadm-select-trigger__sizer" data-label={o.label} aria-hidden />
+            ) : null,
+          )}
+        </span>
         <ChevronDown size={16} strokeWidth={2} className="hgadm-select-trigger__caret" aria-hidden />
       </button>
       {open &&
@@ -723,18 +734,21 @@ export function DataTable<T>({
                   aria-sort={
                     isActive ? (order === "asc" ? "ascending" : "descending") : undefined
                   }
-                  onClick={
-                    sortable
-                      ? () =>
-                          onSortChange!(
-                            col.sortKey!,
-                            isActive && order === "desc" ? "asc" : "desc",
-                          )
-                      : undefined
-                  }
                 >
-                  {col.header}
-                  {isActive ? (order === "asc" ? " ▲" : " ▼") : ""}
+                  {sortable ? (
+                    <button
+                      type="button"
+                      className="hgadm-table__sort"
+                      onClick={() =>
+                        onSortChange!(col.sortKey!, isActive && order === "desc" ? "asc" : "desc")
+                      }
+                    >
+                      {col.header}
+                      {isActive ? (order === "asc" ? " ▲" : " ▼") : ""}
+                    </button>
+                  ) : (
+                    col.header
+                  )}
                 </th>
               );
             })}
@@ -745,7 +759,16 @@ export function DataTable<T>({
             <tr>
               <td colSpan={columns.length}>
                 <div className="hgadm-table__empty">
-                  {empty ?? "표시할 항목이 없습니다."}
+                  {typeof empty === "string" || empty === undefined ? (
+                    <>
+                      <span className="hgadm-table__empty-icon" aria-hidden>
+                        <Inbox size={22} strokeWidth={1.75} />
+                      </span>
+                      {empty || "표시할 항목이 없습니다."}
+                    </>
+                  ) : (
+                    empty
+                  )}
                 </div>
               </td>
             </tr>
@@ -789,11 +812,16 @@ export function Pagination({
   return (
     <div className="hgadm-pagination">
       <span>
-        {total.toLocaleString()}건 중 {from.toLocaleString()}–{to.toLocaleString()}
+        {total === 0
+          ? "0건"
+          : pages === 1
+            ? `${total.toLocaleString()}건`
+            : `${total.toLocaleString()}건 중 ${from.toLocaleString()}–${to.toLocaleString()}`}
       </span>
+      {pages > 1 && (
       <div className="hgadm-pagination__pages">
-        <Button size="sm" variant="ghost" disabled={page <= 1} onClick={() => onPageChange(1)}>
-          «
+        <Button size="sm" variant="ghost" disabled={page <= 1} onClick={() => onPageChange(1)} aria-label="첫 페이지">
+          <ChevronsLeft size={15} strokeWidth={2} aria-hidden />
         </Button>
         <Button
           size="sm"
@@ -803,7 +831,7 @@ export function Pagination({
         >
           이전
         </Button>
-        <span style={{ padding: "5px 8px", fontWeight: 700 }}>
+        <span className="hgadm-pagination__current">
           {page} / {pages}
         </span>
         <Button
@@ -819,11 +847,49 @@ export function Pagination({
           variant="ghost"
           disabled={page >= pages}
           onClick={() => onPageChange(pages)}
+          aria-label="마지막 페이지"
         >
-          »
+          <ChevronsRight size={15} strokeWidth={2} aria-hidden />
         </Button>
       </div>
+      )}
     </div>
+  );
+}
+
+/* ---------- Thumbnail ---------- */
+
+/**
+ * A content image (course cover, lecture thumbnail, banner) at a fixed size.
+ * A missing or unreachable image shows a calm placeholder instead of the
+ * browser's broken-image glyph, so a list with one bad URL still reads cleanly.
+ */
+export function Thumb({
+  src,
+  alt = "",
+  className = "hgadm-thumb",
+  imgStyle,
+}: {
+  src: string | null | undefined;
+  alt?: string;
+  /** The frame's class, which sets its size (`hgadm-thumb` or `hgadm-crop-thumb`). */
+  className?: string;
+  /** For a cropped preview: how the image sits inside the frame. */
+  imgStyle?: CSSProperties;
+}) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [src]);
+  const showImage = Boolean(src) && !failed;
+  return (
+    <span className={`${className} hgadm-thumb-frame`}>
+      {showImage ? (
+        <img src={src!} alt={alt} loading="lazy" style={imgStyle} onError={() => setFailed(true)} />
+      ) : (
+        <span className="hgadm-thumb-frame__missing" role="img" aria-label={src ? "이미지를 불러오지 못함" : "이미지 없음"}>
+          <ImageOff size={18} strokeWidth={1.75} aria-hidden />
+        </span>
+      )}
+    </span>
   );
 }
 

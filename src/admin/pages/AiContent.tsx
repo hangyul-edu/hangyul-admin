@@ -193,7 +193,6 @@ export function AiContentPage() {
           <Select
             value={reviewStatus}
             onChange={(e) => filters.patch({ review_status: e.target.value, page: null })}
-            style={{ width: 160 }}
           >
             <option value="pending">검수 대기</option>
             <option value="approved">승인됨</option>
@@ -207,7 +206,6 @@ export function AiContentPage() {
             onChange={(e) =>
               filters.patch({ content_kind: e.target.value, level: null, page: null })
             }
-            style={{ width: 140 }}
           >
             <option value="">종류: 전체</option>
             <option value={SENTENCE_KIND}>문장</option>
@@ -216,7 +214,6 @@ export function AiContentPage() {
           <Select
             value={level}
             onChange={(e) => filters.patch({ level: e.target.value, page: null })}
-            style={{ width: 120 }}
           >
             <option value="">{levelLabel}: 전체</option>
             {levelOptions.map((l) => (

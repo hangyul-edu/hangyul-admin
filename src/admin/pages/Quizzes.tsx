@@ -429,7 +429,6 @@ export function QuizzesPage() {
           <Select
             value={format}
             onChange={(e) => filters.patch({ answer_format: e.target.value, page: null })}
-            style={{ width: 150 }}
           >
             <option value="">형식: 전체</option>
             {FORMATS.map(([value, label]) => (
@@ -441,7 +440,6 @@ export function QuizzesPage() {
           <Select
             value={section}
             onChange={(e) => filters.patch({ topik_section: e.target.value, page: null })}
-            style={{ width: 140 }}
           >
             <option value="">영역: 전체</option>
             {SECTIONS.map(([value, label]) => (
@@ -453,7 +451,6 @@ export function QuizzesPage() {
           <Select
             value={level}
             onChange={(e) => filters.patch({ level: e.target.value, page: null })}
-            style={{ width: 120 }}
           >
             <option value="">급수: 전체</option>
             {TOPIK_GRADES.map((l) => (
@@ -468,7 +465,6 @@ export function QuizzesPage() {
           <Select
             value={aiOnly}
             onChange={(e) => filters.patch({ is_ai_generated: e.target.value, page: null })}
-            style={{ width: 140 }}
           >
             <option value="">출처: 전체</option>
             <option value="true">AI 생성</option>

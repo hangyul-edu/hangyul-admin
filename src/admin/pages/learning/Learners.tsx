@@ -98,7 +98,6 @@ export function LearnersPage() {
             aria-label="트랙"
             value={track}
             onChange={(e) => f.patch({ track: e.target.value, band: null, page: null })}
-            style={{ width: 130 }}
           >
             <option value="">전체 트랙</option>
             <option value="conversation">{TRACK_LABEL.conversation}</option>
@@ -109,7 +108,6 @@ export function LearnersPage() {
             value={band}
             disabled={!track}
             onChange={(e) => f.patch({ band: e.target.value, page: null })}
-            style={{ width: 130 }}
           >
             <option value="">전체 레벨</option>
             {Array.from({ length: track === "topik" ? 6 : 10 }, (_, i) => i + 1).map((n) => (
@@ -122,7 +120,6 @@ export function LearnersPage() {
             aria-label="최근 학습"
             value={activeSince}
             onChange={(e) => f.patch({ active_since_days: e.target.value, page: null })}
-            style={{ width: 150 }}
           >
             <option value="">전체 기간</option>
             <option value="7">최근 7일 학습</option>
@@ -132,7 +129,6 @@ export function LearnersPage() {
             aria-label="복습 기한"
             value={overdue}
             onChange={(e) => f.patch({ review_overdue: e.target.value, page: null })}
-            style={{ width: 170 }}
           >
             <option value="">복습 상태 전체</option>
             <option value="true">밀린 복습 있음</option>

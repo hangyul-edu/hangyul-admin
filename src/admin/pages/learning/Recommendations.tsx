@@ -278,7 +278,7 @@ function Simulation() {
           <LearnerPicker value={learner} onChange={setLearner} />
         </Field>
         <Field label="과정">
-          <Select value={track} onChange={(e) => setTrack(e.target.value)} style={{ width: 120 }}>
+          <Select value={track} onChange={(e) => setTrack(e.target.value)}>
             <option value="conversation">회화</option>
             <option value="topik">TOPIK</option>
           </Select>

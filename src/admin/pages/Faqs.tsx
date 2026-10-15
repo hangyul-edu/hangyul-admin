@@ -353,7 +353,6 @@ export function FaqsPage() {
           <Select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            style={{ width: 170 }}
           >
             <option value="">카테고리: 전체</option>
             {CATEGORIES.map(([value, label]) => (

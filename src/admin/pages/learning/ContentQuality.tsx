@@ -265,17 +265,17 @@ function DiagnosticsTab() {
       description="회원이 실제로 풀어 본 결과예요. 예상보다 훨씬 어렵거나, 한 오답에 답이 몰리는 문항은 내용을 다시 확인해 보세요. 예상 난이도는 작성자가 정한 값, 실제 난이도는 스스로 틀린 비율이에요."
     >
       <div className="hgadm-toolbar">
-        <Select value={track} aria-label="트랙" onChange={(e) => f.patch({ track: e.target.value, page: null })} style={{ width: 140 }}>
+        <Select value={track} aria-label="트랙" onChange={(e) => f.patch({ track: e.target.value, page: null })}>
           <option value="">전체 과정</option>
           <option value="conversation">회화</option>
           <option value="topik">TOPIK</option>
         </Select>
-        <Select value={String(minExposures)} aria-label="최소 노출" onChange={(e) => f.patch({ min_exposures: e.target.value, page: null })} style={{ width: 180 }}>
+        <Select value={String(minExposures)} aria-label="최소 노출" onChange={(e) => f.patch({ min_exposures: e.target.value, page: null })}>
           <option value="1">1번 이상 출제된 문항</option>
           <option value="10">10번 이상 출제된 문항</option>
           <option value="30">30번 이상 출제된 문항</option>
         </Select>
-        <Select value={sort} aria-label="정렬" onChange={(e) => f.patch({ sort: e.target.value, page: null })} style={{ width: 150 }}>
+        <Select value={sort} aria-label="정렬" onChange={(e) => f.patch({ sort: e.target.value, page: null })}>
           <option value="exposures">많이 출제된 순</option>
           <option value="band">레벨 순</option>
         </Select>
@@ -378,14 +378,14 @@ function QueueTab() {
         상세를 열면 정답이 보여요. &quot;블라인드 풀이&quot;로 먼저 풀어 정답 키가 맞는지 확인하면 게시 조건이 채워져요.
       </Notice>
       <div className="hgadm-toolbar">
-        <Select value={lifecycle} aria-label="상태" onChange={(e) => f.patch({ lifecycle: e.target.value, page: null })} style={{ width: 140 }}>
+        <Select value={lifecycle} aria-label="상태" onChange={(e) => f.patch({ lifecycle: e.target.value, page: null })}>
           <option value="in_review">검수 중</option>
           <option value="draft">초안</option>
           <option value="published">게시됨</option>
           <option value="retired">회수됨</option>
           <option value="all">전체</option>
         </Select>
-        <Select value={reviewStatus} aria-label="검수 상태" onChange={(e) => f.patch({ review_status: e.target.value, page: null })} style={{ width: 180 }}>
+        <Select value={reviewStatus} aria-label="검수 상태" onChange={(e) => f.patch({ review_status: e.target.value, page: null })}>
           <option value="">검수 상태 전체</option>
           <option value="legacy_unreviewed">기존 콘텐츠(미검수)</option>
           <option value="auto_published">자동 게시(미검수)</option>
@@ -394,7 +394,7 @@ function QueueTab() {
           <option value="changes_requested">수정 요청</option>
           <option value="rejected">반려됨</option>
         </Select>
-        <Select value={track} aria-label="트랙" onChange={(e) => f.patch({ track: e.target.value, page: null })} style={{ width: 140 }}>
+        <Select value={track} aria-label="트랙" onChange={(e) => f.patch({ track: e.target.value, page: null })}>
           <option value="">전체 과정</option>
           <option value="conversation">회화</option>
           <option value="topik">TOPIK</option>

@@ -217,7 +217,6 @@ export function UsersPage() {
           <Select
             value={role}
             onChange={(e) => filters.patch({ role: e.target.value, page: null })}
-            style={{ width: 130 }}
           >
             <option value="">역할: 전체</option>
             <option value="member">일반</option>
@@ -227,7 +226,6 @@ export function UsersPage() {
           <Select
             value={status}
             onChange={(e) => filters.patch({ status: e.target.value, page: null })}
-            style={{ width: 140 }}
           >
             <option value="">상태: 전체</option>
             {/* Generated from the one vocabulary, so a filter can never offer
@@ -243,7 +241,6 @@ export function UsersPage() {
             onChange={(e) =>
               filters.patch({ subscription_status: e.target.value, page: null })
             }
-            style={{ width: 150 }}
           >
             <option value="">구독: 전체</option>
             <option value="active">구독 중</option>

@@ -83,7 +83,7 @@ export function ProficiencyDetailPage() {
         </div>
       </div>
       <div className="hgadm-toolbar">
-        <Select aria-label="트랙" value={track} onChange={(e) => f.patch({ track: e.target.value })} style={{ width: 120 }}>
+        <Select aria-label="트랙" value={track} onChange={(e) => f.patch({ track: e.target.value })}>
           <option value="conversation">회화</option>
           <option value="topik">TOPIK</option>
         </Select>
@@ -342,7 +342,7 @@ function GrowthPanel({ userId, track }: { userId: string; track: ProficiencyTrac
   return (
     <>
       <div className="hgadm-toolbar">
-        <Select aria-label="기간" value={period} onChange={(e) => setPeriod(e.target.value)} style={{ width: 110 }}>
+        <Select aria-label="기간" value={period} onChange={(e) => setPeriod(e.target.value)}>
           <option value="7">7일</option>
           <option value="30">30일</option>
           <option value="90">90일</option>
@@ -643,7 +643,7 @@ function CorrectionPanel({ userId, track }: { userId: string; track: Proficiency
         일반적인 승급에는 관리자 승인이 필요하지 않습니다.
       </p>
       <div className="hgadm-toolbar">
-        <Select aria-label="확인 레벨" value={confirmed} onChange={(e) => setConfirmed(e.target.value)} style={{ width: 150 }}>
+        <Select aria-label="확인 레벨" value={confirmed} onChange={(e) => setConfirmed(e.target.value)}>
           <option value="">확인 레벨 없음</option>
           {Array.from({ length: max }, (_, i) => i + 1).map((n) => (
             <option key={n} value={String(n)}>
@@ -651,7 +651,7 @@ function CorrectionPanel({ userId, track }: { userId: string; track: Proficiency
             </option>
           ))}
         </Select>
-        <Select aria-label="임시 레벨" value={provisional} onChange={(e) => setProvisional(e.target.value)} style={{ width: 150 }}>
+        <Select aria-label="임시 레벨" value={provisional} onChange={(e) => setProvisional(e.target.value)}>
           <option value="">임시 레벨 없음</option>
           {Array.from({ length: max }, (_, i) => i + 1).map((n) => (
             <option key={n} value={String(n)}>

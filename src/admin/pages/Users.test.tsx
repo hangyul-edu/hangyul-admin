@@ -121,7 +121,7 @@ describe("UsersPage", () => {
     // share the value `active` and both went through one map.
     expect(screen.getAllByText("활성").length).toBeGreaterThan(0);
     expect(screen.queryByText("이용 중")).not.toBeInTheDocument();
-    expect(screen.getByText(/1건 중 1–1/)).toBeInTheDocument();
+    expect(screen.getByText("1건")).toBeInTheDocument();
     // How the member signs in, by name: email first, then the social sign-ins.
     expect(screen.getByRole("columnheader", { name: "로그인 수단" })).toBeInTheDocument();
     for (const method of ["이메일", "카카오", "LINE"]) expect(screen.getByText(method)).toBeInTheDocument();

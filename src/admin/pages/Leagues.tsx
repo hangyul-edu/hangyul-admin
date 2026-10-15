@@ -427,7 +427,6 @@ export function LeaguesPage() {
           <Select
             value={tier}
             onChange={(e) => filters.patch({ tier: e.target.value, page: null })}
-            style={{ width: 160 }}
           >
             <option value="">등급: 전체</option>
             {LEAGUE_TIERS.map((value) => (
@@ -955,7 +954,6 @@ export function UnassignedMembersPage() {
           <Select
             value={state}
             onChange={(e) => filters.patch({ state: e.target.value, page: null })}
-            style={{ width: 190 }}
           >
             <option value="">전체 미배정 회원</option>
             <option value="DORMANT">휴면만</option>
@@ -968,7 +966,6 @@ export function UnassignedMembersPage() {
             }
             // Matches the sibling; its longest option measures 113px, which
             // needs more than 170 once the select's own chrome is counted.
-            style={{ width: 190 }}
           >
             <option value="">전 주 학습 여부 전체</option>
             <option value="1">전 주 미학습만</option>

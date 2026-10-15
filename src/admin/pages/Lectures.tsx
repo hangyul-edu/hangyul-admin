@@ -20,6 +20,7 @@ import {
   Select,
   statusLabel,
   statusTone,
+  Thumb,
 } from "../components/kit";
 import type { Column } from "../components/kit";
 import { formatClock } from "../lib/videoFile";
@@ -136,7 +137,7 @@ export function LecturesPage() {
       header: "강의",
       render: (l) => (
         <div className="hgadm-row">
-          {l.thumbnail_url && <img src={l.thumbnail_url} alt="" className="hgadm-thumb" />}
+          <Thumb src={l.thumbnail_url} />
           <div>
             <div className="hgadm-title-row">
               <span className="hgadm-cell-main">{l.title}</span>
@@ -250,7 +251,6 @@ export function LecturesPage() {
           <Select
             value={courseId}
             onChange={(e) => filters.patch({ course_id: e.target.value, series_id: null, page: null })}
-            style={{ minWidth: 180 }}
           >
             <option value="">코스: 전체</option>
             {courses.data?.items.map((c) => (
@@ -264,7 +264,6 @@ export function LecturesPage() {
             disabled={!courseId}
             aria-label="시리즈"
             onChange={(e) => filters.patch({ series_id: e.target.value, page: null })}
-            style={{ minWidth: 170 }}
           >
             <option value="">{courseId ? "시리즈: 전체" : "시리즈: 코스 먼저"}</option>
             {series.data?.items.map((s) => (
@@ -278,7 +277,6 @@ export function LecturesPage() {
           <Select
             value={track}
             onChange={(e) => filters.patch({ track_id: e.target.value, page: null })}
-            style={{ width: 150 }}
           >
             <option value="">학습 분야: 전체</option>
             {TRACKS.map(([value, label]) => (
@@ -290,7 +288,6 @@ export function LecturesPage() {
           <Select
             value={access}
             onChange={(e) => filters.patch({ access: e.target.value, page: null })}
-            style={{ width: 140 }}
           >
             <option value="">공개: 전체</option>
             <option value="free">무료</option>

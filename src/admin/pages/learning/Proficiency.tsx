@@ -202,17 +202,17 @@ export function ProficiencyLearnersPage() {
       <div className="hgadm-card">
         <div className="hgadm-toolbar">
           <SearchBox value={q} placeholder="사용자 ID 또는 닉네임" onSearch={(next) => f.patch({ q: next, page: null })} />
-          <Select aria-label="트랙" value={track} onChange={(e) => f.patch({ track: e.target.value, level: null, page: null })} style={{ width: 120 }}>
+          <Select aria-label="트랙" value={track} onChange={(e) => f.patch({ track: e.target.value, level: null, page: null })}>
             <option value="conversation">회화</option>
             <option value="topik">TOPIK</option>
           </Select>
-          <Select aria-label="상태" value={status} onChange={(e) => f.patch({ status: e.target.value, page: null })} style={{ width: 130 }}>
+          <Select aria-label="상태" value={status} onChange={(e) => f.patch({ status: e.target.value, page: null })}>
             <option value="">전체 상태</option>
             <option value="confirmed">레벨 확정</option>
             <option value="provisional">임시 레벨</option>
             <option value="insufficient_evidence">근거 모으는 중</option>
           </Select>
-          <Select aria-label="확인 레벨" value={level} onChange={(e) => f.patch({ level: e.target.value, page: null })} style={{ width: 120 }}>
+          <Select aria-label="확인 레벨" value={level} onChange={(e) => f.patch({ level: e.target.value, page: null })}>
             <option value="">전체 레벨</option>
             {Array.from({ length: track === "topik" ? 6 : 10 }, (_, i) => i + 1).map((n) => (
               <option key={n} value={String(n)}>
@@ -220,14 +220,14 @@ export function ProficiencyLearnersPage() {
               </option>
             ))}
           </Select>
-          <Select aria-label="주의 필요" value={flag} onChange={(e) => f.patch({ flag: e.target.value, page: null })} style={{ width: 205 }}>
+          <Select aria-label="주의 필요" value={flag} onChange={(e) => f.patch({ flag: e.target.value, page: null })}>
             <option value="">살펴볼 회원 전체</option>
             <option value="provisional">임시 레벨인 회원</option>
             <option value="insufficient">평가가 부족한 회원</option>
             <option value="stalled">30일째 제자리인 회원</option>
             <option value="errors">평가 오류·대기가 있는 회원</option>
           </Select>
-          <Select aria-label="성장 기간" value={period} onChange={(e) => f.patch({ period: e.target.value, page: null })} style={{ width: 140 }}>
+          <Select aria-label="성장 기간" value={period} onChange={(e) => f.patch({ period: e.target.value, page: null })}>
             <option value="7">최근 7일 성장</option>
             <option value="30">최근 30일 성장</option>
             <option value="90">최근 90일 성장</option>

@@ -111,7 +111,6 @@ export function SubscriptionsPage() {
               setStatus(e.target.value);
               setPage(1);
             }}
-            style={{ width: 170 }}
           >
             <option value="">상태: 전체</option>
             {STATUSES.map((s) => (

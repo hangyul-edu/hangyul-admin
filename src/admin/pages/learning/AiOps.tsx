@@ -374,7 +374,7 @@ function TutorSection() {
         <label className="hgadm-checkbox">
           <input type="checkbox" checked={unreviewed} onChange={(e) => f.patch({ unreviewed: e.target.checked ? "1" : null, tpage: null })} /> 아직 검수 안 한 답변만
         </label>
-        <Select value={route} aria-label="경로" onChange={(e) => f.patch({ route: e.target.value, tpage: null })} style={{ width: 190 }}>
+        <Select value={route} aria-label="경로" onChange={(e) => f.patch({ route: e.target.value, tpage: null })}>
           <option value="">모든 답변 방법</option>
           {Object.entries(ROUTE_LABEL).map(([k, label]) => (
             <option key={k} value={k}>

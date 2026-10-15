@@ -6,7 +6,7 @@ import { ArrowLeft } from "lucide-react";
 import { adminApi } from "../api";
 import { useAdminAuth } from "../auth";
 import { errorMessage } from "../../lib/http";
-import { Badge, Button, Dl, ErrorState, LoadingState, statusLabel, statusTone } from "../components/kit";
+import { Badge, Button, Dl, ErrorState, LoadingState, statusLabel, statusTone, Thumb } from "../components/kit";
 import { formatClock } from "../lib/videoFile";
 import { LectureFormModal, TRACK_LABEL } from "./lectures/LectureFormModal";
 import { LectureVideoPanel } from "./lectures/LectureVideoPanel";
@@ -228,7 +228,7 @@ export function LectureWorkspacePage() {
                 ...(l.track_id === "track_topik"
                   ? ([["TOPIK 문제 유형", l.topik_question_type ?? "—"]] as [string, string][])
                   : []),
-                ["썸네일", l.thumbnail_url ? <img src={l.thumbnail_url} alt="" className="hgadm-thumb" /> : "—"],
+                ["썸네일", l.thumbnail_url ? <Thumb src={l.thumbnail_url} /> : "—"],
               ]}
             />
           </div>

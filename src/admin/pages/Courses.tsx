@@ -16,6 +16,7 @@ import {
   LoadingState,
   Modal,
   Select,
+  Thumb,
 } from "../components/kit";
 import type { Column } from "../components/kit";
 import { LanguageFields, StandInBadge, koreanTitle, languageDraft, translationsOf } from "../components/LanguageFields";
@@ -168,12 +169,7 @@ export function CoursesPage() {
       key: "cover",
       header: "대표 이미지",
       width: 90,
-      render: (c) =>
-        c.cover_image_url ? (
-          <img src={c.cover_image_url} alt="" className="hgadm-thumb" />
-        ) : (
-          <span className="hgadm-muted">—</span>
-        ),
+      render: (c) => <Thumb src={c.cover_image_url} />,
     },
     {
       key: "title",
@@ -268,7 +264,7 @@ export function CoursesPage() {
 
       <div className="hgadm-card">
         <div className="hgadm-toolbar">
-          <Select value={track} onChange={(e) => setTrack(e.target.value)} style={{ width: 150 }}>
+          <Select value={track} onChange={(e) => setTrack(e.target.value)}>
             <option value="">학습 분야: 전체</option>
             {TRACKS.map(([value, label]) => (
               <option key={value} value={value}>

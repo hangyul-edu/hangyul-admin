@@ -20,6 +20,7 @@ import {
   LoadingState,
   Modal,
   Switch,
+  Thumb,
 } from "../components/kit";
 import {
   formatDateTime,
@@ -200,13 +201,12 @@ export function BannersPage() {
             >
               <OrderNumber position={index + 1} />
               {/* As the app shows it: the card's 15:8 with the chosen crop. */}
-              <span className="hgadm-crop-thumb">
-                <img
-                  src={banner.image_url}
-                  alt={banner.alt_text}
-                  style={banner.image_crop ? croppedImageStyle(banner.image_crop) : undefined}
-                />
-              </span>
+              <Thumb
+                className="hgadm-crop-thumb"
+                src={banner.image_url}
+                alt={banner.alt_text}
+                imgStyle={banner.image_crop ? croppedImageStyle(banner.image_crop) : undefined}
+              />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="hgadm-row hgadm-row--wrap">
                   <Badge tone={banner.is_active ? "success" : "neutral"} dot>

@@ -146,7 +146,7 @@ export function LearnerDetailPage() {
 
       {tab !== "overview" && tab !== "timeline" && tab !== "sessions" && (
         <div className="hgadm-toolbar">
-          <Select aria-label="트랙" value={track} onChange={(e) => f.patch({ track: e.target.value })} style={{ width: 140 }}>
+          <Select aria-label="트랙" value={track} onChange={(e) => f.patch({ track: e.target.value })}>
             <option value="conversation">{TRACK_LABEL.conversation}</option>
             <option value="topik">{TRACK_LABEL.topik}</option>
           </Select>
@@ -482,7 +482,6 @@ function EvidencePanel({
             setBefore(undefined);
             onSkillChange(e.target.value);
           }}
-          style={{ width: 280 }}
         >
           <option value="">모든 기술</option>
           {skills.map((s) => (
