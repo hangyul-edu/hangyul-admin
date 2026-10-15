@@ -123,8 +123,8 @@ const MONTHLY: MonthlyRevenueResponse = {
   ],
 };
 
-function renderPage() {
-  vi.mocked(adminApi.metricsOverview).mockResolvedValue(OVERVIEW);
+function renderPage(overview: MetricsOverview = OVERVIEW) {
+  vi.mocked(adminApi.metricsOverview).mockResolvedValue(overview);
   vi.mocked(adminApi.metricsTimeseries).mockResolvedValue({
     metric: "signups", range: "30d", points: [],
   } as never);
@@ -183,5 +183,34 @@ describe("dashboard alerts", () => {
       "href",
       "/payments?tab=invoices",
     );
+  });
+
+  it("opens the operations queue that lists what each background alert counts", async () => {
+    scopes = ["users:read", "commerce:read", "learners:read"];
+    renderPage({
+      ...OVERVIEW,
+      alerts: [
+        { code: "webhook_dlq", severity: "critical", count: 1, message: "웹훅 DLQ 1건" },
+        { code: "outbox_stuck", severity: "warning", count: 2, message: "아웃박스 지연 2건" },
+        { code: "scoring_exhausted", severity: "warning", count: 3, message: "채점 멈춤 3건" },
+      ],
+    });
+
+    // These used to open 결제·청구서, which lists none of them.
+    const href = async (message: string) => (await screen.findByText(message)).closest("a")?.getAttribute("href");
+    expect(await href("웹훅 DLQ 1건")).toBe("/operations?tab=webhooks");
+    expect(await href("아웃박스 지연 2건")).toBe("/operations?tab=outbox");
+    expect(await href("채점 멈춤 3건")).toBe("/operations?tab=scoring");
+  });
+
+  it("hides the scoring alert from an admin who cannot read learners", async () => {
+    scopes = ["users:read", "commerce:read"];
+    renderPage({
+      ...OVERVIEW,
+      alerts: [{ code: "scoring_exhausted", severity: "warning", count: 3, message: "채점 멈춤 3건" }],
+    });
+
+    expect(await screen.findByText("전체 사용자")).toBeInTheDocument();
+    expect(screen.queryByText("채점 멈춤 3건")).not.toBeInTheDocument();
   });
 });

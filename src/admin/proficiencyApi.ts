@@ -226,9 +226,38 @@ export interface Cohort {
   note: Bi;
 }
 
+/** A speaking task still waiting for its score (`/scoring-queue`). */
+export interface ScoringQueueItem {
+  attempt_id: string;
+  user_id: string;
+  nickname: string | null;
+  /** Masked. */
+  email: string | null;
+  family_id: string;
+  submitted_at: string | null;
+  /** Automatic scoring attempts used so far. */
+  attempts: number;
+  /** When the next automatic attempt is due; null once exhausted (or never tried). */
+  next_scoring_at: string | null;
+  /** Why the last attempt left it pending, e.g. `error:TimeoutError`. */
+  failure: string | null;
+  /** Every automatic attempt used: out of the queue until retried. */
+  exhausted: boolean;
+}
+
+export interface ScoringQueue {
+  max_attempts: number;
+  total: number;
+  exhausted: number;
+  items: ScoringQueueItem[];
+}
+
 const P = "/admin/proficiency";
 
 export const proficiencyAdminApi = {
+  scoringQueue: () => http.get<ScoringQueue>(`${P}/scoring-queue`),
+  retryScoring: (attemptId: string) =>
+    http.post<{ attempt_id: string; scoring_status: string; attempts: number }>(`${P}/scoring-queue/${attemptId}/retry`),
   learners: (params: Query) =>
     http.get<{ items: ProficiencyRow[]; total: number; page: number; page_size: number }>(`${P}/learners`, params),
   learner: (userId: string) => http.get<ProficiencyDetail>(`${P}/learners/${userId}`),

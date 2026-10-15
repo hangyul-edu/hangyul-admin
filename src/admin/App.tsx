@@ -20,6 +20,7 @@ import { PlansPage } from "./pages/Plans";
 import { CouponsPage } from "./pages/Coupons";
 import { SubscriptionsPage } from "./pages/Subscriptions";
 import { PaymentsPage } from "./pages/Payments";
+import { OperationsPage } from "./pages/Operations";
 // NOTE: the banner-management page lives in HomeCards.tsx — in dev mode every
 // source file is a browser-visible URL, and a path containing "banner" gets
 // blocked by common adblocker lists, which kills the whole module graph.
@@ -132,6 +133,8 @@ const router = createBrowserRouter(
         {/* ops:read, unlike the send page above: the reminder time is worth
             seeing for anyone who can read ops, and the form itself is what
             gates on ops:write. */}
+        {/* Each tab checks its own scope (payments: commerce:read, scoring: learners:read). */}
+        <Route path="/operations" element={<OperationsPage />} />
         <Route path="/notification-settings" element={<RequireScope scope="ops:read"><NotificationSettingsPage /></RequireScope>} />
         {/* 학습 인사이트 pages (and 콘텐츠 업데이트) share one wrapper: card
             spacing, and the tabs that join related pages. */}

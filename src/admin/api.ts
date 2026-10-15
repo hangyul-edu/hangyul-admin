@@ -148,6 +148,36 @@ export interface MonthlyRevenueResponse {
   series: CurrencyMonthlyRevenue[];
 }
 
+// ---- Operations queues ----------------------------------------------------
+
+/** A payment webhook that failed every processing attempt (dead-lettered). */
+export interface AdminDeadWebhook {
+  event_id: string;
+  provider: string;
+  event_type: string;
+  received_at: string;
+  dlq_at: string;
+  attempts: number;
+  processing_error: string | null;
+}
+
+/** An outbox event still undelivered ten minutes after it was written. */
+export interface AdminStuckOutboxEvent {
+  event_id: string;
+  event_type: string;
+  aggregate_type: string;
+  aggregate_id: string;
+  created_at: string;
+  attempts: number;
+  last_error: string | null;
+}
+
+/** At most 100 rows; `total` is the full count — the dashboard alert's number. */
+export interface OperationsQueuePage<T> {
+  items: T[];
+  total: number;
+}
+
 // ---- Users -----------------------------------------------------------------
 
 export interface AdminUserSummary {
@@ -1209,6 +1239,8 @@ export const adminApi = {
   metricsOverview: () => http.get<MetricsOverview>("/admin/metrics/overview"),
   metricsTimeseries: (metric: string, days: number) =>
     http.get<TimeseriesResponse>("/admin/metrics/timeseries", { metric, days }),
+  deadWebhooks: () => http.get<OperationsQueuePage<AdminDeadWebhook>>("/admin/operations/webhooks"),
+  stuckOutbox: () => http.get<OperationsQueuePage<AdminStuckOutboxEvent>>("/admin/operations/outbox"),
   metricsMonthlyRevenue: (months: number) =>
     http.get<MonthlyRevenueResponse>("/admin/metrics/monthly-revenue", { months }),
 

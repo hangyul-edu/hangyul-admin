@@ -5114,3 +5114,16 @@ img.hgadm-cover-preview {
   height: 84px;
   margin-bottom: 8px;
 }
+
+/* 운영 대기열: a stored error kept to one line; the full text is its tooltip. */
+.hgadm-ops-error {
+  display: inline-block;
+  max-width: 360px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  color: var(--ink-2);
+}

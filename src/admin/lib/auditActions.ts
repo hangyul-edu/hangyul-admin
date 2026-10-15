@@ -296,6 +296,10 @@ const ACTION_COPY: Record<string, ActionCopy> = {
     ko: "실력 평가 증거 무효 처리",
     en: "Invalidated a piece of proficiency evidence",
   },
+  "POST /admin/proficiency/scoring-queue/{attempt_id}/retry": {
+    ko: "말하기 과제 채점 다시 시도",
+    en: "Put a speaking task back in the scoring queue",
+  },
   "POST /admin/proficiency/ratings": {
     ko: "평가 응답 기준 채점 기록",
     en: "Recorded a reference rating for an assessment response",
@@ -350,6 +354,7 @@ export const AUDIT_OBJECT_TYPES: readonly [value: string, label: string][] = [
   ["learning-analytics", "학습 인사이트"],
   ["learner_proficiency", "학습자 실력 판정"],
   ["proficiency_rating", "평가 기준 채점"],
+  ["proficiency_task", "말하기 과제 채점"],
 ];
 
 const OBJECT_TYPE_LABEL = new Map(AUDIT_OBJECT_TYPES);
@@ -410,6 +415,7 @@ const SENSITIVE_READ_COPY: Record<string, ActionCopy> = {
     en: "Viewed why a learner's session contained what it did",
   },
   "READ /admin/proficiency/learners": { ko: "레벨 판정 목록 조회", en: "Viewed the proficiency directory" },
+  "READ /admin/proficiency/scoring-queue": { ko: "말하기 채점 대기열 조회", en: "Viewed the speaking-task scoring queue" },
   "READ /admin/proficiency/learners/{user_id}": {
     ko: "학습자 레벨 판정 상세 조회",
     en: "Viewed a learner's proficiency",

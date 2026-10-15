@@ -35,8 +35,11 @@ export function monthLabel(month: string): string {
  */
 const ALERT_ROUTES: Record<string, { to: string; scope: string }> = {
   lecture_videos_failed: { to: "/lectures", scope: "content:read" },
-  webhook_dlq: { to: "/payments", scope: "commerce:read" },
-  outbox_stuck: { to: "/payments", scope: "commerce:read" },
+  // The background queues have their own page, each tab listing exactly the
+  // rows the alert counts — 결제·청구서 shows none of them.
+  webhook_dlq: { to: "/operations?tab=webhooks", scope: "commerce:read" },
+  outbox_stuck: { to: "/operations?tab=outbox", scope: "commerce:read" },
+  scoring_exhausted: { to: "/operations?tab=scoring", scope: "learners:read" },
   payments_failed_24h: { to: "/payments", scope: "commerce:read" },
   // The page opens on its 결제 tab; unpaid invoices live on the other one.
   invoices_unpaid: { to: "/payments?tab=invoices", scope: "commerce:read" },
