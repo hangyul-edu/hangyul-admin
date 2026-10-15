@@ -1,41 +1,39 @@
-import { defineConfig } from "vite";
+import { defineConfig, type Connect } from "vite";
 import react from "@vitejs/plugin-react";
 
+// Vite serves the portal at /admin/ only; send the bare /admin there, as
+// every other host of the portal does.
+const redirectBareBase: Connect.NextHandleFunction = (req, res, next) => {
+  const [path, query] = (req.url ?? "").split("?");
+  if (path !== "/admin") return next();
+  res.statusCode = 302;
+  res.setHeader("Location", `/admin/${query ? `?${query}` : ""}`);
+  res.end();
+};
+
+// The admin portal is served under /admin (its router's basename) — by this
+// dev server, by `vite preview`, by the API's single-server hosting and by a
+// static host. The build lands in dist/admin, so a host that serves dist/
+// as-is needs no rewrite for the portal's files.
+//
 // The dev server proxies /api → the backend so the browser never makes a
-// cross-origin request in development (and cookies/headers "just work").
-// The base URL used by the app is read from VITE_API_BASE_URL at build/runtime;
-// when it is left empty the app talks to "/api" and relies on this proxy.
+// cross-origin request in development. The member app's dev server
+// (hangyul-learn-app, :5173) forwards its /admin here, so the portal also
+// opens at http://localhost:5173/admin.
 export default defineConfig(({ mode }) => {
   const backend = process.env.VITE_DEV_BACKEND || "http://127.0.0.1:8000";
   return {
+    base: "/admin/",
     plugins: [
       react(),
       {
-        // Serve the admin SPA at /admin (and any /admin/* deep link) in both
-        // `vite` (dev) and `vite preview`. Other static hosts need the same
-        // rewrite — and the runtime redirect in src/main.tsx covers hosts
-        // that only have an index.html fallback (see docs/admin-portal.md).
-        name: "admin-spa-fallback",
-        configureServer(server) {
-          server.middlewares.use((req, _res, next) => {
-            if (req.url === "/admin" || req.url?.startsWith("/admin/")) {
-              req.url = "/admin.html";
-            }
-            next();
-          });
-        },
-        configurePreviewServer(server) {
-          server.middlewares.use((req, _res, next) => {
-            if (req.url === "/admin" || req.url?.startsWith("/admin/")) {
-              req.url = "/admin.html";
-            }
-            next();
-          });
-        },
+        name: "admin-bare-base-redirect",
+        configureServer: (server) => void server.middlewares.use(redirectBareBase),
+        configurePreviewServer: (server) => void server.middlewares.use(redirectBareBase),
       },
     ],
     server: {
-      port: 5173,
+      port: 5174,
       proxy: {
         "/api": {
           target: backend,
@@ -44,15 +42,11 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
+    preview: { port: 5174 },
     build: {
-      outDir: "dist",
+      outDir: "dist/admin",
+      emptyOutDir: true,
       sourcemap: mode !== "production",
-      rollupOptions: {
-        input: {
-          main: new URL("./index.html", import.meta.url).pathname,
-          admin: new URL("./admin.html", import.meta.url).pathname,
-        },
-      },
     },
   };
 });

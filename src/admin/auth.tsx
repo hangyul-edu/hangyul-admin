@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState } from 
 import type { ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ApiError, NetworkError, http, setAuthHandlers } from "../lib/http";
-import { sessionIdOf } from "../hooks/auth";
+import { sessionIdOf } from "./lib/sessionId";
 import {
   clearAdminSession,
   loadAdminSession,

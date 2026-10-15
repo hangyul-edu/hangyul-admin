@@ -14,7 +14,7 @@
   --hgadm-content-max: 1320px;
 
   /* ---- Admin palette: premium blue + cool neutral (NO orange) ----
-     The admin is a separate entry (admin.html) that loads theme.css then this
+     The admin is a separate app (index.html) that loads theme.css then this
      file; redefining the brand scale here re-themes ONLY the admin, never the
      member app. Every warm/orange brand token from theme.css is remapped to
      blue so existing var(--brand-*) usages become blue automatically. */

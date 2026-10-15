@@ -3,6 +3,7 @@ import { beforeAll, expect } from "vitest";
 
 // The admin portal is Korean and words errors for operators (admin/main.tsx
 // sets both at startup); its tests render pages without that entry point.
+// The shared modules' own tests (src/i18n, src/lib) set what they test.
 beforeAll(async () => {
   if (expect.getState().testPath?.includes("/src/admin/")) {
     (await import("../i18n/current")).setCurrentLanguage("ko");
