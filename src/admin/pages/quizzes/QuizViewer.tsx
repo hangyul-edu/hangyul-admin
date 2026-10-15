@@ -2,6 +2,7 @@ import { Check } from "lucide-react";
 import type { AdminQuiz } from "../../api";
 import { sanitizeHtml } from "../../../lib/sanitizeHtml";
 import { Badge, Modal } from "../../components/kit";
+import { topikSectionLabel } from "../../lib/topik";
 import { FORMAT_LABEL } from "./draft";
 
 /** A question as it reads, with its answer marked. */
@@ -12,7 +13,7 @@ export function QuizViewer({ quiz, onClose }: { quiz: AdminQuiz | null; onClose:
         <div className="hgadm-prose">
           <div className="hgadm-row hgadm-row--wrap hgadm-mb-12">
             <Badge tone="info">{FORMAT_LABEL[quiz.answer_format]}</Badge>
-            {quiz.topik_section && <Badge tone="brand">{quiz.topik_section}</Badge>}
+            {quiz.topik_section && <Badge tone="brand">{topikSectionLabel(quiz.topik_section)}</Badge>}
             <Badge tone="neutral">{quiz.level}급</Badge>
             {quiz.is_ai_generated && <Badge tone="warning">AI 생성</Badge>}
           </div>
