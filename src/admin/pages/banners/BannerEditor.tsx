@@ -1,9 +1,6 @@
-import { useRef, useState } from "react";
-import { adminApi } from "../../api";
-import { errorMessage } from "../../../lib/http";
-import { useToast } from "../../../hooks/toast";
 import { Button, Field, Input, Modal, Switch } from "../../components/kit";
 import { CardImageSizeHint, ImageCropField } from "../../components/ImageCropField";
+import { ImageDropzone } from "../../components/ImageDropzone";
 import type { BannerDraft } from "./useBanners";
 
 type SetDraft = (update: (d: BannerDraft | null) => BannerDraft | null) => void;
@@ -56,7 +53,11 @@ export function BannerEditor({
               {canUploadImage ? (
                 // A new picture starts from the centred default; the old crop
                 // was for the old one.
-                <ImageDropzone replacing={!!draft.image_url} onUploaded={(url) => patch({ image_url: url, image_crop: null })} />
+                <ImageDropzone
+                  replacing={!!draft.image_url}
+                  successMessage="이미지를 업로드했어요."
+                  onUploaded={(url) => patch({ image_url: url, image_crop: null })}
+                />
               ) : (
                 <p className="hgadm-cell-sub hgadm-m-0">
                   이미지 변경은 콘텐츠 편집 권한이 필요합니다. 나머지 항목은 그대로 수정할 수 있어요.
@@ -87,42 +88,5 @@ export function BannerEditor({
         </div>
       )}
     </Modal>
-  );
-}
-
-/** Click or drop an image to upload it through /admin/media. */
-function ImageDropzone({ replacing, onUploaded }: { replacing: boolean; onUploaded: (url: string) => void }) {
-  const toast = useToast();
-  const [uploading, setUploading] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
-
-  async function upload(file: File | undefined) {
-    if (!file) return;
-    setUploading(true);
-    try {
-      const result = await adminApi.uploadMedia(file);
-      onUploaded(result.url);
-      toast.success("이미지를 업로드했어요.");
-    } catch (e) {
-      toast.error(errorMessage(e));
-    } finally {
-      setUploading(false);
-      if (fileRef.current) fileRef.current.value = "";
-    }
-  }
-
-  return (
-    <div
-      className="hgadm-dropzone"
-      onClick={() => fileRef.current?.click()}
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={(e) => {
-        e.preventDefault();
-        void upload(e.dataTransfer.files?.[0]);
-      }}
-    >
-      {uploading ? <span>업로드 중…</span> : <span>클릭하거나 파일을 끌어다 놓아 {replacing ? "교체" : "업로드"}</span>}
-      <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => void upload(e.target.files?.[0])} />
-    </div>
   );
 }

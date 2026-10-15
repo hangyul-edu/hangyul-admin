@@ -1,9 +1,8 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { adminApi } from "../../api";
 import type { AdminLecture } from "../../api";
-import { errorMessage } from "../../../lib/http";
 import { useToast, useToastError } from "../../../hooks/toast";
 import { Button, Field, Input, Modal, Select } from "../../components/kit";
 import { LanguageFields, koreanTitle, languageDraft, translationsOf } from "../../components/LanguageFields";
@@ -16,6 +15,7 @@ function withKorean(item: { title: string; translations?: CatalogTranslation[] }
 }
 import type { LanguageDraft } from "../../components/LanguageFields";
 import { TopikTypeSelect } from "../../components/TopikTypeSelect";
+import { ImageDropzone } from "../../components/ImageDropzone";
 
 export const TRACKS = [
   ["track_conversation", "회화"],
@@ -245,38 +245,11 @@ export function LectureFormModal({
 }
 
 function ThumbnailField({ value, onChange }: { value: string; onChange: (url: string) => void }) {
-  const toast = useToast();
-  const [uploading, setUploading] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
   return (
     <Field label="썸네일" hint="JPEG/PNG/WebP, 최대 5MB">
       <div className="hgadm-row">
         {value && <img src={value} alt="썸네일" className="hgadm-thumb" />}
-        <div
-          className="hgadm-dropzone hgadm-flex-1 hgadm-dropzone--compact"
-          onClick={() => fileRef.current?.click()}
-        >
-          {uploading ? "업로드 중…" : value ? "클릭해서 교체" : "클릭해서 업로드"}
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            onChange={async (e) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-              setUploading(true);
-              try {
-                const result = await adminApi.uploadMedia(file);
-                onChange(result.url);
-              } catch (err) {
-                toast.error(errorMessage(err));
-              } finally {
-                setUploading(false);
-                if (fileRef.current) fileRef.current.value = "";
-              }
-            }}
-          />
-        </div>
+        <ImageDropzone replacing={!!value} className="hgadm-flex-1 hgadm-dropzone--compact" onUploaded={onChange} />
       </div>
     </Field>
   );

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { adminApi } from "../../api";
@@ -10,6 +10,7 @@ import { LanguageFields, StandInBadge, koreanTitle, languageDraft, translationsO
 import type { LanguageDraft } from "../../components/LanguageFields";
 import { MoveButtons, OrderNumber, useReorder } from "../../components/ordering";
 import { LessonOrder } from "./LessonOrder";
+import { ImageDropzone } from "../../components/ImageDropzone";
 
 interface SeriesDraft {
   text: LanguageDraft;
@@ -253,36 +254,11 @@ export function SeriesPanel({ course, canWrite }: { course: AdminCourse; canWrit
 
 /** The series' key art — shown on its card in the app (COU-001) and on top of its lesson list (COU-002). */
 function SeriesThumbnail({ value, onChange }: { value: string; onChange: (url: string) => void }) {
-  const toast = useToast();
-  const [uploading, setUploading] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
   return (
     <Field label="썸네일" hint="앱의 시리즈 카드와 강의 목록 상단에 쓰여요. 가로형 이미지(약 16:9), JPEG/PNG/WebP, 최대 5MB">
       <div className="hgadm-series__upload">
         {value && <img src={value} alt="썸네일 미리보기" className="hgadm-series__preview" />}
-        <div className="hgadm-dropzone" onClick={() => fileRef.current?.click()}>
-          {uploading ? "업로드 중…" : value ? "클릭해서 교체" : "클릭해서 이미지 업로드"}
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            aria-label="썸네일 파일"
-            onChange={async (e) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-              setUploading(true);
-              try {
-                const result = await adminApi.uploadMedia(file);
-                onChange(result.url);
-              } catch (err) {
-                toast.error(errorMessage(err));
-              } finally {
-                setUploading(false);
-                if (fileRef.current) fileRef.current.value = "";
-              }
-            }}
-          />
-        </div>
+        <ImageDropzone replacing={!!value} inputLabel="썸네일 파일" onUploaded={onChange} />
         {value && (
           <Button size="sm" variant="ghost" onClick={() => onChange("")}>
             썸네일 빼기
