@@ -5,7 +5,7 @@ import { errorMessage } from "../../../lib/http";
 import { useAdminAuth } from "../../auth";
 import { ErrorState, LoadingState } from "../../components/kit";
 import { RecentActivity } from "./recent";
-import { AlertList, DailyTrendCard, HeadlineStats, MonthlyRevenueCard } from "./sections";
+import { AlertList, DailyTrendCard, HeadlineStats, RevenueCard } from "./sections";
 
 /**
  * The dashboard's reads, started together so the charts load alongside the
@@ -37,10 +37,6 @@ export function DashboardPage() {
   if (overview.isPending) return <LoadingState label="지표를 불러오는 중…" />;
   if (overview.isError) return <ErrorState message={errorMessage(overview.error)} onRetry={() => void overview.refetch()} />;
   const data = overview.data;
-  // Revenue is reported in ONE currency — whichever most settled payments use.
-  // Payments in the other currency are not converted or added, so every
-  // revenue figure names its currency and says the rest is left out.
-  const currency = data.revenue.currency;
 
   return (
     <div>
@@ -53,9 +49,9 @@ export function DashboardPage() {
         </div>
       </div>
       <AlertList alerts={data.alerts ?? []} can={can} />
-      <HeadlineStats data={data} currency={currency} can={can} />
-      <MonthlyRevenueCard query={monthly} currency={currency} months={months} onMonths={setMonths} />
-      <DailyTrendCard query={series} currency={currency} metric={metric} onMetric={setMetric} />
+      <HeadlineStats data={data} can={can} />
+      <RevenueCard revenue={data.revenue} query={monthly} months={months} onMonths={setMonths} can={can} />
+      <DailyTrendCard query={series} metric={metric} onMetric={setMetric} />
       <RecentActivity data={data} can={can} />
     </div>
   );

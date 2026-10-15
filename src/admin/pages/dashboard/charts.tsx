@@ -1,7 +1,7 @@
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
-import type { MonthlyRevenueResponse } from "../../api";
+import type { CurrencyMonthlyRevenue } from "../../api";
 import { chartDayLabel, currencySymbol, formatMoney, isZeroDecimal, toMajorUnits, weekdayShort } from "../../lib/format";
 import { formatTick, niceScale } from "../../lib/chartScale";
 import { placeTooltip } from "../../lib/tooltipPlacement";
@@ -38,46 +38,58 @@ export function TimeseriesChart({
 }
 
 /**
- * Revenue by calendar month. Every month is labelled — the trend is the point
- * of the chart — and the year is shown whenever it changes so a window
- * spanning New Year reads correctly.
+ * One currency's revenue by calendar month. Every month is labelled — the
+ * trend is the point of the chart — and the year is shown whenever it changes
+ * so a window spanning New Year reads correctly. Each currency gets its own
+ * chart and axis: won and cents are different units and never share a scale.
  *
  * The month in progress is drawn hatched rather than solid: it holds the 1st
  * to today only, so showing it as a flat bar next to completed months would
  * read as a collapse in revenue every single month.
  */
-export function MonthlyRevenueChart({ data }: { data: MonthlyRevenueResponse }) {
-  const bars: Bar[] = data.points.map((p, i) => {
+export function MonthlyRevenueChart({
+  series,
+  currentMonth,
+}: {
+  series: CurrencyMonthlyRevenue;
+  currentMonth: string;
+}) {
+  const { points, currency } = series;
+  const bars: Bar[] = points.map((p, i) => {
     const [year, month] = p.month.split("-");
-    const yearChanged = i === 0 || p.month.slice(0, 4) !== data.points[i - 1].month.slice(0, 4);
+    const yearChanged = i === 0 || p.month.slice(0, 4) !== points[i - 1].month.slice(0, 4);
     return {
       key: p.month,
       label: yearChanged ? `${year.slice(2)}'${Number(month)}월` : `${Number(month)}월`,
       caption: `${year}년 ${Number(month)}월`,
       value: p.value_cents,
-      partial: p.month === data.current_month,
+      partial: p.month === currentMonth,
     };
   });
 
   return (
-    <>
-      <BarChart
-        bars={bars}
-        money={data.currency}
-        ariaLabel={`최근 ${data.months}개월 월별 매출 막대 차트`}
-        showLabel={() => true}
-      />
-      <div className="hgadm-row hgadm-chart-legend">
-        <span className="hgadm-row hgadm-row--tight">
-          <span aria-hidden className="hgadm-chart-legend__swatch" />
-          완료된 달
-        </span>
-        <span className="hgadm-row hgadm-row--tight">
-          <span aria-hidden className="hgadm-chart-legend__swatch hgadm-chart-legend__swatch--current" />
-          이번 달 (진행 중 · 1일~오늘)
-        </span>
-      </div>
-    </>
+    <BarChart
+      bars={bars}
+      money={currency}
+      ariaLabel={`최근 ${points.length}개월 ${currency} 월별 매출 막대 차트`}
+      showLabel={() => true}
+    />
+  );
+}
+
+/** What the solid and the hatched monthly bars mean. */
+export function MonthlyRevenueLegend() {
+  return (
+    <div className="hgadm-row hgadm-chart-legend">
+      <span className="hgadm-row hgadm-row--tight">
+        <span aria-hidden className="hgadm-chart-legend__swatch" />
+        완료된 달
+      </span>
+      <span className="hgadm-row hgadm-row--tight">
+        <span aria-hidden className="hgadm-chart-legend__swatch hgadm-chart-legend__swatch--current" />
+        이번 달 (진행 중 · 1일~오늘)
+      </span>
+    </div>
   );
 }
 
@@ -115,6 +127,9 @@ function BarChart({
   showLabel: (index: number, total: number) => boolean;
 }) {
   const [hover, setHover] = useState<number | null>(null);
+  // Per chart: the dashboard draws one monthly chart per currency, and an
+  // SVG id must be unique in the document.
+  const hatchId = `hgadm-bar-partial-${useId().replace(/:/g, "")}`;
   // Where the hovered bar sits on screen, captured on enter. The tooltip is
   // placed against the viewport rather than against the chart, so it needs the
   // bar in viewport coordinates.
@@ -179,7 +194,7 @@ function BarChart({
               "incomplete" rather than "lower" at a glance, and survives being
               printed or viewed without color. */}
           <pattern
-            id="hgadm-bar-partial"
+            id={hatchId}
             width={6}
             height={6}
             patternUnits="userSpaceOnUse"
@@ -246,7 +261,7 @@ function BarChart({
               {p.value > 0 && (
                 <path
                   d={roundedTopBar(x, y, barW, h, Math.min(4, barW / 2, h))}
-                  fill={p.partial ? "url(#hgadm-bar-partial)" : "#2563eb"}
+                  fill={p.partial ? `url(#${hatchId})` : "#2563eb"}
                   stroke={p.partial ? "#2563eb" : undefined}
                   strokeWidth={p.partial ? 1 : undefined}
                   strokeDasharray={p.partial ? "3 2" : undefined}

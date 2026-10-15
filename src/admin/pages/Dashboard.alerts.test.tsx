@@ -61,11 +61,11 @@ const OVERVIEW = {
   },
   subscriptions: { active: 40, trialing: 5, in_grace: 0, suspended: 0, canceling: 2 },
   revenue: {
-    currency: "USD",
-    today_cents: 12_000,
+    by_currency: [
+      { currency: "KRW", today_cents: 9_900, this_month_cents: 1_234_000, refunded_30d_cents: 0 },
+      { currency: "USD", today_cents: 12_000, this_month_cents: 480_000, refunded_30d_cents: 1_500 },
+    ],
     this_month: "2026-09",
-    this_month_cents: 480_000,
-    refunded_30d_cents: 0,
     failed_payments_24h: 0,
   },
   learning: {
@@ -87,23 +87,39 @@ const OVERVIEW = {
   recent_admin_actions: [],
 } as unknown as MetricsOverview;
 
+// Only the last two months have won payments.
+const KRW_BY_MONTH: Record<string, number> = { "2026-08": 2_000_000, "2026-09": 1_234_000 };
+
+const MONTHS = [
+  "2025-10", "2025-11", "2025-12", "2026-01", "2026-02", "2026-03",
+  "2026-04", "2026-05", "2026-06", "2026-07", "2026-08", "2026-09",
+];
+
 const MONTHLY: MonthlyRevenueResponse = {
-  currency: "USD",
   months: 12,
   current_month: "2026-09",
-  points: [
-    { month: "2025-10", value_cents: 100_000 },
-    { month: "2025-11", value_cents: 200_000 },
-    { month: "2025-12", value_cents: 300_000 },
-    { month: "2026-01", value_cents: 250_000 },
-    { month: "2026-02", value_cents: 0 },
-    { month: "2026-03", value_cents: 400_000 },
-    { month: "2026-04", value_cents: 410_000 },
-    { month: "2026-05", value_cents: 420_000 },
-    { month: "2026-06", value_cents: 430_000 },
-    { month: "2026-07", value_cents: 440_000 },
-    { month: "2026-08", value_cents: 900_000 },
-    { month: "2026-09", value_cents: 480_000 },
+  series: [
+    {
+      currency: "KRW",
+      points: MONTHS.map((month) => ({ month, value_cents: KRW_BY_MONTH[month] ?? 0 })),
+    },
+    {
+      currency: "USD",
+      points: [
+        { month: "2025-10", value_cents: 100_000 },
+        { month: "2025-11", value_cents: 200_000 },
+        { month: "2025-12", value_cents: 300_000 },
+        { month: "2026-01", value_cents: 250_000 },
+        { month: "2026-02", value_cents: 0 },
+        { month: "2026-03", value_cents: 400_000 },
+        { month: "2026-04", value_cents: 410_000 },
+        { month: "2026-05", value_cents: 420_000 },
+        { month: "2026-06", value_cents: 430_000 },
+        { month: "2026-07", value_cents: 440_000 },
+        { month: "2026-08", value_cents: 900_000 },
+        { month: "2026-09", value_cents: 480_000 },
+      ],
+    },
   ],
 };
 

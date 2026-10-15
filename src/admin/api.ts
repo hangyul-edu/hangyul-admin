@@ -61,13 +61,11 @@ export interface MetricsOverview {
     canceling: number;
   };
   revenue: {
-    currency: string;
-    today_cents: number;
-    /** `YYYY-MM` the figure below covers — stated by the server, not derived here. */
+    /** One entry per priced currency (KRW, then USD), always both. Amounts in
+     *  different currencies are never added together or converted. */
+    by_currency: CurrencyRevenue[];
+    /** `YYYY-MM` the month figures cover — stated by the server, not derived here. */
     this_month: string;
-    /** This CALENDAR month, 1st → now. Not a rolling 30-day window. */
-    this_month_cents: number;
-    refunded_30d_cents: number;
     failed_payments_24h: number;
   };
   learning: {
@@ -122,17 +120,32 @@ export interface TimeseriesResponse {
   points: { date: string; value: number }[];
 }
 
+/** Revenue in one currency, in its minor units (whole won for KRW, cents for USD). */
+export interface CurrencyRevenue {
+  currency: string;
+  today_cents: number;
+  /** This CALENDAR month, 1st → now. Not a rolling 30-day window. */
+  this_month_cents: number;
+  refunded_30d_cents: number;
+}
+
+/** One currency's revenue by calendar month, oldest first. */
+export interface CurrencyMonthlyRevenue {
+  currency: string;
+  points: { month: string; value_cents: number }[];
+}
+
 /**
- * Revenue by calendar month, oldest first, ending with the month in progress.
- * The server derives every bucket — and the overview's `this_month_cents` —
- * from one query, so the last point always equals that KPI.
+ * Revenue by calendar month, one series per currency, ending with the month
+ * in progress. The server derives every bucket — and the overview's
+ * `this_month_cents` for that currency — from one query, so each series' last
+ * point always equals its KPI.
  */
 export interface MonthlyRevenueResponse {
-  currency: string;
   months: number;
   /** `YYYY-MM` of the in-progress month: its bar covers the 1st → today only. */
   current_month: string;
-  points: { month: string; value_cents: number }[];
+  series: CurrencyMonthlyRevenue[];
 }
 
 // ---- Users -----------------------------------------------------------------
