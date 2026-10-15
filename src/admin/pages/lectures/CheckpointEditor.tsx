@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Play } from "lucide-react";
 import { adminApi } from "../../api";
 import type { AdminCheckpoint, AdminCheckpointWrite, AdminLecture, CheckpointInteractionType } from "../../api";
 import { StreamVideo } from "../../../components/StreamVideo";
@@ -595,7 +596,8 @@ function CheckpointList({
                 )}
               </span>
             </button>
-            <Button size="sm" variant="ghost" onClick={() => onPreview(c)} aria-label={`${formatPrecise(c.at_second)} 미리보기`}>
+            <Button size="sm" variant="secondary" onClick={() => onPreview(c)} aria-label={`${formatPrecise(c.at_second)} 미리보기`}>
+              <Play size={12} strokeWidth={2.25} aria-hidden />
               미리보기
             </Button>
           </li>
