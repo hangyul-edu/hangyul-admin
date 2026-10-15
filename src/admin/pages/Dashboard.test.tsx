@@ -364,3 +364,30 @@ describe("DashboardPage revenue", () => {
     expect(MONTHLY.current_month).toBe(OVERVIEW.revenue.this_month);
   });
 });
+
+describe("DashboardPage navigation", () => {
+  beforeEach(() => {
+    metricsOverview.mockReset();
+    metricsTimeseries.mockReset();
+    metricsMonthlyRevenue.mockReset();
+    metricsOverview.mockResolvedValue(OVERVIEW);
+    metricsTimeseries.mockResolvedValue({ metric: "signups", days: 30, points: [] });
+    metricsMonthlyRevenue.mockResolvedValue(MONTHLY);
+  });
+
+  it("links each headline number to the page behind it", async () => {
+    renderPage();
+    const tile = (label: string) => screen.getByText(label).closest("a");
+    expect(await screen.findByText("전체 사용자")).toBeInTheDocument();
+    expect(tile("전체 사용자")).toHaveAttribute("href", "/users");
+    expect(tile("활성 구독")).toHaveAttribute("href", "/subscriptions");
+    expect(tile("AI 검수 대기")).toHaveAttribute("href", "/ai-content");
+  });
+
+  it("opens the full list behind each recent card", async () => {
+    renderPage();
+    await screen.findByText("최근 가입");
+    const more = screen.getAllByRole("link", { name: "전체 보기" }).map((a) => a.getAttribute("href"));
+    expect(more).toEqual(["/users", "/payments", "/audit-logs"]);
+  });
+});

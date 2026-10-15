@@ -153,32 +153,38 @@ export function DashboardPage() {
 
       <div className="hgadm-stats">
         <Stat
+          to={can("users:read") ? "/users" : undefined}
           label="전체 사용자"
           value={data.users.total.toLocaleString()}
           sub={`오늘 +${data.users.new_today} · 7일 +${data.users.new_7d}`}
           subTone={data.users.new_today > 0 ? "up" : undefined}
         />
         <Stat
+          to={can("commerce:read") ? "/subscriptions" : undefined}
           label="활성 구독"
           value={(data.subscriptions.active + data.subscriptions.trialing).toLocaleString()}
           sub={`체험 ${data.subscriptions.trialing} · 해지 예약 ${data.subscriptions.canceling}`}
         />
         <Stat
+          to={can("commerce:read") ? "/payments" : undefined}
           label={`이번 달 매출 (${currency})`}
           value={formatMoney(data.revenue.this_month_cents, currency)}
           sub={`${monthLabel(data.revenue.this_month)} 1일부터 · 오늘 ${formatMoney(data.revenue.today_cents, currency)} · 다른 통화 결제 제외`}
         />
         <Stat
+          to={can("analytics:read") ? "/learning" : undefined}
           label="오늘 학습 활동"
           value={data.learning.active_learners_today.toLocaleString()}
           sub={`${data.learning.sessions_today}회 학습 · ${data.learning.minutes_today.toLocaleString()}분`}
         />
         <Stat
+          to={can("ai:read") ? "/learning/ai" : undefined}
           label="AI 비용 (이번 달)"
           value={formatMoney(data.ai.llm_cost_month_usd_cents, "USD")}
           sub={`호출 ${data.ai.llm_calls_30d.toLocaleString()}회/30일`}
         />
         <Stat
+          to={can("content:read") ? "/ai-content" : undefined}
           label="AI 검수 대기"
           value={data.ai.generated_pending_review.toLocaleString()}
           sub={`전체 생성 ${data.ai.generated_total.toLocaleString()}건`}
@@ -257,29 +263,20 @@ export function DashboardPage() {
       </div>
 
       <div className="hgadm-recent-stack">
-        <RecentCard title="최근 가입">
+        <RecentCard title="최근 가입" more={can("users:read") ? "/users" : undefined} empty="아직 가입자가 없습니다.">
           {data.recent_signups.map((u) => (
             <SignupRow key={u.user_id} user={u} />
           ))}
-          {data.recent_signups.length === 0 && (
-            <div className="hgadm-muted" style={{ padding: 12 }}>아직 가입자가 없습니다.</div>
-          )}
         </RecentCard>
-        <RecentCard title="최근 결제">
+        <RecentCard title="최근 결제" more={can("commerce:read") ? "/payments" : undefined} empty="결제 내역이 없습니다.">
           {data.recent_payments.map((p) => (
             <PaymentRow key={p.payment_id} payment={p} />
           ))}
-          {data.recent_payments.length === 0 && (
-            <div className="hgadm-muted" style={{ padding: 12 }}>결제 내역이 없습니다.</div>
-          )}
         </RecentCard>
-        <RecentCard title="최근 관리자 활동">
+        <RecentCard title="최근 관리자 활동" more={can("audit:read") ? "/audit-logs" : undefined} empty="기록이 없습니다.">
           {data.recent_admin_actions.map((a) => (
             <AdminActivityRow key={a.id} entry={a} />
           ))}
-          {data.recent_admin_actions.length === 0 && (
-            <div className="hgadm-muted" style={{ padding: 12 }}>기록이 없습니다.</div>
-          )}
         </RecentCard>
       </div>
     </div>
@@ -447,13 +444,32 @@ function RecentTime({ at }: { at: string }) {
   return <Timestamp at={at} />;
 }
 
-function RecentCard({ title, children }: { title: string; children: React.ReactNode }) {
+function RecentCard({
+  title,
+  more,
+  empty,
+  children,
+}: {
+  title: string;
+  /** The full list behind the card, when the admin can open it. */
+  more?: string;
+  /** Shown instead of the rows when there are none. */
+  empty: string;
+  children: React.ReactNode[];
+}) {
   return (
     <div className="hgadm-card">
       <div className="hgadm-card__head">
         <div className="hgadm-card__title">{title}</div>
+        {more && (
+          <Link to={more} className="hgadm-recent__more">
+            전체 보기
+          </Link>
+        )}
       </div>
-      <div style={{ padding: "6px 8px 10px" }}>{children}</div>
+      <div className="hgadm-recent__list">
+        {children.length > 0 ? children : <div className="hgadm-recent__empty">{empty}</div>}
+      </div>
     </div>
   );
 }

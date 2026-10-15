@@ -21,6 +21,13 @@ import type { Column } from "../components/kit";
 import { AUDIT_OBJECT_TYPES, describeAuditAction, objectTypeLabel } from "../lib/auditActions";
 import { personName, personNameWithEmail } from "../lib/adminIdentity";
 
+/** Who performed a row, as the 수행자 filter names them. */
+const ACTOR_TYPE_LABEL: Record<string, string> = { admin: "관리자", system: "시스템" };
+
+function actorTypeLabel(type: string): string {
+  return ACTOR_TYPE_LABEL[type] ?? type;
+}
+
 export function AuditLogsPage() {
   const filters = useUrlFilters();
   const { can } = useAdminAuth();
@@ -60,7 +67,7 @@ export function AuditLogsPage() {
           </div>
           <div className="hgadm-cell-sub">
             <Badge tone={e.actor_type === "admin" ? "brand" : "neutral"}>
-              {e.actor_type}
+              {actorTypeLabel(e.actor_type)}
             </Badge>
           </div>
         </div>
@@ -186,7 +193,7 @@ export function AuditLogsPage() {
                   email: detail.actor_email,
                   user_id: detail.actor_id,
                 })}{" "}
-                ({detail.actor_type})
+                ({actorTypeLabel(detail.actor_type)})
               </dd>
               <dt>행위</dt>
               <dd>

@@ -558,11 +558,24 @@ body {
 }
 
 /* ---------- Stat tiles ---------- */
+/* The dashboard's six headline numbers: one row of six on a wide screen,
+   then two even rows of three, then three of two — never five and an orphan,
+   which is what an auto-fill track count produced at common widths. */
 .hgadm-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 14px;
   margin-bottom: 24px;
+}
+@media (max-width: 1360px) {
+  .hgadm-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 720px) {
+  .hgadm-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 .hgadm-stat {
   position: relative;
@@ -583,13 +596,40 @@ body {
   opacity: 0;
   transition: opacity 0.16s ease;
 }
-.hgadm-stat:hover {
+/* Only a tile that goes somewhere responds to the pointer. */
+.hgadm-stat--link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+.hgadm-stat--link:hover {
   transform: translateY(-2px);
   box-shadow: var(--hgadm-shadow-lift);
   border-color: var(--brand-200);
 }
-.hgadm-stat:hover::before {
+.hgadm-stat--link:hover::before {
   opacity: 1;
+}
+.hgadm-stat--link:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.hgadm-recent__list {
+  padding: 6px 8px 10px;
+}
+.hgadm-recent__empty {
+  padding: 12px;
+  color: var(--ink-3);
+}
+.hgadm-recent__more {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hgadm-primary);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.hgadm-recent__more:hover {
+  text-decoration: underline;
 }
 .hgadm-stat__label {
   font-size: 12.5px;

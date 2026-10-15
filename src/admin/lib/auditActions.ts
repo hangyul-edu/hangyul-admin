@@ -409,7 +409,28 @@ const SENSITIVE_READ_COPY: Record<string, ActionCopy> = {
     ko: "학습자 세션 추천 근거 조회",
     en: "Viewed why a learner's session contained what it did",
   },
+  "READ /admin/proficiency/learners": { ko: "레벨 판정 목록 조회", en: "Viewed the proficiency directory" },
+  "READ /admin/proficiency/learners/{user_id}": {
+    ko: "학습자 레벨 판정 상세 조회",
+    en: "Viewed a learner's proficiency",
+  },
+  "READ /admin/proficiency/learners/{user_id}/evidence": {
+    ko: "학습자 레벨 판정 근거 조회",
+    en: "Viewed a learner's proficiency evidence",
+  },
+  "READ /admin/proficiency/learners/{user_id}/growth": {
+    ko: "학습자 레벨 성장 조회",
+    en: "Viewed a learner's proficiency growth",
+  },
 };
+
+/** The server stores at most this many characters of an action. */
+const STORED_ACTION_LENGTH = 64;
+
+/** Read copy keyed the way the rows are stored: a long route arrives cut short. */
+const SENSITIVE_READ_BY_STORED_ACTION: Record<string, ActionCopy> = Object.fromEntries(
+  Object.entries(SENSITIVE_READ_COPY).map(([action, copy]) => [action.slice(0, STORED_ACTION_LENGTH), copy]),
+);
 
 // The portal's one vocabulary for roles and tiers, so a tier added there is
 // named here too.
@@ -543,7 +564,7 @@ export type DescribedAction = {
 
 export function describeAuditAction(entry: AuditLogEntry): DescribedAction {
   const copy =
-    refine(entry) ?? ACTION_COPY[entry.action] ?? SENSITIVE_READ_COPY[entry.action] ?? null;
+    refine(entry) ?? ACTION_COPY[entry.action] ?? SENSITIVE_READ_BY_STORED_ACTION[entry.action] ?? null;
   return {
     // An unmapped action shows its route rather than a label that would be a
     // guess; the completeness test exists so this stays hypothetical.

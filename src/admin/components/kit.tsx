@@ -2,6 +2,7 @@
 // defined here against the classes in src/admin/styles/admin.css.
 import { Children, isValidElement, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { Link } from "react-router-dom";
 import type { ButtonHTMLAttributes, CSSProperties, InputHTMLAttributes, KeyboardEvent as ReactKeyboardEvent, ReactNode, TextareaHTMLAttributes } from "react";
 import { AlertCircle, AlertTriangle, Check, ChevronDown, ChevronsLeft, ChevronsRight, ImageOff, Inbox, Search as SearchIcon, X } from "lucide-react";
 import { formatDateTimeParts } from "../lib/format";
@@ -948,14 +949,17 @@ export function Stat({
   value,
   sub,
   subTone,
+  to,
 }: {
   label: ReactNode;
   value: ReactNode;
   sub?: ReactNode;
   subTone?: "up" | "down";
+  /** The page behind the number. Only a linked tile lifts on hover. */
+  to?: string;
 }) {
-  return (
-    <div className="hgadm-stat">
+  const body = (
+    <>
       <div className="hgadm-stat__label">{label}</div>
       <div className="hgadm-stat__value">{value}</div>
       {sub && (
@@ -963,7 +967,14 @@ export function Stat({
           {sub}
         </div>
       )}
-    </div>
+    </>
+  );
+  return to ? (
+    <Link to={to} className="hgadm-stat hgadm-stat--link">
+      {body}
+    </Link>
+  ) : (
+    <div className="hgadm-stat">{body}</div>
   );
 }
 

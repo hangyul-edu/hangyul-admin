@@ -53,6 +53,21 @@ describe("the label", () => {
   });
 });
 
+describe("audited reads", () => {
+  it("labels a proficiency read", () => {
+    const d = describeAuditAction(entry({ action: "READ /admin/proficiency/learners/{user_id}" }));
+    expect(d.label).toBe("학습자 레벨 판정 상세 조회");
+    expect(d.known).toBe(true);
+  });
+
+  it("labels a read whose action the server cut at 64 characters", () => {
+    // The row stores only the first 64 characters of a long route.
+    const stored = "READ /admin/learning-analytics/learners/{user_id}/sessions/{session_id}".slice(0, 64);
+    const d = describeAuditAction(entry({ action: stored }));
+    expect(d.label).toBe("학습자 세션 추천 근거 조회");
+  });
+});
+
 describe("payment refunds", () => {
   const refund = (after: unknown) =>
     describeAuditAction(
