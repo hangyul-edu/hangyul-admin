@@ -309,7 +309,7 @@ export function QuizFields({
           {draft.blanks.map((blank, i) => (
             <div className="hgadm-cpc__choice" key={i}>
               <Input
-                style={{ width: 64 }}
+                className="hgadm-w-xs"
                 value={blank.label}
                 readOnly={readOnly}
                 placeholder="표시"
@@ -527,7 +527,7 @@ function Labeled({ label, hint, required, children }: { label: string; hint?: st
     <div className="hgadm-field">
       <span className="hgadm-field__label">
         {label}
-        {required && <span className="hgadm-field__req"> *</span>}
+        {required && <span className="req">*</span>}
       </span>
       {children}
       {hint && <span className="hgadm-field__hint">{hint}</span>}

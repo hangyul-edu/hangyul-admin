@@ -187,7 +187,7 @@ export function ProficiencyLearnersPage() {
             ))}
           </div>
           {Object.keys(cohort.data.confirmed_by_level).length > 0 && (
-            <div className="hgadm-prof-chips" style={{ marginTop: 12 }}>
+            <div className="hgadm-prof-chips hgadm-mt-12">
               <span className="hgins-cta__hint">확정 레벨별</span>
               {Object.entries(cohort.data.confirmed_by_level).map(([lv, n]) => (
                 <Badge key={lv} tone="neutral">

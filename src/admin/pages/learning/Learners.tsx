@@ -70,7 +70,7 @@ export function LearnersPage() {
       header: "참고",
       render: (r) =>
         r.labels.length ? (
-          <span style={{ display: "inline-flex", gap: 4, flexWrap: "wrap" }}>
+          <span className="hgadm-chip-row">
             {r.labels.map((l) => (
               <Badge key={l.code} tone="neutral">
                 {l.ko}

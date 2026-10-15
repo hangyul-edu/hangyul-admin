@@ -47,7 +47,7 @@ export class AdminErrorBoundary extends Component<{ children: ReactNode }, State
             예상치 못한 오류가 발생했습니다. 로그인 정보를 초기화하고 로그인 화면으로
             이동해 주세요.
           </p>
-          <pre className="hgadm-json" style={{ marginBottom: 16 }}>
+          <pre className="hgadm-json hgadm-mb-16">
             {this.state.error.message}
           </pre>
           <button className="hgadm-btn hgadm-btn--primary hgadm-btn--lg hgadm-btn--block" onClick={this.reset}>

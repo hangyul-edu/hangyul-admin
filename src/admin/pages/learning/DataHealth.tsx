@@ -142,7 +142,7 @@ export function DataHealthPage() {
         <KpiCard
           icon={Clock3}
           label="마지막으로 받은 시각"
-          value={<span style={{ fontSize: 17 }}>{i.last_received_at ? formatDateTime(i.last_received_at) : "없음"}</span>}
+          value={<span className="hgadm-text-lg">{i.last_received_at ? formatDateTime(i.last_received_at) : "없음"}</span>}
           sub={`기기 시계 오차로 보정 ${i.clock_skew_clamped_24h.toLocaleString()}건`}
         />
         <KpiCard

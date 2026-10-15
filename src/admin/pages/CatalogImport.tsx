@@ -393,7 +393,7 @@ export function CatalogImportPage() {
                     </div>
                   </details>
                 )}
-                <p className="hgins-cta__hint" style={{ marginTop: 12 }}>
+                <p className="hgins-cta__hint hgadm-mt-12">
                   {formatDateTime(latestPlan.created_at)} 미리보기 · {latestPlan.requested_by_email ?? "알 수 없음"}
                 </p>
               </>
@@ -453,7 +453,7 @@ export function CatalogImportPage() {
                     }
                   />
                 </div>
-                <p className="hgins-cta__hint" style={{ marginTop: 12 }}>
+                <p className="hgins-cta__hint hgadm-mt-12">
                   {formatDateTime(latestImport.created_at)} 반영 · {latestImport.requested_by_email ?? "알 수 없음"} ·
                   연습 문항은 {d.auto_publish ? "바로 공개" : "초안으로 저장"}
                 </p>
@@ -528,11 +528,11 @@ export function CatalogImportPage() {
           </>
         }
       >
-        <div className="hgins-facts" style={{ marginBottom: 14 }}>
+        <div className="hgins-facts hgadm-mb-12">
           <Fact label="새로 추가" value={n(plan?.counts.create)} tone="brand" />
           <Fact label="내용 변경" value={n(plan?.counts.update)} tone="brand" />
         </div>
-        <ul className="hgins-list" style={{ margin: "0 0 16px" }}>
+        <ul className="hgins-list hgadm-mt-0 hgadm-mb-16">
           <li>
             연습 문항은 {d.auto_publish ? "바로 회원에게 공개돼요" : "초안으로 저장돼요 (공개는 따로 해야 해요)"}.
           </li>
@@ -545,12 +545,12 @@ export function CatalogImportPage() {
         >
           <Input value={typedName} onChange={(e) => setTypedName(e.target.value)} autoComplete="off" aria-label="데이터베이스 이름" />
         </Field>
-        <label className="hgadm-checkbox" style={{ display: "flex", marginTop: 6 }}>
+        <label className="hgadm-checkbox hgadm-checkbox--block hgadm-mt-8">
           <input type="checkbox" checked={backup} onChange={(e) => setBackup(e.target.checked)} />
           반영 전에 이 데이터베이스를 백업했고, 복원할 수 있음을 확인했습니다.
         </label>
         {needsSeed && (
-          <label className="hgadm-checkbox" style={{ display: "flex", marginTop: 6 }}>
+          <label className="hgadm-checkbox hgadm-checkbox--block hgadm-mt-8">
             <input type="checkbox" checked={seed} onChange={(e) => setSeed(e.target.checked)} />
             빠진 커리큘럼 v1 스킬도 함께 만듭니다.
           </label>

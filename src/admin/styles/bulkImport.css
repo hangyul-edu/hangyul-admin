@@ -93,3 +93,10 @@
 .hgbulk-issues li.is-error {
   color: var(--hgadm-danger);
 }
+
+.hgbulk-col-no {
+  width: 56px;
+}
+.hgbulk-col-status {
+  width: 150px;
+}

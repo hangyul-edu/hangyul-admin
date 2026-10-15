@@ -99,7 +99,7 @@ export function CohortsPage() {
             : undefined
         }
         actions={
-          <div className="hgins-period" style={{ margin: 0 }}>
+          <div className="hgins-period hgadm-m-0">
             <div className="hgins-seg" role="radiogroup" aria-label="묶는 단위">
               {(
                 [
@@ -141,7 +141,7 @@ export function CohortsPage() {
               <MetricLabel metric="return_retention_d30" />
             </div>
             <DataTable columns={columns} rows={query.data.cohorts} rowKey={(c) => c.cohort} />
-            <p className="hgins-cta__hint" style={{ marginTop: 10 }}>
+            <p className="hgins-cta__hint hgadm-mt-12">
               {query.data.definition}
             </p>
           </>

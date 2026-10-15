@@ -90,7 +90,6 @@ export function ContentQualityPage() {
             role="tab"
             aria-selected={tab === key}
             className={`hgins-tab${tab === key ? " is-active" : ""}`}
-            style={{ border: 0, cursor: "pointer", background: tab === key ? undefined : "transparent" }}
             onClick={() => f.patch({ tab: key, page: null })}
           >
             {label}
@@ -117,7 +116,7 @@ function CoverageTab() {
   const approved = c.bands.reduce((sum, b) => sum + b.approved, 0);
   return (
     <>
-      <div className="hgins-facts" style={{ marginBottom: 16 }}>
+      <div className="hgins-facts hgadm-mb-16">
         <div className={`hgins-fact ${shortBands.length ? "hgins-fact--bad" : "hgins-fact--good"}`}>
           <div className="hgins-fact__label">콘텐츠가 부족한 레벨</div>
           <div className="hgins-fact__value">{shortBands.length ? `${shortBands.length}개` : "없음"}</div>
@@ -163,7 +162,7 @@ function CoverageTab() {
               key: "shortage",
               header: "모자란 양",
               numeric: true,
-              render: (b) => (b.shortage ? <strong style={{ color: "var(--hgadm-danger)" }}>{b.shortage.toLocaleString()}</strong> : "—"),
+              render: (b) => (b.shortage ? <strong className="hgadm-text-danger">{b.shortage.toLocaleString()}</strong> : "—"),
             },
             {
               key: "status",
@@ -219,8 +218,8 @@ function DiagnosticsTab() {
       key: "item",
       header: "문항",
       render: (r) => (
-        <div style={{ maxWidth: 360 }}>
-          <div className="hgadm-cell-main" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <div className="hgadm-cell-text hgadm-cell-text--narrow">
+          <div className="hgadm-cell-main hgadm-ellipsis">
             {r.preview || "(내용 없음)"}
           </div>
           <div className="hgadm-cell-sub">
@@ -286,7 +285,7 @@ function DiagnosticsTab() {
         <ErrorState message="문항별 결과를 불러오지 못했습니다." onRetry={() => void q.refetch()} />
       ) : (
         <>
-          <div className="hgadm-cell-sub" style={{ marginBottom: 8 }}>
+          <div className="hgadm-cell-sub hgadm-mb-8">
             처리 안 된 신고 {q.data.open_issues.toLocaleString()}건
             {Object.keys(q.data.review_backlog).length > 0 &&
               ` · ${Object.entries(q.data.review_backlog)
@@ -333,8 +332,8 @@ function QueueTab() {
       key: "preview",
       header: "내용",
       render: (v) => (
-        <div style={{ maxWidth: 420 }}>
-          <div className="hgadm-cell-main" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <div className="hgadm-cell-text">
+          <div className="hgadm-cell-main hgadm-ellipsis">
             {v.preview}
           </div>
           <div className="hgadm-cell-sub">v{v.version_no}</div>
@@ -427,12 +426,12 @@ function renderPayload(p: Record<string, unknown>) {
   const keys = (p.choice_keys as string[] | undefined) ?? choices.map((_, i) => String(i + 1));
   return (
     <div>
-      {typeof p.prompt === "string" && <div style={{ fontWeight: 600 }}>{p.prompt}</div>}
-      {typeof p.display_text === "string" && <div style={{ fontWeight: 600 }}>{p.display_text}</div>}
+      {typeof p.prompt === "string" && <div className="hgadm-fw-600">{p.prompt}</div>}
+      {typeof p.display_text === "string" && <div className="hgadm-fw-600">{p.display_text}</div>}
       {typeof p.translation === "string" && <div className="hgadm-cell-sub">{p.translation}</div>}
       {typeof p.content_html === "string" && <div className="hgadm-cell-sub">{p.content_html.replace(/<[^>]+>/g, " ")}</div>}
       {choices.length > 0 && (
-        <ol style={{ margin: "6px 0 0 18px", padding: 0 }}>
+        <ol className="hgadm-bullets hgadm-mt-8">
           {choices.map((c, i) => (
             <li key={i}>
               <span className="hgadm-cell-mono">{keys[i]}</span> {c}
@@ -483,7 +482,7 @@ function BlindSolveModal({ versionId, onClose }: { versionId: string; onClose: (
         <ErrorState message="문항을 불러오지 못했습니다." />
       ) : (
         <>
-          <div className="hgadm-cell-sub" style={{ marginBottom: 8 }}>
+          <div className="hgadm-cell-sub hgadm-mb-8">
             정답과 해설은 표시되지 않습니다. 스스로 푼 답을 입력하세요.
           </div>
           {renderPayload(view.data.public_payload)}
@@ -551,7 +550,7 @@ function VersionModal({ versionId, onClose }: { versionId: string; onClose: () =
           <h3>학습자에게 보이는 내용</h3>
           {renderPayload(v.public_payload)}
           <h3>정답</h3>
-          <pre className="hgadm-cell-mono" style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(v.answer_key, null, 2)}</pre>
+          <pre className="hgadm-cell-mono hgadm-pre-wrap">{JSON.stringify(v.answer_key, null, 2)}</pre>
           <h3>해설·힌트</h3>
           {v.explanations.length === 0 ? (
             <div className="hgadm-cell-sub">없음</div>
@@ -619,7 +618,7 @@ function VersionModal({ versionId, onClose }: { versionId: string; onClose: () =
             </ul>
           )}
 
-          <div className="hgadm-toolbar" style={{ marginTop: 16, flexWrap: "wrap" }}>
+          <div className="hgadm-toolbar hgadm-row--wrap hgadm-mt-16">
             {can("content:write") && v.lifecycle === "draft" && (
               <Button loading={submit.isPending} onClick={() => submit.mutate()}>
                 검수 요청
@@ -644,9 +643,9 @@ function VersionModal({ versionId, onClose }: { versionId: string; onClose: () =
           </div>
 
           {can("content:review") && v.lifecycle === "in_review" && (
-            <div className="hgadm-card" style={{ marginTop: 12 }}>
+            <div className="hgadm-card hgadm-mt-12">
               <h3>교육 검수</h3>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 6 }}>
+              <div className="hgadm-check-grid">
                 {CHECKLIST.map(([key, label]) => (
                   <label key={key}>
                     <input

@@ -180,7 +180,7 @@ export function LearnerDetailPage() {
               }}
               empty="아직 반영된 학습 증거가 없습니다."
             />
-            <div className="hgadm-grid-2" style={{ marginTop: 12 }}>
+            <div className="hgadm-grid-2 hgadm-mt-12">
               <div>
                 <h4>복습 대기열</h4>
                 {t.review_queue.length === 0 ? (
@@ -288,7 +288,7 @@ function GrowthPanel({ userId, track, onSkill }: { userId: string; track: string
   const date = (name: string, label: string) => (
     <label className="hgadm-window-field">
       <span className="hgadm-cell-sub">{label}</span>
-      <Input type="date" aria-label={label} value={f.value(name)} onChange={(e) => f.patch({ [name]: e.target.value || null })} style={{ width: 150 }} />
+      <Input className="hgadm-w-md" type="date" aria-label={label} value={f.value(name)} onChange={(e) => f.patch({ [name]: e.target.value || null })} />
     </label>
   );
   return (
@@ -349,8 +349,8 @@ function GrowthView({ g, onSkill }: { g: Growth; onSkill: (skill: string, name: 
           기준 {g.baseline_window.start} ~ {g.baseline_window.end} · 현재 {g.current_window.start} ~ {g.current_window.end} ·{" "}
           {g.current_window.timezone} · 학습자 모델 {g.learner_model_version} · 도움 기준: {g.assistance_policy}
         </div>
-        <table className="hgadm-table" style={{ marginTop: 10 }}>
-          <caption className="hgadm-cell-sub" style={{ textAlign: "left" }}>활동·수행·복습은 서로 다른 측정입니다</caption>
+        <table className="hgadm-table hgadm-mt-12">
+          <caption className="hgadm-cell-sub hgadm-text-left">활동·수행·복습은 서로 다른 측정입니다</caption>
           <thead>
             <tr>
               <th scope="col">항목</th>
@@ -410,7 +410,7 @@ function GrowthView({ g, onSkill }: { g: Growth; onSkill: (skill: string, name: 
       <div className="hgadm-card">
         <h3>기술별 숙달도 변화</h3>
         <DataTable columns={skillColumns} rows={g.skills} rowKey={(s) => `${s.skill_id}:${s.dimension}`} empty="비교할 기술 기록이 없습니다." />
-        <ul className="hgadm-cell-sub" style={{ marginTop: 8 }}>
+        <ul className="hgadm-cell-sub hgadm-mt-8">
           {g.limitations.map((l) => (
             <li key={l}>{l}</li>
           ))}
@@ -458,8 +458,8 @@ function EvidencePanel({
       key: "content",
       header: "콘텐츠",
       render: (e) => (
-        <div style={{ maxWidth: 320 }}>
-          <div className="hgadm-cell-main" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <div className="hgadm-cell-text hgadm-cell-text--narrow">
+          <div className="hgadm-cell-main hgadm-ellipsis">
             {e.content_preview || UNNAMED_CONTENT}
           </div>
           <div className="hgadm-cell-sub">
@@ -615,7 +615,7 @@ function TraceView({ t }: { t: SessionTrace }) {
                 key: "item",
                 header: "콘텐츠",
                 render: (s) => (
-                  <span style={{ display: "inline-block", maxWidth: 280, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  <span className="hgadm-truncate">
                     {s.preview || UNNAMED_CONTENT}
                   </span>
                 ),

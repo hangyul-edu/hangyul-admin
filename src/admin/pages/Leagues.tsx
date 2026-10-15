@@ -200,7 +200,7 @@ function MemberLookup() {
       <div className="hgadm-card__head">
         <div>
           <div className="hgadm-card__title">회원 소속 리그 찾기</div>
-          <div className="hgadm-cell-sub" style={{ marginTop: 2 }}>
+          <div className="hgadm-cell-sub hgadm-mt-4">
             회원을 검색하면 이번 주 어느 리그에 속해 있는지 확인할 수 있습니다.
           </div>
         </div>
@@ -596,11 +596,10 @@ export function LeagueDetailPage() {
     <div>
       <div className="hgadm-page-head">
         <div>
-          <div className="hgadm-row" style={{ marginBottom: 4 }}>
+          <div className="hgadm-row hgadm-mb-4">
             <Link
               to="/leagues"
-              className="hgadm-muted hgadm-row"
-              style={{ fontSize: 13, gap: 4 }}
+              className="hgadm-muted hgadm-row hgadm-text-sm hgadm-row--tight"
             >
               <ArrowLeft size={14} strokeWidth={2} />
               진행 중인 리그
@@ -874,11 +873,10 @@ export function UnassignedMembersPage() {
     <div>
       <div className="hgadm-page-head">
         <div>
-          <div className="hgadm-row" style={{ marginBottom: 4 }}>
+          <div className="hgadm-row hgadm-mb-4">
             <Link
               to="/leagues"
-              className="hgadm-muted hgadm-row"
-              style={{ fontSize: 13, gap: 4 }}
+              className="hgadm-muted hgadm-row hgadm-text-sm hgadm-row--tight"
             >
               <ArrowLeft size={14} strokeWidth={2} />
               진행 중인 리그

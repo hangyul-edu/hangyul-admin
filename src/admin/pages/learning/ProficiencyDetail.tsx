@@ -520,7 +520,7 @@ function EvidencePanel({ userId, track, canCorrect, canTranscripts }: { userId: 
     <div className="hgadm-card">
       {canCorrect && (
         <div className="hgadm-toolbar">
-          <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="무효 처리 사유(10자 이상)" style={{ width: 360 }} />
+          <Input className="hgadm-w-lg" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="무효 처리 사유(10자 이상)" />
           <span className="hgadm-cell-sub">사유는 감사 기록에 남습니다.</span>
         </div>
       )}
@@ -660,7 +660,7 @@ function CorrectionPanel({ userId, track }: { userId: string; track: Proficiency
           ))}
         </Select>
       </div>
-      <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="사유(10자 이상)" style={{ width: "100%" }} />
+      <Input className="hgadm-w-full" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="사유(10자 이상)" />
       <div className="hgadm-toolbar">
         <Button variant="primary" disabled={!ok || correct.isPending} onClick={() => correct.mutate()}>
           정정 기록

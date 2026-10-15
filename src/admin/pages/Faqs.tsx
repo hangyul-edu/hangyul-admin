@@ -361,7 +361,7 @@ export function FaqsPage() {
               </option>
             ))}
           </Select>
-          <span className="hgadm-muted" style={{ fontSize: 13 }}>
+          <span className="hgadm-muted hgadm-text-sm">
             {rows.length}개 표시 중
           </span>
         </div>
@@ -463,7 +463,7 @@ export function FaqsPage() {
                 </Field>
               </div>
             ))}
-            <p className="hgadm-muted" style={{ fontSize: 12.5, marginTop: 0 }}>
+            <p className="hgadm-muted hgadm-text-xs hgadm-mt-0">
               한 언어만 입력해도 저장됩니다. 비워 둔 언어의 사용자에게는 입력된 언어가
               대신 보여집니다.
             </p>

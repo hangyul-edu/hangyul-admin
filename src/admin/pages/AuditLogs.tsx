@@ -182,7 +182,7 @@ export function AuditLogsPage() {
         onClose={() => setDetail(null)}
       >
         {detail && (
-          <div style={{ fontSize: 13.5 }}>
+          <div className="hgadm-text-md">
             <dl className="hgadm-dl">
               <dt>시각</dt>
               <dd><Timestamp at={detail.occurred_at} /></dd>

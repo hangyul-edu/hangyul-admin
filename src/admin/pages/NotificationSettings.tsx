@@ -102,23 +102,13 @@ export function NotificationSettingsPage() {
             ) : (
               <>
                 <div
-                  className="hgadm-row"
-                  style={{
-                    gap: 8,
-                    alignItems: "flex-start",
-                    background: "var(--surface-2)",
-                    border: "1px solid var(--border)",
-                    borderRadius: 12,
-                    padding: "10px 12px",
-                    marginBottom: 16,
-                  }}
+                  className="hgadm-note hgadm-note--boxed hgadm-mb-16"
                 >
-                  <Globe2
+                  <Globe2 className="hgadm-note__icon"
                     size={16}
                     strokeWidth={2}
-                    style={{ flexShrink: 0, marginTop: 2, color: "var(--ink-3)" }}
                   />
-                  <div style={{ fontSize: 13, color: "var(--ink-2)", lineHeight: 1.6 }}>
+                  <div className="hgadm-note__text">
                     <strong>전체 공통 설정입니다.</strong> 여기서 바꾼 시각은 학습 알림을
                     켜 둔 모든 사용자에게 즉시 적용됩니다. 사용자별로 다른 시각을 지정할 수는
                     없습니다.
@@ -132,6 +122,7 @@ export function NotificationSettingsPage() {
                   hint={`24시간제 HH:MM 형식 (기본값 ${DEFAULT_TIME})`}
                 >
                   <Input
+                    className="hgadm-w-md hgadm-tabular"
                     value={time}
                     onChange={(e) => {
                       setTouched(true);
@@ -143,12 +134,11 @@ export function NotificationSettingsPage() {
                     placeholder={DEFAULT_TIME}
                     aria-label="발송 시각"
                     aria-invalid={error ? true : undefined}
-                    style={{ width: 140, fontVariantNumeric: "tabular-nums" }}
                   />
                 </Field>
 
                 {canEdit ? (
-                  <div className="hgadm-row" style={{ gap: 8, marginTop: 4 }}>
+                  <div className="hgadm-row hgadm-mt-4">
                     <Button
                       variant="primary"
                       loading={save.isPending}
@@ -168,19 +158,19 @@ export function NotificationSettingsPage() {
                       기본값({DEFAULT_TIME})으로
                     </Button>
                     {dirty && !error && (
-                      <span className="hgadm-muted" style={{ fontSize: 12.5 }}>
+                      <span className="hgadm-muted hgadm-text-xs">
                         저장하지 않은 변경사항이 있습니다.
                       </span>
                     )}
                   </div>
                 ) : (
-                  <p className="hgadm-muted" style={{ fontSize: 13, marginTop: 4 }}>
+                  <p className="hgadm-muted hgadm-text-sm hgadm-mt-4">
                     변경하려면 <code>ops:write</code> 권한이 필요합니다. 현재 계정은 조회만
                     가능합니다.
                   </p>
                 )}
 
-                <div style={{ marginTop: 20 }}>
+                <div className="hgadm-mt-20">
                   <Dl
                     items={[
                       ["현재 적용 값", <strong key="v">{saved}</strong>],
@@ -230,7 +220,7 @@ export function NotificationSettingsPage() {
               알림 <strong>문구</strong>는 각 사용자의 앱 언어를 따릅니다. 언어를 영어로 바꿔도
               발송 시각은 바뀌지 않습니다.
             </NoteRow>
-            <p className="hgadm-muted" style={{ fontSize: 12.5, marginBottom: 0 }}>
+            <p className="hgadm-muted hgadm-text-xs hgadm-mb-0">
               학습 알림을 끈 사용자와 그날 학습 목표를 이미 채운 사용자에게는 발송되지
               않습니다.
             </p>
@@ -251,13 +241,13 @@ function NoteRow({
   children: ReactNode;
 }) {
   return (
-    <div className="hgadm-row" style={{ gap: 10, alignItems: "flex-start", marginBottom: 16 }}>
-      <span style={{ flexShrink: 0, marginTop: 2, color: "var(--ink-3)" }} aria-hidden>
+    <div className="hgadm-row hgadm-note hgadm-mb-16">
+      <span className="hgadm-note__icon" aria-hidden>
         {icon}
       </span>
       <div>
-        <div style={{ fontWeight: 700, fontSize: 13.5, marginBottom: 2 }}>{title}</div>
-        <div style={{ fontSize: 13, color: "var(--ink-2)", lineHeight: 1.6 }}>{children}</div>
+        <div className="hgadm-fw-700 hgadm-text-md hgadm-mb-4">{title}</div>
+        <div className="hgadm-note__text">{children}</div>
       </div>
     </div>
   );

@@ -253,8 +253,7 @@ function ThumbnailField({ value, onChange }: { value: string; onChange: (url: st
       <div className="hgadm-row">
         {value && <img src={value} alt="썸네일" className="hgadm-thumb" />}
         <div
-          className="hgadm-dropzone"
-          style={{ flex: 1, padding: "14px 12px" }}
+          className="hgadm-dropzone hgadm-flex-1 hgadm-dropzone--compact"
           onClick={() => fileRef.current?.click()}
         >
           {uploading ? "업로드 중…" : value ? "클릭해서 교체" : "클릭해서 업로드"}

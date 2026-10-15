@@ -175,13 +175,13 @@ export function NoticesPage() {
         const ko = pick(n, "ko") ?? n.translations[0];
         return (
           <div>
-            <div className="hgadm-cell-main hgadm-row" style={{ gap: 6 }}>
+            <div className="hgadm-cell-main hgadm-row hgadm-row--tight">
               {n.pinned && (
                 <Pin
+                  className="hgadm-notice-pin"
                   size={14}
                   strokeWidth={2}
                   aria-label="고정됨"
-                  style={{ color: "var(--hgadm-primary)", flexShrink: 0 }}
                 />
               )}
               {ko?.title ?? "(제목 없음)"}
@@ -344,7 +344,7 @@ export function NoticesPage() {
                 </Field>
               </div>
             </div>
-            <div className="hgadm-row hgadm-row--wrap" style={{ gap: 22 }}>
+            <div className="hgadm-row hgadm-row--wrap hgadm-row--spacious">
               <label className="hgadm-checkbox">
                 <input
                   type="checkbox"

@@ -45,9 +45,10 @@ describe("notification preview", () => {
     // place the icon. With one child left, that spacing would show as an
     // indent before the title.
     const title = screen.getByText("알림 제목");
-    const box = title.closest("[style*='border-radius']") as HTMLElement;
-    expect(box.style.display).not.toBe("flex");
-    expect(box.style.gap).toBe("");
+    const box = title.closest(".hgadm-push-preview") as HTMLElement;
+    expect(box).not.toBeNull();
+    // Title and body stack in one plain block: no flex row, no gap before the title.
+    expect(box.className).not.toMatch(/hgadm-row|hgadm-note/);
   });
 
   it("previews the title and body the admin is typing", async () => {

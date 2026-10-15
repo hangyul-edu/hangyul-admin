@@ -326,12 +326,12 @@ export function UsersPage() {
         }
       >
         {testerInfo && (
-          <div style={{ fontSize: 14, lineHeight: 1.7 }}>
+          <div className="hgadm-prose">
             <p>
               비밀번호는 <strong>지금 한 번만</strong> 표시됩니다. 안전한 채널로
               전달하고 이 창을 닫으세요.
             </p>
-            <dl className="hgadm-dl" style={{ marginTop: 10 }}>
+            <dl className="hgadm-dl hgadm-mt-12">
               <dt>이메일</dt>
               <dd className="hgadm-cell-mono">{testerInfo.email}</dd>
               <dt>닉네임</dt>

@@ -180,15 +180,14 @@ export function UserDetailPage() {
     <div>
       <div className="hgadm-page-head">
         <div>
-          <div className="hgadm-row" style={{ marginBottom: 4 }}>
+          <div className="hgadm-row hgadm-mb-4">
             {/* Back to wherever this page was opened from — the directory by
                 default, but the league that linked here if that is where the
                 admin came from. */}
             <Link
               to={back.to}
               state={backNavigationState(back)}
-              className="hgadm-muted hgadm-row"
-              style={{ fontSize: 13, gap: 4 }}
+              className="hgadm-muted hgadm-row hgadm-text-sm hgadm-row--tight"
             >
               <ArrowLeft size={14} strokeWidth={2} />
               {back.label}
@@ -390,7 +389,7 @@ export function UserDetailPage() {
                     user.gamification.league_tier ? (
                       <div key="league" className="hgadm-row">
                         <TierChip tier={user.gamification.league_tier} />
-                        <span style={{ fontSize: 13.5 }}>
+                        <span className="hgadm-text-md">
                           {user.gamification.season_points.toLocaleString()}P
                         </span>
                       </div>
@@ -440,7 +439,7 @@ export function UserDetailPage() {
                 {/* These are the answers given at signup, kept as a record.
                     What the learner is actually held to now is on 학습·게임 —
                     the two drift apart as soon as they change a setting. */}
-                <p className="hgadm-cell-sub" style={{ marginTop: 14 }}>
+                <p className="hgadm-cell-sub hgadm-mt-12">
                   가입 시 응답한 내용입니다. 현재 적용 중인 값은 학습·게임 탭에서
                   확인하세요.
                 </p>
@@ -575,11 +574,11 @@ export function UserDetailPage() {
                 <span className="hgadm-muted">학습 분야별 진행 정보가 없습니다.</span>
               ) : (
                 user.learning.tracks.map((t) => (
-                  <div key={t.track_id} className="hgadm-row" style={{ marginBottom: 8 }}>
+                  <div key={t.track_id} className="hgadm-row hgadm-mb-8">
                     <Badge tone="brand">
                       {t.track_id === "track_topik" ? "TOPIK" : "회화"}
                     </Badge>
-                    <span style={{ fontSize: 13.5 }}>
+                    <span className="hgadm-text-md">
                       레벨 {t.current_level} · 진행률 {t.level_progress}% · 누적{" "}
                       {formatDuration(t.cumulative_seconds)}
                     </span>
@@ -754,7 +753,7 @@ export function UserDetailPage() {
           </>
         }
       >
-        <p className="hgadm-muted" style={{ marginTop: 0, fontSize: 12.5 }}>
+        <p className="hgadm-muted hgadm-text-xs hgadm-mt-0">
           {personNameWithEmail(user)} 계정에 관리자 포털 접근 권한을 부여합니다. 권한 등급은
           이후 관리자 계정 관리에서 변경하거나 회수할 수 있어요.
         </p>
@@ -792,7 +791,7 @@ export function UserDetailPage() {
       />
 
       {actionsBlocked && canWrite && (isSelf || user.status === "deactivated") && (
-        <p className="hgadm-muted" style={{ marginTop: 16, fontSize: 12.5 }}>
+        <p className="hgadm-muted hgadm-mt-16 hgadm-text-xs">
           {isSelf
             ? "본인 계정의 역할·상태는 이 화면에서 변경할 수 없습니다."
             : "사용자가 직접 탈퇴한 계정은 관리자가 되살릴 수 없습니다."}
@@ -818,7 +817,7 @@ function AccountHistory({
 }) {
   return (
     // Spaced from the cards above like they are from each other (the grid gap).
-    <div className="hgadm-card hgadm-section" style={{ marginTop: 18 }}>
+    <div className="hgadm-card hgadm-section hgadm-mt-20">
       <div className="hgadm-card__head">
         <div className="hgadm-card__title">
           계정 이력 · 재가입 {count}회

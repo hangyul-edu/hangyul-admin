@@ -84,25 +84,24 @@ export function ContentCleanupButton<T>({
         onConfirm={() => mutation.mutate()}
         onCancel={() => setOpen(false)}
         message={
-          <div style={{ textAlign: "left" }}>
-            <p style={{ marginBottom: 10 }}>
+          <div className="hgadm-text-left">
+            <p className="hgadm-mb-12">
               아래 콘텐츠가 <strong>학습 대상에서 제외</strong>됩니다. 더 이상 새
               학습에 제공되지 않으며, 이 작업은 되돌릴 수 없습니다.
             </p>
-            <dl className="hgadm-dl" style={{ gridTemplateColumns: "1fr auto", rowGap: 6 }}>
+            <dl className="hgadm-dl hgadm-count-list">
               {countLabels.map(([key, lbl]) => (
                 <FragmentRow key={key} label={lbl} value={count(key)} />
               ))}
             </dl>
             {preservedLabels.length > 0 && (
               <>
-                <p style={{ margin: "14px 0 10px" }}>
+                <p className="hgadm-mt-12 hgadm-mb-12">
                   아래 <strong>회원 기록은 그대로 보존</strong>되며, 회원은 이전과
                   동일하게 열람·복습할 수 있습니다.
                 </p>
                 <dl
-                  className="hgadm-dl"
-                  style={{ gridTemplateColumns: "1fr auto", rowGap: 6 }}
+                  className="hgadm-dl hgadm-count-list"
                 >
                   {preservedLabels.map(([key, lbl]) => (
                     <FragmentRow key={key} label={lbl} value={count(key)} />
@@ -111,7 +110,7 @@ export function ContentCleanupButton<T>({
               </>
             )}
             {previewQuery.isError && (
-              <p className="hgadm-field__error" style={{ marginTop: 8 }}>
+              <p className="hgadm-field__error hgadm-mt-8">
                 미리보기를 불러오지 못했어요: {errorMessage(previewQuery.error)}
               </p>
             )}
@@ -126,7 +125,7 @@ function FragmentRow({ label, value }: { label: string; value: string }) {
   return (
     <>
       <dt>{label}</dt>
-      <dd style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{value}</dd>
+      <dd className="hgadm-text-right hgadm-tabular">{value}</dd>
     </>
   );
 }

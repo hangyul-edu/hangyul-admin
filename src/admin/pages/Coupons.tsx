@@ -168,7 +168,7 @@ function BatchesTab() {
   return (
     <div className="hgadm-card">
       <div className="hgadm-toolbar">
-        <span className="hgadm-muted" style={{ fontSize: 13 }}>
+        <span className="hgadm-muted hgadm-text-sm">
           발행 묶음 목록
         </span>
         <span className="hgadm-toolbar__spacer" />
@@ -262,13 +262,13 @@ function BatchesTab() {
         }
       >
         {created && (
-          <div style={{ fontSize: 14, lineHeight: 1.7 }}>
+          <div className="hgadm-prose">
             <p>
               코드 <strong>{created.generated.toLocaleString()}개</strong>가
               생성되었습니다. 샘플:
             </p>
             <pre className="hgadm-json">{created.sample.join("\n")}</pre>
-            <p className="hgadm-muted" style={{ fontSize: 12.5 }}>
+            <p className="hgadm-muted hgadm-text-xs">
               전체 코드는 '쿠폰 검색' 탭에서 발행 묶음으로 필터해 확인할 수 있습니다.
             </p>
           </div>

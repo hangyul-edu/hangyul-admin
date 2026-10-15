@@ -206,7 +206,7 @@ export function BulkImportButton({
               </span>
             </label>
             {parseError && (
-              <p className="hgadm-field__error" role="alert" style={{ marginTop: 10 }}>
+              <p className="hgadm-field__error hgadm-mt-12" role="alert">
                 {parseError}
               </p>
             )}
@@ -251,15 +251,15 @@ export function BulkImportButton({
               <summary>파일 대신 직접 붙여넣기</summary>
               <div className="hgins-more__body">
                 <Textarea
+                  className="hgadm-mono hgadm-text-sm"
                   rows={10}
                   value={pasted}
                   aria-label="JSON 붙여넣기"
-                  style={{ fontFamily: "var(--font-mono, monospace)", fontSize: 13 }}
                   spellCheck={false}
                   placeholder={template}
                   onChange={(e) => setPasted(e.target.value)}
                 />
-                <div className="hgadm-row" style={{ justifyContent: "flex-end", marginTop: 8 }}>
+                <div className="hgadm-row hgadm-row--end hgadm-mt-8">
                   <Button
                     size="sm"
                     variant="primary"
@@ -276,10 +276,10 @@ export function BulkImportButton({
         ) : (
           report && (
             <div className="hgbulk">
-              <div className="hgins-cta__hint" style={{ marginBottom: 10 }}>
-                <FileJson size={14} strokeWidth={2} aria-hidden style={{ verticalAlign: -2 }} /> {source} · 아직 저장하지 않았어요
+              <div className="hgins-cta__hint hgadm-mb-12">
+                <FileJson className="hgadm-icon-inline" size={14} strokeWidth={2} aria-hidden /> {source} · 아직 저장하지 않았어요
               </div>
-              <div className="hgins-facts" style={{ marginBottom: 14 }}>
+              <div className="hgins-facts hgadm-mb-12">
                 <Fact label={`전체 ${noun}`} value={report.total} />
                 <Fact label="추가할 수 있음" value={report.ready} tone={report.ready ? "good" : undefined} />
                 <Fact label="오류" value={report.invalid} tone={report.invalid ? "bad" : undefined} hint={report.invalid ? "고쳐야 추가돼요" : "없음"} />
@@ -328,9 +328,9 @@ export function BulkImportButton({
                 <table className="hgadm-table">
                   <thead>
                     <tr>
-                      <th style={{ width: 56 }}>#</th>
+                      <th className="hgbulk-col-no">#</th>
                       <th>내용</th>
-                      <th style={{ width: 150 }}>상태</th>
+                      <th className="hgbulk-col-status">상태</th>
                       <th>확인할 점</th>
                     </tr>
                   </thead>
@@ -371,7 +371,7 @@ export function BulkImportButton({
                 </table>
               </div>
               {report.invalid > 0 && (
-                <p className="hgins-cta__hint" style={{ marginTop: 10 }}>
+                <p className="hgins-cta__hint hgadm-mt-12">
                   오류가 있는 {report.invalid.toLocaleString()}건은 추가되지 않아요. "오류 내려받기"로 그 줄만 받아 고친 뒤 다시 올리면 돼요.
                 </p>
               )}

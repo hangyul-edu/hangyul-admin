@@ -74,7 +74,7 @@ function ActivityChips({ codes, tone }: { codes: string[]; tone: "success" | "ne
       {codes.map((code) => (
         <Badge key={code} tone={tone}>
           {ACTIVITY_LABEL[code] ?? code}{" "}
-          {ACTIVITY_LABEL[code] && <span className="hgadm-cell-mono" style={{ opacity: 0.6, fontSize: 11 }}>{code}</span>}
+          {ACTIVITY_LABEL[code] && <span className="hgadm-cell-mono hgadm-faint-tag">{code}</span>}
         </Badge>
       ))}
     </div>
@@ -197,7 +197,7 @@ export function ProficiencyPolicyPage() {
       <div className="hgins-grid">
         <Panel
           title={
-            <span className="hgadm-row" style={{ gap: 6 }}>
+            <span className="hgadm-row hgadm-row--tight">
               <CheckCircle2 size={17} color="var(--hgadm-success)" aria-hidden /> 레벨 판정에 쓰는 활동
             </span>
           }
@@ -207,7 +207,7 @@ export function ProficiencyPolicyPage() {
         </Panel>
         <Panel
           title={
-            <span className="hgadm-row" style={{ gap: 6 }}>
+            <span className="hgadm-row hgadm-row--tight">
               <XCircle size={17} color="var(--hgadm-danger)" aria-hidden /> 절대 증거가 되지 않는 활동
             </span>
           }
@@ -234,7 +234,7 @@ export function ProficiencyPolicyPage() {
               ["보정·검증 자료가 섞인 경우", `회원 ${v.leakage.learners_in_both_splits.length}명 · 과제 유형 ${v.leakage.families_in_both_splits.length}개`],
             ]}
           />
-          <div className="hgadm-table-wrap" style={{ marginTop: 12 }}>
+          <div className="hgadm-table-wrap hgadm-mt-12">
             <table className="hgadm-table">
               <thead>
                 <tr>

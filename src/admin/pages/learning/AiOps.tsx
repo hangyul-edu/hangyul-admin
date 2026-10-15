@@ -169,7 +169,7 @@ function FeaturesSection() {
             </>
           }
         >
-          <p className="hgins-cta__hint" style={{ margin: "0 0 12px" }}>
+          <p className="hgins-cta__hint hgadm-mt-0 hgadm-mb-12">
             {editing.enabled
               ? "끄면 이 기능을 쓰는 화면은 AI 없이 동작하는 기본 방식으로 바뀌어요."
               : "켜면 바로 회원에게 적용되고, 한도 안에서 비용이 발생해요."}
@@ -250,7 +250,7 @@ function UsageSection() {
             columns={columns}
             empty="이 기간에 AI를 호출한 기록이 없어요"
           />
-          <p className="hgins-cta__hint" style={{ marginTop: 10 }}>
+          <p className="hgins-cta__hint hgadm-mt-12">
             비용은 단가표({q.data.rate_card_version}) 기준 추정치로, 실제 청구 금액과 다를 수 있어요. 기능이 정해지지 않은 예전 호출{" "}
             {q.data.legacy_unattributed.calls.toLocaleString()}건 · {usd(q.data.legacy_unattributed.cost_cents)} (추정)은 위 표에 포함되지 않아요.
           </p>
@@ -306,7 +306,7 @@ function TutorSection() {
             key: "text",
             header: "질문 / 답변 (개인정보 가림)",
             render: (t: TutorTurnRow) => (
-              <div style={{ maxWidth: 360 }}>
+              <div className="hgadm-cell-text hgadm-cell-text--narrow">
                 <div>{t.question}</div>
                 <div className="hgadm-cell-sub">{t.answer}</div>
               </div>
@@ -336,7 +336,7 @@ function TutorSection() {
       ) : reliability.isError || !r ? (
         <ErrorState message="튜터 정확도를 불러오지 못했습니다." onRetry={() => void reliability.refetch()} />
       ) : (
-        <div className="hgins-facts" style={{ marginBottom: 14 }}>
+        <div className="hgins-facts hgadm-mb-12">
           <div className="hgins-fact">
             <div className="hgins-fact__label">정확하고 근거 있는 답변</div>
             <div className="hgins-fact__value">
@@ -438,7 +438,7 @@ function TurnReviewModal({ turn, onClose }: { turn: TutorTurnRow; onClose: () =>
         </>
       }
     >
-      <div className="hgadm-cell-sub" style={{ marginBottom: 8 }}>
+      <div className="hgadm-cell-sub hgadm-mb-8">
         {formatDateTime(turn.created_at)} · {ROUTE_LABEL[turn.route] ?? turn.route}
       </div>
       <Field label="내용이 정확한가요?">

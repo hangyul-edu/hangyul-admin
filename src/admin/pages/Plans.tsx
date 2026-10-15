@@ -341,9 +341,9 @@ function CurrencyEditor({
       <legend className="hgadm-field__label">
         {currency} <span className="hgadm-muted">{CURRENCY_AUDIENCE[currency] ?? ""}</span>
       </legend>
-      <label className="hgadm-row" style={{ marginBottom: 10 }}>
+      <label className="hgadm-row hgadm-mb-12">
         <Switch checked={draft.sold} onChange={(sold) => onChange({ ...draft, sold })} label={`${currency}로 판매`} />
-        <span style={{ fontSize: 13 }}>
+        <span className="hgadm-text-sm">
           {draft.sold ? `${currency}로 판매해요.` : `판매 안 함 — 이 통화로 결제하는 회원에게 보이지 않아요.`}
         </span>
       </label>
@@ -371,13 +371,13 @@ function CurrencyEditor({
             />
           </Field>
           <div className="span-2">
-            <label className="hgadm-row" style={{ marginBottom: 8 }}>
+            <label className="hgadm-row hgadm-mb-8">
               <Switch
                 checked={draft.new_member_on}
                 onChange={(next) => onChange({ ...draft, new_member_on: next })}
                 label={`${currency} 신규 회원가 적용`}
               />
-              <span style={{ fontSize: 13 }}>
+              <span className="hgadm-text-sm">
                 {draft.new_member_on
                   ? "무료 체험이나 결제를 한 번도 하지 않은 회원에게 이 가격을 보여주고 청구해요."
                   : "신규 회원가 꺼짐 — 신규 회원도 일반 회원과 같은 가격을 내요."}
@@ -504,12 +504,12 @@ function PlanEditor({
         )}
 
         <div className="span-2">
-          <fieldset className="hgadm-field" style={{ border: 0, padding: 0, margin: "0 0 14px" }}>
+          <fieldset className="hgadm-field hgadm-fieldset">
             <legend className="hgadm-field__label">요금제 배지</legend>
             {/* A label, so the visible track toggles the (hidden) checkbox. */}
-            <label className="hgadm-row" style={{ marginBottom: 10 }}>
+            <label className="hgadm-row hgadm-mb-12">
               <Switch checked={d.badge_published} onChange={(next) => setD({ ...d, badge_published: next })} label="배지 게시" />
-              <span style={{ fontSize: 13 }}>
+              <span className="hgadm-text-sm">
                 {d.badge_published ? "결제 화면의 요금제 카드에 배지를 보여줍니다." : "숨김 — 고른 문구는 저장돼요."}
               </span>
             </label>
@@ -542,7 +542,7 @@ function PlanEditor({
               </label>
             </div>
             {d.badge_choice.kind === "custom" && (
-              <div className="hgadm-form-grid" style={{ marginTop: 12 }}>
+              <div className="hgadm-form-grid hgadm-mt-12">
                 {(["ko", "en"] as const).map((lang) => (
                   <Field
                     key={lang}
@@ -568,7 +568,7 @@ function PlanEditor({
           </fieldset>
 
           {problems.length > 0 && (
-            <ul className="hgadm-field__error" role="alert" style={{ margin: 0, paddingLeft: 18 }}>
+            <ul className="hgadm-field__error hgadm-bullets" role="alert">
               {problems.map((p) => (
                 <li key={p}>{p}</li>
               ))}

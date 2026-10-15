@@ -138,7 +138,7 @@ export function AdminsPage() {
       header: "",
       render: (a) =>
         a.user_id === me?.user_id ? (
-          <span className="hgadm-muted" style={{ fontSize: 12 }}>
+          <span className="hgadm-muted hgadm-text-xs">
             본인 계정은 변경 불가
           </span>
         ) : (

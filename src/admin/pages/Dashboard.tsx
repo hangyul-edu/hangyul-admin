@@ -113,26 +113,14 @@ export function DashboardPage() {
         </div>
       </div>
       {visibleAlerts.length > 0 && (
-        <div className="hgadm-section" style={{ display: "grid", gap: 8 }}>
+        <div className="hgadm-section hgadm-stack hgadm-stack--tight">
           {visibleAlerts.map((alert) => (
             <Link
               key={alert.code}
               to={ALERT_ROUTES[alert.code]?.to ?? "/"}
-              className="hgadm-card"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                padding: "10px 16px",
-                color: "inherit",
-                borderLeft: `4px solid var(--${
-                  alert.severity === "critical"
-                    ? "danger"
-                    : alert.severity === "warning"
-                      ? "warning"
-                      : "info"
-                })`,
-              }}
+              className={`hgadm-card hgadm-alert-row hgadm-alert-row--${
+                alert.severity === "critical" ? "danger" : alert.severity === "warning" ? "warning" : "info"
+              }`}
             >
               <Badge
                 tone={
@@ -145,7 +133,7 @@ export function DashboardPage() {
               >
                 {alert.count.toLocaleString()}건
               </Badge>
-              <span style={{ fontSize: 13.5 }}>{alert.message}</span>
+              <span className="hgadm-text-md">{alert.message}</span>
             </Link>
           ))}
         </div>
@@ -195,7 +183,7 @@ export function DashboardPage() {
         <div className="hgadm-card__head">
           <div>
             <div className="hgadm-card__title">월별 매출</div>
-            <div className="hgadm-cell-sub" style={{ marginTop: 2 }}>
+            <div className="hgadm-cell-sub hgadm-mt-4">
               한국 시간(KST) 달력 월 기준 {currency} 결제 금액. 다른 통화 결제는 포함하지
               않습니다. 마지막 달은 아직 진행 중입니다.
             </div>
@@ -253,7 +241,7 @@ export function DashboardPage() {
                 money={metric === "revenue" ? currency : null}
               />
               {metric === "revenue" && (
-                <div className="hgadm-cell-sub" style={{ marginTop: 8 }}>
+                <div className="hgadm-cell-sub hgadm-mt-8">
                   {currency} 결제 금액입니다. 다른 통화 결제는 포함하지 않습니다.
                 </div>
               )}
@@ -534,29 +522,13 @@ function MonthlyRevenueChart({ data }: { data: MonthlyRevenueResponse }) {
         ariaLabel={`최근 ${data.months}개월 월별 매출 막대 차트`}
         showLabel={() => true}
       />
-      <div
-        className="hgadm-row"
-        style={{ gap: 14, marginTop: 10, fontSize: 12, color: "var(--ink-3)" }}
-      >
-        <span className="hgadm-row" style={{ gap: 6 }}>
-          <span
-            aria-hidden
-            style={{ width: 10, height: 10, borderRadius: 2, background: "#2563eb" }}
-          />
+      <div className="hgadm-row hgadm-chart-legend">
+        <span className="hgadm-row hgadm-row--tight">
+          <span aria-hidden className="hgadm-chart-legend__swatch" />
           완료된 달
         </span>
-        <span className="hgadm-row" style={{ gap: 6 }}>
-          <span
-            aria-hidden
-            style={{
-              width: 10,
-              height: 10,
-              borderRadius: 2,
-              background: "#2563eb",
-              opacity: 0.35,
-              border: "1px dashed #2563eb",
-            }}
-          />
+        <span className="hgadm-row hgadm-row--tight">
+          <span aria-hidden className="hgadm-chart-legend__swatch hgadm-chart-legend__swatch--current" />
           이번 달 (진행 중 · 1일~오늘)
         </span>
       </div>
@@ -649,10 +621,10 @@ function BarChart({
   const hovered = hover !== null ? points[hover] : null;
 
   return (
-    <div style={{ position: "relative", overflowX: "auto" }}>
+    <div className="hgadm-chart-scroll">
       <svg
         viewBox={`0 0 ${width} ${height}`}
-        style={{ width: "100%", minWidth: 640, display: "block" }}
+        className="hgadm-chart-svg"
         role="img"
         aria-label={ariaLabel}
         onMouseLeave={() => setHover(null)}

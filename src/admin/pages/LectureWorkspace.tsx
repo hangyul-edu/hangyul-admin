@@ -128,9 +128,9 @@ export function LectureWorkspacePage() {
     <div className="hgadm-lw">
       <div className="hgadm-page-head">
         <div>
-          <div className="hgadm-row" style={{ marginBottom: 4 }}>
+          <div className="hgadm-row hgadm-mb-4">
             {/* Back to the list as it was filtered (e.g. one series), not the whole list. */}
-            <Link to={`/lectures${listSearch}`} className="hgadm-muted hgadm-row" style={{ fontSize: 13, gap: 4 }}>
+            <Link to={`/lectures${listSearch}`} className="hgadm-muted hgadm-row hgadm-text-sm hgadm-row--tight">
               <ArrowLeft size={14} strokeWidth={2} />
               강의·영상 관리
             </Link>

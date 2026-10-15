@@ -192,7 +192,7 @@ export function BannersPage() {
           </div>
         </div>
       ) : (
-        <div style={{ display: "grid", gap: 12 }}>
+        <div className="hgadm-stack">
           {query.data.items.map((banner, index) => (
             <div
               key={banner.banner_id}
@@ -212,12 +212,12 @@ export function BannersPage() {
                     {banner.is_active ? "노출 중" : "비활성"}
                   </Badge>
                   {banner.action_url && (
-                    <span className="hgadm-cell-mono" style={{ fontSize: 12 }}>
+                    <span className="hgadm-cell-mono hgadm-text-xs">
                       → {banner.action_url}
                     </span>
                   )}
                 </div>
-                <div className="hgadm-cell-sub" style={{ marginTop: 4 }}>
+                <div className="hgadm-cell-sub hgadm-mt-4">
                   {banner.alt_text || "(대체 텍스트 없음)"}
                 </div>
                 <div className="hgadm-cell-sub">
@@ -296,7 +296,7 @@ export function BannersPage() {
           <div>
             <Field label="배너 이미지" required>
               <div>
-                <p className="hgadm-cell-sub" style={{ margin: "0 0 8px" }}>
+                <p className="hgadm-cell-sub hgadm-mt-0 hgadm-mb-8">
                   <CardImageSizeHint />
                 </p>
                 {draft.image_url ? (
@@ -331,7 +331,7 @@ export function BannersPage() {
                     />
                   </div>
                 ) : (
-                  <p className="hgadm-cell-sub" style={{ margin: 0 }}>
+                  <p className="hgadm-cell-sub hgadm-m-0">
                     이미지 변경은 콘텐츠 편집 권한이 필요합니다. 나머지 항목은 그대로
                     수정할 수 있어요.
                   </p>
@@ -375,7 +375,7 @@ export function BannersPage() {
                   onChange={(next) => setDraft({ ...draft, is_active: next })}
                   label="활성화"
                 />
-                <span style={{ fontSize: 13 }}>
+                <span className="hgadm-text-sm">
                   {draft.is_active ? "저장 즉시 노출됩니다" : "저장 후에도 숨김 상태"}
                 </span>
               </div>

@@ -120,7 +120,7 @@ export function NotificationsPage() {
             <div className="hgadm-card__title">{meta.title}</div>
           </div>
           <div className="hgadm-card__body">
-            <p className="hgadm-muted" style={{ fontSize: 13, marginTop: 0 }}>
+            <p className="hgadm-muted hgadm-text-sm hgadm-mt-0">
               {meta.desc}
             </p>
             <Field label="제목" required hint="최대 200자">
@@ -176,10 +176,9 @@ export function NotificationsPage() {
             </Button>
             {lastResult && (
               <p
-                className="hgadm-row"
-                style={{ color: "var(--success)", fontSize: 13.5, marginTop: 12, gap: 6 }}
+                className="hgadm-row hgadm-success-line hgadm-text-md hgadm-mt-12"
               >
-                <CheckCircle2 size={16} strokeWidth={2} style={{ flexShrink: 0 }} />
+                <CheckCircle2 className="hgadm-shrink-0" size={16} strokeWidth={2} />
                 {lastResult}
               </p>
             )}
@@ -191,37 +190,22 @@ export function NotificationsPage() {
             <div className="hgadm-card__title">미리보기</div>
           </div>
           <div className="hgadm-card__body">
-            <div
-              style={{
-                background: "var(--surface-2)",
-                borderRadius: 14,
-                padding: 14,
-                border: "1px solid var(--border)",
-              }}
-            >
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontWeight: 700, fontSize: 14, lineHeight: 1.4 }}>
+            <div className="hgadm-push-preview">
+              <div className="hgadm-min-w-0">
+                <div className="hgadm-push-preview__title">
                   {title || "알림 제목"}
                 </div>
-                <div
-                  style={{
-                    fontSize: 13,
-                    lineHeight: 1.45,
-                    color: "var(--ink-2)",
-                    whiteSpace: "pre-wrap",
-                    marginTop: 2,
-                  }}
-                >
+                <div className="hgadm-push-preview__body">
                   {body || "본문 내용이 여기에 표시됩니다."}
                 </div>
                 {deepLink && (
-                  <div className="hgadm-cell-sub hgadm-cell-mono" style={{ marginTop: 4 }}>
+                  <div className="hgadm-cell-sub hgadm-cell-mono hgadm-mt-4">
                     → {deepLink}
                   </div>
                 )}
               </div>
             </div>
-            <p className="hgadm-muted" style={{ fontSize: 12.5 }}>
+            <p className="hgadm-muted hgadm-text-xs">
               실제 표시 형태는 기기·OS 설정에 따라 다를 수 있습니다.
             </p>
           </div>
@@ -233,8 +217,8 @@ export function NotificationsPage() {
         title={`${meta.title} 발송`}
         message={
           <div>
-            <p style={{ marginTop: 0 }}>{meta.confirm}</p>
-            <div className="hgadm-json" style={{ maxHeight: 140 }}>
+            <p className="hgadm-mt-0">{meta.confirm}</p>
+            <div className="hgadm-json hgadm-scroll-140">
               <strong>{title}</strong>
               {body ? `\n${body}` : ""}
             </div>

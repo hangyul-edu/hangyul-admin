@@ -95,7 +95,7 @@ function Diagnostics() {
         <KpiCard
           icon={Gauge}
           label="세션 구성 속도"
-          value={<span style={{ fontSize: 17 }}>{latency(d.assembly_latency_ms)}</span>}
+          value={<span className="hgadm-text-lg">{latency(d.assembly_latency_ms)}</span>}
           sub={d.assembly_latency_ms.n ? `${d.assembly_latency_ms.n.toLocaleString()}회 기준` : undefined}
         />
         <KpiCard
@@ -116,7 +116,7 @@ function Diagnostics() {
         title={`회원의 맞춤 요청 · ${c.total.toLocaleString()}건`}
         description={`주제·난이도를 바꿔 달라는 요청이 어떻게 처리됐는지예요. 다른 설정과 충돌 ${c.conflicts.toLocaleString()}건 · 다시 계산 ${c.recomputes.toLocaleString()}회 · 처리 시간 ${latency(c.latency_ms)}`}
       >
-        <div className="hgins-grid" style={{ marginBottom: 0 }}>
+        <div className="hgins-grid hgadm-mb-0">
           <div>
             <h4>처리 결과</h4>
             <BarList rows={rows(c.by_status, STATUS_LABEL)} empty="요청이 없어요" />
@@ -169,7 +169,7 @@ function Traces() {
       title="세션 구성 기록"
       description="최근 세션 50개가 어떤 후보 중에서 어떻게 골라졌는지 볼 수 있어요. 보기만 할 수 있어요."
       actions={
-        <Select aria-label="근거 종류" value={kind} onChange={(e) => f.patch({ trace_kind: e.target.value })} style={{ width: 160 }}>
+        <Select className="hgadm-w-md" aria-label="근거 종류" value={kind} onChange={(e) => f.patch({ trace_kind: e.target.value })}>
           <option value="">전체</option>
           <option value="assembly">세션 구성</option>
           <option value="customization">맞춤 요청</option>
@@ -203,7 +203,7 @@ function LearnerPicker({ value, onChange }: { value: LearnerRow | null; onChange
   });
   if (value) {
     return (
-      <div className="hgadm-row" style={{ gap: 8 }}>
+      <div className="hgadm-row">
         <span>
           <strong>{value.nickname ?? "(닉네임 없음)"}</strong> <span className="hgadm-cell-sub">{value.email_masked}</span>
         </span>
@@ -214,18 +214,18 @@ function LearnerPicker({ value, onChange }: { value: LearnerRow | null; onChange
     );
   }
   return (
-    <div style={{ width: 260 }}>
+    <div className="hgadm-sim__picker">
       <SearchBox value={q} placeholder="닉네임으로 검색" onSearch={setQ} />
       {q.trim() && (
-        <div className="hgadm-card" style={{ marginTop: 4, padding: 4 }}>
+        <div className="hgadm-card hgadm-sim__results">
           {results.isLoading ? (
             <LoadingState />
           ) : (results.data?.items ?? []).length === 0 ? (
-            <div className="hgadm-cell-sub" style={{ padding: 6 }}>
+            <div className="hgadm-cell-sub hgadm-sim__hint">
               찾는 회원이 없어요.
             </div>
           ) : (
-            <ul aria-label="학습자 검색 결과" style={{ listStyle: "none", margin: 0, padding: 0 }}>
+            <ul className="hgadm-plain-list" aria-label="학습자 검색 결과">
               {results.data!.items.map((l) => (
                 <li key={l.user_id}>
                   <Button size="sm" variant="ghost" onClick={() => onChange(l)}>
@@ -284,10 +284,10 @@ function Simulation() {
           </Select>
         </Field>
         <Field label="문항 수">
-          <Input type="number" min={1} max={20} value={count} onChange={(e) => setCount(e.target.value)} style={{ width: 80 }} />
+          <Input className="hgadm-w-xs" type="number" min={1} max={20} value={count} onChange={(e) => setCount(e.target.value)} />
         </Field>
         <Field label="레벨 직접 지정 (선택)">
-          <Input type="number" min={1} max={10} value={band} onChange={(e) => setBand(e.target.value)} style={{ width: 90 }} />
+          <Input className="hgadm-w-sm" type="number" min={1} max={10} value={band} onChange={(e) => setBand(e.target.value)} />
         </Field>
         <Button variant="primary" disabled={!learner} loading={run.isPending} onClick={() => run.mutate()}>
           <Sparkles size={15} strokeWidth={2} aria-hidden />
@@ -296,7 +296,7 @@ function Simulation() {
       </div>
       {/* A group, not a Field: Field's <label> would turn any click into a
           click on the first checkbox. */}
-      <div role="group" aria-label="선호 주제 (선택)" style={{ margin: "4px 0 8px" }}>
+      <div className="hgadm-mt-4 hgadm-mb-8" role="group" aria-label="선호 주제 (선택)">
         <div className="hgadm-field__label">
           좋아하는 주제 (선택, 최대 {MAX_TOPICS}개){topics.length ? ` · ${topics.length}개 선택` : ""}
         </div>
@@ -305,21 +305,9 @@ function Simulation() {
         ) : topicList.isError ? (
           <ErrorState message="주제를 불러오지 못했습니다." onRetry={() => void topicList.refetch()} />
         ) : (
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "6px 14px",
-              maxHeight: 112,
-              overflowY: "auto",
-              padding: "8px 10px",
-              border: "1px solid var(--border)",
-              borderRadius: 10,
-              background: "var(--surface-2)",
-            }}
-          >
+          <div className="hgadm-topic-picker">
             {(topicList.data?.items ?? []).map((t) => (
-              <label key={t.topic_id} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 13 }}>
+              <label className="hgadm-topic-picker__item" key={t.topic_id}>
                 <input
                   type="checkbox"
                   checked={topics.includes(t.topic_id)}
@@ -334,7 +322,7 @@ function Simulation() {
       </div>
       {result && (
         <div>
-          <div className="hgins-facts" style={{ margin: "12px 0" }}>
+          <div className="hgins-facts hgadm-mt-12 hgadm-mb-12">
             <div className="hgins-fact">
               <div className="hgins-fact__label">회원 레벨</div>
               <div className="hgins-fact__value">
@@ -358,7 +346,7 @@ function Simulation() {
                 key: "item",
                 header: "나올 문항",
                 render: (s) => (
-                  <span style={{ display: "inline-block", maxWidth: 280, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  <span className="hgadm-truncate">
                     {s.preview || "(내용 없음)"}
                   </span>
                 ),

@@ -292,10 +292,9 @@ export function QuizzesPage() {
       key: "prompt",
       header: "문제",
       render: (quiz) => (
-        <div style={{ maxWidth: 420 }}>
+        <div className="hgadm-cell-text">
           <div
-            className="hgadm-cell-main"
-            style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+            className="hgadm-cell-main hgadm-ellipsis"
           >
             {quiz.prompt}
           </div>
@@ -499,32 +498,30 @@ export function QuizzesPage() {
         onClose={() => setViewing(null)}
       >
         {viewing && (
-          <div style={{ fontSize: 14 }}>
-            <div className="hgadm-row hgadm-row--wrap" style={{ marginBottom: 10 }}>
+          <div className="hgadm-prose">
+            <div className="hgadm-row hgadm-row--wrap hgadm-mb-12">
               <Badge tone="info">{FORMAT_LABEL[viewing.answer_format]}</Badge>
               {viewing.topik_section && <Badge tone="brand">{viewing.topik_section}</Badge>}
               <Badge tone="neutral">{viewing.level}급</Badge>
               {viewing.is_ai_generated && <Badge tone="warning">AI 생성</Badge>}
             </div>
-            <p style={{ fontWeight: 700, whiteSpace: "pre-wrap" }}>{viewing.prompt}</p>
+            <p className="hgadm-fw-700 hgadm-pre-wrap">{viewing.prompt}</p>
             {viewing.content_html && (
               <div
-                className="hgadm-json"
-                style={{ fontFamily: "inherit" }}
+                className="hgadm-json hgadm-json--prose"
                 // Often LLM-generated; sanitized so a hostile passage cannot
                 // run script in an admin's session.
                 dangerouslySetInnerHTML={{ __html: sanitizeHtml(viewing.content_html) }}
               />
             )}
             {viewing.choices.length > 0 && (
-              <ol style={{ paddingLeft: 20, lineHeight: 1.8 }}>
+              <ol className="hgadm-bullets hgadm-bullets--roomy">
                 {viewing.choices.map((c) => (
                   <li key={c.key}>
                     {c.text}
                     {viewing.correct_choice === c.key && (
                       <strong
-                        className="hgadm-row"
-                        style={{ color: "var(--success)", display: "inline-flex", gap: 4, marginLeft: 6, verticalAlign: "middle" }}
+                        className="hgadm-row hgadm-success-line hgadm-answer-mark"
                       >
                         <Check size={15} strokeWidth={2.5} />
                         정답
@@ -535,7 +532,7 @@ export function QuizzesPage() {
               </ol>
             )}
             {viewing.blanks.length > 0 && (
-              <ul style={{ paddingLeft: 20, lineHeight: 1.8 }}>
+              <ul className="hgadm-bullets hgadm-bullets--roomy">
                 {viewing.blanks.map((b, i) => (
                   <li key={i}>
                     {b.label || "빈칸"}: <strong>{b.answer ?? "(기준 채점)"}</strong>
@@ -547,7 +544,7 @@ export function QuizzesPage() {
               <>
                 <hr className="hgadm-divider" />
                 <div className="hgadm-field__label">해설</div>
-                <p style={{ whiteSpace: "pre-wrap" }}>{viewing.explanation}</p>
+                <p className="hgadm-pre-wrap">{viewing.explanation}</p>
               </>
             )}
           </div>
@@ -703,11 +700,11 @@ export function QuizzesPage() {
 
             {draft.answer_format === "single_choice" && (
               <div>
-                <div className="hgadm-field__label" style={{ marginBottom: 6 }}>
+                <div className="hgadm-field__label hgadm-mb-8">
                   선택지 (정답 라디오 선택)
                 </div>
                 {draft.choices.map((choice, i) => (
-                  <div className="hgadm-row" key={i} style={{ marginBottom: 8 }}>
+                  <div className="hgadm-row hgadm-mb-8" key={i}>
                     <input
                       type="radio"
                       name="correct"
@@ -715,7 +712,7 @@ export function QuizzesPage() {
                       onChange={() => setDraft({ ...draft, correct_choice: choice.key })}
                       aria-label={`정답: 선택지 ${choice.key}`}
                     />
-                    <span style={{ width: 20, fontWeight: 700 }}>{choice.key}</span>
+                    <span className="hgadm-choice-no">{choice.key}</span>
                     <Input
                       value={choice.text}
                       onChange={(e) => {
@@ -731,13 +728,13 @@ export function QuizzesPage() {
 
             {draft.answer_format === "short_answer" && (
               <div>
-                <div className="hgadm-field__label" style={{ marginBottom: 6 }}>
+                <div className="hgadm-field__label hgadm-mb-8">
                   빈칸 (라벨 + 정답 · 정답을 비우면 기준 채점)
                 </div>
                 {draft.blanks.map((blank, i) => (
-                  <div className="hgadm-row" key={i} style={{ marginBottom: 8 }}>
+                  <div className="hgadm-row hgadm-mb-8" key={i}>
                     <Input
-                      style={{ width: 90 }}
+                      className="hgadm-w-sm"
                       placeholder="라벨 (ㄱ)"
                       value={blank.label}
                       onChange={(e) => {
@@ -782,7 +779,7 @@ export function QuizzesPage() {
             )}
 
             {criteriaGraded(draft) && (
-              <div className="hgadm-form-grid" style={{ marginTop: 10 }}>
+              <div className="hgadm-form-grid hgadm-mt-12">
                 <Field label="최대 글자 수" required={draft.answer_format === "free_response"}>
                   <Input
                     type="number"
@@ -827,7 +824,7 @@ export function QuizzesPage() {
               </div>
             )}
 
-            <div className="hgadm-form-grid" style={{ marginTop: 10 }}>
+            <div className="hgadm-form-grid hgadm-mt-12">
               <Field label="힌트">
                 <Input
                   value={draft.hint}

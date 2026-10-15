@@ -215,11 +215,10 @@ export function LecturesPage() {
       <div className="hgadm-page-head">
         <div>
           {courseId && (
-            <div className="hgadm-row" style={{ marginBottom: 4 }}>
+            <div className="hgadm-row hgadm-mb-4">
               <Link
                 to={`/courses?course_id=${encodeURIComponent(courseId)}`}
-                className="hgadm-muted hgadm-row"
-                style={{ fontSize: 13, gap: 4 }}
+                className="hgadm-muted hgadm-row hgadm-text-sm hgadm-row--tight"
               >
                 <ArrowLeft size={14} strokeWidth={2} />
                 {courseTitle ? `${courseTitle} 시리즈 목록` : "코스의 시리즈 목록"}

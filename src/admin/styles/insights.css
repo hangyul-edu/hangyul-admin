@@ -73,6 +73,13 @@
   text-decoration: none;
   transition: background 0.14s, color 0.14s, box-shadow 0.14s;
 }
+/* A tab can be a link or a button; a button drops the browser's chrome. */
+button.hgins-tab {
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  cursor: pointer;
+}
 .hgins-tab:hover {
   color: var(--ink);
 }

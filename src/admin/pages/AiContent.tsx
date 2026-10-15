@@ -138,10 +138,9 @@ export function AiContentPage() {
       key: "preview",
       header: "내용 미리보기",
       render: (g) => (
-        <div style={{ maxWidth: 420 }}>
+        <div className="hgadm-cell-text">
           <div
-            className="hgadm-cell-main"
-            style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+            className="hgadm-cell-main hgadm-ellipsis"
           >
             {g.preview}
           </div>
@@ -267,7 +266,7 @@ export function AiContentPage() {
               >
                 삭제
               </Button>
-              <span style={{ flex: 1 }} />
+              <span className="hgadm-flex-1" />
               {detail.data.review_status !== "rejected" && (
                 <Button
                   variant="danger"
@@ -299,8 +298,8 @@ export function AiContentPage() {
         ) : detail.isError ? (
           <ErrorState message={errorMessage(detail.error)} />
         ) : detail.data ? (
-          <div style={{ fontSize: 13.5 }}>
-            <div className="hgadm-row hgadm-row--wrap" style={{ marginBottom: 12 }}>
+          <div className="hgadm-text-md">
+            <div className="hgadm-row hgadm-row--wrap hgadm-mb-12">
               <Badge tone={statusTone(detail.data.review_status)}>
                 {statusLabel(detail.data.review_status)}
               </Badge>

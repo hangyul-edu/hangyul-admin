@@ -355,8 +355,7 @@ export function CoursesPage() {
                   <img
                     src={draft.cover_image_url}
                     alt="대표 이미지 미리보기"
-                    className="hgadm-thumb"
-                    style={{ width: 140, height: 84, marginBottom: 8 }}
+                    className="hgadm-thumb hgadm-cover-preview"
                   />
                 )}
                 <div className="hgadm-dropzone" onClick={() => fileRef.current?.click()}>
