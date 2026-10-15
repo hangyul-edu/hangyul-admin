@@ -17,6 +17,7 @@ import {
   Pagination,
   Select,
   Textarea,
+  Timestamp,
 } from "../../components/kit";
 import type { Column } from "../../components/kit";
 import { ListChecks } from "lucide-react";
@@ -349,7 +350,7 @@ function QueueTab() {
       render: (v) =>
         v.validation_passed === null ? "—" : <Badge tone={v.validation_passed ? "success" : "danger"}>{v.validation_passed ? "통과" : "실패"}</Badge>,
     },
-    { key: "created", header: "생성", render: (v) => formatDateTime(v.created_at) },
+    { key: "created", header: "생성", render: (v) => <Timestamp at={v.created_at} /> },
     {
       key: "blind",
       header: "",

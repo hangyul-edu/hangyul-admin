@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, Check, CheckCircle2, Eye, PackagePlus, ShieldAlert, Upload } from "lucide-react";
 import { catalogImportApi } from "../catalogImportApi";
 import type { CatalogImportOverview, CatalogJob, PlanSummary } from "../catalogImportApi";
-import { Badge, Button, DataTable, Dl, ErrorState, Field, Input, LoadingState, Modal } from "../components/kit";
+import { Badge, Button, DataTable, Dl, ErrorState, Field, Input, LoadingState, Modal, Timestamp } from "../components/kit";
 import type { Column } from "../components/kit";
 import { Notice, PageHero, Panel } from "../components/insights";
 import { formatDateTime } from "../lib/format";
@@ -262,7 +262,7 @@ export function CatalogImportPage() {
   };
 
   const jobColumns: Column<CatalogJob>[] = [
-    { key: "created", header: "일시", render: (j) => formatDateTime(j.created_at) },
+    { key: "created", header: "일시", render: (j) => <Timestamp at={j.created_at} /> },
     { key: "kind", header: "작업", render: (j) => (j.kind === "plan" ? "미리보기" : "앱에 반영") },
     { key: "status", header: "결과", render: (j) => <JobBadge job={j} /> },
     {

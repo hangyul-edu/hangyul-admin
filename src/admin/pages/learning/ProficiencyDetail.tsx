@@ -8,7 +8,7 @@ import { useUrlFilters } from "../../lib/urlFilters";
 import { useBackTarget } from "../../lib/navigation";
 import { formatDateTime } from "../../lib/format";
 import { useToast, useToastError } from "../../../hooks/toast";
-import { Badge, Button, DataTable, Dl, ErrorState, Input, LoadingState, Select, Stat } from "../../components/kit";
+import { Badge, Button, DataTable, Dl, ErrorState, Input, LoadingState, Select, Stat, Timestamp } from "../../components/kit";
 import type { BadgeTone, Column } from "../../components/kit";
 import { GrowthCell, STATUS_LABEL, levelText } from "./Proficiency";
 
@@ -534,7 +534,7 @@ function EvidencePanel({ userId, track, canCorrect, canTranscripts }: { userId: 
 
 function DecisionTable({ rows, track }: { rows: DecisionView[]; track: ProficiencyTrack }) {
   const columns: Column<DecisionView>[] = [
-    { key: "at", header: "시각", render: (r) => formatDateTime(r.decided_at) },
+    { key: "at", header: "시각", render: (r) => <Timestamp at={r.decided_at} /> },
     {
       key: "kind",
       header: "종류",

@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { learningApi } from "../../learningApi";
 import type { DataHealth } from "../../learningApi";
 import { Activity, AlertTriangle, CheckCircle2, Clock3, FlaskConical, Radio } from "lucide-react";
-import { Badge, DataTable, ErrorState, LoadingState } from "../../components/kit";
+import { Badge, DataTable, ErrorState, LoadingState, Timestamp } from "../../components/kit";
 import { KpiCard, KpiRow, Notice, PageHero, Panel } from "../../components/insights";
 import type { Column } from "../../components/kit";
 import { formatDateTime } from "../../lib/format";
@@ -86,7 +86,7 @@ export function DataHealthPage() {
   ];
 
   const runColumns: Column<Run>[] = [
-    { key: "started", header: "시작", render: (r) => formatDateTime(r.started_at) },
+    { key: "started", header: "시작", render: (r) => <Timestamp at={r.started_at} /> },
     { key: "job", header: "작업", render: (r) => <span className="hgadm-cell-mono">{r.job}</span> },
     { key: "kind", header: "유형", render: (r) => r.kind },
     {

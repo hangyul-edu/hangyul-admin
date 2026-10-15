@@ -17,6 +17,7 @@ import {
   Select,
   Switch,
   Textarea,
+  Timestamp,
 } from "../../components/kit";
 import type { Column } from "../../components/kit";
 import { Notice, PageHero, Panel } from "../../components/insights";
@@ -284,7 +285,7 @@ function TutorSection() {
   });
   const showText = turns.data?.transcripts_included ?? false;
   const columns: Column<TutorTurnRow>[] = [
-    { key: "when", header: "일시", render: (t) => formatDateTime(t.created_at) },
+    { key: "when", header: "일시", render: (t) => <Timestamp at={t.created_at} /> },
     { key: "mode", header: "요청", render: (t) => (t.mode === "hint_only" ? "힌트만" : "설명") },
     {
       key: "route",

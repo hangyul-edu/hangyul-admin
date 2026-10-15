@@ -17,10 +17,10 @@ import {
   Modal,
   SearchBox,
   Select,
+  Timestamp,
 } from "../components/kit";
 import {
-  formatDateTime,
-} from "../lib/format";
+  } from "../lib/format";
 import type { Column } from "../components/kit";
 import {
   ADMIN_TIERS as TIERS,
@@ -131,7 +131,7 @@ export function AdminsPage() {
     {
       key: "granted",
       header: "부여일",
-      render: (a) => formatDateTime(a.granted_at),
+      render: (a) => <Timestamp at={a.granted_at} />,
     },
     {
       key: "actions",

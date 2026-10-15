@@ -6,11 +6,10 @@ import type { LearnerRow, SimulationResult, TraceSummary } from "../../learningA
 import { useUrlFilters } from "../../lib/urlFilters";
 import { useAdminAuth } from "../../auth";
 import { useToastError } from "../../../hooks/toast";
-import { Badge, Button, DataTable, ErrorState, Field, Input, LoadingState, SearchBox, Select } from "../../components/kit";
+import { Badge, Button, DataTable, ErrorState, Field, Input, LoadingState, SearchBox, Select, Timestamp } from "../../components/kit";
 import type { Column } from "../../components/kit";
 import { KpiCard, KpiRow, PageHero, Panel, PeriodPicker } from "../../components/insights";
 import { BarList, MetricLabel, RatioView, TRACK_LABEL, windowParams } from "../../components/learning";
-import { formatDateTime } from "../../lib/format";
 import { errorMessage } from "../../../lib/http";
 
 const EXCLUSION_LABEL: Record<string, string> = {
@@ -147,7 +146,7 @@ function Traces() {
     queryFn: () => learningApi.traces({ kind: kind || undefined, limit: 50 }),
   });
   const columns: Column<TraceSummary>[] = [
-    { key: "at", header: "일시", render: (t) => formatDateTime(t.created_at) },
+    { key: "at", header: "일시", render: (t) => <Timestamp at={t.created_at} /> },
     { key: "kind", header: "종류", render: (t) => <Badge tone="info">{KIND_LABEL[t.kind] ?? t.kind}</Badge> },
     { key: "considered", header: "살펴본 후보", numeric: true, render: (t) => t.candidates_considered.toLocaleString() },
     { key: "eligible", header: "조건 맞는 후보", numeric: true, render: (t) => t.candidates_eligible.toLocaleString() },

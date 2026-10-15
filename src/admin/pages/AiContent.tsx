@@ -20,9 +20,10 @@ import {
   Pagination,
   SearchBox,
   Select,
-  Textarea,
   statusLabel,
   statusTone,
+  Textarea,
+  Timestamp,
 } from "../components/kit";
 import {
   formatDateTime,
@@ -170,7 +171,7 @@ export function AiContentPage() {
       header: "검수 상태",
       render: (g) => <Badge tone={statusTone(g.review_status)}>{statusLabel(g.review_status)}</Badge>,
     },
-    { key: "created", header: "생성일", render: (g) => formatDateTime(g.created_at) },
+    { key: "created", header: "생성일", render: (g) => <Timestamp at={g.created_at} /> },
   ];
 
   return (

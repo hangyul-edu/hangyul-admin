@@ -14,10 +14,10 @@ import {
   Select,
   statusLabel,
   statusTone,
+  Timestamp,
 } from "../components/kit";
 import {
-  formatDateTime,
-} from "../lib/format";
+  } from "../lib/format";
 import type { Column } from "../components/kit";
 
 const STATUSES = [
@@ -74,14 +74,14 @@ export function SubscriptionsPage() {
     {
       key: "period",
       header: "현재 주기 종료",
-      render: (s) => formatDateTime(s.current_period_end),
+      render: (s) => <Timestamp at={s.current_period_end} />,
     },
     {
       key: "next",
       header: "다음 결제",
-      render: (s) => formatDateTime(s.next_billing_at),
+      render: (s) => <Timestamp at={s.next_billing_at} />,
     },
-    { key: "created", header: "시작일", render: (s) => formatDateTime(s.created_at) },
+    { key: "created", header: "시작일", render: (s) => <Timestamp at={s.created_at} /> },
   ];
 
   return (

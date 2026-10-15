@@ -17,6 +17,7 @@ import {
   LoadingState,
   Modal,
   Select,
+  Timestamp,
 } from "../../components/kit";
 import type { Column } from "../../components/kit";
 import {
@@ -169,7 +170,7 @@ export function LearnerDetailPage() {
                 { key: "prior", header: "배치 초기값", numeric: true, render: (s) => pct(s.prior, 0) },
                 { key: "evidence", header: "증거", numeric: true, render: (s) => `${s.evidence_count}건` },
                 { key: "strength", header: "증거 강도", render: (s) => <Badge tone={s.evidence_strength === "high" ? "success" : s.evidence_strength === "medium" ? "info" : "neutral"}>{STRENGTH_LABEL[s.evidence_strength]}</Badge> },
-                { key: "next", header: "다음 복습", render: (s) => formatDateTime(s.next_review_at) },
+                { key: "next", header: "다음 복습", render: (s) => <Timestamp at={s.next_review_at} /> },
               ]}
               rows={t.skills}
               rowKey={(s) => `${s.skill_id}:${s.dimension}`}
@@ -241,7 +242,7 @@ export function LearnerDetailPage() {
         <div className="hgadm-card">
           <DataTable
             columns={[
-              { key: "started", header: "시작", render: (s) => formatDateTime(s.started_at) },
+              { key: "started", header: "시작", render: (s) => <Timestamp at={s.started_at} /> },
               { key: "track", header: "트랙", render: (s) => TRACK_LABEL[s.track] },
               { key: "status", header: "상태", render: (s) => <Badge tone="neutral">{s.status}</Badge> },
               { key: "rev", header: "수정 버전", numeric: true, render: (s) => s.current_revision },
@@ -439,7 +440,7 @@ function EvidencePanel({
     queryFn: () => learningApi.evidence(userId, { track, skill_id: skillId || undefined, before, limit: 50 }),
   });
   const columns: Column<EvidenceRow>[] = [
-    { key: "at", header: "시각", render: (e) => formatDateTime(e.occurred_at) },
+    { key: "at", header: "시각", render: (e) => <Timestamp at={e.occurred_at} /> },
     { key: "skill", header: "기술", render: (e) => `${e.skill_name ?? UNNAMED_SKILL} (${e.role === "primary" ? "주" : "보조"})` },
     { key: "outcome", header: "결과", render: (e) => (e.outcome >= 0.5 ? "정답" : "오답") },
     {
@@ -513,7 +514,7 @@ function TimelinePanel({ userId, onSession }: { userId: string; onSession: (sess
     queryFn: () => learningApi.timeline(userId, { before_seq: beforeSeq, limit: 100 }),
   });
   const columns: Column<TimelineRow>[] = [
-    { key: "at", header: "시각", render: (r) => formatDateTime(r.occurred_at) },
+    { key: "at", header: "시각", render: (r) => <Timestamp at={r.occurred_at} /> },
     { key: "event", header: "사건", render: (r) => EVENT_LABEL[r.event_name] ?? r.event_name },
     {
       key: "session",
@@ -633,7 +634,7 @@ function TraceView({ t }: { t: SessionTrace }) {
       <h4>시도 기록 {t.answers_included ? "" : "(답안 원문은 transcripts:read 권한 필요)"}</h4>
       <DataTable
         columns={[
-          { key: "at", header: "시각", render: (a) => formatDateTime(a.graded_at) },
+          { key: "at", header: "시각", render: (a) => <Timestamp at={a.graded_at} /> },
           { key: "no", header: "회차", numeric: true, render: (a) => a.attempt_no },
           { key: "correct", header: "결과", render: (a) => (a.correct === null ? "루브릭" : a.correct ? "정답" : "오답") },
           { key: "policy", header: "반영", render: (a) => POLICY_LABEL[a.evidence_policy] ?? a.evidence_policy },

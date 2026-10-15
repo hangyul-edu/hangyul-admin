@@ -21,9 +21,10 @@ import {
   Pagination,
   SearchBox,
   Select,
-  Textarea,
   statusLabel,
   statusTone,
+  Textarea,
+  Timestamp,
 } from "../components/kit";
 import {
   formatDateTime,
@@ -447,7 +448,7 @@ function PaymentsTab() {
         </div>
       ),
     },
-    { key: "paid", header: "결제일", render: (p) => formatDateTime(p.paid_at ?? p.created_at) },
+    { key: "paid", header: "결제일", render: (p) => <Timestamp at={p.paid_at ?? p.created_at} /> },
   ];
   if (canRefund) {
     columns.push({
@@ -573,8 +574,8 @@ function InvoicesTab() {
       header: "상태",
       render: (inv) => <Badge tone={statusTone(inv.status)}>{statusLabel(inv.status)}</Badge>,
     },
-    { key: "paid", header: "결제일", render: (inv) => formatDateTime(inv.paid_at) },
-    { key: "created", header: "생성일", render: (inv) => formatDateTime(inv.created_at) },
+    { key: "paid", header: "결제일", render: (inv) => <Timestamp at={inv.paid_at} /> },
+    { key: "created", header: "생성일", render: (inv) => <Timestamp at={inv.created_at} /> },
   ];
   if (canRetry) {
     columns.push({

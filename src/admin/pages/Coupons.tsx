@@ -21,6 +21,7 @@ import {
   Select,
   statusLabel,
   statusTone,
+  Timestamp,
 } from "../components/kit";
 import {
   formatDateTime,
@@ -149,7 +150,7 @@ function BatchesTab() {
       header: "상태",
       render: (b) => <Badge tone={statusTone(b.status)}>{batchStatusLabel(b.status)}</Badge>,
     },
-    { key: "created", header: "생성일", render: (b) => formatDateTime(b.created_at) },
+    { key: "created", header: "생성일", render: (b) => <Timestamp at={b.created_at} /> },
     {
       key: "actions",
       header: "",

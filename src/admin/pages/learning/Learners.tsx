@@ -5,7 +5,6 @@ import type { LearnerRow } from "../../learningApi";
 import { errorMessage } from "../../../lib/http";
 import { useUrlFilters } from "../../lib/urlFilters";
 import { originFrom } from "../../lib/navigation";
-import { formatDateTime } from "../../lib/format";
 import {
   Badge,
   DataTable,
@@ -14,6 +13,7 @@ import {
   Pagination,
   SearchBox,
   Select,
+  Timestamp,
 } from "../../components/kit";
 import type { Column } from "../../components/kit";
 import { GraduationCap } from "lucide-react";
@@ -57,7 +57,7 @@ export function LearnersPage() {
         </div>
       ),
     },
-    { key: "last", header: "마지막 학습", render: (r) => formatDateTime(r.last_study_at) },
+    { key: "last", header: "마지막 학습", render: (r) => <Timestamp at={r.last_study_at} /> },
     { key: "evidence", header: "실력 평가 기록", numeric: true, render: (r) => r.evidence_count.toLocaleString() },
     {
       key: "overdue",
