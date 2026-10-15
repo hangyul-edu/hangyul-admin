@@ -978,6 +978,37 @@ export function Stat({
   );
 }
 
+/* ---------- Card ---------- */
+
+/**
+ * A titled panel: the head (title, and anything on its right) over the
+ * content. `flush` puts the content edge to edge — for a table, which brings
+ * its own padding — instead of inside the padded body.
+ */
+export function Card({
+  title,
+  aside,
+  flush = false,
+  className = "",
+  children,
+}: {
+  title: ReactNode;
+  aside?: ReactNode;
+  flush?: boolean;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className={`hgadm-card ${className}`.trim()}>
+      <div className="hgadm-card__head">
+        <div className="hgadm-card__title">{title}</div>
+        {aside}
+      </div>
+      {flush ? children : <div className="hgadm-card__body">{children}</div>}
+    </div>
+  );
+}
+
 /* ---------- Description list ---------- */
 
 export function Dl({ items }: { items: [ReactNode, ReactNode][] }) {
