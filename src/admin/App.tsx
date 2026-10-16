@@ -2,6 +2,7 @@ import { Navigate, Route, createBrowserRouter, createRoutesFromElements, RouterP
 import type { ReactNode } from "react";
 import { Compass, Lock } from "lucide-react";
 import { useAdminAuth } from "./auth";
+import { normalizeLegacyAddress } from "./lib/legacyPath";
 import { AccessDenied } from "./components/AccessDenied";
 import { AdminLayout } from "./components/Layout";
 import { LoadingState, EmptyState } from "./components/kit";
@@ -89,6 +90,9 @@ function HomeRoute() {
   return <RequireScope scope="users:read"><DashboardPage /></RequireScope>;
 }
 
+// Old /admin/… addresses open their page at the domain root. Before the
+// router is created: it reads the location once, when it is made.
+normalizeLegacyAddress();
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -152,7 +156,6 @@ const router = createBrowserRouter(
       </Route>
     </>,
   ),
-  { basename: "/admin" },
 );
 
 export function AdminApp() {

@@ -31,7 +31,7 @@ export class AdminErrorBoundary extends Component<{ children: ReactNode }, State
     } catch {
       /* storage unavailable */
     }
-    window.location.href = "/admin/login";
+    window.location.href = "/login";
   };
 
   render() {

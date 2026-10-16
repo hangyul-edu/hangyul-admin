@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ShieldAlert } from "lucide-react";
+import { MEMBER_APP_URL } from "../../lib/config";
 import { http } from "../../lib/http";
 import { useAdminAuth } from "../auth";
 import { personNameWithEmail } from "../lib/adminIdentity";
@@ -68,12 +69,15 @@ export function AccessDenied() {
           {/* The login route also clears incompatible sessions on arrival,
               so this path works even if the logout call cannot reach the
               server. Full-page navigation keeps it dependency-free. */}
-          <a className="hgadm-text-sm hgadm-access-link" href="/admin/login">
+          <a className="hgadm-text-sm hgadm-access-link" href="/login">
             관리자 로그인 화면으로
           </a>
-          <a className="hgadm-text-sm" href="/">
-            멤버 앱으로 돌아가기
-          </a>
+          {/* The member app is another domain; linked only when configured. */}
+          {MEMBER_APP_URL && (
+            <a className="hgadm-text-sm" href={MEMBER_APP_URL}>
+              멤버 앱으로 돌아가기
+            </a>
+          )}
         </p>
       </div>
     </div>

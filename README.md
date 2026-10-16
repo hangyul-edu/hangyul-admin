@@ -5,7 +5,7 @@ CMS (courses, lectures and videos, sentences, quizzes), AI-generated content
 review, learning analytics, commerce (plans, coupons, subscriptions,
 payments), operational content (banners, notices, FAQ), notifications,
 operations queues, settings and the audit trail. React + Vite + TypeScript,
-served at **`/admin`**.
+served at the **root of its own domain** (`/users`, `/operations`, …).
 
 Hangyul is three repositories that work together:
 
@@ -40,6 +40,7 @@ labels there.
 |---|---|---|
 | `VITE_API_BASE_URL` | API base URL. **Leave empty** for local development → the portal calls `/api`, which the dev server proxies. Deployed builds **must** set the API's https URL, e.g. `https://api.talkhangyul.com` (see §5). | *(empty → `/api`)* |
 | `VITE_DEV_BACKEND` | Where the dev server forwards `/api` (dev only). | `http://127.0.0.1:8000` |
+| `VITE_MEMBER_APP_URL` | The member app's address, for the "멤버 앱으로 돌아가기" link on the access-denied screen. Optional. | *(empty → no link)* |
 
 `VITE_*` values are inlined at build time: change one, rebuild.
 
@@ -49,9 +50,9 @@ labels there.
 npm run dev
 ```
 
-Open **http://localhost:5174/admin**. `/api` is proxied to the API, so there
-are no CORS issues. This is the portal's only development address: the member
-app's dev server (hangyul-learn-app, port 5173) does not serve it.
+Open **http://localhost:5174**. `/api` is proxied to the API, so there are no
+CORS issues. This is the portal's only development address: the member app's
+dev server (hangyul-learn-app, port 5173) does not serve it.
 
 ## 4. Test
 
@@ -63,14 +64,22 @@ npm run typecheck
 ## 5. Build and deploy
 
 ```bash
-npm run build         # type-checks, then bundles into dist/admin/
-npm run preview       # serves the build at http://localhost:5174/admin
+npm run build         # type-checks, then bundles into dist/
+npm run preview       # serves the build at http://localhost:5174
 ```
 
-The portal is built for the `/admin` path: everything lands in `dist/admin/`
-and refers to `/admin/assets/…`. It is deployed on its own **Vercel**
-project and calls the API (hangyul-api, on AWS) cross-origin. The API never
-serves the portal.
+The portal is built for the root of its domain: everything lands in `dist/`
+and refers to `/assets/…`. It is deployed on its own **Vercel** project and
+calls the API (hangyul-api, on AWS) cross-origin. The API never serves the
+portal.
+
+**Old `/admin/…` addresses.** The portal used to live under `/admin`.
+Bookmarks and shared links keep working: on Vercel, `/admin` and
+`/admin/<page>` redirect permanently (308) to `/` and `/<page>`, keeping the
+query string (the browser keeps the `#fragment`); on any other host — the dev
+server included — the app rewrites such an address to its page before
+routing (`src/admin/lib/legacyPath.ts`). `/admins` (the admin accounts page)
+is a current address and is never rewritten.
 
 ### Vercel project
 
@@ -78,10 +87,11 @@ serves the portal.
 |---|---|
 | Git repository | `hangyul-edu/hangyul-admin` |
 | Root Directory | the repository root |
-| Framework preset | Vite — `vercel.json` sets build `npm run build`, output `dist`, `/admin` and `/admin/*` → `/admin/index.html` (real files such as `/admin/assets/*` are served first), and `/` → `/admin/` |
+| Framework preset | Vite — `vercel.json` sets build `npm run build`, output `dist`, every route → `index.html` (real files such as `/assets/*` are served first), and the `/admin/…` redirects above |
 | Node.js | 20.19+ or 22.12+ (`engines` in `package.json`) |
 | `VITE_API_BASE_URL` | **Required.** The API's https URL, no `/api` suffix, e.g. `https://api.talkhangyul.com`. A Vercel build without an https value fails on purpose: the `/api` default would call the portal's own domain |
-| Domain | the portal's domain, e.g. `admin.talkhangyul.com`; the portal opens at `https://<admin-domain>/admin/` |
+| `VITE_MEMBER_APP_URL` | Optional — the member app's address, e.g. `https://talkhangyul.com` (the access-denied screen links to it) |
+| Domain | the portal's domain, e.g. `admin.talkhangyul.com`; the portal opens at `https://<admin-domain>/` |
 
 `VITE_*` values are inlined at build time: change one, redeploy with the build
 cache cleared.
@@ -95,18 +105,18 @@ cache cleared.
 The portal signs in with email and password only, so it needs no social-login
 or payment-return settings.
 
-Any other static host works the same way: publish `dist/` and send `/admin`
-and every `/admin/*` route to `/admin/index.html` (SPA fallback).
+Any other static host works the same way: publish `dist/` and serve
+`index.html` for every route that is not a file (SPA fallback).
 
 ## 6. Project structure
 
 ```
 hangyul-admin/
 ├─ index.html              # entry; a boot watchdog explains a blocked/failed load
-├─ vite.config.ts          # base /admin/, dev server :5174, /api → backend
+├─ vite.config.ts          # dev server :5174, /api → backend
 ├─ vercel.json
 └─ src/
-   ├─ admin/               # the portal: main.tsx, App.tsx (router, basename /admin),
+   ├─ admin/               # the portal: main.tsx, App.tsx (router, at the domain root),
    │                       #   auth.tsx (admin session + scopes), api clients,
    │                       #   components/, pages/, lib/, styles/ (hgadm-* classes)
    ├─ lib/                 # http client (Bearer auth, refresh, error wording),

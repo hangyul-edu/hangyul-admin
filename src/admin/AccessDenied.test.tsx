@@ -104,4 +104,32 @@ describe("AccessDenied screen", () => {
     expect(httpPost).toHaveBeenCalledWith("/auth/logout", { refresh_token: "ref" });
     expect(storage.clearAdminSession).toHaveBeenCalled();
   });
+
+  it.each([
+    ["no member app address configured", "", null],
+    ["the member app's address configured", "https://talkhangyul.com/", "https://talkhangyul.com"],
+  ])("links to the portal's login, and to the member app only when known (%s)", async (_label, url, expected) => {
+    // The portal is at the root of its own domain; the member app is another domain.
+    vi.stubEnv("VITE_MEMBER_APP_URL", url);
+    vi.resetModules();
+    try {
+      httpGet.mockImplementation(() => Promise.reject(new ApiError(403, "forbidden", "권한 없음")));
+      // Fresh modules read the stubbed env; the provider must be the same fresh copy.
+      const { AccessDenied: Fresh } = await import("./components/AccessDenied");
+      const { AdminAuthProvider: FreshProvider } = await import("./auth");
+      render(
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <FreshProvider>
+            <Fresh />
+          </FreshProvider>
+        </QueryClientProvider>,
+      );
+      expect(screen.getByRole("link", { name: "관리자 로그인 화면으로" })).toHaveAttribute("href", "/login");
+      const member = screen.queryByRole("link", { name: "멤버 앱으로 돌아가기" });
+      if (expected) expect(member).toHaveAttribute("href", expected);
+      else expect(member).toBeNull();
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
 });

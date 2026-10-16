@@ -4,10 +4,10 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "redirects": [
-    { "source": "/", "destination": "/admin/", "permanent": false }
+    { "source": "/admin", "destination": "/", "permanent": true },
+    { "source": "/admin/:path*", "destination": "/:path*", "permanent": true }
   ],
   "rewrites": [
-    { "source": "/admin", "destination": "/admin/index.html" },
-    { "source": "/admin/(.*)", "destination": "/admin/index.html" }
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
