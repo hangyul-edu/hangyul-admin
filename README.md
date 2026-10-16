@@ -33,11 +33,12 @@ cp .env.example .env    # optional; the defaults suit local development
 ```
 
 Clone it next to `hangyul-api` and `hangyul-learn-app` in the same parent
-folder: the API finds the portal's build and its wording catalog there.
+folder: the API's tests check this repository's wording catalog and audit
+labels there.
 
 | Variable | Purpose | Default |
 |---|---|---|
-| `VITE_API_BASE_URL` | API base URL. **Leave empty** for local development and when the API serves the portal itself → the portal calls `/api`. Set it for a build hosted apart from the API, e.g. `https://api.hangyul.app` (the API must then list the portal's origin in `CORS_ALLOW_ORIGINS`). | *(empty → `/api`)* |
+| `VITE_API_BASE_URL` | API base URL. **Leave empty** for local development → the portal calls `/api`, which the dev server proxies. Deployed builds **must** set the API's https URL, e.g. `https://api.talkhangyul.com` (see §5). | *(empty → `/api`)* |
 | `VITE_DEV_BACKEND` | Where the dev server forwards `/api` (dev only). | `http://127.0.0.1:8000` |
 
 `VITE_*` values are inlined at build time: change one, rebuild.
@@ -67,16 +68,35 @@ npm run preview       # serves the build at http://localhost:5174/admin
 ```
 
 The portal is built for the `/admin` path: everything lands in `dist/admin/`
-and refers to `/admin/assets/…`. Deploy it either way:
+and refers to `/admin/assets/…`. It is deployed on its own **Vercel**
+project and calls the API (hangyul-api, on AWS) cross-origin. The API never
+serves the portal.
 
-- **From the API (single server).** The API serves this build at `/admin`
-  when it finds `dist/admin/index.html` (by default in `../hangyul-admin`, or
-  set `ADMIN_DIST` to this repository's `dist`), next to the member app at `/`.
-  See `docs/architecture.md` in hangyul-api.
-- **A static host.** Publish `dist/` and send `/admin` and every `/admin/*`
-  route to `/admin/index.html` (SPA fallback). The checked-in `vercel.json`
-  does this for Vercel (Root Directory: the repository root) and redirects
-  `/` to `/admin/`.
+### Vercel project
+
+| Setting | Value |
+|---|---|
+| Git repository | `hangyul-edu/hangyul-admin` |
+| Root Directory | the repository root |
+| Framework preset | Vite — `vercel.json` sets build `npm run build`, output `dist`, `/admin` and `/admin/*` → `/admin/index.html` (real files such as `/admin/assets/*` are served first), and `/` → `/admin/` |
+| Node.js | 20.19+ or 22.12+ (`engines` in `package.json`) |
+| `VITE_API_BASE_URL` | **Required.** The API's https URL, no `/api` suffix, e.g. `https://api.talkhangyul.com`. A Vercel build without an https value fails on purpose: the `/api` default would call the portal's own domain |
+| Domain | the portal's domain, e.g. `admin.talkhangyul.com`; the portal opens at `https://<admin-domain>/admin/` |
+
+`VITE_*` values are inlined at build time: change one, redeploy with the build
+cache cleared.
+
+### What the API needs to know about the portal
+
+| API setting | Value | Why |
+|---|---|---|
+| `ADMIN_WEB_APP_URL` | the portal's origin, e.g. `https://admin.talkhangyul.com` | Allows the portal's cross-origin calls (Bearer token, no cookies). It is environment-only on purpose: the CORS list on the portal's settings page can be edited, and leaving the portal out there would otherwise lock every operator out |
+
+The portal signs in with email and password only, so it needs no social-login
+or payment-return settings.
+
+Any other static host works the same way: publish `dist/` and send `/admin`
+and every `/admin/*` route to `/admin/index.html` (SPA fallback).
 
 ## 6. Project structure
 
