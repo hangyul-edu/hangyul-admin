@@ -17,9 +17,8 @@ const redirectBareBase: Connect.NextHandleFunction = (req, res, next) => {
 // as-is needs no rewrite for the portal's files.
 //
 // The dev server proxies /api → the backend so the browser never makes a
-// cross-origin request in development. The member app's dev server
-// (hangyul-learn-app, :5173) forwards its /admin here, so the portal also
-// opens at http://localhost:5173/admin.
+// cross-origin request in development. The portal is reached only through
+// its own server; the member app's server does not serve or forward it.
 export default defineConfig(({ mode }) => {
   const backend = process.env.VITE_DEV_BACKEND || "http://127.0.0.1:8000";
   return {

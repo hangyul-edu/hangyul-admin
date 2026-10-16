@@ -49,9 +49,8 @@ npm run dev
 ```
 
 Open **http://localhost:5174/admin**. `/api` is proxied to the API, so there
-are no CORS issues. The member app's dev server (hangyul-learn-app, port 5173)
-forwards its `/admin` here, so **http://localhost:5173/admin** works too when
-both are running.
+are no CORS issues. This is the portal's only development address: the member
+app's dev server (hangyul-learn-app, port 5173) does not serve it.
 
 ## 4. Test
 
