@@ -2,10 +2,10 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { adminApi } from "../../api";
-import type { AdminCourse, AdminSeries } from "../../api";
+import type { AdminCourse, AdminSeries, SeriesLevel } from "../../api";
 import { errorMessage } from "../../../lib/http";
 import { useToast, useToastError } from "../../../hooks/toast";
-import { Button, ConfirmDialog, ErrorState, Field, LoadingState, Modal } from "../../components/kit";
+import { Button, ConfirmDialog, ErrorState, Field, LoadingState, Modal, Select } from "../../components/kit";
 import { LanguageFields, StandInBadge, koreanTitle, languageDraft, translationsOf } from "../../components/LanguageFields";
 import type { LanguageDraft } from "../../components/LanguageFields";
 import { MoveButtons, OrderNumber, useReorder } from "../../components/ordering";
@@ -15,9 +15,19 @@ import { ImageDropzone } from "../../components/ImageDropzone";
 interface SeriesDraft {
   text: LanguageDraft;
   thumbnail_url: string;
+  /** "" = no level (no chip). */
+  level: SeriesLevel | "";
 }
 
-const EMPTY: SeriesDraft = { text: languageDraft(null), thumbnail_url: "" };
+const EMPTY: SeriesDraft = { text: languageDraft(null), thumbnail_url: "", level: "" };
+
+/** The chip's text, as the app prints it in every language (COU-001), with the Korean term alongside. */
+const LEVELS: [SeriesLevel, string, string][] = [
+  ["beginner", "Beginner", "초급"],
+  ["intermediate", "Intermediate", "중급"],
+  ["advanced", "Advanced", "고급"],
+];
+const LEVEL_CHIP: Record<SeriesLevel, string> = { beginner: "Beginner", intermediate: "Intermediate", advanced: "Advanced" };
 
 /**
  * A course's series — the row of key-art cards learners see under the
@@ -59,6 +69,7 @@ export function SeriesPanel({ course, canWrite }: { course: AdminCourse; canWrit
         title: d.text.en.title.trim(),
         description: d.text.en.description,
         thumbnail_url: d.thumbnail_url || null,
+        level: d.level || null,
         translations: translationsOf(d.text),
       };
       return editing ? adminApi.updateSeries(editing.series_id, body) : adminApi.createSeries(course.course_id, body);
@@ -89,7 +100,7 @@ export function SeriesPanel({ course, canWrite }: { course: AdminCourse; canWrit
 
   function openEdit(s: AdminSeries) {
     setEditing(s);
-    setDraft({ text: languageDraft(s), thumbnail_url: s.thumbnail_url ?? "" });
+    setDraft({ text: languageDraft(s), thumbnail_url: s.thumbnail_url ?? "", level: s.level ?? "" });
   }
 
   const ids = (list.data?.items ?? []).map((s) => s.series_id);
@@ -132,6 +143,8 @@ export function SeriesPanel({ course, canWrite }: { course: AdminCourse; canWrit
                   <span className="hgadm-series__order">
                     <OrderNumber position={index + 1} />
                   </span>
+                  {/* Where the app puts it: the art's bottom-left corner. */}
+                  {s.level && <span className="hgadm-series__level">{LEVEL_CHIP[s.level]}</span>}
                 </div>
                 <div className="hgadm-series__info">
                   <div className="hgadm-title-row">
@@ -206,6 +219,20 @@ export function SeriesPanel({ course, canWrite }: { course: AdminCourse; canWrit
               onChange={(text) => setDraft({ ...draft, text })}
             />
             <SeriesThumbnail value={draft.thumbnail_url} onChange={(url) => setDraft({ ...draft, thumbnail_url: url })} />
+            <Field label="레벨" hint="앱의 시리즈 카드 왼쪽 아래에 영어로 표시돼요. ‘없음’이면 표시하지 않아요.">
+              <Select
+                aria-label="레벨"
+                value={draft.level}
+                onChange={(e) => setDraft({ ...draft, level: e.target.value as SeriesLevel | "" })}
+              >
+                <option value="">없음</option>
+                {LEVELS.map(([value, chip, korean]) => (
+                  <option key={value} value={value}>
+                    {`${chip} (${korean})`}
+                  </option>
+                ))}
+              </Select>
+            </Field>
             {!editing && (
               <p className="hgadm-field__hint">새 시리즈는 이 코스의 맨 뒤에 놓여요. 순서는 카드의 ← / → 로 바꿔요.</p>
             )}

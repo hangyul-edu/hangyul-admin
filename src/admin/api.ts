@@ -797,6 +797,9 @@ export interface AdminCourseWrite {
   translations?: CatalogTranslation[];
 }
 
+/** A series' level, shown as the chip on its card in the app (COU-001). */
+export type SeriesLevel = "beginner" | "intermediate" | "advanced";
+
 /** A series inside a course: its own key art, and the lessons filed under it. */
 export interface AdminSeries {
   series_id: string;
@@ -804,6 +807,8 @@ export interface AdminSeries {
   title: string;
   description: string;
   thumbnail_url: string | null;
+  /** The card's level chip; null when none is set (no chip). */
+  level: SeriesLevel | null;
   /** Position within the course (managed with the reorder endpoint). */
   sequence: number;
   lecture_count: number;
@@ -815,6 +820,8 @@ export interface AdminSeriesWrite {
   description?: string;
   /** null clears it on an update. */
   thumbnail_url?: string | null;
+  /** null clears it on an update. */
+  level?: SeriesLevel | null;
   /** Replaces every translation when sent. */
   translations?: CatalogTranslation[];
 }

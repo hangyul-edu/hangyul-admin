@@ -53,11 +53,20 @@ const KIT: AdminSeries = {
   title: "KOREAN SURVIVAL KIT",
   description: "",
   thumbnail_url: "https://cdn.example.com/kit.png",
+  level: "beginner",
   sequence: 1,
   lecture_count: 5,
   translations: [],
 };
-const ICE: AdminSeries = { ...KIT, series_id: "ser_ice", title: "ICEBREAKER KIT", thumbnail_url: null, sequence: 2, lecture_count: 0 };
+const ICE: AdminSeries = {
+  ...KIT,
+  series_id: "ser_ice",
+  title: "ICEBREAKER KIT",
+  thumbnail_url: null,
+  level: null,
+  sequence: 2,
+  lecture_count: 0,
+};
 
 function renderPage(url = "/courses") {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -119,8 +128,40 @@ describe("CoursesPage series", () => {
       title: "PATTERN KIT",
       description: "",
       thumbnail_url: "https://cdn.example.com/new.png",
+      level: null,
       translations: [],
     });
+  });
+
+  it("shows each series' level on its card and edits it", async () => {
+    vi.mocked(adminApi.updateSeries).mockReset().mockResolvedValue({ ...KIT, level: "advanced" });
+    renderPage("/courses?course_id=crs_1");
+    const panel = await screen.findByRole("region", { name: /의 시리즈/ });
+    await within(panel).findByText("KOREAN SURVIVAL KIT");
+    // The chip as the app prints it; a series without a level has none.
+    expect(within(panel).getAllByText("Beginner")).toHaveLength(1);
+
+    await userEvent.click(within(panel).getAllByRole("button", { name: "수정" })[0]);
+    await userEvent.click(screen.getByLabelText("레벨"));
+    await userEvent.click(screen.getByRole("option", { name: "Advanced (고급)" }));
+    await userEvent.click(screen.getByRole("button", { name: "저장" }));
+    await waitFor(() =>
+      expect(adminApi.updateSeries).toHaveBeenCalledWith("ser_kit", expect.objectContaining({ level: "advanced" })),
+    );
+  });
+
+  it("sends a removed level as null so the chip goes away", async () => {
+    vi.mocked(adminApi.updateSeries).mockReset().mockResolvedValue({ ...KIT, level: null });
+    renderPage("/courses?course_id=crs_1");
+    const panel = await screen.findByRole("region", { name: /의 시리즈/ });
+    await within(panel).findByText("KOREAN SURVIVAL KIT");
+    await userEvent.click(within(panel).getAllByRole("button", { name: "수정" })[0]);
+    await userEvent.click(screen.getByLabelText("레벨"));
+    await userEvent.click(screen.getByRole("option", { name: "없음" }));
+    await userEvent.click(screen.getByRole("button", { name: "저장" }));
+    await waitFor(() =>
+      expect(adminApi.updateSeries).toHaveBeenCalledWith("ser_kit", expect.objectContaining({ level: null })),
+    );
   });
 
   it("will not delete a series that still has lessons", async () => {

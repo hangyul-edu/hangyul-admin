@@ -73,6 +73,7 @@ beforeEach(() => {
         title: "KOREAN SURVIVAL KIT",
         description: "",
         thumbnail_url: null,
+        level: null,
         sequence: 1,
         lecture_count: 2,
         translations: [],

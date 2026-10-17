@@ -49,6 +49,7 @@ const series = (id: string, courseId: string, title: string): AdminSeries => ({
   title,
   description: "",
   thumbnail_url: null,
+  level: null,
   sequence: 1,
   lecture_count: 0,
   translations: [],
