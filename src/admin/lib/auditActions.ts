@@ -438,6 +438,33 @@ const SENSITIVE_READ_BY_STORED_ACTION: Record<string, ActionCopy> = Object.fromE
   Object.entries(SENSITIVE_READ_COPY).map(([action, copy]) => [action.slice(0, STORED_ACTION_LENGTH), copy]),
 );
 
+/**
+ * Changes made on the server's command line rather than through the portal.
+ * They have no route, so the server stores them as `CLI <command>` with
+ * `actor_type: "cli"` (hangyul-api `src/modules/admin/application/super_admins.py`);
+ * hangyul-api's `tests/unit/test_audit_action_labels.py` checks each has a label here.
+ */
+const CLI_ACTION_COPY: Record<string, ActionCopy> = {
+  "CLI promote-super-admin": { ko: "최고 관리자 지정 (서버 CLI)", en: "Made a super admin (server CLI)" },
+};
+
+/**
+ * Who ran a CLI row, as `login@host` (`login (as account)@host` under sudo),
+ * from the operator the server recorded. Null for every other row.
+ */
+export function cliOperator(entry: AuditLogEntry): string | null {
+  if (entry.actor_type !== "cli") return null;
+  const raw = entry.after?.["operator"];
+  if (!raw || typeof raw !== "object") return null;
+  const op = raw as Record<string, unknown>;
+  const login = str(op, "login");
+  const runAs = str(op, "run_as");
+  const host = str(op, "host");
+  if (!login) return null;
+  const who = runAs && runAs !== login ? `${login} (${runAs} 계정)` : login;
+  return host ? `${who}@${host}` : who;
+}
+
 // The portal's one vocabulary for roles and tiers, so a tier added there is
 // named here too.
 const ROLE_KO = ROLE_LABELS;
@@ -532,6 +559,15 @@ function context(entry: AuditLogEntry): string | null {
     return now ? TIER_KO[now] ?? now : null;
   }
 
+  if (entry.action === "CLI promote-super-admin") {
+    // Was: a tier when it was already an admin, else its role (회원, 테스터).
+    const wasTier = str(before, "admin_role");
+    const wasRole = str(before, "role");
+    const was = wasTier ? TIER_KO[wasTier] ?? wasTier : wasRole ? ROLE_KO[wasRole] ?? wasRole : null;
+    const now = TIER_KO["super_admin"] ?? "super_admin";
+    return was ? `${was} → ${now}` : now;
+  }
+
   if (entry.action === "PATCH /admin/users/{user_id}") {
     const parts: string[] = [];
     /* `translate` renders each side of the change in the portal's own words.
@@ -570,7 +606,11 @@ export type DescribedAction = {
 
 export function describeAuditAction(entry: AuditLogEntry): DescribedAction {
   const copy =
-    refine(entry) ?? ACTION_COPY[entry.action] ?? SENSITIVE_READ_BY_STORED_ACTION[entry.action] ?? null;
+    refine(entry) ??
+    ACTION_COPY[entry.action] ??
+    SENSITIVE_READ_BY_STORED_ACTION[entry.action] ??
+    CLI_ACTION_COPY[entry.action] ??
+    null;
   return {
     // An unmapped action shows its route rather than a label that would be a
     // guess; the completeness test exists so this stays hypothetical.

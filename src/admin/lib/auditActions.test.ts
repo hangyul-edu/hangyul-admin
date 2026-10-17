@@ -10,8 +10,41 @@
  * degrades to its route rather than to a guess.
  */
 import { describe, expect, it } from "vitest";
-import { describeAuditAction, KNOWN_AUDIT_ACTIONS } from "./auditActions";
+import { cliOperator, describeAuditAction, KNOWN_AUDIT_ACTIONS } from "./auditActions";
 import type { AuditLogEntry } from "../api";
+
+/** A promotion made on the server with scripts/promote_super_admin.py. */
+function cliPromotion(before: Record<string, unknown>, operator?: Record<string, unknown>): AuditLogEntry {
+  return entry({
+    actor_type: "cli", actor_id: null, actor_name: null, actor_email: null,
+    action: "CLI promote-super-admin", ip_address: null, request_id: null,
+    before: { state: before },
+    after: {
+      state: { role: "admin", admin_role: "super_admin" },
+      operator: operator ?? { login: "ec2-user", run_as: "hangyul", host: "ip-10-0-0-12" },
+    },
+  });
+}
+
+describe("a promotion run on the server CLI", () => {
+  it("is named, not shown as a bare action", () => {
+    const d = describeAuditAction(cliPromotion({ role: "member", admin_role: null }));
+    expect(d.label).toBe("최고 관리자 지정 (서버 CLI)");
+    expect(d.known).toBe(true);
+  });
+
+  it("says what the account was before, from the recorded snapshot", () => {
+    expect(describeAuditAction(cliPromotion({ role: "member", admin_role: null })).context).toBe("일반 → 최고 관리자");
+    expect(describeAuditAction(cliPromotion({ role: "admin", admin_role: "operator" })).context).toBe("운영자 → 최고 관리자");
+  });
+
+  it("names who ran it, as recorded", () => {
+    expect(cliOperator(cliPromotion({ role: "member" }))).toBe("ec2-user (hangyul 계정)@ip-10-0-0-12");
+    expect(cliOperator(cliPromotion({ role: "member" }, { login: "dev", run_as: "dev", host: "mbp" }))).toBe("dev@mbp");
+    // Only CLI rows have an operator.
+    expect(cliOperator(entry())).toBeNull();
+  });
+});
 
 function entry(overrides: Partial<AuditLogEntry> = {}): AuditLogEntry {
   return {

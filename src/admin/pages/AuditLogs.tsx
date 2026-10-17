@@ -18,14 +18,23 @@ import {
   Timestamp,
 } from "../components/kit";
 import type { Column } from "../components/kit";
-import { AUDIT_OBJECT_TYPES, describeAuditAction, objectTypeLabel } from "../lib/auditActions";
+import { AUDIT_OBJECT_TYPES, cliOperator, describeAuditAction, objectTypeLabel } from "../lib/auditActions";
 import { personName, personNameWithEmail } from "../lib/adminIdentity";
 
-/** Who performed a row, as the 수행자 filter names them. */
-const ACTOR_TYPE_LABEL: Record<string, string> = { admin: "관리자", system: "시스템" };
+/** Who performed a row, as the 수행자 filter names them. `cli` = run on the
+ *  server's command line (no portal account acted). */
+const ACTOR_TYPE_LABEL: Record<string, string> = { admin: "관리자", system: "시스템", cli: "서버 CLI" };
 
 function actorTypeLabel(type: string): string {
   return ACTOR_TYPE_LABEL[type] ?? type;
+}
+
+/** The actor's name: the admin account, or for a CLI row whoever ran it on the server. */
+function actorName(e: AuditLogEntry, withEmail: boolean): string {
+  const operator = cliOperator(e);
+  if (operator) return operator;
+  const person = { name: e.actor_name, email: e.actor_email, user_id: e.actor_id };
+  return withEmail ? personNameWithEmail(person) : personName(person);
 }
 
 export function AuditLogsPage() {
@@ -62,9 +71,7 @@ export function AuditLogsPage() {
       header: "관리자",
       render: (e) => (
         <div>
-          <div className="hgadm-cell-main">
-            {personName({ name: e.actor_name, email: e.actor_email, user_id: e.actor_id })}
-          </div>
+          <div className="hgadm-cell-main">{actorName(e, false)}</div>
           <div className="hgadm-cell-sub">
             <Badge tone={e.actor_type === "admin" ? "brand" : "neutral"}>
               {actorTypeLabel(e.actor_type)}
@@ -135,6 +142,7 @@ export function AuditLogsPage() {
             <option value="">수행자: 전체</option>
             <option value="admin">관리자</option>
             <option value="system">시스템</option>
+            <option value="cli">서버 CLI</option>
           </Select>
           <Select
             value={objectType}
@@ -188,12 +196,7 @@ export function AuditLogsPage() {
               <dd><Timestamp at={detail.occurred_at} /></dd>
               <dt>수행자</dt>
               <dd>
-                {personNameWithEmail({
-                  name: detail.actor_name,
-                  email: detail.actor_email,
-                  user_id: detail.actor_id,
-                })}{" "}
-                ({actorTypeLabel(detail.actor_type)})
+                {actorName(detail, true)} ({actorTypeLabel(detail.actor_type)})
               </dd>
               <dt>행위</dt>
               <dd>

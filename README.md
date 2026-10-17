@@ -21,7 +21,10 @@ Hangyul is three repositories that work together:
 
 - **Node.js 20.19+ or 22.12+** (Vite 7's minimum) and npm.
 - The **Hangyul API** running and reachable, and an account with an admin
-  role (see hangyul-api's `docs/admin-portal.md`).
+  role. The first super admin is an existing member account promoted on the
+  API server with `scripts/promote_super_admin.py` (hangyul-api's
+  `docs/super-admin-promotion.md`); further admins are granted on the
+  portal's **관리자 계정** page. The portal signs in with email and password.
 
 ## 2. Install
 

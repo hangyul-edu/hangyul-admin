@@ -166,8 +166,9 @@ export function AdminsPage() {
         <div>
           <h1>관리자 계정</h1>
           <div className="hgadm-page-head__desc">
-            관리자 권한 부여는 이 화면에서만 가능하며 모든 변경이 감사 로그에 기록됩니다.
-            마지막 최고 관리자는 강등·회수할 수 없습니다.
+            이미 가입한 계정에 관리자 권한을 부여하고 등급을 바꾸거나 회수합니다. 모든 변경이
+            관리자 활동 내역에 기록됩니다. 최고 관리자가 아무도 없을 때(첫 관리자)는 서버에서
+            CLI로 지정합니다. 마지막 최고 관리자는 강등·회수할 수 없습니다.
           </div>
         </div>
         <div className="hgadm-page-head__actions">

@@ -132,6 +132,43 @@ describe("the action column", () => {
   });
 });
 
+describe("a row from the server CLI", () => {
+  const cli = entry({
+    actor_type: "cli",
+    actor_id: null,
+    actor_name: null,
+    actor_email: null,
+    action: "CLI promote-super-admin",
+    ip_address: null,
+    before: { state: { role: "member", admin_role: null } },
+    after: {
+      state: { role: "admin", admin_role: "super_admin" },
+      operator: { login: "ec2-user", run_as: "hangyul", host: "ip-10-0-0-12" },
+    },
+  });
+
+  it("names who ran it on the server and marks it 서버 CLI", async () => {
+    renderPage([cli]);
+    expect(await screen.findByText("최고 관리자 지정 (서버 CLI)")).toBeInTheDocument();
+    expect(screen.getByText("ec2-user (hangyul 계정)@ip-10-0-0-12")).toBeInTheDocument();
+    expect(screen.getAllByText("서버 CLI").length).toBeGreaterThan(0);
+    expect(screen.getByText("일반 → 최고 관리자")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByText("최고 관리자 지정 (서버 CLI)"));
+    expect(await screen.findByText("ec2-user (hangyul 계정)@ip-10-0-0-12 (서버 CLI)")).toBeInTheDocument();
+  });
+
+  it("can be filtered to on its own", async () => {
+    renderPage([cli]);
+    await screen.findByText("최고 관리자 지정 (서버 CLI)");
+    await userEvent.click(screen.getByRole("button", { name: /수행자: 전체/ }));
+    await userEvent.click(screen.getByRole("option", { name: "서버 CLI" }));
+    await waitFor(() =>
+      expect(listAuditLogs).toHaveBeenLastCalledWith(expect.objectContaining({ actor_type: "cli" })),
+    );
+  });
+});
+
 describe("the 시각 column", () => {
   it("splits the date and the time onto two lines, down to the second", async () => {
     // 04:05:42Z is 13:05:42 in Seoul. Seconds matter here: two admin actions
