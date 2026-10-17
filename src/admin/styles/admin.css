@@ -192,9 +192,8 @@ body {
 /* Sidebar chrome: a compact icon button in the brand row. Muted until hovered
    so it reads as part of the frame rather than a navigation entry, but always
    drawn — never hover-only, which would make it undiscoverable in the rail.
-   Hidden below the breakpoint, where the sidebar is collapsed for lack of room
-   rather than by choice: a control that cannot widen the layout would be a
-   lie. */
+   Shown at every width: below the breakpoint it opens the sidebar as a drawer
+   over the page (.is-drawer) instead of widening the layout. */
 .hgadm-sidebar__collapse {
   margin-left: var(--collapse-push);
   flex-shrink: 0;
@@ -2756,9 +2755,10 @@ a.hgadm-recent--link:hover {
 
 /* ---------- Responsive (tablet) ---------- */
 @media (max-width: 1024px) {
-  /* Below this width the sidebar is collapsed for lack of room, not by
-     choice — same properties, so the look cannot drift from .is-collapsed. */
-  .hgadm-sidebar {
+  /* Below this width the sidebar is an icon rail for lack of room — same
+     properties, so the look cannot drift from .is-collapsed — unless its
+     toggle has opened it as a drawer. */
+  .hgadm-sidebar:not(.is-drawer) {
     --nav-width: var(--hgadm-sidebar-w-collapsed);
     --nav-label-display: none;
     --nav-link-justify: center;
@@ -2767,9 +2767,20 @@ a.hgadm-recent--link:hover {
     --brand-pad-x: 8px;
     --collapse-push: 0;
   }
-  /* Offering a control that cannot widen the layout here would be a lie. */
-  .hgadm-sidebar__collapse {
-    display: none;
+  /* The drawer: full width, drawn OVER the page. The negative margin keeps
+     only the rail's 64px in the layout, so the page does not shift or reflow
+     when it opens. */
+  .hgadm-sidebar.is-drawer {
+    z-index: 41;
+    margin-right: calc(var(--hgadm-sidebar-w-collapsed) - var(--hgadm-sidebar-w));
+    box-shadow: 0 12px 40px rgba(15, 23, 42, 0.22);
+  }
+  .hgadm-sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    background: rgba(15, 23, 42, 0.32);
+    animation: hgadm-fade 0.15s ease;
   }
   .hgadm-content {
     padding: 20px 16px 40px;

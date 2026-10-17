@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { AdminLayout, activeNavTarget } from "./Layout";
@@ -37,6 +37,88 @@ function renderLayout(at = "/users") {
 
 const sidebar = () => document.querySelector("aside.hgadm-sidebar") as HTMLElement;
 const toggle = () => screen.getByRole("button", { name: /사이드바 (접기|펼치기)/ });
+
+/** A viewport `width` px wide, as far as the layout's media query can tell. */
+function viewport(width: number) {
+  const listeners = new Set<() => void>();
+  const query = {
+    get matches() {
+      return width <= 1024;
+    },
+    addEventListener: (_: string, fn: () => void) => listeners.add(fn),
+    removeEventListener: (_: string, fn: () => void) => listeners.delete(fn),
+  };
+  vi.stubGlobal("matchMedia", vi.fn(() => query));
+  return {
+    resize(next: number) {
+      width = next;
+      listeners.forEach((fn) => fn());
+    },
+  };
+}
+
+describe("admin sidebar on a narrow screen", () => {
+  beforeEach(() => localStorage.clear());
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("starts as an icon rail whose toggle stays offered", () => {
+    viewport(800);
+    renderLayout();
+    expect(sidebar().className).toContain("is-collapsed");
+    expect(toggle()).toHaveAccessibleName("사이드바 펼치기");
+    expect(toggle()).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("opens the sidebar as a drawer over the page and closes it again", async () => {
+    viewport(800);
+    const user = userEvent.setup();
+    renderLayout();
+
+    await user.click(toggle());
+    expect(sidebar().className).toContain("is-drawer");
+    expect(sidebar().className).not.toContain("is-collapsed");
+    expect(toggle()).toHaveAttribute("aria-expanded", "true");
+    expect(within(sidebar()).getByText("사용자 관리")).toBeInTheDocument();
+
+    await user.click(toggle());
+    expect(sidebar().className).not.toContain("is-drawer");
+    expect(sidebar().className).toContain("is-collapsed");
+  });
+
+  it("closes on a click outside, on Escape and on navigating", async () => {
+    viewport(800);
+    const user = userEvent.setup();
+    renderLayout("/users");
+
+    await user.click(toggle());
+    await user.click(document.querySelector(".hgadm-sidebar-backdrop") as HTMLElement);
+    expect(sidebar().className).not.toContain("is-drawer");
+    expect(document.querySelector(".hgadm-sidebar-backdrop")).toBeNull();
+
+    await user.click(toggle());
+    await user.keyboard("{Escape}");
+    expect(sidebar().className).not.toContain("is-drawer");
+
+    await user.click(toggle());
+    await user.click(within(sidebar()).getByRole("link", { name: "대시보드" }));
+    expect(screen.getByText("DASHBOARD PAGE")).toBeInTheDocument();
+    expect(sidebar().className).not.toContain("is-drawer");
+  });
+
+  it("leaves the stored wide-screen preference alone", async () => {
+    const screenSize = viewport(800);
+    const user = userEvent.setup();
+    renderLayout();
+    await user.click(toggle());
+    expect(localStorage.getItem("hangyul.admin.sidebar.v1")).toBeNull();
+
+    // Widening the window closes the drawer and shows the stored (expanded) layout.
+    act(() => screenSize.resize(1440));
+    expect(sidebar().className).not.toContain("is-drawer");
+    expect(sidebar().className).not.toContain("is-collapsed");
+    expect(toggle()).toHaveAccessibleName("사이드바 접기");
+  });
+});
 
 describe("admin sidebar", () => {
   beforeEach(() => localStorage.clear());

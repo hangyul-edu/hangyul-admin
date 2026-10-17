@@ -5,7 +5,8 @@
  * switched on by two independent triggers — the user's toggle
  * (`.is-collapsed`) and the narrow-viewport breakpoint. These assertions pin
  * that single definition, so the two triggers cannot drift into different
- * collapsed appearances.
+ * collapsed appearances. Below the breakpoint the toggle still works: it opens
+ * the sidebar as a drawer over the page (`.is-drawer`).
  *
  * jsdom resolves custom properties but does not lay out, so this checks the
  * values that decide the layout rather than measured pixels.
@@ -87,8 +88,24 @@ describe("collapsible sidebar", () => {
     const breakpoint = code.slice(code.indexOf("@media (max-width: 1024px)"));
     expect(breakpoint).toContain("--nav-width: var(--hgadm-sidebar-w-collapsed)");
     expect(breakpoint).toContain("--nav-label-display: none");
-    // …and it hides the control, which cannot widen the layout at that size.
-    expect(breakpoint).toMatch(/\.hgadm-sidebar__collapse\s*\{\s*display:\s*none/);
+    // …except while the control has opened it as a drawer over the page.
+    expect(breakpoint).toMatch(/\.hgadm-sidebar:not\(\.is-drawer\)\s*\{\s*--nav-width/);
+    // The control stays at every width: the narrow rail must still open.
+    expect(breakpoint).not.toMatch(/\.hgadm-sidebar__collapse\s*\{[^}]*display:\s*none/);
+  });
+
+  it("opens the narrow-screen drawer over the page without moving it", () => {
+    const code = CSS.replace(/\/\*[\s\S]*?\*\//g, "");
+    const breakpoint = code.slice(code.indexOf("@media (max-width: 1024px)"));
+    const drawer = /\.hgadm-sidebar\.is-drawer\s*\{([^}]*)\}/.exec(breakpoint);
+    expect(drawer).not.toBeNull();
+    // Only the rail's width stays in the layout; the rest overlaps the page.
+    expect(drawer![1]).toContain(
+      "margin-right: calc(var(--hgadm-sidebar-w-collapsed) - var(--hgadm-sidebar-w))",
+    );
+    // Above the sticky top bar (z-index 30), below dialogs (100+).
+    expect(drawer![1]).toMatch(/z-index:\s*41/);
+    expect(breakpoint).toMatch(/\.hgadm-sidebar-backdrop\s*\{[^}]*position:\s*fixed[^}]*z-index:\s*40/);
   });
 
   it("keeps the control compact chrome rather than a menu row", () => {

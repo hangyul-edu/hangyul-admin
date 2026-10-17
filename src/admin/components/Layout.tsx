@@ -176,11 +176,42 @@ const NAV: NavGroup[] = [
   },
 ];
 
+/** Below this width the sidebar has no room beside the page (admin.css's tablet breakpoint). */
+export const NARROW_SIDEBAR_QUERY = "(max-width: 1024px)";
+
+function matchesNarrow(): boolean {
+  return typeof window !== "undefined" && typeof window.matchMedia === "function"
+    ? window.matchMedia(NARROW_SIDEBAR_QUERY).matches
+    : false;
+}
+
+/** Whether the viewport is too narrow for the sidebar to sit expanded beside the page. */
+function useNarrowViewport(): boolean {
+  const [narrow, setNarrow] = useState(matchesNarrow);
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const query = window.matchMedia(NARROW_SIDEBAR_QUERY);
+    const onChange = () => setNarrow(query.matches);
+    onChange();
+    query.addEventListener("change", onChange);
+    return () => query.removeEventListener("change", onChange);
+  }, []);
+  return narrow;
+}
+
 export function AdminLayout() {
   const { me, can, logout } = useAdminAuth();
   // Lazy initialiser so the stored preference is read once, before first
   // paint — the sidebar never renders wide and then snaps narrow.
   const [collapsed, setCollapsed] = useState(loadSidebarCollapsed);
+  // On a narrow screen the sidebar is an icon rail, and the same toggle opens
+  // it full width OVER the page (a drawer) rather than beside it, since there
+  // is no room to push the page over. That is a momentary state, not the
+  // stored preference: it starts closed, and closes on navigation, on a click
+  // outside it and on Escape.
+  const narrow = useNarrowViewport();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const expanded = narrow ? drawerOpen : !collapsed;
   // Groups the admin folded away (expanded sidebar only; the icon rail always
   // shows every item). The group holding the current page never folds.
   const [folded, setFolded] = useState<string[]>(loadFoldedNavGroups);
@@ -208,6 +239,28 @@ export function AdminLayout() {
     active?.scrollIntoView?.({ block: "nearest" });
   }, [activeTo, me]);
 
+  // The drawer closes when a menu item takes the admin to another page, and
+  // when the screen widens back (the stored preference applies there).
+  useEffect(() => setDrawerOpen(false), [pathname, narrow]);
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setDrawerOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [drawerOpen]);
+
+  function toggleSidebar() {
+    if (narrow) {
+      setDrawerOpen((open) => !open);
+      return;
+    }
+    const next = !collapsed;
+    setCollapsed(next);
+    saveSidebarCollapsed(next);
+  }
+
   function toggleGroup(label: string) {
     const next = folded.includes(label) ? folded.filter((l) => l !== label) : [...folded, label];
     setFolded(next);
@@ -216,7 +269,13 @@ export function AdminLayout() {
 
   return (
     <div className="hgadm-frame">
-      <aside className={`hgadm-sidebar ${collapsed ? "is-collapsed" : ""}`}>
+      {narrow && drawerOpen && (
+        // Dims the page under the open drawer; a click on it closes the drawer.
+        <div className="hgadm-sidebar-backdrop" aria-hidden onClick={() => setDrawerOpen(false)} />
+      )}
+      <aside
+        className={`hgadm-sidebar ${expanded ? "" : "is-collapsed"} ${narrow && drawerOpen ? "is-drawer" : ""}`}
+      >
         <div className="hgadm-sidebar__brand">
           {/* The whole two-line label is one link to the dashboard, the way a
               product logo usually is. It is the LINK that carries the padding,
@@ -235,20 +294,16 @@ export function AdminLayout() {
           <button
             type="button"
             className="hgadm-sidebar__collapse"
-            onClick={() => {
-              const next = !collapsed;
-              setCollapsed(next);
-              saveSidebarCollapsed(next);
-            }}
-            aria-expanded={!collapsed}
+            onClick={toggleSidebar}
+            aria-expanded={expanded}
             aria-controls="hgadm-nav"
             // Named for the action it performs, not the current state, so the
             // tooltip and the screen-reader name agree with what a click does.
             // Icon-only, so this is the ONLY name it has.
-            aria-label={collapsed ? "사이드바 펼치기" : "사이드바 접기"}
-            title={collapsed ? "사이드바 펼치기" : "사이드바 접기"}
+            aria-label={expanded ? "사이드바 접기" : "사이드바 펼치기"}
+            title={expanded ? "사이드바 접기" : "사이드바 펼치기"}
           >
-            {collapsed ? (
+            {!expanded ? (
               <PanelLeftOpen size={16} strokeWidth={1.75} aria-hidden />
             ) : (
               <PanelLeftClose size={16} strokeWidth={1.75} aria-hidden />
@@ -264,7 +319,7 @@ export function AdminLayout() {
             );
             if (visible.length === 0) return null;
             const holdsActive = visible.some((item) => item.to === activeTo);
-            const open = collapsed || holdsActive || !folded.includes(group.label);
+            const open = !expanded || holdsActive || !folded.includes(group.label);
             const listId = `hgadm-nav-${group.label}`;
             return (
               <div key={group.label}>
