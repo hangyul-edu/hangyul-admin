@@ -118,8 +118,8 @@ describe("notice order", () => {
 describe("notice editor", () => {
   it("deletes a language the admin cleared instead of leaving the old text live", async () => {
     await openEditor();
-    await userEvent.clear(screen.getByLabelText("Title (English)"));
-    await userEvent.clear(screen.getByLabelText("Body (English)"));
+    await userEvent.clear(screen.getByLabelText("제목 (영어)"));
+    await userEvent.clear(screen.getByLabelText("본문 (영어)"));
     await userEvent.click(screen.getByRole("button", { name: "저장" }));
 
     await waitFor(() => expect(deleteNoticeTranslation).toHaveBeenCalledWith("ntc_1", "en"));
@@ -137,7 +137,7 @@ describe("notice editor", () => {
     await userEvent.type(screen.getByLabelText(/제목 \(한국어\)/), "  새 공지  ");
     await userEvent.type(screen.getByLabelText(/본문 \(한국어\)/), "내용입니다");
     // Title only: no body, so English is not authored.
-    await userEvent.type(screen.getByLabelText("Title (English)"), "New notice");
+    await userEvent.type(screen.getByLabelText("제목 (영어)"), "New notice");
     await userEvent.click(screen.getByRole("button", { name: "저장" }));
 
     await waitFor(() => expect(createNotice).toHaveBeenCalledTimes(1));

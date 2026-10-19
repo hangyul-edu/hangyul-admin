@@ -121,7 +121,7 @@ hangyul-admin/
 └─ src/
    ├─ admin/               # the portal: main.tsx, App.tsx (router, at the domain root),
    │                       #   auth.tsx (admin session + scopes), api clients,
-   │                       #   components/, pages/, lib/, styles/ (hgadm-* classes)
+   │                       #   components/, pages/, lib/, styles/ (hgadm-*, hgins-* and hg-* classes)
    ├─ lib/                 # http client (Bearer auth, refresh, error wording),
    │                       #   config, image crop, leagues, levels, HTML sanitizer…
    ├─ i18n/                # Korean error wording (operator catalog apiErrors.admin.ko.ts

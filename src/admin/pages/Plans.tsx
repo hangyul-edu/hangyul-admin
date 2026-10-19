@@ -546,7 +546,7 @@ function PlanEditor({
                 {(["ko", "en"] as const).map((lang) => (
                   <Field
                     key={lang}
-                    label={lang === "ko" ? "한국어" : "English"}
+                    label={lang === "ko" ? "한국어" : "영어"}
                     hint={`${d.custom_badge[lang].length}/${BADGE_MAX_LENGTH}자`}
                     error={overflow[lang] ? "배지 끝이 잘려요. 더 짧게 써 주세요." : undefined}
                   >

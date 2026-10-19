@@ -215,7 +215,7 @@ export function LectureWorkspacePage() {
                     "—"
                   ),
                 ],
-                ["설명 (English)", l.description || <span className="hgadm-muted">없음</span>],
+                ["설명 (영어)", l.description || <span className="hgadm-muted">없음</span>],
                 [
                   "한국어 제목",
                   koreanTitle(l) ?? <span className="hgadm-muted">없음 — 앱에서 영어로 보여요</span>,

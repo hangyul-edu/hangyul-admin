@@ -266,8 +266,8 @@ export function UsersPage() {
       </div>
 
       {/* What each badge in the 상태 column actually means. The differences
-          that matter are not guessable from the words: 정지 does not sign a
-          member out of a device they are already using, and 탈퇴 is the
+          that matter are not guessable from the words: 정지 also ends every
+          session the member is signed in with, and 탈퇴 is the
           member's own action that no admin can undo. */}
       <div className="hgadm-card">
         <div className="hgadm-card__head">

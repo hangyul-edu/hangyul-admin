@@ -162,8 +162,8 @@ describe("LectureFormModal", () => {
     await choose(screen.getByLabelText(/소속 시리즈/), "KOREAN SURVIVAL KIT");
     // Without the English title there is nothing to create.
     expect(screen.getByRole("button", { name: "만들고 영상 올리기" })).toBeDisabled();
-    await userEvent.type(screen.getByLabelText(/강의 제목 · English/), "1-1 Greetings");
-    await userEvent.type(screen.getByLabelText(/설명 · English/), "Hello and goodbye");
+    await userEvent.type(screen.getByLabelText(/강의 제목 · 영어/), "1-1 Greetings");
+    await userEvent.type(screen.getByLabelText(/설명 · 영어/), "Hello and goodbye");
     await userEvent.click(screen.getByRole("tab", { name: /한국어/ }));
     await userEvent.type(screen.getByLabelText(/강의 제목 · 한국어/), "1-1 인사");
     await userEvent.click(screen.getByRole("button", { name: "만들고 영상 올리기" }));

@@ -7,8 +7,8 @@ import { useAdminAuth } from "../../auth";
 import { Badge, Button, ConfirmDialog, EmptyState, ErrorState, LoadingState, Switch, Thumb } from "../../components/kit";
 import { MoveButtons, OrderNumber } from "../../components/ordering";
 import { formatDateTime } from "../../lib/format";
-import { BannerEditor } from "./BannerEditor";
-import { draftFromBanner, emptyBannerDraft, useBannerList, useBannerMutations, type BannerDraft } from "./useBanners";
+import { BannerEditor } from "./HomeCardEditor";
+import { draftFromBanner, emptyBannerDraft, useBannerList, useBannerMutations, type BannerDraft } from "./useHomeCards";
 
 /** 배너 관리: the lecture home's slides, in the order the app shows them. */
 export function BannersPage() {
@@ -76,7 +76,7 @@ export function BannersPage() {
       ) : (
         <div className="hgadm-stack">
           {query.data.items.map((banner, index, all) => (
-            <div key={banner.banner_id} className="hgadm-card hgadm-banner-row">
+            <div key={banner.banner_id} className="hgadm-card hgadm-slide-row">
               <OrderNumber position={index + 1} />
               {/* As the app shows it: the card's 15:8 with the chosen crop. */}
               <Thumb
@@ -85,7 +85,7 @@ export function BannersPage() {
                 alt={banner.alt_text}
                 imgStyle={banner.image_crop ? croppedImageStyle(banner.image_crop) : undefined}
               />
-              <div className="hgadm-banner-row__info">
+              <div className="hgadm-slide-row__info">
                 <div className="hgadm-row hgadm-row--wrap">
                   <Badge tone={banner.is_active ? "success" : "neutral"} dot>
                     {banner.is_active ? "노출 중" : "비활성"}

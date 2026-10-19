@@ -22,9 +22,10 @@ import { CouponsPage } from "./pages/Coupons";
 import { SubscriptionsPage } from "./pages/Subscriptions";
 import { PaymentsPage } from "./pages/Payments";
 import { OperationsPage } from "./pages/Operations";
-// NOTE: the banner-management page lives in HomeCards.tsx — in dev mode every
-// source file is a browser-visible URL, and a path containing "banner" gets
-// blocked by common adblocker lists, which kills the whole module graph.
+// NOTE: the banner-management page lives in pages/homeCards (via
+// HomeCards.tsx) — in dev mode every source file is a browser-visible URL, and
+// a path containing "banner" gets blocked by common adblocker lists, which
+// kills the whole module graph.
 import { BannersPage } from "./pages/HomeCards";
 import { NoticesPage } from "./pages/Notices";
 import { FaqsPage } from "./pages/Faqs";
@@ -125,11 +126,11 @@ const router = createBrowserRouter(
         <Route path="/notices" element={<RequireScope scope="ops:read"><NoticesPage /></RequireScope>} />
         <Route path="/faqs" element={<RequireScope scope="ops:read"><FaqsPage /></RequireScope>} />
         <Route path="/notifications" element={<RequireScope scope="ops:write"><NotificationsPage /></RequireScope>} />
+        {/* Each tab checks its own scope (webhooks/outbox: commerce:read, scoring: learners:read). */}
+        <Route path="/operations" element={<OperationsPage />} />
         {/* ops:read, unlike the send page above: the reminder time is worth
             seeing for anyone who can read ops, and the form itself is what
             gates on ops:write. */}
-        {/* Each tab checks its own scope (payments: commerce:read, scoring: learners:read). */}
-        <Route path="/operations" element={<OperationsPage />} />
         <Route path="/notification-settings" element={<RequireScope scope="ops:read"><NotificationSettingsPage /></RequireScope>} />
         {/* 학습 인사이트 pages (and 콘텐츠 업데이트) share one wrapper: card
             spacing, and the tabs that join related pages. */}

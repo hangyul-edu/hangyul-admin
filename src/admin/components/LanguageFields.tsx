@@ -13,7 +13,7 @@ import { Badge, Input, Textarea } from "./kit";
  */
 
 export const CATALOG_LANGUAGES = [
-  { locale: "en", label: "English", required: true },
+  { locale: "en", label: "영어", required: true },
   { locale: "ko", label: "한국어", required: false },
 ] as const;
 

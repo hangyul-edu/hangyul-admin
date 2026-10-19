@@ -149,7 +149,7 @@ function LeagueHeading({ detail }: { detail: AdminLeagueDetail }) {
             named instead. 인원 부족 covers the one remaining case: a
             single-member league, which allocation no longer builds but which
             older rows can still be. */}
-        <span className="hgadm-fact hgadm-fact--promote">
+        <span className="hgadm-fact hgadm-fact--emphasis">
           <span className="hgadm-fact__label">승급권</span>
           <span className="hgadm-fact__value">{promoteCount.toLocaleString()}명</span>
           <span className="hgadm-fact__note">

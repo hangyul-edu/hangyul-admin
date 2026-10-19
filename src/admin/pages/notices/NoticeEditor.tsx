@@ -48,10 +48,10 @@ export function NoticeEditor({
               </Field>
             </div>
             <div>
-              <Field label="Title (English)">
+              <Field label="제목 (영어)">
                 <Input value={draft.en_title} maxLength={200} onChange={(e) => patch({ en_title: e.target.value })} />
               </Field>
-              <Field label="Body (English)">
+              <Field label="본문 (영어)">
                 <Textarea rows={7} value={draft.en_body} onChange={(e) => patch({ en_body: e.target.value })} />
               </Field>
             </div>

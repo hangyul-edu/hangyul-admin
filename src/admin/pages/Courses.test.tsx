@@ -204,11 +204,11 @@ describe("CoursesPage languages", () => {
     const dialog = screen.getByRole("dialog");
     expect(within(dialog).queryByLabelText(/정렬 순서/)).toBeNull();
     // English opens first and is the required one.
-    expect(within(dialog).getByRole("tab", { name: /English/ })).toHaveAttribute("aria-selected", "true");
-    expect(within(dialog).getByRole("tab", { name: /English/ })).toHaveTextContent("(필수)");
+    expect(within(dialog).getByRole("tab", { name: /영어/ })).toHaveAttribute("aria-selected", "true");
+    expect(within(dialog).getByRole("tab", { name: /영어/ })).toHaveTextContent("(필수)");
     expect(within(dialog).getByRole("button", { name: "저장" })).toBeDisabled();
 
-    await userEvent.type(within(dialog).getByLabelText(/코스 제목 · English/), "Speak Korean Instantly");
+    await userEvent.type(within(dialog).getByLabelText(/코스 제목 · 영어/), "Speak Korean Instantly");
     await userEvent.click(within(dialog).getByRole("tab", { name: /한국어/ }));
     expect(within(dialog).getByText(/비워 두면 그 칸은 영어로 보여요/)).toBeInTheDocument();
     // An empty Korean field shows the English text it falls back to.

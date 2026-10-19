@@ -219,7 +219,7 @@ function QueueFacts({ page }: { page: AdminUnassignedMembersPage }) {
       </span>
       {/* Deliberately the emphasised one: it is the only number on this page
           that represents something the service owes. */}
-      <span className="hgadm-fact hgadm-fact--promote">
+      <span className="hgadm-fact hgadm-fact--emphasis">
         <span className="hgadm-fact__label">배정 대기</span>
         <span className="hgadm-fact__value">{page.waiting_total.toLocaleString()}명</span>
         <span className="hgadm-fact__note">리그 자리 부족</span>

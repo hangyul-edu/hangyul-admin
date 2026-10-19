@@ -1,7 +1,7 @@
 import { Button, Field, Input, Modal, Switch } from "../../components/kit";
 import { CardImageSizeHint, ImageCropField } from "../../components/ImageCropField";
 import { ImageDropzone } from "../../components/ImageDropzone";
-import type { BannerDraft } from "./useBanners";
+import type { BannerDraft } from "./useHomeCards";
 
 type SetDraft = (update: (d: BannerDraft | null) => BannerDraft | null) => void;
 
