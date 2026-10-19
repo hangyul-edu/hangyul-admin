@@ -139,7 +139,13 @@ export function AiContentPage() {
         )}
       </div>
 
-      <GeneratedDetailModal contentId={detailId} canWrite={canWrite} onClose={() => setDetailId(null)} onDelete={setDeleting} />
+      <GeneratedDetailModal
+        contentId={detailId}
+        canReview={can("content:review")}
+        canDelete={canWrite}
+        onClose={() => setDetailId(null)}
+        onDelete={setDeleting}
+      />
 
       <ConfirmDialog
         open={deleting !== null}

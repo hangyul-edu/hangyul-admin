@@ -10,12 +10,16 @@ import { KIND_LABEL, useGeneratedDetail, useReviewGenerated } from "./useGenerat
 /** One generated item: its source data and generation conditions, and its review. */
 export function GeneratedDetailModal({
   contentId,
-  canWrite,
+  canReview,
+  canDelete,
   onClose,
   onDelete,
 }: {
   contentId: string | null;
-  canWrite: boolean;
+  /** `content:review`: approve / reject, with a note. */
+  canReview: boolean;
+  /** `content:write`: delete the item. */
+  canDelete: boolean;
   onClose: () => void;
   onDelete: (item: GeneratedDetail) => void;
 }) {
@@ -42,18 +46,20 @@ export function GeneratedDetailModal({
       size="xl"
       onClose={onClose}
       footer={
-        canWrite && item ? (
+        (canReview || canDelete) && item ? (
           <>
-            <Button variant="danger-soft" onClick={() => onDelete(item)}>
-              삭제
-            </Button>
+            {canDelete && (
+              <Button variant="danger-soft" onClick={() => onDelete(item)}>
+                삭제
+              </Button>
+            )}
             <span className="hgadm-flex-1" />
-            {item.review_status !== "rejected" && (
+            {canReview && item.review_status !== "rejected" && (
               <Button variant="danger" loading={review.isPending} onClick={() => decide("rejected")}>
                 반려
               </Button>
             )}
-            {item.review_status !== "approved" && (
+            {canReview && item.review_status !== "approved" && (
               <Button variant="primary" loading={review.isPending} onClick={() => decide("approved")}>
                 승인
               </Button>
@@ -89,7 +95,7 @@ export function GeneratedDetailModal({
           <hr className="hgadm-divider" />
           <div className="hgadm-field__label">생성 결과 원본</div>
           <pre className="hgadm-json">{JSON.stringify(item.payload, null, 2)}</pre>
-          {canWrite && (
+          {canReview && (
             <Field label="검수 메모" hint="승인/반려와 함께 저장됩니다.">
               <Textarea rows={2} value={note} maxLength={500} onChange={(e) => setNote(e.target.value)} />
             </Field>

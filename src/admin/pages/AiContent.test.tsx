@@ -31,7 +31,9 @@ vi.mock("../api", async () => {
     },
   };
 });
-vi.mock("../auth", () => ({ useAdminAuth: () => ({ can: () => true }) }));
+/** The signed-in admin's scopes; null grants every scope. */
+let scopes: Set<string> | null = null;
+vi.mock("../auth", () => ({ useAdminAuth: () => ({ can: (s: string) => scopes === null || scopes.has(s) }) }));
 
 const { AiContentPage } = await import("./AiContent");
 
@@ -79,6 +81,7 @@ function renderPage() {
 }
 
 beforeEach(() => {
+  scopes = null;
   [listGenerated, getGenerated, reviewGenerated].forEach((m) => m.mockReset());
   listGenerated.mockResolvedValue({
     items: [summary("gen_a", "첫 번째 문장"), summary("gen_b", "두 번째 문장")],
@@ -123,5 +126,15 @@ describe("AI content review", () => {
         note: "이미 저장된 메모",
       }),
     );
+  });
+
+  it("lets a reviewer without content:write approve and reject, but not delete", async () => {
+    scopes = new Set(["content:read", "content:review"]); // an educator
+    renderPage();
+    await userEvent.click(await screen.findByText("첫 번째 문장"));
+    expect(await screen.findByRole("button", { name: "승인" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "반려" })).toBeInTheDocument();
+    expect(screen.getByLabelText(/^검수 메모/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "삭제" })).not.toBeInTheDocument();
   });
 });
