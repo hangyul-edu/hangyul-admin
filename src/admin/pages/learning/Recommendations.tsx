@@ -4,6 +4,7 @@ import { Gauge, Layers, Repeat2, Scissors, Sparkles } from "lucide-react";
 import { learningApi } from "../../learningApi";
 import type { LearnerRow, SimulationResult, TraceSummary } from "../../learningApi";
 import { useUrlFilters } from "../../lib/urlFilters";
+import { FALLBACK_STEP_LABEL, SHORTFALL_LABEL, codeLabel } from "../../lib/codeLabels";
 import { useAdminAuth } from "../../auth";
 import { useToastError } from "../../../hooks/toast";
 import { Badge, Button, DataTable, ErrorState, Field, Input, LoadingState, SearchBox, Select, Timestamp } from "../../components/kit";
@@ -37,13 +38,6 @@ const STATUS_LABEL: Record<string, string> = {
   processing: "처리 중",
 };
 
-const STEP_LABEL: Record<string, string> = {
-  exact: "요청 그대로",
-  alternative: "비슷한 대안으로 (차이 안내)",
-  clarify: "회원에게 다시 질문",
-  preserve: "기존 세션 유지",
-  none: "해당 없음",
-};
 
 const INTERPRETER_LABEL: Record<string, string> = {
   model: "AI가 해석",
@@ -57,6 +51,7 @@ const UNMET_LABEL: Record<string, string> = {
   difficulty_out_of_range: "요청 난이도 범위 밖",
   no_mistakes_in_session: "세션에 틀린 문항이 없음",
   no_eligible_content: "쓸 수 있는 문항 없음",
+  simplified_explanation_unavailable: "더 쉬운 설명은 아직 없음",
 };
 
 function rows(record: Record<string, number> | undefined, labels: Record<string, string> = {}) {
@@ -122,7 +117,7 @@ function Diagnostics() {
           </div>
           <div>
             <h4>반영 방식</h4>
-            <BarList rows={rows(c.by_fallback_step, STEP_LABEL)} empty="요청이 없어요" />
+            <BarList rows={rows(c.by_fallback_step, FALLBACK_STEP_LABEL)} empty="요청이 없어요" />
           </div>
           <div>
             <h4>요청 해석</h4>
@@ -335,7 +330,7 @@ function Simulation() {
             <div className="hgins-fact">
               <div className="hgins-fact__label">조건 맞는 후보</div>
               <div className="hgins-fact__value">{result.candidates_eligible.toLocaleString()}</div>
-              {result.shortfall_reason && <div className="hgins-fact__hint">부족: {result.shortfall_reason}</div>}
+              {result.shortfall_reason && <div className="hgins-fact__hint">부족: {codeLabel(SHORTFALL_LABEL, result.shortfall_reason)}</div>}
             </div>
           </div>
           <BarList rows={rows(result.excluded_by_reason, EXCLUSION_LABEL)} empty="빠진 후보가 없어요" />

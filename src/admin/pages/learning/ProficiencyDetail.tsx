@@ -11,6 +11,13 @@ import { useToast, useToastError } from "../../../hooks/toast";
 import { Badge, Button, DataTable, Dl, ErrorState, Input, LoadingState, Select, Stat, Timestamp } from "../../components/kit";
 import type { BadgeTone, Column } from "../../components/kit";
 import { GrowthCell, STATUS_LABEL, levelText } from "./Proficiency";
+import {
+  MOCK_STATUS_LABEL,
+  READINESS_BASIS_LABEL,
+  READINESS_REASON_LABEL,
+  TOPIK_SECTION_LABEL,
+  codeLabel,
+} from "../../lib/codeLabels";
 
 type Tab = "overview" | "growth" | "evidence" | "history" | "correct";
 
@@ -50,6 +57,27 @@ const ROLLOUT_MODE: Record<string, string> = {
   enabled: "적용",
   admin: "관리자",
 };
+
+/** A finished mock's stored result in words: total and band, the section
+ * scores, and whether it could count toward readiness (and why not). */
+function mockResultText(result: Record<string, unknown>): string {
+  const parts: string[] = [];
+  if (typeof result.total === "number") parts.push(`총점 ${result.total}`);
+  if (typeof result.grade_band === "number") parts.push(`${result.grade_band}급 범위`);
+  const sections = result.section_scores;
+  if (sections && typeof sections === "object") {
+    const scores = Object.entries(sections as Record<string, number | null>)
+      .map(([s, v]) => `${codeLabel(TOPIK_SECTION_LABEL, s)} ${v ?? "미채점"}`)
+      .join(" · ");
+    if (scores) parts.push(scores);
+  }
+  if (result.eligible === true) parts.push("판정 근거로 인정");
+  else if (result.eligible === false) {
+    const why = typeof result.eligibility_reason === "string" ? codeLabel(READINESS_REASON_LABEL, result.eligibility_reason) : null;
+    parts.push(why ? `판정 근거 아님(${why})` : "판정 근거 아님");
+  }
+  return parts.join(" · ") || "—";
+}
 
 const MISSING: Record<string, string> = {
   independent_successes: "독립 성공 부족",
@@ -278,10 +306,15 @@ function TopikOverview({ d }: { d: ProficiencyDetail }) {
             <Dl
               items={[
                 ["판정", `${STATUS_LABEL[r.status as keyof typeof STATUS_LABEL]?.text ?? r.status}${r.grade != null ? ` · ${r.grade}급` : ""}`],
-                ["근거 범위", r.basis === "listening_reading_only" ? "듣기·읽기만(쓰기 미평가) — 급수 판정 안 함" : r.basis],
-                ["사유", r.reasons.join(", ") || "—"],
-                ["영역 점수(최근)", Object.entries(r.latest_section_scores).map(([s, v]) => `${s} ${v ?? "—"}`).join(" · ") || "—"],
-                ["보완 영역(지도용 진단)", r.weak_sections.join(", ") || "—"],
+                ["근거 범위", codeLabel(READINESS_BASIS_LABEL, r.basis)],
+                ["사유", r.reasons.map((x) => codeLabel(READINESS_REASON_LABEL, x)).join(", ") || "—"],
+                [
+                  "영역 점수(최근)",
+                  Object.entries(r.latest_section_scores)
+                    .map(([s, v]) => `${codeLabel(TOPIK_SECTION_LABEL, s)} ${v ?? "—"}`)
+                    .join(" · ") || "—",
+                ],
+                ["보완 영역(지도용 진단)", r.weak_sections.map((s) => codeLabel(TOPIK_SECTION_LABEL, s)).join(", ") || "—"],
               ]}
             />
           </div>
@@ -487,8 +520,8 @@ function EvidencePanel({ userId, track, canCorrect, canTranscripts }: { userId: 
               <tr key={r.session_id}>
                 <td>{formatDateTime(r.started_at ?? "")}</td>
                 <td>{r.spec_version}</td>
-                <td>{r.status}</td>
-                <td>{r.result ? JSON.stringify(r.result) : "—"}</td>
+                <td>{codeLabel(MOCK_STATUS_LABEL, r.status)}</td>
+                <td>{r.result ? mockResultText(r.result) : "—"}</td>
                 <td>맞춤 학습 · 모의평가</td>
               </tr>
             ))}

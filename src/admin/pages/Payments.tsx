@@ -5,6 +5,7 @@ import { adminApi } from "../api";
 import type { AdminInvoiceRow, AdminPaymentRow, AdminRetryResult } from "../api";
 import { ApiError, errorMessage } from "../../lib/http";
 import { randomUuid } from "../../lib/uuid";
+import { PAYMENT_FAILURE_LABEL, codeLabel } from "../lib/codeLabels";
 import { useToast } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
 import {
@@ -260,7 +261,7 @@ export function retryErrorMessage(error: unknown): string {
 export function retryOutcomeMessage(result: AdminRetryResult): string {
   if (result.invoice_status === "paid") return `결제되었습니다 (시도 #${result.attempt_no}).`;
   if (result.attempt_status === "failed") {
-    return `결제가 거절되었습니다 (시도 #${result.attempt_no}${result.failure_class ? `, ${result.failure_class}` : ""}). 자동 재시도 일정은 그대로 이어집니다.`;
+    return `결제가 거절되었습니다 (시도 #${result.attempt_no}${result.failure_class ? `, ${codeLabel(PAYMENT_FAILURE_LABEL, result.failure_class)}` : ""}). 자동 재시도 일정은 그대로 이어집니다.`;
   }
   return `결제사가 아직 결과를 주지 않았습니다 (시도 #${result.attempt_no}). 결제 스윕이 같은 요청으로 다시 확인합니다.`;
 }
@@ -454,7 +455,7 @@ function PaymentsTab() {
       render: (p) => (
         <div>
           <Badge tone={statusTone(p.status)}>{statusLabel(p.status)}</Badge>
-          {p.failure_class && <div className="hgadm-cell-sub">{p.failure_class}</div>}
+          {p.failure_class && <div className="hgadm-cell-sub">{codeLabel(PAYMENT_FAILURE_LABEL, p.failure_class)}</div>}
         </div>
       ),
     },

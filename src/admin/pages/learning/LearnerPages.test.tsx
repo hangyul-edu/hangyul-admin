@@ -244,7 +244,8 @@ describe("LearnerDetailPage", () => {
     for (const id of ["grammar.euni_kka", "sentence:s1", "cv_1", "ss_1"]) expect(document.body.textContent).not.toContain(id);
 
     await userEvent.click(screen.getByRole("tab", { name: "세션·추천 근거" }));
-    await userEvent.click(await screen.findByText("completed"));
+    // The session's status reads in words ("completed" → 완료).
+    await userEvent.click(await screen.findByText("완료"));
     const dialog = await screen.findByRole("dialog");
     await waitFor(() => expect(within(dialog).getByText(/transcripts:read 권한 필요/)).toBeInTheDocument());
     expect(within(dialog).getByText("세션 시작")).toBeInTheDocument();

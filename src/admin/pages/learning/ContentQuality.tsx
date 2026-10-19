@@ -26,8 +26,22 @@ import { useUrlFilters } from "../../lib/urlFilters";
 import { useAdminAuth } from "../../auth";
 import { useToast, useToastError } from "../../../hooks/toast";
 import { formatDateTime } from "../../lib/format";
+import { topikTypeLabel } from "../../lib/topik";
+import {
+  AUTHORING_METHOD_LABEL,
+  CONTENT_ACTION_LABEL,
+  EXPLANATION_KIND_LABEL,
+  REVIEW_DECISION_LABEL,
+  SENTENCE_TASK_LABEL,
+  SEVERITY_LABEL,
+  SOURCE_USE_LABEL,
+  codeLabel,
+} from "../../lib/codeLabels";
 
 type Tab = "coverage" | "diagnostics" | "queue";
+
+/** A version's task type: a sentence task, or the quiz's TOPIK question type. */
+const taskTypeLabel = (code: string) => SENTENCE_TASK_LABEL[code] ?? topikTypeLabel(code);
 
 const LIFECYCLE_LABEL: Record<string, string> = {
   draft: "초안",
@@ -224,7 +238,7 @@ function DiagnosticsTab() {
             {r.preview || "(내용 없음)"}
           </div>
           <div className="hgadm-cell-sub">
-            v{r.version_no} · {TRACK_LABEL[r.track] ?? r.track} {r.band} · {r.task_type} · {REVIEW_STATUS_LABEL[r.review_status] ?? r.review_status}
+            v{r.version_no} · {TRACK_LABEL[r.track] ?? r.track} {r.band} · {taskTypeLabel(r.task_type)} · {REVIEW_STATUS_LABEL[r.review_status] ?? r.review_status}
           </div>
         </div>
       ),
@@ -542,10 +556,10 @@ function VersionModal({ versionId, onClose }: { versionId: string; onClose: () =
               ["내용", v.preview || "(내용 없음)"],
               ["버전", `v${v.version_no}`],
               ["상태", `${LIFECYCLE_LABEL[v.lifecycle] ?? v.lifecycle} · ${REVIEW_STATUS_LABEL[v.review_status] ?? v.review_status}`],
-              ["트랙·수준·유형", `${TRACK_LABEL[v.track] ?? v.track} ${v.band} · ${v.task_type}`],
-              ["작성 방식·출처", `${v.authoring_method} · ${v.source_use}`],
+              ["트랙·수준·유형", `${TRACK_LABEL[v.track] ?? v.track} ${v.band} · ${taskTypeLabel(v.task_type)}`],
+              ["작성 방식·출처", `${codeLabel(AUTHORING_METHOD_LABEL, v.authoring_method)} · ${codeLabel(SOURCE_USE_LABEL, v.source_use)}`],
               ["편집 난이도", `${pct(v.difficulty_estimate, 0)} (${v.difficulty_method})`],
-              ["회수 사유", v.retirement_reason ? `${v.retirement_reason} (${v.retirement_severity})` : "—"],
+              ["회수 사유", v.retirement_reason ? `${v.retirement_reason} (${codeLabel(SEVERITY_LABEL, v.retirement_severity)})` : "—"],
             ]}
           />
           <h3>학습자에게 보이는 내용</h3>
@@ -559,7 +573,11 @@ function VersionModal({ versionId, onClose }: { versionId: string; onClose: () =
             <ul>
               {v.explanations.map((e, i) => (
                 <li key={i}>
-                  <Badge tone="neutral">{e.kind}{e.choice_key ? ` ${e.choice_key}` : ""}</Badge> {e.body}
+                  <Badge tone="neutral">
+                    {codeLabel(EXPLANATION_KIND_LABEL, e.kind)}
+                    {e.choice_key ? ` ${e.choice_key}` : ""}
+                  </Badge>{" "}
+                  {e.body}
                 </li>
               ))}
             </ul>
@@ -579,7 +597,7 @@ function VersionModal({ versionId, onClose }: { versionId: string; onClose: () =
               <ul>
                 {r.findings.map((fd, j) => (
                   <li key={j}>
-                    [{fd.severity}] {fd.message}
+                    [{codeLabel(SEVERITY_LABEL, fd.severity)}] {fd.message}
                   </li>
                 ))}
               </ul>
@@ -592,7 +610,7 @@ function VersionModal({ versionId, onClose }: { versionId: string; onClose: () =
             <ul>
               {v.reviews.map((r) => (
                 <li key={r.review_id}>
-                  {r.kind === "blind_solve" ? "블라인드 풀이" : "교육 검수"} · {r.decision}
+                  {r.kind === "blind_solve" ? "블라인드 풀이" : "교육 검수"} · {codeLabel(REVIEW_DECISION_LABEL, r.decision)}
                   {r.agrees_with_key !== null ? ` · 키 일치: ${r.agrees_with_key ? "예" : "아니요"}` : ""} · {formatDateTime(r.reviewed_at)}
                   {r.note ? ` — ${r.note}` : ""}
                 </li>
@@ -603,7 +621,8 @@ function VersionModal({ versionId, onClose }: { versionId: string; onClose: () =
           <ul>
             {v.actions.map((a, i) => (
               <li key={i}>
-                {formatDateTime(a.acted_at)} · {a.action}: {a.from_state ?? "—"} → {a.to_state}
+                {formatDateTime(a.acted_at)} · {codeLabel(CONTENT_ACTION_LABEL, a.action)}:{" "}
+                {a.from_state ? codeLabel(LIFECYCLE_LABEL, a.from_state) : "—"} → {codeLabel(LIFECYCLE_LABEL, a.to_state)}
                 {a.reason ? ` (${a.reason})` : ""}
               </li>
             ))}

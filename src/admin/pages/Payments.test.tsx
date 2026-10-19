@@ -299,7 +299,8 @@ describe("retrying an invoice", () => {
     expect(within(dialog).getByText("2/10")).toBeInTheDocument();
     await userEvent.click(within(dialog).getByRole("button", { name: "지금 결제 시도" }));
     expect(retryInvoice).toHaveBeenCalledWith("inv_5d1e8a0c44");
-    expect(await within(dialog).findByText(/결제가 거절되었습니다 \(시도 #3, insufficient_funds\)/)).toBeInTheDocument();
+    // The failure class in words, never the raw code.
+    expect(await within(dialog).findByText(/결제가 거절되었습니다 \(시도 #3, 잔액 부족\)/)).toBeInTheDocument();
     // One attempt per dialog: the send button is gone once it ran.
     expect(within(dialog).queryByRole("button", { name: "지금 결제 시도" })).not.toBeInTheDocument();
   });

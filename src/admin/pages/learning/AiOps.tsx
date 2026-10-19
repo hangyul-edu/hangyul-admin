@@ -22,6 +22,7 @@ import {
 import type { Column } from "../../components/kit";
 import { Notice, PageHero, Panel } from "../../components/insights";
 import { useUrlFilters } from "../../lib/urlFilters";
+import { TUTOR_FAILURE_LABEL, TUTOR_LEAK_LABEL, TUTOR_MODE_LABEL, codeLabel } from "../../lib/codeLabels";
 import { useAdminAuth } from "../../auth";
 import { useToast, useToastError } from "../../../hooks/toast";
 import { formatDateTime } from "../../lib/format";
@@ -291,15 +292,17 @@ function TutorSection() {
   const showText = turns.data?.transcripts_included ?? false;
   const columns: Column<TutorTurnRow>[] = [
     { key: "when", header: "일시", render: (t) => <Timestamp at={t.created_at} /> },
-    { key: "mode", header: "요청", render: (t) => (t.mode === "hint_only" ? "힌트만" : "설명") },
+    { key: "mode", header: "요청", render: (t) => codeLabel(TUTOR_MODE_LABEL, t.mode) },
     {
       key: "route",
       header: "답한 방법",
       render: (t) => (
         <div>
           <Badge tone={t.route === "refused" || t.route === "fallback" ? "warning" : "info"}>{ROUTE_LABEL[t.route] ?? t.route}</Badge>
-          {t.leak_check && t.leak_check !== "clean" && <div className="hgadm-cell-sub">{t.leak_check}</div>}
-          {t.failure_code && <div className="hgadm-cell-sub">{t.failure_code}</div>}
+          {t.leak_check && t.leak_check !== "clean" && (
+            <div className="hgadm-cell-sub">{codeLabel(TUTOR_LEAK_LABEL, t.leak_check)}</div>
+          )}
+          {t.failure_code && <div className="hgadm-cell-sub">{codeLabel(TUTOR_FAILURE_LABEL, t.failure_code)}</div>}
         </div>
       ),
     },

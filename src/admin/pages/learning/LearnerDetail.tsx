@@ -8,6 +8,19 @@ import { useUrlFilters } from "../../lib/urlFilters";
 import { useBackTarget } from "../../lib/navigation";
 import { formatDateTime } from "../../lib/format";
 import {
+  EVENT_OUTCOME_LABEL,
+  EVENT_REASON_LABEL,
+  EVENT_ROUTE_LABEL,
+  EVIDENCE_POLICY_LABEL,
+  FALLBACK_STEP_LABEL,
+  REVISION_CAUSE_LABEL,
+  SESSION_STATUS_LABEL,
+  SHORTFALL_LABEL,
+  STATE_CAUSE_LABEL,
+  TUTOR_MODE_LABEL,
+  codeLabel,
+} from "../../lib/codeLabels";
+import {
   Badge,
   Button,
   DataTable,
@@ -64,21 +77,16 @@ const EVENT_LABEL: Record<string, string> = {
   model_usage_recorded: "AI 모델 사용",
 };
 
-const POLICY_LABEL: Record<string, string> = {
-  independent: "독립",
-  assisted: "도움 받음",
-  revealed: "정답 공개 후",
-  retry: "재시도",
-  custom_practice: "맞춤 연습",
-  excluded: "제외",
-};
-
-const CAUSE_LABEL: Record<string, string> = {
-  evidence: "새 증거",
-  correction: "콘텐츠 정정",
-  recompute: "재계산",
-  review_decay: "복습 일정",
-};
+/** A timeline payload's fields as "이름 값" pairs, every value in words. */
+const TIMELINE_FIELDS: [key: string, label: string, values?: Record<string, string>][] = [
+  ["evidence_policy", "반영", EVIDENCE_POLICY_LABEL],
+  ["reason", "사유", EVENT_REASON_LABEL],
+  ["route", "경로", EVENT_ROUTE_LABEL],
+  ["mode", "방식", TUTOR_MODE_LABEL],
+  ["fallback_step", "대체 단계", FALLBACK_STEP_LABEL],
+  ["outcome", "결과", EVENT_OUTCOME_LABEL],
+  ["cause", "원인", STATE_CAUSE_LABEL],
+];
 
 /* Skills, sessions and content are named here, never shown by their internal
    ids; these stand in when a name could not be resolved. */
@@ -244,9 +252,9 @@ export function LearnerDetailPage() {
             columns={[
               { key: "started", header: "시작", render: (s) => <Timestamp at={s.started_at} /> },
               { key: "track", header: "트랙", render: (s) => TRACK_LABEL[s.track] },
-              { key: "status", header: "상태", render: (s) => <Badge tone="neutral">{s.status}</Badge> },
+              { key: "status", header: "상태", render: (s) => <Badge tone="neutral">{codeLabel(SESSION_STATUS_LABEL, s.status)}</Badge> },
               { key: "rev", header: "수정 버전", numeric: true, render: (s) => s.current_revision },
-              { key: "short", header: "짧아진 이유", render: (s) => s.shortfall_reason ?? "—" },
+              { key: "short", header: "짧아진 이유", render: (s) => codeLabel(SHORTFALL_LABEL, s.shortfall_reason) },
             ]}
             rows={d.recent_sessions}
             rowKey={(s) => s.session_id}
@@ -337,7 +345,7 @@ function GrowthView({ g, onSkill }: { g: Growth; onSkill: (skill: string, name: 
       header: "변화 원인 (현재 기간)",
       render: (s) =>
         Object.keys(s.change_causes).length
-          ? Object.entries(s.change_causes).map(([k, n]) => `${CAUSE_LABEL[k] ?? k} ${n}`).join(", ")
+          ? Object.entries(s.change_causes).map(([k, n]) => `${codeLabel(STATE_CAUSE_LABEL, k)} ${n}`).join(", ")
           : "—",
     },
     { key: "drill", header: "", render: (s) => <Button size="sm" variant="ghost" onClick={() => onSkill(s.skill_id, s.skill_name)}>근거 보기</Button> },
@@ -448,7 +456,7 @@ function EvidencePanel({
       header: "반영 방식",
       render: (e) => (
         <span>
-          <Badge tone={e.policy === "independent" ? "success" : e.policy === "assisted" ? "info" : "neutral"}>{POLICY_LABEL[e.policy] ?? e.policy}</Badge>
+          <Badge tone={e.policy === "independent" ? "success" : e.policy === "assisted" ? "info" : "neutral"}>{EVIDENCE_POLICY_LABEL[e.policy] ?? e.policy}</Badge>
           {e.invalidated_at && <Badge tone="danger">콘텐츠 정정으로 무효</Badge>}
         </span>
       ),
@@ -550,12 +558,16 @@ function TimelinePanel({ userId, onSession }: { userId: string; onSession: (sess
 
 function summarize(row: TimelineRow): string {
   const payload = row.payload;
-  const keys = ["correct", "evidence_policy", "skill_id", "reason", "route", "mode", "fallback_step", "outcome", "mastery_after", "cause"];
-  return keys
-    .filter((k) => payload[k] !== undefined && payload[k] !== null)
-    // The skill is named, never shown by its id.
-    .map((k) => (k === "skill_id" ? `기술=${row.skill_name ?? UNNAMED_SKILL}` : `${k}=${String(payload[k])}`))
-    .join(" · ");
+  const has = (k: string) => payload[k] !== undefined && payload[k] !== null;
+  const parts: string[] = [];
+  if (has("correct")) parts.push(payload.correct ? "정답" : "오답");
+  // The skill is named, never shown by its id.
+  if (has("skill_id")) parts.push(`기술 ${row.skill_name ?? UNNAMED_SKILL}`);
+  for (const [key, label, values] of TIMELINE_FIELDS) {
+    if (has(key)) parts.push(`${label} ${values ? codeLabel(values, String(payload[key])) : String(payload[key])}`);
+  }
+  if (typeof payload.mastery_after === "number") parts.push(`숙달도 ${Math.round(payload.mastery_after * 100)}%`);
+  return parts.join(" · ");
 }
 
 function TraceModal({ userId, sessionId, onClose }: { userId: string; sessionId: string; onClose: () => void }) {
@@ -597,8 +609,8 @@ function TraceView({ t }: { t: SessionTrace }) {
           ["세션 시작", formatDateTime(t.started_at)],
           ["트랙 · 레벨", `${TRACK_LABEL[t.track]} · ${t.learner_band}`],
           ["정책", `${t.blueprint_version} · ${t.ranking_policy_version}`],
-          ["짧아진 이유", t.shortfall_reason ?? "—"],
-          ["수정 이력", t.revisions.map((r) => `r${r.revision_no}(${r.cause})`).join(" → ")],
+          ["짧아진 이유", codeLabel(SHORTFALL_LABEL, t.shortfall_reason)],
+          ["수정 이력", t.revisions.map((r) => `r${r.revision_no}(${codeLabel(REVISION_CAUSE_LABEL, r.cause)})`).join(" → ")],
         ]}
       />
       {t.traces.map((tr) => (
@@ -637,7 +649,7 @@ function TraceView({ t }: { t: SessionTrace }) {
           { key: "at", header: "시각", render: (a) => <Timestamp at={a.graded_at} /> },
           { key: "no", header: "회차", numeric: true, render: (a) => a.attempt_no },
           { key: "correct", header: "결과", render: (a) => (a.correct === null ? "루브릭" : a.correct ? "정답" : "오답") },
-          { key: "policy", header: "반영", render: (a) => POLICY_LABEL[a.evidence_policy] ?? a.evidence_policy },
+          { key: "policy", header: "반영", render: (a) => EVIDENCE_POLICY_LABEL[a.evidence_policy] ?? a.evidence_policy },
           { key: "answer", header: "답안", render: (a) => a.answer ?? "—" },
         ]}
         rows={t.attempts}

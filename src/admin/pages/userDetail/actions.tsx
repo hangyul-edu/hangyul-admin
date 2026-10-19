@@ -89,7 +89,8 @@ export function UserActions({
                     title: "계정 정지",
                     message: `${user.email} 계정을 정지하면 로그인되어 있던 모든 기기에서 즉시 로그아웃되고, 다시 로그인할 수 없게 됩니다. 진행할까요?`,
                     danger: true,
-                    body: { status: "suspended", reason: "admin suspension" },
+                    // The reason is stored and read back by operators: Korean.
+                    body: { status: "suspended", reason: "관리자 계정 정지" },
                   })
                 }
               >
