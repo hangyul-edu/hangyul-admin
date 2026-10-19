@@ -93,7 +93,7 @@ describe("what the row says", () => {
 
   it("shows the object when the row records no richer context", () => {
     const { container } = render(
-      <AdminActivityRow entry={entry({ action: "POST /admin/banners", object_type: "banners", object_id: "bnr_1" })} />,
+      <AdminActivityRow entry={entry({ action: "POST /admin/home-cards", object_type: "banners", object_id: "bnr_1" })} />,
     );
     // The kind of object, by name — its internal id is never shown.
     expect(container.querySelector(".hgadm-recent__rest")?.textContent).toBe("배너");

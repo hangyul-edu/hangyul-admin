@@ -122,7 +122,10 @@ const router = createBrowserRouter(
         <Route path="/coupons" element={<RequireScope scope="commerce:read"><CouponsPage /></RequireScope>} />
         <Route path="/subscriptions" element={<RequireScope scope="commerce:read"><SubscriptionsPage /></RequireScope>} />
         <Route path="/payments" element={<RequireScope scope="commerce:read"><PaymentsPage /></RequireScope>} />
-        <Route path="/banners" element={<RequireScope scope="ops:read"><BannersPage /></RequireScope>} />
+        {/* Not "/banners": a reload there requests a URL ad blockers block.
+            The old address (a bookmark) still lands on the page. */}
+        <Route path="/home-cards" element={<RequireScope scope="ops:read"><BannersPage /></RequireScope>} />
+        <Route path="/banners" element={<Navigate to="/home-cards" replace />} />
         <Route path="/notices" element={<RequireScope scope="ops:read"><NoticesPage /></RequireScope>} />
         <Route path="/faqs" element={<RequireScope scope="ops:read"><FaqsPage /></RequireScope>} />
         <Route path="/notifications" element={<RequireScope scope="ops:write"><NotificationsPage /></RequireScope>} />

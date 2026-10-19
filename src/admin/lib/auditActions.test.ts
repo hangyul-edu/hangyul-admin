@@ -225,8 +225,17 @@ describe("context", () => {
   it("stays empty rather than inventing detail for a row without a snapshot", () => {
     expect(describeAuditAction(entry({ before: null, after: null })).context).toBeNull();
     expect(
-      describeAuditAction(entry({ action: "POST /admin/banners", after: null })).context,
+      describeAuditAction(entry({ action: "POST /admin/home-cards", after: null })).context,
     ).toBeNull();
+  });
+
+  it("still names rows recorded under a route that has since moved", () => {
+    // Banners moved from /admin/banners to /admin/home-cards; history keeps
+    // the old route string and must not fall back to the bare endpoint.
+    const old = describeAuditAction(entry({ action: "PATCH /admin/banners/{banner_id}" }));
+    expect(old.known).toBe(true);
+    expect(old.label).toBe("배너 수정");
+    expect(describeAuditAction(entry({ action: "PATCH /admin/home-cards/{banner_id}" })).label).toBe("배너 수정");
   });
 
   it("survives a malformed payload without throwing", () => {

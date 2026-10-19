@@ -46,7 +46,7 @@ function renderPage() {
   return render(
     <QueryClientProvider client={qc}>
       <ToastProvider>
-        <MemoryRouter initialEntries={["/banners"]}>
+        <MemoryRouter initialEntries={["/home-cards"]}>
           <BannersPage />
         </MemoryRouter>
       </ToastProvider>

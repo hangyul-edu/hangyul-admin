@@ -122,11 +122,11 @@ const ACTION_COPY: Record<string, ActionCopy> = {
     en: "Deleted an AI-generated item",
   },
 
-  // ---- Banners -----------------------------------------------------------
-  "POST /admin/banners": { ko: "배너 등록", en: "Created a banner" },
-  "PATCH /admin/banners/{banner_id}": { ko: "배너 수정", en: "Updated a banner" },
-  "DELETE /admin/banners/{banner_id}": { ko: "배너 삭제", en: "Deleted a banner" },
-  "POST /admin/banners/reorder": { ko: "배너 순서 변경", en: "Reordered banners" },
+  // ---- Banners (served at /admin/home-cards; see RETIRED_ROUTE_COPY) -------
+  "POST /admin/home-cards": { ko: "배너 등록", en: "Created a banner" },
+  "PATCH /admin/home-cards/{banner_id}": { ko: "배너 수정", en: "Updated a banner" },
+  "DELETE /admin/home-cards/{banner_id}": { ko: "배너 삭제", en: "Deleted a banner" },
+  "POST /admin/home-cards/reorder": { ko: "배너 순서 변경", en: "Reordered banners" },
 
   // ---- FAQs --------------------------------------------------------------
   "POST /admin/support/faqs": { ko: "FAQ 등록", en: "Created a FAQ" },
@@ -449,6 +449,19 @@ const CLI_ACTION_COPY: Record<string, ActionCopy> = {
 };
 
 /**
+ * Routes that have moved: rows written before the move keep the old route
+ * string, so they are labelled here. Kept out of ACTION_COPY, which lists only
+ * live routes (hangyul-api's completeness test reads it).
+ */
+const RETIRED_ROUTE_COPY: Record<string, ActionCopy> = {
+  // Banners moved to /admin/home-cards (ad blockers block "banner" URLs).
+  "POST /admin/banners": { ko: "배너 등록", en: "Created a banner" },
+  "PATCH /admin/banners/{banner_id}": { ko: "배너 수정", en: "Updated a banner" },
+  "DELETE /admin/banners/{banner_id}": { ko: "배너 삭제", en: "Deleted a banner" },
+  "POST /admin/banners/reorder": { ko: "배너 순서 변경", en: "Reordered banners" },
+};
+
+/**
  * Who ran a CLI row, as `login@host` (`login (as account)@host` under sudo),
  * from the operator the server recorded. Null for every other row.
  */
@@ -610,6 +623,7 @@ export function describeAuditAction(entry: AuditLogEntry): DescribedAction {
     ACTION_COPY[entry.action] ??
     SENSITIVE_READ_BY_STORED_ACTION[entry.action] ??
     CLI_ACTION_COPY[entry.action] ??
+    RETIRED_ROUTE_COPY[entry.action] ??
     null;
   return {
     // An unmapped action shows its route rather than a label that would be a

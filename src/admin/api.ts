@@ -1350,17 +1350,18 @@ export const adminApi = {
   revokeCoupon: (couponId: string) =>
     http.post<CouponRow>(`/admin/coupons/${couponId}/revoke`),
 
-  // Banners
-  listBanners: () => http.get<{ items: AdminBanner[] }>("/admin/banners"),
+  // Banners — served at /admin/home-cards: ad blockers block request URLs
+  // that say "banner".
+  listBanners: () => http.get<{ items: AdminBanner[] }>("/admin/home-cards"),
   createBanner: (body: Partial<AdminBanner>) =>
-    http.post<AdminBanner>("/admin/banners", body),
+    http.post<AdminBanner>("/admin/home-cards", body),
   updateBanner: (bannerId: string, body: Partial<AdminBanner>) =>
-    http.patch<AdminBanner>(`/admin/banners/${bannerId}`, body),
+    http.patch<AdminBanner>(`/admin/home-cards/${bannerId}`, body),
   reorderBanners: (bannerIds: string[]) =>
-    http.post<{ items: AdminBanner[] }>("/admin/banners/reorder", {
+    http.post<{ items: AdminBanner[] }>("/admin/home-cards/reorder", {
       banner_ids: bannerIds,
     }),
-  deleteBanner: (bannerId: string) => http.del<void>(`/admin/banners/${bannerId}`),
+  deleteBanner: (bannerId: string) => http.del<void>(`/admin/home-cards/${bannerId}`),
 
   // Media
   uploadMedia: (file: File) => {

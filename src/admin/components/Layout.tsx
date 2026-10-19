@@ -158,7 +158,7 @@ const NAV: NavGroup[] = [
   {
     label: "운영",
     items: [
-      { to: "/banners", icon: ImageIcon, label: "배너", scopes: ["ops:read"] },
+      { to: "/home-cards", icon: ImageIcon, label: "배너", scopes: ["ops:read"] },
       { to: "/notices", icon: Megaphone, label: "공지", scopes: ["ops:read"] },
       { to: "/faqs", icon: MessagesSquare, label: "FAQ", scopes: ["ops:read"] },
       { to: "/notifications", icon: Bell, label: "알림 발송", scopes: ["ops:write"] },
