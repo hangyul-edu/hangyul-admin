@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ToastProvider } from "../../hooks/toast";
-import { CouponsPage } from "./Coupons";
+import { CouponsPage, allCouponBatches } from "./Coupons";
 import { adminApi, type CouponBatch } from "../api";
 
 vi.mock("../auth", () => ({
@@ -53,5 +53,22 @@ describe("coupon batches", () => {
     expect(await screen.findByText("발행됨")).toBeInTheDocument();
     expect(screen.getByText("회수됨")).toBeInTheDocument();
     expect(screen.queryByText("이용 중")).not.toBeInTheDocument();
+  });
+});
+
+describe("the 발행 묶음 filter's batches", () => {
+  it("loads every batch page by page, past the server's 200-row page", async () => {
+    const all = Array.from({ length: 450 }, (_, i) => batch(String(i), "active"));
+    vi.mocked(adminApi.listCouponBatches).mockReset();
+    vi.mocked(adminApi.listCouponBatches).mockImplementation(async (params) => {
+      const { limit, offset } = params as { limit: number; offset: number };
+      return { items: all.slice(offset, offset + limit), total: all.length, limit, offset };
+    });
+
+    const { items } = await allCouponBatches();
+
+    expect(items).toHaveLength(450);
+    expect(items[449].batch_id).toBe("449");
+    expect(vi.mocked(adminApi.listCouponBatches).mock.calls.map((c) => (c[0] as { offset: number }).offset)).toEqual([0, 200, 400]);
   });
 });

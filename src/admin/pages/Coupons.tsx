@@ -290,6 +290,22 @@ function BatchesTab() {
   );
 }
 
+// The server's largest batch page.
+const BATCH_PAGE_LIMIT = 200;
+
+/** Every batch, page by page, so the 발행 묶음 filter can offer all of them
+ * (one page held only the newest 200). */
+export async function allCouponBatches(): Promise<{ items: CouponBatch[] }> {
+  const items: CouponBatch[] = [];
+  for (let offset = 0; ; offset += BATCH_PAGE_LIMIT) {
+    const page = await adminApi.listCouponBatches({ limit: BATCH_PAGE_LIMIT, offset });
+    items.push(...page.items);
+    // Stop at the reported total, or on a short (or empty) page.
+    if (page.items.length < BATCH_PAGE_LIMIT || items.length >= page.total) break;
+  }
+  return { items };
+}
+
 function CouponSearchTab() {
   const qc = useQueryClient();
   const toast = useToast();
@@ -304,7 +320,7 @@ function CouponSearchTab() {
 
   const batches = useQuery({
     queryKey: ["admin", "coupon-batches", "all"],
-    queryFn: () => adminApi.listCouponBatches({ limit: 200, offset: 0 }),
+    queryFn: allCouponBatches,
   });
 
   const query = useQuery({
