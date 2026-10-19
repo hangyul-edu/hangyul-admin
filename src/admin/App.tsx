@@ -62,7 +62,7 @@ function RequireAdmin({ children }: { children: ReactNode }) {
 }
 
 /** Scope gate for a whole page; shows the permission-denied state instead. */
-export function RequireScope({
+function RequireScope({
   scope,
   children,
 }: {

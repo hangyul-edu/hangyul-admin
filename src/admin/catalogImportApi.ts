@@ -4,7 +4,7 @@ import { http } from "../lib/http";
 
 const BASE = "/admin/content-catalog/package-import";
 
-export type JobStatus = "queued" | "running" | "succeeded" | "failed";
+type JobStatus ="queued" | "running" | "succeeded" | "failed";
 
 export interface PlanSummary {
   ok: boolean;
@@ -13,7 +13,7 @@ export interface PlanSummary {
   dependency_failures: string[];
 }
 
-export interface TargetInfo {
+interface TargetInfo {
   dialect: string;
   database: string;
   user: string | null;
@@ -66,7 +66,7 @@ export interface CatalogImportOverview {
   jobs: CatalogJob[];
 }
 
-export interface StartImportBody {
+interface StartImportBody {
   plan_job_id: string;
   confirm_database: string;
   backup_confirmed: boolean;

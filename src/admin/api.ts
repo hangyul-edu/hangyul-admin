@@ -20,7 +20,7 @@ export interface AdminMe {
 
 // ---- Metrics ---------------------------------------------------------------
 
-export interface OperationalAlert {
+interface OperationalAlert {
   severity: "info" | "warning" | "critical";
   code: string;
   message: string;
@@ -173,7 +173,7 @@ export interface AdminStuckOutboxEvent {
 }
 
 /** At most 100 rows; `total` is the full count — the dashboard alert's number. */
-export interface OperationsQueuePage<T> {
+interface OperationsQueuePage<T> {
   items: T[];
   total: number;
 }
@@ -236,7 +236,7 @@ export interface BulkCheckResult {
   rows: BulkCheckRow[];
 }
 
-export interface Page<T> {
+interface Page<T> {
   items: T[];
   total: number;
   page: number;
@@ -343,7 +343,7 @@ export interface AdminUserDetail {
   accounts: AdminPersonAccount[];
 }
 
-export interface UserListParams {
+interface UserListParams {
   q?: string;
   role?: string;
   status?: string;
@@ -413,7 +413,7 @@ export interface AdminLeagueSeasonContext {
 }
 
 /** Where a member currently stands, if they are in a league at all. */
-export interface AdminMemberLeagueAssignment {
+interface AdminMemberLeagueAssignment {
   season_id: string;
   group_id: string;
   group_ordinal: number;
@@ -437,7 +437,7 @@ export interface AdminMemberLookupResult {
   assignment: AdminMemberLeagueAssignment | null;
 }
 
-export interface AdminMemberLookupPage {
+interface AdminMemberLookupPage {
   items: AdminMemberLookupResult[];
   total: number;
   truncated: boolean;
@@ -454,7 +454,7 @@ export interface AdminMemberLookupPage {
  * put them, because every league in their tier is full and fewer than five are
  * waiting to open another. Nothing the member does changes that.
  */
-export type AdminUnassignedState = "DORMANT" | "WAITING_FOR_ALLOCATION";
+type AdminUnassignedState ="DORMANT" | "WAITING_FOR_ALLOCATION";
 
 /** One member with no league this week. */
 export interface AdminUnassignedMember {
@@ -492,7 +492,7 @@ export interface AdminUnassignedMembersPage extends Page<AdminUnassignedMember> 
   seasons: AdminLeagueSeasonContext[];
 }
 
-export interface AdminLeaguesPage extends Page<AdminLeagueSummary> {
+interface AdminLeaguesPage extends Page<AdminLeagueSummary> {
   seasons: AdminLeagueSeasonContext[];
 }
 
@@ -591,7 +591,7 @@ export interface AdminPaymentRow {
 
 /** POST /admin/commerce/payments/{payment_id}/refund. Omit `amount_cents` to
  *  refund everything not yet refunded. */
-export interface AdminRefundRequest {
+interface AdminRefundRequest {
   amount_cents?: number;
   reason: string;
   /** New for each refund the admin starts, re-sent unchanged when retrying
@@ -599,7 +599,7 @@ export interface AdminRefundRequest {
   request_id?: string;
 }
 
-export interface AdminRefundResult {
+interface AdminRefundResult {
   payment_id: string;
   status: string;
   amount_cents: number;
@@ -611,7 +611,7 @@ export interface AdminRefundResult {
 
 /** GET /admin/commerce/invoices/{invoice_id}/retry-eligibility — whether an
  *  operator retry would be accepted now, and if not why (`reason`). */
-export interface AdminRetryEligibility {
+interface AdminRetryEligibility {
   invoice_id: string;
   allowed: boolean;
   reason: string | null;
@@ -653,7 +653,7 @@ export interface BadgePreset {
 
 /** The fixed place a plan is sold in: the monthly or the yearly plan. Every
  *  plan unlocks the same full access; they differ in period and price. */
-export interface OfferSlot {
+interface OfferSlot {
   interval: "month" | "year";
 }
 
@@ -788,7 +788,7 @@ export interface AdminCourse {
   translations: CatalogTranslation[];
 }
 
-export interface AdminCourseWrite {
+interface AdminCourseWrite {
   title?: string;
   description?: string;
   cover_image_url?: string | null;
@@ -814,7 +814,7 @@ export interface AdminSeries {
   translations: CatalogTranslation[];
 }
 
-export interface AdminSeriesWrite {
+interface AdminSeriesWrite {
   title?: string;
   description?: string;
   /** null clears it on an update. */
@@ -830,7 +830,7 @@ export interface AdminSeriesWrite {
  * member's history and saved items keep rendering). `*_preserved` = member
  * records left untouched. Only the regenerable AI cache is deleted.
  */
-export interface SentenceCleanupCounts {
+interface SentenceCleanupCounts {
   sentences_archived: number;
   generated_sentences: number;
   sentence_histories_preserved: number;
@@ -839,7 +839,7 @@ export interface SentenceCleanupCounts {
 }
 
 /** See `SentenceCleanupCounts` for what the two suffixes mean. */
-export interface TopikCleanupCounts {
+interface TopikCleanupCounts {
   questions_archived: number;
   exam_sets_archived: number;
   practice_sets: number;
@@ -877,7 +877,7 @@ export interface AdminLecture {
  * The lecture fields an admin edits; kind and length come from the video, and
  * its position is set by reordering the series, never typed.
  */
-export type AdminLectureFields = Partial<
+type AdminLectureFields = Partial<
   Pick<AdminLecture, "title" | "description" | "thumbnail_url" | "access" | "topik_question_type" | "translations"> & {
     series_id: string;
   }
@@ -910,7 +910,7 @@ export interface AdminCheckpoint {
   quiz?: AdminQuiz | null;
 }
 
-export interface AdminCheckpointList {
+interface AdminCheckpointList {
   lecture_id: string;
   /** The ready video checkpoints sit on; null until one is uploaded and ready. */
   video_id: string | null;
@@ -952,7 +952,7 @@ export interface AdminLectureVideo {
   deleted_at: string | null;
 }
 
-export interface UploadSession {
+interface UploadSession {
   video_id: string;
   provider: string;
   provider_video_id: string;
@@ -977,12 +977,12 @@ export interface AdminSentence {
   is_ai_generated: boolean;
 }
 
-export interface AdminQuizChoice {
+interface AdminQuizChoice {
   key: string;
   text: string;
 }
 
-export interface AdminQuizBlank {
+interface AdminQuizBlank {
   label: string;
   answer: string | null;
 }
@@ -1065,7 +1065,7 @@ export interface AdminFaq {
 
 /** Body for creating/updating a FAQ. On update every field is optional; the
  *  translations sent are upserted by locale and others are left untouched. */
-export interface AdminFaqBody {
+interface AdminFaqBody {
   category?: string;
   translations?: FaqTranslation[];
   published?: boolean;
@@ -1094,7 +1094,7 @@ export interface AdminNotice {
  * app syncs (UTC until one is synced) — never a UTC instant and never derived
  * from their phone number or app language.
  */
-export interface DailyReminderSettings {
+interface DailyReminderSettings {
   daily_reminder_time: string;
   /** When an admin last changed it; null while it is still the default. */
   updated_at: string | null;
@@ -1106,9 +1106,9 @@ export interface DailyReminderSettings {
 type Query = Record<string, string | number | boolean | undefined | null>;
 
 /* ---- Settings page (/admin/system-settings) ---- */
-export type SettingSource = "admin" | "env" | "default" | "unreadable";
-export type IntegrationStatus = "active" | "incomplete" | "off" | "not_configured" | "settings";
-export type SettingFieldKind =
+type SettingSource ="admin" | "env" | "default" | "unreadable";
+type IntegrationStatus ="active" | "incomplete" | "off" | "not_configured" | "settings";
+type SettingFieldKind =
   | "secret"
   | "multiline_secret"
   | "text"
@@ -1162,7 +1162,7 @@ export interface IntegrationSettings {
   last_check: IntegrationCheck | null;
   fields: SettingField[];
 }
-export interface SettingsGroup {
+interface SettingsGroup {
   id: string;
   label: string;
   description: string;
@@ -1178,7 +1178,7 @@ export interface SettingsPageData {
 export type SettingChange =
   | { key: string; action: "set"; value?: unknown; secret?: string }
   | { key: string; action: "clear" | "reset" };
-export interface SettingsSaveResult {
+interface SettingsSaveResult {
   integration: IntegrationSettings;
   applied: Record<string, "live" | "restart">;
   message: string;
@@ -1199,7 +1199,7 @@ export interface AiModelOption {
   /** Purposes it suits (fast/cheap → generation, strong → reasoning). */
   recommended_for: AiPurpose[];
 }
-export interface AiModelProvider {
+interface AiModelProvider {
   id: string;
   name: string;
   supported: boolean;

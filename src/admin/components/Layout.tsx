@@ -177,7 +177,7 @@ const NAV: NavGroup[] = [
 ];
 
 /** Below this width the sidebar has no room beside the page (admin.css's tablet breakpoint). */
-export const NARROW_SIDEBAR_QUERY = "(max-width: 1024px)";
+const NARROW_SIDEBAR_QUERY ="(max-width: 1024px)";
 
 function matchesNarrow(): boolean {
   return typeof window !== "undefined" && typeof window.matchMedia === "function"

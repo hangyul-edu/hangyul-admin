@@ -11,7 +11,7 @@
 
 export type GoodDirection = "up" | "down" | "neutral";
 
-export interface MetricGuide {
+interface MetricGuide {
   /** Short, plain name. */
   name: string;
   /** One sentence: what the number tells you. */
@@ -19,7 +19,7 @@ export interface MetricGuide {
   good: GoodDirection;
 }
 
-export const METRIC_GUIDE: Record<string, MetricGuide> = {
+const METRIC_GUIDE:Record<string, MetricGuide> = {
   active_learners: {
     name: "학습한 회원",
     meaning: "기간 중 문제를 풀거나 복습하거나 튜터에게 질문한 회원 수예요.",

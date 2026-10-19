@@ -5,7 +5,7 @@ import { http } from "../lib/http";
 
 type Query = Record<string, string | number | boolean | undefined>;
 
-export type MetricStatus = "ok" | "no_eligible_data" | "suppressed" | "not_comparable" | "unavailable";
+type MetricStatus ="ok" | "no_eligible_data" | "suppressed" | "not_comparable" | "unavailable";
 
 /** A ratio exactly as the server computed it — always with its denominator. */
 export interface Ratio {
@@ -20,7 +20,7 @@ export interface Ratio {
 /** Tutor reliability from human reviews: the correct-and-grounded ratio plus
  * how many reviews found the answer leaked (`leak_rate` = leaks / reviews,
  * null without reviews; a turn reviewed twice counts twice). */
-export interface TutorReliability extends Ratio {
+interface TutorReliability extends Ratio {
   leaks: number;
   leak_rate: number | null;
 }
@@ -35,7 +35,7 @@ export interface Change {
   note: string | null;
 }
 
-export interface WindowInfo {
+interface WindowInfo {
   start: string;
   end: string;
   timezone: string;
@@ -122,7 +122,7 @@ export interface Cohorts {
   cohorts: CohortRow[];
 }
 
-export interface Label {
+interface Label {
   code: string;
   ko: string;
 }
@@ -137,7 +137,7 @@ export interface LearnerRow {
   labels: Label[];
 }
 
-export interface SkillState {
+interface SkillState {
   skill_id: string;
   name_ko: string;
   dimension: string;
@@ -195,13 +195,13 @@ export interface SkillGrowth {
   change_causes: Record<string, number>;
 }
 
-export interface AssistanceSide {
+interface AssistanceSide {
   any: Ratio;
   hint: Ratio;
   reveal: Ratio;
 }
 
-export interface ReviewsSide {
+interface ReviewsSide {
   review_success: Ratio;
   reviews_assisted: number;
   reviews_overdue_now: number;
@@ -272,7 +272,7 @@ export interface TimelineRow {
 }
 
 /** One pick in a recommendation trace or a simulation, with its labels. */
-export interface TracePick {
+interface TracePick {
   version_id: string;
   item_key: string;
   preview: string | null;
@@ -380,7 +380,7 @@ export interface ContentVersionDetail extends ContentVersionSummary {
   publication_check: { policy: string; allowed: boolean; blockers: string[] };
 }
 
-export interface CoverageBand {
+interface CoverageBand {
   track: string;
   band: number;
   eligible: number;
@@ -393,7 +393,7 @@ export interface CoverageBand {
   status: "ok" | "short";
 }
 
-export interface Coverage {
+interface Coverage {
   model_version: string;
   assumptions: Record<string, number>;
   bands: CoverageBand[];
@@ -536,7 +536,7 @@ export interface DataHealth {
   pending_erasures: number;
 }
 
-export interface PageOf<T> {
+interface PageOf<T> {
   items: T[];
   total: number;
   page: number;

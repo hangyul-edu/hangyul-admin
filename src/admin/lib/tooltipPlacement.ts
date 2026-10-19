@@ -22,12 +22,12 @@ export interface Rect {
   height: number;
 }
 
-export interface Viewport {
+interface Viewport {
   width: number;
   height: number;
 }
 
-export interface Placement {
+interface Placement {
   left: number;
   top: number;
   /** True when the tooltip had to go below its anchor instead of above it. */

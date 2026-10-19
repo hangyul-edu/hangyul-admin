@@ -44,14 +44,14 @@ export function PageHero({
 
 // ---- Section tabs: related pages behind one menu item ----------------------
 
-export interface InsightTab {
+interface InsightTab {
   to: string;
   label: string;
   scope: string;
 }
 
 /** Pages that share one sidebar entry, shown as tabs on each of them. */
-export const INSIGHT_SECTIONS: InsightTab[][] = [
+const INSIGHT_SECTIONS:InsightTab[][] = [
   [
     { to: "/learning/learners", label: "학습 현황", scope: "learners:read" },
     { to: "/learning/proficiency", label: "레벨 판정", scope: "learners:read" },
@@ -66,7 +66,7 @@ export const INSIGHT_SECTIONS: InsightTab[][] = [
   ],
 ];
 
-export function SectionTabs({ pathname }: { pathname: string }) {
+function SectionTabs({ pathname }: { pathname: string }) {
   const { can } = useAdminAuth();
   // Only on a section's own pages — a learner's detail page has a back link
   // instead, and tabs there would read as tabs of that learner.
@@ -128,9 +128,9 @@ export function Panel({
 
 // ---- KPI cards and trends ---------------------------------------------------
 
-export type TrendTone = "good" | "bad" | "flat";
+type TrendTone ="good" | "bad" | "flat";
 
-export interface Trend {
+interface Trend {
   text: string;
   tone: TrendTone;
   direction: "up" | "down" | "flat";
@@ -261,7 +261,7 @@ function dotted(iso: string): string {
 }
 
 /** The window ending today with `days` days, and the same length just before it. */
-export function presetWindow(days: number, today = seoulToday()) {
+function presetWindow(days: number, today = seoulToday()) {
   const current_end = today;
   const current_start = shiftDays(today, -(days - 1));
   return {

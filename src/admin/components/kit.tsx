@@ -503,7 +503,7 @@ export function Switch({
 
 /* ---------- States ---------- */
 
-export function Spinner() {
+function Spinner() {
   return <span className="hgadm-spinner" role="status" aria-label="로딩 중" />;
 }
 

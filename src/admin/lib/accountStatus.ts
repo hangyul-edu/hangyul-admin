@@ -21,13 +21,13 @@
 import type { BadgeTone } from "../components/kit";
 
 /** The values `users.status` can hold. */
-export type AccountStatus =
+type AccountStatus =
   | "active"
   | "suspended"
   | "deactivated"
   | "pending_verification";
 
-export interface AccountStatusMeta {
+interface AccountStatusMeta {
   /** The one word this status is called, everywhere in the portal. */
   label: string;
   tone: BadgeTone;

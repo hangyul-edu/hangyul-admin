@@ -258,7 +258,7 @@ export function retryErrorMessage(error: unknown): string {
 }
 
 /** The outcome of an operator retry, in one sentence. */
-export function retryOutcomeMessage(result: AdminRetryResult): string {
+function retryOutcomeMessage(result: AdminRetryResult): string {
   if (result.invoice_status === "paid") return `결제되었습니다 (시도 #${result.attempt_no}).`;
   if (result.attempt_status === "failed") {
     return `결제가 거절되었습니다 (시도 #${result.attempt_no}${result.failure_class ? `, ${codeLabel(PAYMENT_FAILURE_LABEL, result.failure_class)}` : ""}). 자동 재시도 일정은 그대로 이어집니다.`;

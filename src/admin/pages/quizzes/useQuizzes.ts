@@ -7,7 +7,7 @@ import { draftToBody, type QuizDraft } from "./draft";
 export const QUIZZES_KEY = ["admin", "quizzes"];
 export const PAGE_SIZE = 25;
 
-export type QuizFilters = { q: string; format: string; section: string; level: string; aiOnly: string; page: number };
+type QuizFilters ={ q: string; format: string; section: string; level: string; aiOnly: string; page: number };
 
 /** One page of the question list, for the current filters. */
 export function useQuizList({ q, format, section, level, aiOnly, page }: QuizFilters) {

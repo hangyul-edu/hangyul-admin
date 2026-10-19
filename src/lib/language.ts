@@ -3,7 +3,7 @@
  * `AppLanguage`. The portal itself is Korean-only; it uses this list for
  * content authored per language (FAQs).
  */
-export type AppLanguage = "en" | "ko";
+type AppLanguage = "en" | "ko";
 
 export const SUPPORTED_LANGUAGES: { code: AppLanguage; nativeLabel: string }[] = [
   { code: "en", nativeLabel: "English" },

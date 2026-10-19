@@ -6,7 +6,7 @@ import type { ImageCrop } from "../../../lib/imageCrop";
 import { useReorder } from "../../components/ordering";
 import { fromAdminInputValue, toAdminInputValue } from "../../lib/format";
 
-export const BANNERS_KEY = ["admin", "banners"];
+const BANNERS_KEY =["admin", "banners"];
 
 /** The editor's working copy of a banner; the window is in datetime-local form. */
 export interface BannerDraft {

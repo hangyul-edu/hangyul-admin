@@ -68,7 +68,7 @@ export function useReorder<T>({
 }
 
 /** Puts the scope's rows into the slots they already occupy, in `ids` order. */
-export function placeInOrder<T>(items: T[], ids: string[], idOf: (item: T) => string): T[] {
+function placeInOrder<T>(items: T[], ids: string[], idOf: (item: T) => string): T[] {
   const inScope = new Set(ids);
   const byId = new Map(items.map((item) => [idOf(item), item]));
   const ordered = ids.map((id) => byId.get(id)).filter((item): item is T => item !== undefined);

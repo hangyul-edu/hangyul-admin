@@ -41,7 +41,7 @@ export function personName(person: NamedPerson | null | undefined): string {
 }
 
 /** The label for an account with neither a name nor an email. */
-export const UNNAMED_ACCOUNT = "(이름 없는 계정)";
+const UNNAMED_ACCOUNT ="(이름 없는 계정)";
 
 /**
  * `Name (email@example.com)` — the identifier plus its proof.

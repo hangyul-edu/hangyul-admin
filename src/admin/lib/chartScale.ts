@@ -31,7 +31,7 @@ const STEP_MANTISSAS = [1, 2, 2.5, 5, 10] as const;
 /** Relative slack, so a peak that IS the axis top is not pushed up a step. */
 const EPSILON = 1e-9;
 
-export interface AxisScale {
+interface AxisScale {
   /** Axis top, in the data's own unit. Always ≥ the peak, and never 0. */
   max: number;
   /** Distance between neighbouring ticks. Always > 0. */
@@ -42,7 +42,7 @@ export interface AxisScale {
   decimals: number;
 }
 
-export interface ScaleOptions {
+interface ScaleOptions {
   /** Restrict the step to whole numbers — for anything counted, not measured. */
   integer?: boolean;
   /** Intervals to aim for. The result never exceeds this. */

@@ -14,7 +14,7 @@ import { interpolate } from "./messages";
 import { apiErrorsKo } from "./locales/apiErrors.ko";
 import { apiErrorsAdminKo } from "./locales/apiErrors.admin.ko";
 
-export interface ServerProblem {
+interface ServerProblem {
   code: string;
   details?: Record<string, unknown>;
 }

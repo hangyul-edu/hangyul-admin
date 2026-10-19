@@ -12,13 +12,13 @@ import { Badge, Input, Textarea } from "./kit";
  * language; a ✓ marks the languages that have something written.
  */
 
-export const CATALOG_LANGUAGES = [
+const CATALOG_LANGUAGES = [
   { locale: "en", label: "영어", required: true },
   { locale: "ko", label: "한국어", required: false },
 ] as const;
 
-export type CatalogLocale = (typeof CATALOG_LANGUAGES)[number]["locale"];
-export type LanguageText = { title: string; description: string };
+type CatalogLocale =(typeof CATALOG_LANGUAGES)[number]["locale"];
+type LanguageText ={ title: string; description: string };
 export type LanguageDraft = Record<CatalogLocale, LanguageText>;
 
 const HANGUL = /[가-힣ㄱ-ㅎㅏ-ㅣ]/;
@@ -28,7 +28,7 @@ const HANGUL = /[가-힣ㄱ-ㅎㅏ-ㅣ]/;
  * never had English kept their Korean text in the English title when English
  * became the base language; they still need an English title.
  */
-export function isStandInTitle(title: string | null | undefined): boolean {
+function isStandInTitle(title: string | null | undefined): boolean {
   return !!title && HANGUL.test(title);
 }
 

@@ -3,7 +3,7 @@ import { resolveMessage } from "../i18n/messages";
 import { apiErrorText } from "../i18n/apiErrors";
 
 /** One entry of a `validation_error` problem's `errors[]`: which field, never its value. */
-export interface ApiFieldError {
+interface ApiFieldError {
   loc: (string | number)[];
   type?: string;
   msg?: string;
@@ -148,7 +148,7 @@ function buildUrl(path: string, query?: RequestOptions["query"]): string {
   return url.toString();
 }
 
-export async function apiFetch<T = unknown>(path: string, opts: RequestOptions = {}): Promise<T> {
+async function apiFetch<T = unknown>(path: string, opts: RequestOptions = {}): Promise<T> {
   const { method = "GET", body, form, query, auth = true, _retry = false, signal, responseType = "json" } = opts;
   const headers: Record<string, string> = { accept: "application/json" };
   const sentToken = auth ? handlers?.getAccessToken() ?? null : null;

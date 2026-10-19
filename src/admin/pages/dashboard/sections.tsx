@@ -12,7 +12,7 @@ type Can = (scope: string) => boolean;
 const CURRENCY_NAMES: Record<string, string> = { KRW: "원화", USD: "미국 달러" };
 
 /** `"KRW"` → `"원화 (KRW)"`: the code is always shown, the name when known. */
-export function currencyHeading(currency: string): string {
+function currencyHeading(currency: string): string {
   const name = CURRENCY_NAMES[currency];
   return name ? `${name} (${currency})` : currency;
 }
@@ -139,7 +139,7 @@ function TabSwitch<T extends string | number>({
   );
 }
 
-export const MONTH_RANGES = [6, 12, 24].map((m) => ({ value: m, label: `${m}개월` }));
+const MONTH_RANGES =[6, 12, 24].map((m) => ({ value: m, label: `${m}개월` }));
 
 /** One currency's month-to-date figure, labelled with the currency. */
 function CurrencyRevenueStat({ revenue, month, to }: { revenue: CurrencyRevenue; month: string; to?: string }) {
@@ -216,7 +216,7 @@ export function RevenueCard({
   );
 }
 
-export const METRICS = [
+const METRICS = [
   { value: "signups", label: "신규 가입" },
   { value: "revenue_krw", label: "결제 금액 (KRW)" },
   { value: "revenue_usd", label: "결제 금액 (USD)" },

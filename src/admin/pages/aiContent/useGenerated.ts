@@ -11,9 +11,9 @@ export const KIND_LABEL: Record<string, string> = {
   [QUESTION_KIND]: "문제",
 };
 
-export type ReviewStatus = "approved" | "rejected" | "pending";
+type ReviewStatus ="approved" | "rejected" | "pending";
 
-export type GeneratedFilters = { q: string; reviewStatus: string; kind: string; level: string; page: number };
+type GeneratedFilters ={ q: string; reviewStatus: string; kind: string; level: string; page: number };
 
 export function useGeneratedList({ q, reviewStatus, kind, level, page }: GeneratedFilters) {
   return useQuery({

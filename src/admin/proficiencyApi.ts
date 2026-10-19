@@ -3,7 +3,7 @@ import { http } from "../lib/http";
 /** Admin: evidence-based proficiency (`/admin/proficiency`). */
 
 type Query = Record<string, string | number | boolean | undefined>;
-export type Bi = { ko: string; en: string };
+type Bi ={ ko: string; en: string };
 export type ProficiencyTrack = "conversation" | "topik";
 
 export interface ProficiencyRow {
@@ -69,7 +69,7 @@ export interface CapabilityView {
   missing: string[];
 }
 
-export interface ConversationView {
+interface ConversationView {
   status: ProficiencyRow["status"];
   confirmed_level: number | null;
   provisional_level: number | null;
@@ -92,7 +92,7 @@ export interface ConversationView {
   next_activity: { kind: string; reason: Bi; available_at?: string };
 }
 
-export interface TopikView {
+interface TopikView {
   status: ProficiencyRow["status"];
   confirmed_grade: number | null;
   provisional_grade: number | null;
@@ -178,7 +178,7 @@ export interface GrowthView {
   promotions: DecisionView[];
 }
 
-export interface ValidationReport {
+interface ValidationReport {
   ratings: { total: number; human: number; model: number; by_split: Record<string, number> };
   human_human: Agreement;
   model_vs_human: Record<string, Record<string, Agreement>>;
@@ -196,7 +196,7 @@ export interface Agreement {
   mean_abs_diff: number | null;
 }
 
-export interface PolicyView {
+interface PolicyView {
   conversation: {
     framework_version: string;
     bank_version: string;
@@ -216,7 +216,7 @@ export interface PolicyView {
   manual: string;
 }
 
-export interface Cohort {
+interface Cohort {
   track: ProficiencyTrack;
   denominator: number;
   learners_without_record: number;

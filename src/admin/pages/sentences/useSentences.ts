@@ -5,7 +5,7 @@ import { useToast, useToastError } from "../../../hooks/toast";
 import { SENTENCE_TOPICS_KEY } from "../../lib/topicNames";
 import { sentenceBody, type SentenceDraft } from "./draft";
 
-export const SENTENCES_KEY = ["admin", "sentences"];
+const SENTENCES_KEY =["admin", "sentences"];
 /** What changes when a sentence is added, edited or removed: the list and the topics in use. */
 export const SENTENCE_KEYS = [SENTENCES_KEY, [...SENTENCE_TOPICS_KEY]];
 

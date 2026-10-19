@@ -60,7 +60,7 @@ export function periodInZone(startsAt: string, endsAt: string, timeZone: string)
   return `${formatInZone(startsAt, timeZone)} ~ ${formatInZone(endsAt, timeZone)}`;
 }
 
-export interface Remaining {
+interface Remaining {
   days: number;
   hours: number;
   minutes: number;

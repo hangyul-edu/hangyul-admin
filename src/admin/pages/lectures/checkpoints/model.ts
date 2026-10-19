@@ -27,7 +27,7 @@ export function contentKindOf(trackId: string): ContentKind {
   return KIND_BY_TRACK[trackId] ?? "sentence";
 }
 
-export type KindCopy = { add: string; noun: string; heading: string; hint: string };
+type KindCopy ={ add: string; noun: string; heading: string; hint: string };
 
 export const KIND_COPY: Record<ContentKind, KindCopy> = {
   sentence: {

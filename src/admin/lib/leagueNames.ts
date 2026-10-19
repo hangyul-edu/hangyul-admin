@@ -44,7 +44,7 @@ export function leagueName(tier: string, ordinal: number): string {
 }
 
 /** `"2026-09-07T00:00:00Z"` → `"2026.09.07"`, in the league's own timezone. */
-export function leagueDate(value: string): string {
+function leagueDate(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   // The league runs on US Eastern time; a week that closes late on Sunday there

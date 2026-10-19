@@ -14,7 +14,7 @@ export function emptyNoticeDraft(): NoticeDraft {
   return { ko_title: "", ko_body: "", en_title: "", en_body: "", pinned: false, published: false };
 }
 
-export function pick(notice: AdminNotice, locale: string): NoticeTranslation | undefined {
+function pick(notice: AdminNotice, locale: string): NoticeTranslation | undefined {
   return notice.translations.find((t) => t.locale === locale);
 }
 

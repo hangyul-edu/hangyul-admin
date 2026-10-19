@@ -24,7 +24,7 @@ import { ADMIN_TIER_LABEL, ROLE_LABELS } from "./adminTiers";
  * it is the wording an English portal would use, and keeping it beside the
  * Korean is the only way the two stay in step.
  */
-export type ActionCopy = { ko: string; en: string };
+type ActionCopy = { ko: string; en: string };
 
 const ACTION_COPY: Record<string, ActionCopy> = {
   // ---- Admin accounts ----------------------------------------------------
@@ -606,7 +606,7 @@ function context(entry: AuditLogEntry): string | null {
   return null;
 }
 
-export type DescribedAction = {
+type DescribedAction = {
   /** What the admin did, in the portal's language. */
   label: string;
   /** A short "on what", or null when the row records nothing worth adding. */
