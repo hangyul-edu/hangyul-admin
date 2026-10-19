@@ -47,6 +47,16 @@ export const apiErrorsAdminKo = {
     "settings.invalid": "입력값을 확인해 주세요.",
     "settings.required_missing": "켜기 전에 필수 항목을 입력해 주세요: {missing}",
     "settings.test_unsupported": "이 항목은 연결 테스트를 지원하지 않아요.",
+    "speech.realtime_unavailable": "LiveKit 실시간 음성 서버에 연결할 수 없어요. 설정과 서버 상태를 확인해 주세요.",
+    "speech.session_not_found": "해당 방과 참가자에 맞는 음성 세션이 없어요.",
+    "speech.purpose_unknown": "음성 세션 종류가 올바르지 않아요.",
+    "speech.transcript_not_found": "인식 결과를 찾을 수 없어요.",
+    "speech.transcript_used": "이미 답안으로 제출된 인식 결과예요.",
+    "speech.transcript_expired": "인식 결과가 만료되었어요. 다시 말해 주세요.",
+    "speech.transcript_invalid": "인식 결과 형식이 올바르지 않아요.",
+    "speech.recognition_failed": "음성 인식에 실패했어요. 인식 엔진 상태와 로그를 확인해 주세요.",
+    "speech.agent_unauthorized": "STT 에이전트 키가 일치하지 않아요 (LIVEKIT_AGENT_SHARED_SECRET).",
+    "speech.agent_not_configured": "STT 에이전트 공유 키(LIVEKIT_AGENT_SHARED_SECRET)가 설정되지 않았어요.",
 
     // AI providers — the provider's own explanation, so an operator can act on it
     "llm.not_configured": "AI를 쓸 수 없어요: {problem}",

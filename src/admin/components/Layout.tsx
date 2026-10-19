@@ -18,6 +18,7 @@ import {
   LayoutDashboard,
   LogOut,
   Megaphone,
+  Mic,
   PanelLeftClose,
   PanelLeftOpen,
   MessagesSquare,
@@ -170,6 +171,7 @@ const NAV: NavGroup[] = [
     label: "시스템",
     items: [
       { to: "/settings", icon: SlidersHorizontal, label: "연동·환경 설정", scopes: ["settings:read"] },
+      { to: "/speech-test", icon: Mic, label: "음성 인식 테스트", scopes: ["settings:read"] },
       { to: "/audit-logs", icon: ScrollText, label: "관리자 활동 내역", scopes: ["audit:read"] },
       { to: "/admins", icon: ShieldCheck, label: "관리자 계정", scopes: ["admins:manage"] },
     ],

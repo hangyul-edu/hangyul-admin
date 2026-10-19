@@ -5144,3 +5144,193 @@ img.hgadm-cover-preview {
   font-size: 12px;
   color: var(--ink-2);
 }
+
+/* ---------- 음성 인식 테스트 (pages/speech) ----------
+   Four stacked sections: pipeline status, the realtime microphone test, the
+   upload fallback and the grading preview. Cards, tables and badges are the
+   portal's; only the VAD meter, the recording timer and the token chips are new. */
+.hgadm-speech {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.hgadm-speech__section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.hgadm-speech__section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.hgadm-speech__section-head h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.hgadm-speech__subhead {
+  margin: 4px 0 0;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+.hgadm-speech__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+@media (max-width: 1024px) {
+  .hgadm-speech__grid {
+    grid-template-columns: 1fr;
+  }
+}
+.hgadm-speech__stats {
+  margin-bottom: 0;
+}
+.hgadm-speech__warn-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #b45309;
+}
+/* The VAD read-out: the agent's speech probability, 4× a second. */
+.hgadm-speech__vad {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--hgadm-radius);
+  background: var(--surface-2);
+  font-size: 13px;
+  transition: border-color 0.16s ease, background 0.16s ease;
+}
+.hgadm-speech__vad.is-speaking {
+  border-color: var(--hgadm-success);
+  background: var(--hgadm-success-soft);
+}
+.hgadm-speech__vad-label {
+  font-weight: 600;
+  color: var(--ink-2);
+  flex-shrink: 0;
+}
+.hgadm-speech__vad-value {
+  color: var(--ink-3);
+  flex-shrink: 0;
+  min-width: 90px;
+}
+.hgadm-speech__meter {
+  flex: 1;
+  min-width: 0;
+  height: 12px;
+  accent-color: var(--hgadm-success);
+}
+/* The upload test's recording timer. */
+.hgadm-speech__elapsed {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hgadm-danger);
+}
+.hgadm-speech__rec-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--hgadm-danger);
+  animation: hgadm-speech-blink 1s ease-in-out infinite;
+}
+@keyframes hgadm-speech-blink {
+  50% {
+    opacity: 0.25;
+  }
+}
+.hgadm-speech__result {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.hgadm-speech__quote {
+  margin: 0;
+  padding: 12px 16px;
+  border-left: 4px solid var(--hgadm-primary);
+  border-radius: var(--hgadm-radius-sm);
+  background: var(--hgadm-primary-soft);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink);
+}
+.hgadm-speech__segments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.hgadm-speech__errors {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+}
+.hgadm-speech__errors li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  color: var(--hgadm-danger);
+}
+.hgadm-speech__errors .hgadm-timestamp {
+  flex-shrink: 0;
+  color: var(--ink-3);
+}
+/* The grading mode switch. */
+.hgadm-speech__seg {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+  align-self: flex-start;
+}
+.hgadm-speech__seg-item {
+  border: 0;
+  background: transparent;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+.hgadm-speech__seg-item.is-active {
+  background: var(--surface);
+  color: var(--hgadm-primary);
+  box-shadow: var(--hgadm-shadow-sm);
+}
+.hgadm-speech__seg-item:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.hgadm-speech__tokens {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.hgadm-speech__token {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--hgadm-neutral-soft);
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  color: var(--ink-2);
+}

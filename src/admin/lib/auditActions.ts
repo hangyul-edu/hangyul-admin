@@ -268,6 +268,14 @@ const ACTION_COPY: Record<string, ActionCopy> = {
     ko: "외부 연동 연결 테스트",
     en: "Tested an integration's connection",
   },
+  "POST /admin/speech/transcribe": {
+    ko: "음성 인식 테스트 (녹음 전사)",
+    en: "Ran a speech recognition test on a recording",
+  },
+  "POST /admin/speech/grade": {
+    ko: "음성 답안 채점 미리보기",
+    en: "Previewed how a spoken answer is graded",
+  },
   "POST /admin/ai/tutor/turns/{turn_id}/reviews": {
     ko: "튜터 응답 품질 검수",
     en: "Reviewed a tutor reply",
