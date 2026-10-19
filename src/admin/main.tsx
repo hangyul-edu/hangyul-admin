@@ -1,8 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ApiError, setErrorAudience } from "../lib/http";
-import { setCurrentLanguage } from "../i18n/current";
+import { ApiError } from "../lib/http";
 import { ToastProvider } from "../hooks/toast";
 import { AdminAuthProvider } from "./auth";
 import { AdminErrorBoundary } from "./components/ErrorBoundary";
@@ -12,10 +11,6 @@ import "./styles/admin.css";
 import "./styles/insights.css";
 import "./styles/bulkImport.css";
 import "./styles/checkpointContent.css";
-
-// The portal is Korean; its errors are worded for operators (i18n/apiErrors).
-setCurrentLanguage("ko");
-setErrorAudience("admin");
 
 const queryClient = new QueryClient({
   defaultOptions: {

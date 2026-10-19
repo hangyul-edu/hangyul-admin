@@ -1,15 +1,4 @@
 import "@testing-library/jest-dom/vitest";
-import { beforeAll, expect } from "vitest";
-
-// The admin portal is Korean and words errors for operators (admin/main.tsx
-// sets both at startup); its tests render pages without that entry point.
-// The shared modules' own tests (src/i18n, src/lib) set what they test.
-beforeAll(async () => {
-  if (expect.getState().testPath?.includes("/src/admin/")) {
-    (await import("../i18n/current")).setCurrentLanguage("ko");
-    (await import("../lib/http")).setErrorAudience("admin");
-  }
-});
 
 // The react-router *data* router (createMemoryRouter, needed to exercise
 // useBlocker) builds a `new Request(url, { signal })` for every navigation.
@@ -33,7 +22,7 @@ class TestRequest {
 globalThis.Request = TestRequest as unknown as typeof Request;
 
 // This jsdom build exposes no Web Storage, so anything persisting state (the
-// auth session, the language choice) would otherwise always take its failure
+// admin session) would otherwise always take its failure
 // path under test. A plain in-memory Storage keeps that behaviour exercisable.
 // Production code still guards every access — storage is genuinely absent in
 // private-mode browsers.

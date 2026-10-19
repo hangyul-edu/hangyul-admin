@@ -1,9 +1,11 @@
 /**
- * Korean wording for the server's errors — the reference catalog.
+ * Korean wording for the server's errors, as members read it — this
+ * repository's copy of the member app's catalog.
  *
  * The server's problem `detail` is English, written for developers and logs;
- * the member app shows these sentences instead (`errorMessage()` in
- * lib/http.ts). `codes` is keyed by the problem's stable `code`; `reasons` by
+ * the portal shows these sentences for any error its own catalog
+ * (apiErrors.admin.ko.ts) does not word (`errorMessage()` in lib/http.ts).
+ * `codes` is keyed by the problem's stable `code`; `reasons` by
  * the `details.reason` the server adds where one code covers several
  * situations, and wins over the code when present. `{name}` slots are filled
  * from the problem's `details`.
@@ -246,9 +248,4 @@ export const apiErrorsKo = {
     "off_task_prompt": "문장 추천에 쓸 수 없는 요청이에요. 연습하고 싶은 문장을 설명해 주세요. (예: 대학교에서 쓸 수 있는 표현)",
     "prompt_too_long": "요청은 {max}자까지 입력할 수 있어요.",
   },
-};
-
-export type ApiErrorCatalog = {
-  codes: Record<keyof typeof apiErrorsKo.codes, string>;
-  reasons: Record<keyof typeof apiErrorsKo.reasons, string>;
 };

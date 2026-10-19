@@ -1,17 +1,14 @@
 /**
- * League naming and tier identity, taken from the member app.
+ * League naming and tier identity, as the member app shows them.
  *
- * The tier ladder — its names *and* its colours — already has a single source
- * of truth in `src/lib/league.ts`, which the member app's carousel, history
- * screen and tier icons all read. The admin imports it rather than keeping a
- * second copy: a portal whose Golden was a different yellow from the app's
- * would be worse than one with no colour at all, because it would look
- * deliberate. (`league.ts` imports only a *type* from the i18n catalogs, so
- * nothing of the member bundle is pulled in behind it.)
+ * The tier ladder — its names *and* its colours — comes from `src/lib/league.ts`,
+ * which mirrors the member app's: a portal whose Golden was a different yellow
+ * from the app's would be worse than one with no colour at all, because it
+ * would look deliberate.
  *
  * What is composed here is the wording the app composes in its own catalogs:
- * `league.tierLabel` is `"{tier} 리그"`, so a tier reads "Golden 리그" and a
- * group within it "Golden 리그 1그룹".
+ * its `league.tierLabel` is `"{tier} 리그"`, so a tier reads "Golden 리그" and
+ * a group within it "Golden 리그 1그룹".
  */
 import { LEAGUE_TIERS, TIER_META } from "../../lib/league";
 import type { LeagueTier } from "../../lib/league";

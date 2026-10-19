@@ -124,8 +124,8 @@ hangyul-admin/
    │                       #   components/, pages/, lib/, styles/ (hgadm-* classes)
    ├─ lib/                 # http client (Bearer auth, refresh, error wording),
    │                       #   config, image crop, leagues, levels, HTML sanitizer…
-   ├─ i18n/                # error wording (operator catalog apiErrors.admin.ko.ts
-   │                       #   first, then the Korean member catalog)
+   ├─ i18n/                # Korean error wording (operator catalog apiErrors.admin.ko.ts
+   │                       #   first, then the member catalog; messages.ts fallbacks)
    ├─ hooks/toast.tsx
    ├─ components/StreamVideo.tsx
    └─ styles/theme.css     # brand tokens; admin.css re-themes them blue
@@ -134,6 +134,8 @@ hangyul-admin/
 `src/lib`, `src/i18n`, `src/hooks`, `src/components` and `src/styles` began as
 the member app's modules the portal used, and came along with their history
 when the two apps were split into separate repositories. They are this
-repository's own copies now. The backend's test suite checks this repository's
-operator wording (`src/i18n/locales/apiErrors.admin.ko.ts`) and audit labels
-(`src/admin/lib/auditActions.ts`) against the API.
+repository's own copies now, cut down to what the portal uses: it is
+Korean-only, so it carries no translation layer. The backend's test suite
+checks this repository's error wording (`src/i18n/locales/apiErrors.admin.ko.ts`
+and `apiErrors.ko.ts`) and audit labels (`src/admin/lib/auditActions.ts`)
+against the API.

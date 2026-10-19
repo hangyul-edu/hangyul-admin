@@ -1,6 +1,6 @@
 import { API_BASE_URL } from "./config";
-import { resolveMessage } from "../i18n/current";
-import { apiErrorText, type ErrorAudience } from "../i18n/apiErrors";
+import { resolveMessage } from "../i18n/messages";
+import { apiErrorText } from "../i18n/apiErrors";
 
 /** One entry of a `validation_error` problem's `errors[]`: which field, never its value. */
 export interface ApiFieldError {
@@ -228,41 +228,18 @@ export const http = {
     apiFetch<T>(p, { method: "POST", ...o, form }),
 };
 
-let errorAudience: ErrorAudience = "member";
-
 /**
- * Word API errors for operators: the admin portal turns this on at startup
- * (with Korean as its language), so its errors come from the admin catalog
- * before the member one.
- */
-export function setErrorAudience(audience: ErrorAudience): void {
-  errorAudience = audience;
-}
-
-/**
- * Turn any thrown value into a user-friendly message in the active language.
+ * Turn any thrown value into a message for the operator, in Korean.
  *
- * An API error shows the app's sentence for its `code` / `details.reason`
+ * An API error shows the portal's sentence for its `code` / `details.reason`
  * (i18n/apiErrors), never the server's English `detail`; a code the catalogs
  * don't know gets the generic message for its HTTP status. Anything else is
- * either one of our catalog keys (translated) or display text (passed through).
+ * either one of our message keys (i18n/messages) or display text (passed
+ * through).
  */
 export function errorMessage(e: unknown): string {
-  if (e instanceof ApiError) {
-    return apiErrorText(e, { audience: errorAudience }) ?? resolveMessage(friendlyFallback(e.status));
-  }
+  if (e instanceof ApiError) return apiErrorText(e) ?? resolveMessage(friendlyFallback(e.status));
   if (e instanceof NetworkError) return resolveMessage(e.message);
   if (e instanceof Error && e.message) return resolveMessage(e.message);
   return resolveMessage("httpError.unknown");
-}
-
-/** The API answered 404: the thing asked for does not exist (or not for you). */
-export function isNotFound(e: unknown): boolean {
-  return e instanceof ApiError && e.status === 404;
-}
-
-/** react-query `retry`: up to two retries, none for a 404 (retrying cannot
- * make a missing item appear). */
-export function retryUnlessNotFound(failureCount: number, error: unknown): boolean {
-  return !isNotFound(error) && failureCount < 2;
 }

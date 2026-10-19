@@ -2500,7 +2500,6 @@ a.hgadm-recent--link:hover {
 .hgadm-text-xs { font-size: 12.5px !important; }
 .hgadm-text-sm { font-size: 13px !important; }
 .hgadm-text-md { font-size: 13.5px !important; }
-.hgadm-text-secondary { color: var(--ink-2) !important; }
 .hgadm-fw-600 { font-weight: 600 !important; }
 .hgadm-fw-700 { font-weight: 700 !important; }
 .hgadm-text-left { text-align: left !important; }
@@ -2515,11 +2514,9 @@ a.hgadm-recent--link:hover {
 }
 .hgadm-min-w-0 { min-width: 0 !important; }
 .hgadm-row--tight { gap: 4px !important; }
-.hgadm-row--loose { gap: 12px !important; }
 .hgadm-mt-0 { margin-top: 0 !important; }
 .hgadm-mb-0 { margin-bottom: 0 !important; }
 .hgadm-text-lg { font-size: 17px !important; }
-.hgadm-text-success { color: var(--success) !important; }
 .hgadm-text-danger { color: var(--hgadm-danger) !important; }
 .hgadm-shrink-0 { flex-shrink: 0 !important; }
 .hgadm-flex-1 { flex: 1 !important; }
@@ -3926,10 +3923,6 @@ a.hgadm-recent--link:hover {
   color: var(--ink);
   overflow-wrap: break-word;
   min-width: 0;
-}
-.hgadm-models__provider {
-  font-size: 12px;
-  color: var(--ink-3);
 }
 .hgadm-models__checks {
   display: grid;
