@@ -3,6 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { CheckCircle2 } from "lucide-react";
 import { adminApi } from "../api";
 import { errorMessage } from "../../lib/http";
+import { randomUuid } from "../../lib/uuid";
 import { useToast } from "../../hooks/toast";
 import {
   Button,
@@ -24,14 +25,16 @@ const KINDS: { key: Kind; title: string; desc: string; confirm: string }[] = [
   {
     key: "notice",
     title: "마케팅 알림 (인앱)",
-    desc: "마케팅 수신 동의자의 앱 알림함에 알림을 넣습니다. 푸시는 발송되지 않습니다.",
-    confirm: "마케팅 수신 동의자 전체의 알림함에 기록됩니다. 진행할까요?",
+    desc:
+      "마케팅 수신 동의자의 앱 알림함에 알림을 넣고, 푸시도 함께 보냅니다(푸시를 끈 사용자와 방해 금지 시간대는 제외).",
+    confirm: "마케팅 수신 동의자 전체의 알림함에 기록되고 푸시가 발송됩니다. 진행할까요?",
   },
   {
     key: "announcement",
     title: "서비스 공지 (인앱)",
-    desc: "모든 사용자(서비스 알림 수신자)의 알림함에 공지를 넣습니다.",
-    confirm: "전체 사용자의 알림함에 기록됩니다. 진행할까요?",
+    desc:
+      "모든 사용자의 알림함에 공지를 넣습니다. 푸시는 서비스 알림을 켠 사용자에게만 발송됩니다(방해 금지 시간대 제외).",
+    confirm: "전체 사용자의 알림함에 기록되고, 서비스 알림을 켠 사용자에게 푸시가 발송됩니다. 진행할까요?",
   },
 ];
 
@@ -43,10 +46,24 @@ export function NotificationsPage() {
   const [deepLink, setDeepLink] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [dedupKey, setDedupKey] = useState("");
+  // The campaign key sent when none is typed. A broadcast commits user by
+  // user as it goes, so a send that failed partway is re-sent under the same
+  // key: users already reached are skipped. Renewed only after a success or
+  // a switch of kind (the key is per campaign, not per screen).
+  const [autoKey, setAutoKey] = useState(() => randomUuid());
+  // A marketing push has no campaign key: after a failure, part of the
+  // audience may already have it, which the confirm then says.
+  const [pushFailed, setPushFailed] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [lastResult, setLastResult] = useState<string | null>(null);
 
   const meta = KINDS.find((k) => k.key === kind)!;
+
+  function switchKind(next: Kind) {
+    if (next === kind) return;
+    setKind(next);
+    setAutoKey(randomUuid());
+  }
 
   const send = useMutation({
     mutationFn: async () => {
@@ -62,7 +79,7 @@ export function NotificationsPage() {
         title,
         body: body || undefined,
         deep_link: deepLink || undefined,
-        dedup_key: dedupKey || undefined,
+        dedup_key: dedupKey.trim() || autoKey,
       };
       return kind === "notice"
         ? adminApi.sendMarketingNotice(payload)
@@ -82,10 +99,13 @@ export function NotificationsPage() {
       setDeepLink("");
       setImageUrl("");
       setDedupKey("");
+      setAutoKey(randomUuid());
+      setPushFailed(false);
       toast.success("발송이 완료되었어요.");
     },
     onError: (e) => {
       setConfirming(false);
+      if (kind === "push") setPushFailed(true);
       toast.error(errorMessage(e));
     },
   });
@@ -107,7 +127,7 @@ export function NotificationsPage() {
           <button
             key={k.key}
             className={`hgadm-tab ${kind === k.key ? "active" : ""}`}
-            onClick={() => setKind(k.key)}
+            onClick={() => switchKind(k.key)}
           >
             {k.title}
           </button>
@@ -157,7 +177,7 @@ export function NotificationsPage() {
             {kind !== "push" && (
               <Field
                 label="캠페인 키 (dedup_key)"
-                hint="같은 키로 재발송하면 이미 받은 사용자는 중복 수신하지 않습니다."
+                hint="비워 두면 자동 키를 씁니다. 같은 키로 재발송하면(실패 후 재시도 포함) 이미 받은 사용자는 중복 수신하지 않습니다."
               >
                 <Input
                   value={dedupKey}
@@ -218,6 +238,11 @@ export function NotificationsPage() {
         message={
           <div>
             <p className="hgadm-mt-0">{meta.confirm}</p>
+            {kind === "push" && pushFailed && (
+              <p className="hgadm-mt-0">
+                직전 발송이 실패했어요. 일부 기기에는 이미 발송됐을 수 있으며, 다시 보내면 중복으로 받게 됩니다.
+              </p>
+            )}
             <div className="hgadm-json hgadm-scroll-140">
               <strong>{title}</strong>
               {body ? `\n${body}` : ""}

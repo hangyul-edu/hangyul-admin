@@ -564,6 +564,10 @@ export function ErrorState({
 
 /* ---------- Modal & confirm ---------- */
 
+// Open modals, innermost last. A confirm opened over a dialog is on top: only
+// it answers Escape, and the page stays locked until the last one closes.
+const openModals: symbol[] = [];
+
 export function Modal({
   open,
   title,
@@ -582,18 +586,25 @@ export function Modal({
   /** Suppress the default title/close header (caller renders its own). */
   hideHeader?: boolean;
 }) {
+  // The latest onClose, read at key time: depending on it would re-run the
+  // effect on every render and reorder the stack.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
   useEffect(() => {
     if (!open) return;
+    const id = Symbol("modal");
+    openModals.push(id);
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape" && openModals[openModals.length - 1] === id) onCloseRef.current();
     };
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
+      openModals.splice(openModals.indexOf(id), 1);
+      if (openModals.length === 0) document.body.style.overflow = "";
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
   return (
@@ -902,10 +913,13 @@ export function SearchBox({
   value,
   onSearch,
   placeholder = "검색…",
+  maxLength,
 }: {
   value: string;
   onSearch: (q: string) => void;
   placeholder?: string;
+  /** The server's cap on the query, so a longer one is never sent (422). */
+  maxLength?: number;
 }) {
   const [draft, setDraft] = useState(value);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -927,6 +941,7 @@ export function SearchBox({
       <input
         value={draft}
         placeholder={placeholder}
+        maxLength={maxLength}
         onChange={(e) => {
           const next = e.target.value;
           setDraft(next);

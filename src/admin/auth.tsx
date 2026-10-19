@@ -110,7 +110,9 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       // Not an admin (403) or any other failure → drop the session again.
       hardSignOut();
       if (e instanceof ApiError && e.status === 403) {
-        throw new ApiError(403, "forbidden", "관리자 권한이 없는 계정입니다.");
+        // A plain Error: errorMessage shows its text, whereas an ApiError
+        // would show the generic catalog sentence for `forbidden` instead.
+        throw new Error("관리자 권한이 없는 계정이에요.");
       }
       throw e;
     }

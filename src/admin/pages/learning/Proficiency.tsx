@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { proficiencyAdminApi } from "../../proficiencyApi";
 import type { ProficiencyRow, ProficiencyTrack } from "../../proficiencyApi";
@@ -8,7 +8,7 @@ import { useUrlFilters } from "../../lib/urlFilters";
 import { originFrom } from "../../lib/navigation";
 import { formatDateTime } from "../../lib/format";
 import { useAdminAuth } from "../../auth";
-import { useToastError } from "../../../hooks/toast";
+import { useToast, useToastError } from "../../../hooks/toast";
 import { Badge, Button, DataTable, ErrorState, LoadingState, Pagination, SearchBox, Select } from "../../components/kit";
 import type { BadgeTone, Column } from "../../components/kit";
 import { downloadExport } from "../../components/learning";
@@ -48,7 +48,8 @@ export function ProficiencyLearnersPage() {
   const location = useLocation();
   const { can } = useAdminAuth();
   const toastError = useToastError();
-  const track = (f.value("track") || "conversation") as ProficiencyTrack;
+  const toast = useToast();
+  const track =(f.value("track") || "conversation") as ProficiencyTrack;
   const status = f.value("status");
   const level = f.value("level");
   const flag = f.value("flag");
@@ -75,14 +76,16 @@ export function ProficiencyLearnersPage() {
     enabled: can("analytics:read"),
   });
 
-  async function exportCsv() {
-    try {
+  // A mutation, so a double click is one export (and one download).
+  const exporter = useMutation({
+    mutationFn: async () => {
       const created = await learningApi.createExport({ report: "proficiency", filters: { track, status, level, flag, q, period } });
       await downloadExport(created.export_id, `proficiency-${track}.csv`);
-    } catch (e) {
-      toastError(e);
-    }
-  }
+      return created;
+    },
+    onSuccess: (created) => toast.success(`CSV를 내보냈어요 (${created.row_count.toLocaleString()}행).`),
+    onError: toastError,
+  });
 
   const columns: Column<ProficiencyRow>[] = [
     {
@@ -164,7 +167,7 @@ export function ProficiencyLearnersPage() {
         }
         actions={
           can("exports:create") && can("learners:read") ? (
-            <Button onClick={exportCsv}>
+            <Button loading={exporter.isPending} onClick={() => exporter.mutate()}>
               <Download size={15} strokeWidth={2} aria-hidden />
               CSV 내보내기
             </Button>
@@ -201,16 +204,19 @@ export function ProficiencyLearnersPage() {
 
       <div className="hgadm-card">
         <div className="hgadm-toolbar">
-          <SearchBox value={q} placeholder="사용자 ID 또는 닉네임" onSearch={(next) => f.patch({ q: next, page: null })} />
+          <SearchBox value={q} maxLength={64} placeholder="사용자 ID 또는 닉네임" onSearch={(next) => f.patch({ q: next, page: null })} />
           <Select aria-label="트랙" value={track} onChange={(e) => f.patch({ track: e.target.value, level: null, page: null })}>
             <option value="conversation">회화</option>
             <option value="topik">TOPIK</option>
           </Select>
           <Select aria-label="상태" value={status} onChange={(e) => f.patch({ status: e.target.value, page: null })}>
             <option value="">전체 상태</option>
-            <option value="confirmed">레벨 확정</option>
-            <option value="provisional">임시 레벨</option>
-            <option value="insufficient_evidence">근거 모으는 중</option>
+            {/* Every status the server filters on, "평가 전" included. */}
+            {Object.entries(STATUS_LABEL).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label.text}
+              </option>
+            ))}
           </Select>
           <Select aria-label="확인 레벨" value={level} onChange={(e) => f.patch({ level: e.target.value, page: null })}>
             <option value="">전체 레벨</option>

@@ -17,6 +17,14 @@ export interface Ratio {
   note?: string | null;
 }
 
+/** Tutor reliability from human reviews: the correct-and-grounded ratio plus
+ * how many reviews found the answer leaked (`leak_rate` = leaks / reviews,
+ * null without reviews; a turn reviewed twice counts twice). */
+export interface TutorReliability extends Ratio {
+  leaks: number;
+  leak_rate: number | null;
+}
+
 export interface Change {
   metric: string;
   status: MetricStatus;
@@ -592,5 +600,5 @@ export const learningApi = {
   reviewTutorTurn: (turnId: string, body: { correct: boolean; grounded: boolean; leaked_answer: boolean; note?: string }) =>
     http.post<{ review_id: string }>(`/admin/ai/tutor/turns/${turnId}/reviews`, body),
   tutorReliability: () =>
-    http.get<{ overall: Ratio & { leaks: number }; by_route: Record<string, Ratio & { leaks: number }>; learner_satisfaction: { up: number; down: number }; note: string }>("/admin/ai/tutor/reliability"),
+    http.get<{ overall: TutorReliability; by_route: Record<string, TutorReliability>; learner_satisfaction: { up: number; down: number }; note: string }>("/admin/ai/tutor/reliability"),
 };

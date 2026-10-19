@@ -111,6 +111,16 @@ describe("실력 판정 list", () => {
     expect(api.learners).toHaveBeenLastCalledWith(expect.objectContaining({ flag: "stalled" }));
   });
 
+  it("filters on every status the server knows, never-assessed learners included", async () => {
+    api.learners.mockResolvedValue({ items: [row()], total: 1, page: 1, page_size: 25 });
+    wrap(<ProficiencyLearnersPage />, "/learning/proficiency", "/learning/proficiency");
+    expect(await screen.findByText("마리아")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "상태" }));
+    await userEvent.click(await screen.findByRole("option", { name: "평가 전" }));
+    expect(screen.getByTestId("loc").textContent).toContain("status=unassessed");
+    expect(api.learners).toHaveBeenLastCalledWith(expect.objectContaining({ status: "unassessed" }));
+  });
+
   it("hides the export without export permission", async () => {
     api.learners.mockResolvedValue({ items: [], total: 0, page: 1, page_size: 25 });
     wrap(<ProficiencyLearnersPage />, "/learning/proficiency", "/learning/proficiency");

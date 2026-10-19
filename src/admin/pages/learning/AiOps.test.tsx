@@ -83,7 +83,7 @@ describe("AiOpsPage", () => {
       legacy_unattributed: { calls: 0, cost_cents: 0, by_purpose: {} },
     });
     api.tutorReliability.mockResolvedValue({
-      overall: { ...EMPTY_RATIO, leaks: 0 },
+      overall: { ...EMPTY_RATIO, leaks: 0, leak_rate: null },
       by_route: {},
       learner_satisfaction: { up: 0, down: 0 },
       note: "",

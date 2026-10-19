@@ -93,7 +93,7 @@ export function LearnersPage() {
       />
       <div className="hgadm-card">
         <div className="hgadm-toolbar">
-          <SearchBox value={q} placeholder="사용자 ID 또는 닉네임" onSearch={(next) => f.patch({ q: next, page: null })} />
+          <SearchBox value={q} maxLength={64} placeholder="사용자 ID 또는 닉네임" onSearch={(next) => f.patch({ q: next, page: null })} />
           <Select
             aria-label="트랙"
             value={track}

@@ -38,6 +38,19 @@ const DIMENSION: Record<string, string> = {
   pronunciation: "발음 명료성",
 };
 
+const OUTCOME: Record<string, string> = {
+  success: "성공",
+  failure: "실패",
+};
+
+const ROLLOUT_MODE: Record<string, string> = {
+  off: "꺼짐",
+  shadow: "섀도",
+  pilot: "파일럿",
+  enabled: "적용",
+  admin: "관리자",
+};
+
 const MISSING: Record<string, string> = {
   independent_successes: "독립 성공 부족",
   situations: "상황 다양성 부족",
@@ -97,9 +110,12 @@ export function ProficiencyDetailPage() {
       </div>
       {tab === "overview" && (track === "topik" ? <TopikOverview d={d} /> : <ConversationOverview d={d} />)}
       {tab === "growth" && <GrowthPanel userId={userId} track={track} />}
-      {tab === "evidence" && <EvidencePanel userId={userId} track={track} canCorrect={d.can_correct} canTranscripts={d.can_read_transcripts} />}
+      {/* Keyed on the track: a page cursor or a picked level belongs to one track. */}
+      {tab === "evidence" && (
+        <EvidencePanel key={track} userId={userId} track={track} canCorrect={d.can_correct} canTranscripts={d.can_read_transcripts} />
+      )}
       {tab === "history" && <HistoryPanel d={d} track={track} />}
-      {tab === "correct" && d.can_correct && <CorrectionPanel userId={userId} track={track} />}
+      {tab === "correct" && d.can_correct && <CorrectionPanel key={track} userId={userId} track={track} />}
     </div>
   );
 }
@@ -261,7 +277,7 @@ function TopikOverview({ d }: { d: ProficiencyDetail }) {
             <h3 className="hgadm-card__title">TOPIK {lv}</h3>
             <Dl
               items={[
-                ["판정", `${r.status}${r.grade != null ? ` · ${r.grade}급` : ""}`],
+                ["판정", `${STATUS_LABEL[r.status as keyof typeof STATUS_LABEL]?.text ?? r.status}${r.grade != null ? ` · ${r.grade}급` : ""}`],
                 ["근거 범위", r.basis === "listening_reading_only" ? "듣기·읽기만(쓰기 미평가) — 급수 판정 안 함" : r.basis],
                 ["사유", r.reasons.join(", ") || "—"],
                 ["영역 점수(최근)", Object.entries(r.latest_section_scores).map(([s, v]) => `${s} ${v ?? "—"}`).join(" · ") || "—"],
@@ -429,9 +445,11 @@ function EvidencePanel({ userId, track, canCorrect, canTranscripts }: { userId: 
   const toast = useToast();
   const toastError = useToastError();
   const [reason, setReason] = useState("");
+  // Older pages by the server's cursor (50 rows a page), as on LearnerDetail.
+  const [before, setBefore] = useState<string | undefined>(undefined);
   const q = useQuery({
-    queryKey: ["admin", "proficiency", "evidence", userId, track],
-    queryFn: () => proficiencyAdminApi.evidence(userId, { track }),
+    queryKey: ["admin", "proficiency", "evidence", userId, track, before],
+    queryFn: () => proficiencyAdminApi.evidence(userId, { track, before }),
   });
   const invalidate = useMutation({
     mutationFn: (id: string) => proficiencyAdminApi.invalidate(id, reason),
@@ -444,6 +462,13 @@ function EvidencePanel({ userId, track, canCorrect, canTranscripts }: { userId: 
   if (q.isLoading) return <LoadingState />;
   if (q.isError) return <ErrorState message={errorMessage(q.error)} onRetry={() => q.refetch()} />;
   const rows = q.data!.items;
+  const nextBefore = q.data!.next_before;
+  const pager = (before || nextBefore) && (
+    <div className="hgadm-toolbar">
+      {before && <Button size="sm" variant="ghost" onClick={() => setBefore(undefined)}>처음으로</Button>}
+      {nextBefore && <Button size="sm" variant="ghost" onClick={() => setBefore(nextBefore)}>이전 기록 더 보기</Button>}
+    </div>
+  );
   if (track === "topik") {
     return (
       <div className="hgadm-card">
@@ -464,18 +489,23 @@ function EvidencePanel({ userId, track, canCorrect, canTranscripts }: { userId: 
                 <td>{r.spec_version}</td>
                 <td>{r.status}</td>
                 <td>{r.result ? JSON.stringify(r.result) : "—"}</td>
-                <td>맞춤 학습 · topik_mock</td>
+                <td>맞춤 학습 · 모의평가</td>
               </tr>
             ))}
           </tbody>
         </table></div>
+        {pager}
       </div>
     );
   }
   const columns: Column<EvidenceItem>[] = [
     { key: "at", header: "시각(학습자 날짜)", render: (r) => <div>{formatDateTime(r.occurred_at ?? "")}<div className="hgadm-cell-sub">{r.local_date}</div></div> },
     { key: "cap", header: "역량", render: (r) => <div>{r.capability_label?.ko ?? r.capability_id}<div className="hgadm-cell-sub">레벨 {r.level} · {r.situation_id}</div></div> },
-    { key: "outcome", header: "결과", render: (r) => `${r.outcome}${r.rating != null ? ` (${r.rating}/4)` : ""}` },
+    {
+      key: "outcome",
+      header: "결과",
+      render: (r) => `${(r.outcome && OUTCOME[r.outcome]) ?? r.outcome ?? "—"}${r.rating != null ? ` (${r.rating}/4)` : ""}`,
+    },
     {
       key: "counted",
       header: "판정 반영",
@@ -525,6 +555,7 @@ function EvidencePanel({ userId, track, canCorrect, canTranscripts }: { userId: 
         </div>
       )}
       <DataTable columns={columns} rows={rows} rowKey={(r) => r.observation_id ?? r.session_id} empty="평가 증거가 없습니다." />
+      {pager}
       <p className="hgadm-cell-sub">맞춤 학습 실력 평가의 관찰만 표시됩니다. 강의·체크포인트·연습 활동은 증거로 기록되지 않습니다.</p>
     </div>
   );
@@ -541,7 +572,7 @@ function DecisionTable({ rows, track }: { rows: DecisionView[]; track: Proficien
       render: (r) => (
         <div>
           {DECISION_KIND[r.kind] ?? r.kind}
-          {!r.applied && r.kind !== "no_change" && <div className="hgadm-cell-sub">미적용({r.rollout_mode})</div>}
+          {!r.applied && r.kind !== "no_change" && <div className="hgadm-cell-sub">미적용({ROLLOUT_MODE[r.rollout_mode] ?? r.rollout_mode})</div>}
         </div>
       ),
     },

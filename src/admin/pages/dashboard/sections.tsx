@@ -40,9 +40,11 @@ const ALERT_ROUTES: Record<string, { to: string; scope: string }> = {
   webhook_dlq: { to: "/operations?tab=webhooks", scope: "commerce:read" },
   outbox_stuck: { to: "/operations?tab=outbox", scope: "commerce:read" },
   scoring_exhausted: { to: "/operations?tab=scoring", scope: "learners:read" },
-  payments_failed_24h: { to: "/payments", scope: "commerce:read" },
+  // Opened on the status the alert counts (failed payments: every one, newest
+  // first, not only the last 24 hours).
+  payments_failed_24h: { to: "/payments?tab=payments&status=failed", scope: "commerce:read" },
   // The page opens on its 결제 tab; unpaid invoices live on the other one.
-  invoices_unpaid: { to: "/payments?tab=invoices", scope: "commerce:read" },
+  invoices_unpaid: { to: "/payments?tab=invoices&status=unpaid", scope: "commerce:read" },
   generated_pending_review: { to: "/ai-content", scope: "content:read" },
 };
 

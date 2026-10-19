@@ -393,12 +393,22 @@ export function PaymentsPage() {
   );
 }
 
+const PAYMENT_STATUSES = ["succeeded", "failed", "refunded"] as const;
+const INVOICE_STATUSES = ["open", "paid", "unpaid", "refunded", "void"] as const;
+
+/** `value` when it is one of the list's statuses, else "" (all). */
+function knownStatus(value: string | null, allowed: readonly string[]): string {
+  return value && allowed.includes(value) ? value : "";
+}
+
 function PaymentsTab() {
   const navigate = useNavigate();
   const { can } = useAdminAuth();
   const canRefund = can("commerce:write");
   const [q, setQ] = useState("");
-  const [status, setStatus] = useState("");
+  // A dashboard alert links here with the status it counts.
+  const [params] = useSearchParams();
+  const [status, setStatus] = useState(() => knownStatus(params.get("status"), PAYMENT_STATUSES));
   const [page, setPage] = useState(1);
   const [refunding, setRefunding] = useState<AdminPaymentRow | null>(null);
   const pageSize = 25;
@@ -491,7 +501,7 @@ function PaymentsTab() {
           }}
         >
           <option value="">상태: 전체</option>
-          {["succeeded", "failed", "refunded"].map((s) => (
+          {PAYMENT_STATUSES.map((s) => (
             <option key={s} value={s}>
               {statusLabel(s)}
             </option>
@@ -528,7 +538,9 @@ function InvoicesTab() {
   const { can } = useAdminAuth();
   const canRetry = can("commerce:write");
   const [q, setQ] = useState("");
-  const [status, setStatus] = useState("");
+  // A dashboard alert links here with the status it counts.
+  const [params] = useSearchParams();
+  const [status, setStatus] = useState(() => knownStatus(params.get("status"), INVOICE_STATUSES));
   const [page, setPage] = useState(1);
   const [retrying, setRetrying] = useState<AdminInvoiceRow | null>(null);
   const pageSize = 25;
@@ -618,7 +630,7 @@ function InvoicesTab() {
           }}
         >
           <option value="">상태: 전체</option>
-          {["open", "paid", "unpaid", "refunded", "void"].map((s) => (
+          {INVOICE_STATUSES.map((s) => (
             <option key={s} value={s}>
               {statusLabel(s)}
             </option>

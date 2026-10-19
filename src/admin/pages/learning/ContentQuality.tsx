@@ -692,7 +692,7 @@ function VersionModal({ versionId, onClose }: { versionId: string; onClose: () =
             message={
               <div>
                 <Field label="사유" required>
-                  <Input value={retireReason} onChange={(e) => setRetireReason(e.target.value)} aria-label="회수 사유" />
+                  <Input value={retireReason} maxLength={200} onChange={(e) => setRetireReason(e.target.value)} aria-label="회수 사유" />
                 </Field>
                 <Field label="심각도" hint="심각(critical): 진행 중 세션에서 건너뛰고, 이 버전의 학습 증거를 제외합니다.">
                   <Select value={severity} aria-label="심각도" onChange={(e) => setSeverity(e.target.value as "normal" | "critical")}>

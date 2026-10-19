@@ -205,7 +205,10 @@ export function LearningTab({ user }: { user: User }) {
             <div key={t.track_id} className="hgadm-row hgadm-mb-8">
               <Badge tone="brand">{t.track_id === "track_topik" ? "TOPIK" : "회화"}</Badge>
               <span className="hgadm-text-md">
-                레벨 {t.current_level} · 진행률 {t.level_progress}% · 누적 {formatDuration(t.cumulative_seconds)}
+                {/* No progress figure: level_progress is the retired "5 correct
+                    answers" counter, not a percentage (levels come from
+                    proficiency assessment, on its own page). */}
+                학습 난이도 레벨 {t.current_level} · 누적 {formatDuration(t.cumulative_seconds)}
               </span>
             </div>
           ))

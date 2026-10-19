@@ -178,10 +178,11 @@ describe("dashboard alerts", () => {
     scopes = ["users:read", "content:read", "commerce:read"];
     renderPage();
 
-    // /payments alone lands on the 결제 tab, not on the invoices it is about.
+    // /payments alone lands on the 결제 tab, not on the invoices it is about;
+    // the status narrows the list to the rows the alert counts.
     expect((await screen.findByText("미납 청구서 12건")).closest("a")).toHaveAttribute(
       "href",
-      "/payments?tab=invoices",
+      "/payments?tab=invoices&status=unpaid",
     );
   });
 

@@ -6,9 +6,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ToastProvider } from "../../hooks/toast";
 import { NotificationsPage } from "./Notifications";
 
+const { sendMarketingNotice } = vi.hoisted(() => ({ sendMarketingNotice: vi.fn() }));
 vi.mock("../api", async () => {
   const actual = await vi.importActual<typeof import("../api")>("../api");
-  return { ...actual, adminApi: { ...actual.adminApi, sendMarketingPush: vi.fn() } };
+  return { ...actual, adminApi: { ...actual.adminApi, sendMarketingPush: vi.fn(), sendMarketingNotice } };
 });
 
 function renderPage() {
@@ -62,4 +63,36 @@ describe("notification preview", () => {
     expect(preview().textContent).not.toContain("알림 제목");
   });
 
+});
+
+describe("inbox broadcast", () => {
+  it("says it also pushes, and re-sends a failed broadcast under the same campaign key", async () => {
+    const user = userEvent.setup();
+    sendMarketingNotice
+      .mockRejectedValueOnce(new Error("timeout"))
+      .mockResolvedValueOnce({ created: 3 })
+      .mockResolvedValueOnce({ created: 5 });
+    renderPage();
+    await user.click(screen.getByRole("button", { name: "마케팅 알림 (인앱)" }));
+    // The inbox notice is pushed as well (it used to claim it was not).
+    expect(screen.getByText(/푸시도 함께 보냅니다/)).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText(/제목/), "가을 할인");
+    const send = async () => {
+      await user.click(screen.getByRole("button", { name: "발송하기" }));
+      await user.click(screen.getByRole("button", { name: "발송" }));
+    };
+    await send(); // fails partway
+    await send(); // the operator retries
+    expect(sendMarketingNotice).toHaveBeenCalledTimes(2);
+    const [first, retry] = sendMarketingNotice.mock.calls.map((c) => c[0].dedup_key as string);
+    expect(first).toBeTruthy();
+    // Users the failed run already reached are skipped, not posted twice.
+    expect(retry).toBe(first);
+
+    // A new campaign after the success gets a new key.
+    await user.type(screen.getByLabelText(/제목/), "겨울 할인");
+    await send();
+    expect(sendMarketingNotice.mock.calls[2][0].dedup_key).not.toBe(first);
+  });
 });

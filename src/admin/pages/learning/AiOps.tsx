@@ -60,6 +60,11 @@ function usd(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
+/** The share of reviews that found a leak, so 1 in 2 and 1 in 500 differ. */
+function leakRateText(rate: number | null): string {
+  return rate == null ? "검수 없음" : `검수의 ${(rate * 100).toFixed(1)}%`;
+}
+
 export function AiOpsPage() {
   return (
     <div>
@@ -348,7 +353,7 @@ function TutorSection() {
           <div className={`hgins-fact${r.overall.leaks ? " hgins-fact--bad" : ""}`}>
             <div className="hgins-fact__label">정답을 알려 준 답변</div>
             <div className="hgins-fact__value">{r.overall.leaks.toLocaleString()}건</div>
-            <div className="hgins-fact__hint">힌트에서 정답이 노출된 경우</div>
+            <div className="hgins-fact__hint">힌트에서 정답이 노출된 경우 · {leakRateText(r.overall.leak_rate)}</div>
           </div>
           <div className="hgins-fact">
             <div className="hgins-fact__label">회원 반응</div>
@@ -363,7 +368,9 @@ function TutorSection() {
               <div className="hgins-fact__value">
                 <RatioView ratio={v} compact />
               </div>
-              <div className="hgins-fact__hint">정답 노출 {v.leaks}건</div>
+              <div className="hgins-fact__hint">
+                정답 노출 {v.leaks}건 · {leakRateText(v.leak_rate)}
+              </div>
             </div>
           ))}
         </div>

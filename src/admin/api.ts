@@ -300,7 +300,6 @@ export interface AdminUserDetail {
     tracks: {
       track_id: string;
       current_level: number;
-      level_progress: number;
       cumulative_seconds: number;
     }[];
     /** What the member chose. */

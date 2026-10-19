@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
+import { useState } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   Badge,
   ConfirmDialog,
   DataTable,
+  Modal,
   Pagination,
   SearchBox,
   statusLabel,
@@ -194,5 +196,36 @@ describe("statusLabel", () => {
     // A state added on the server should still show, not vanish.
     expect(statusLabel("some_new_state")).toBe("some_new_state");
     expect(statusLabel(null)).toBe("—");
+  });
+});
+
+describe("Modal stacking", () => {
+  function Stack({ onOuterClose }: { onOuterClose: () => void }) {
+    // The confirm opens from inside the open dialog, as in the app.
+    const [inner, setInner] = useState(false);
+    return (
+      <Modal open title="바깥" onClose={onOuterClose}>
+        <button onClick={() => setInner(true)}>삭제</button>
+        <ConfirmDialog open={inner} title="안쪽" message="확인" onConfirm={() => {}} onCancel={() => setInner(false)} />
+      </Modal>
+    );
+  }
+
+  it("Escape closes only the top dialog, and the page stays locked under the outer one", () => {
+    const onOuterClose = vi.fn();
+    const { unmount } = render(<Stack onOuterClose={onOuterClose} />);
+    fireEvent.click(screen.getByRole("button", { name: "삭제" }));
+    expect(screen.getByText("안쪽")).toBeInTheDocument();
+    expect(document.body.style.overflow).toBe("hidden");
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByText("안쪽")).not.toBeInTheDocument();
+    expect(onOuterClose).not.toHaveBeenCalled();
+    expect(document.body.style.overflow).toBe("hidden");
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(onOuterClose).toHaveBeenCalledTimes(1);
+    unmount();
+    expect(document.body.style.overflow).toBe("");
   });
 });
