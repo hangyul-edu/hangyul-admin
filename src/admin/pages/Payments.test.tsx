@@ -196,6 +196,86 @@ describe("the refund dialog", () => {
   });
 });
 
+describe("retrying after the provider's answer was lost", () => {
+  it("re-sends the same request_id and amount, with the fields frozen", async () => {
+    listPayments.mockResolvedValue(page([row()]));
+    refundPayment
+      .mockRejectedValueOnce(new ApiError(502, "payment_method.provider_unavailable", "Toss did not answer"))
+      .mockResolvedValueOnce({
+        payment_id: "pay_7f3a9c2e1b", status: "succeeded", amount_cents: 15000,
+        refunded_amount_cents: 5000, refund_amount_cents: 5000, currency: "KRW", invoice_status: "paid",
+      });
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByRole("button", { name: "환불" }));
+    const dialog = screen.getByRole("dialog", { name: "결제 환불" });
+    const amount = within(dialog).getByLabelText("환불 금액");
+    await user.clear(amount);
+    await user.type(amount, "5000");
+    await user.type(within(dialog).getByLabelText("환불 사유"), "일부 환불");
+    await user.click(within(dialog).getByRole("button", { name: "환불하기" }));
+    await user.click(within(screen.getByRole("dialog", { name: "환불할까요?" })).getByRole("button", { name: "환불" }));
+
+    // Unknown outcome: the dialog comes back (re-mounted after the confirm
+    // step) and says what to do.
+    const again = await screen.findByRole("dialog", { name: "결제 환불" });
+    expect(within(again).getByRole("alert")).toHaveTextContent("같은 금액으로 다시 시도");
+    // The amount and reason can no longer change: the server's idempotency key
+    // includes the amount, so another amount would be a second refund.
+    expect(within(again).getByLabelText("환불 금액")).toHaveValue("5000");
+    expect(within(again).getByLabelText("환불 금액")).toHaveAttribute("readonly");
+    expect(within(again).getByLabelText("환불 사유")).toHaveAttribute("readonly");
+    expect(within(again).getByText(/같은 금액으로만 다시 보낼 수 있어요/)).toBeInTheDocument();
+
+    await user.click(within(again).getByRole("button", { name: "같은 금액으로 다시 시도" }));
+    await user.click(within(screen.getByRole("dialog", { name: "환불할까요?" })).getByRole("button", { name: "환불" }));
+    await waitFor(() => expect(refundPayment).toHaveBeenCalledTimes(2));
+    const [first, second] = refundPayment.mock.calls.map((c) => c[1] as { amount_cents: number; request_id: string });
+    expect(second.request_id).toBe(first.request_id);
+    expect(second.amount_cents).toBe(5000);
+    expect(await screen.findByText("₩5,000을 환불했습니다.")).toBeInTheDocument();
+  });
+
+  it("starts every new refund with a new request_id", async () => {
+    listPayments.mockResolvedValue(page([row({ refunded_amount_cents: 1000 })]));
+    refundPayment.mockRejectedValue(new ApiError(422, "payment_method.refund_refused", "no"));
+    const user = userEvent.setup();
+    renderPage();
+    for (let i = 0; i < 2; i++) {
+      await user.click(await screen.findByRole("button", { name: "환불" }));
+      const dialog = screen.getByRole("dialog", { name: "결제 환불" });
+      await user.type(within(dialog).getByLabelText("환불 사유"), "사유");
+      await user.click(within(dialog).getByRole("button", { name: "환불하기" }));
+      await user.click(within(screen.getByRole("dialog", { name: "환불할까요?" })).getByRole("button", { name: "환불" }));
+      const again = await screen.findByRole("dialog", { name: "결제 환불" });
+      await within(again).findByRole("alert");
+      await user.click(within(again).getByRole("button", { name: "취소" }));
+    }
+    const ids = refundPayment.mock.calls.map((c) => (c[1] as { request_id: string }).request_id);
+    expect(ids).toHaveLength(2);
+    expect(ids[0]).not.toBe(ids[1]);
+  });
+});
+
+describe("the payments list", () => {
+  it("names the provider and filters by it", async () => {
+    listPayments.mockResolvedValue(page([row({ provider: "toss_intl_card", currency: "USD", amount_cents: 1299 })]));
+    const user = userEvent.setup();
+    renderPage("/payments?status=failed&provider=toss_card");
+    expect(await screen.findByText("토스페이먼츠 해외카드")).toBeInTheDocument();
+    expect(screen.getByText("US$12.99")).toBeInTheDocument();
+    // Filters from the URL (a dashboard alert's link) are sent as given.
+    expect(listPayments).toHaveBeenLastCalledWith(
+      expect.objectContaining({ status: "failed", provider: "toss_card", page: 1 }),
+    );
+    await user.click(screen.getByRole("button", { name: "결제사" }));
+    await user.click(await screen.findByRole("option", { name: "네이버페이" }));
+    await waitFor(() =>
+      expect(listPayments).toHaveBeenLastCalledWith(expect.objectContaining({ provider: "naver_pay", page: 1 })),
+    );
+  });
+});
+
 describe("helpers", () => {
   it("parses won as whole numbers and dollars to two decimals", () => {
     expect(parseRefundAmount("15,000", "KRW")).toBe(15000);
@@ -265,7 +345,7 @@ async function openRetry() {
 }
 
 describe("retrying an invoice", () => {
-  it("offers a retry only on open or unpaid invoices, and only with commerce:write", async () => {
+  it("offers a retry only on open invoices, and only with commerce:write", async () => {
     listInvoices.mockResolvedValue({
       items: [invoice(), invoice({ invoice_id: "inv_paid", status: "paid" })],
       total: 2,

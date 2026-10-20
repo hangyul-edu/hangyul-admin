@@ -173,7 +173,7 @@ const ACTION_COPY: Record<string, ActionCopy> = {
   },
   "POST /admin/commerce/invoices/{invoice_id}/retry": {
     ko: "청구서 결제 재시도",
-    en: "Retried an unpaid invoice",
+    en: "Retried an open invoice",
   },
 
   // ---- Plans -------------------------------------------------------------
@@ -304,6 +304,10 @@ const ACTION_COPY: Record<string, ActionCopy> = {
     ko: "실력 평가 증거 무효 처리",
     en: "Invalidated a piece of proficiency evidence",
   },
+  "POST /admin/operations/outbox/{event_id}/retry": {
+    ko: "아웃박스 이벤트 다시 전송",
+    en: "Retried delivering an outbox event",
+  },
   "POST /admin/proficiency/scoring-queue/{attempt_id}/retry": {
     ko: "말하기 과제 채점 다시 시도",
     en: "Put a speaking task back in the scoring queue",
@@ -353,6 +357,7 @@ export const AUDIT_OBJECT_TYPES: readonly [value: string, label: string][] = [
   ["coupons", "쿠폰"],
   ["invoice", "청구서 (시스템)"],
   ["payment", "결제"],
+  ["outbox_event", "아웃박스 이벤트 다시 전송"],
   ["integration_settings", "연동 설정"],
   ["ai_feature", "AI 기능 설정"],
   ["ai", "AI 튜터 검수"],

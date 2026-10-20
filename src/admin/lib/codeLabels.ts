@@ -24,6 +24,15 @@ export const PAYMENT_FAILURE_LABEL: Record<string, string> = {
   unknown: "알 수 없는 오류",
 };
 
+/** `payment_methods.domain.entities.ProviderId` — who processed a payment or
+ * holds a subscription's billing key. */
+export const PAYMENT_PROVIDER_LABEL: Record<string, string> = {
+  toss_card: "토스페이먼츠 카드",
+  toss_intl_card: "토스페이먼츠 해외카드",
+  toss_pay: "토스페이",
+  naver_pay: "네이버페이",
+};
+
 /** `tutor.domain.policy.check_leak` reasons (`clean` when nothing leaked). */
 export const TUTOR_LEAK_LABEL: Record<string, string> = {
   clean: "정답 노출 없음",

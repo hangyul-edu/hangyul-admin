@@ -75,7 +75,9 @@ export function Overview({
         <dd className="hgadm-cell-mono">{data.environment.database}</dd>
       </dl>
       <p className="hgadm-cfg__muted-small">
-        데이터베이스 주소, JWT_SECRET, SETTINGS_ENCRYPTION_KEY는 서버 환경 변수로만 바꿀 수 있습니다. AI 기능별 켜기/끄기와 예산은
+        데이터베이스 주소, JWT_SECRET, SETTINGS_ENCRYPTION_KEY는 서버 환경 변수로만 바꿀 수 있습니다. 저장된 빌링키(카드 자동결제
+        정보)를 암호화하는 키(BILLING_KEY_ENCRYPTION_KEYS 또는 AWS KMS 키)도 환경 변수로만 설정하며, 일부러 이 화면에 두지
+        않습니다 — 데이터베이스에 저장하면 그 키가 지키는 암호문 옆에 놓이기 때문입니다. AI 기능별 켜기/끄기와 예산은
         &lsquo;AI 운영·튜터 품질&rsquo;, 학습 알림 시각은 &lsquo;알림 설정&rsquo;에서 관리합니다.
       </p>
     </div>

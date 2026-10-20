@@ -5,6 +5,7 @@ import type { Column } from "../../components/kit";
 import { TierChip } from "../../components/TierChip";
 import { accountStatusLabel, accountStatusTone } from "../../lib/accountStatus";
 import { formatDateTime, formatDuration, formatMoney } from "../../lib/format";
+import { PAYMENT_PROVIDER_LABEL, codeLabel } from "../../lib/codeLabels";
 import type { BackTarget, NavigationState } from "../../lib/navigation";
 import { providerLabel, signInMethods } from "../../lib/signInMethods";
 
@@ -148,12 +149,18 @@ export function BillingTab({ user }: { user: User }) {
         {sub ? (
           <Dl
             items={[
-              ["요금제", `${sub.plan_name ?? "—"}`],
-              ["결제 수단 제공자", sub.provider],
+              ["요금제", sub.plan_name ?? "—"],
+              ["결제사", sub.provider ? codeLabel(PAYMENT_PROVIDER_LABEL, sub.provider) : "—"],
               ["체험 종료", formatDateTime(sub.trial_expires_at)],
               ["현재 주기 종료", formatDateTime(sub.current_period_end)],
               ["다음 결제", formatDateTime(sub.next_billing_at)],
-              ["해지 예약", sub.cancel_at_period_end ? "예" : "아니요"],
+              // The member cancels in the app; here it is only shown.
+              [
+                "해지 예약",
+                sub.cancel_at_period_end
+                  ? `예 · 기간 종료 시 해지${sub.canceled_at ? ` (${formatDateTime(sub.canceled_at)} 요청)` : ""}`
+                  : "아니요",
+              ],
               ["시작일", formatDateTime(sub.created_at)],
             ]}
           />

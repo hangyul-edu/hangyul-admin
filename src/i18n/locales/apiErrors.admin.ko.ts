@@ -33,6 +33,8 @@ export const apiErrorsAdminKo = {
     "proficiency.observation_not_found": "관찰 기록을 찾을 수 없어요.",
     "proficiency.attempt_not_found": "응답을 찾을 수 없어요.",
     "proficiency.not_pending": "이미 채점이 끝난 과제예요. 목록을 새로 고쳐 주세요.",
+    "operations.outbox_event_not_found": "아웃박스 이벤트를 찾을 수 없어요. 목록을 새로 고쳐 주세요.",
+    "operations.outbox_event_delivered": "이미 전송된 이벤트예요. 목록을 새로 고쳐 주세요.",
     "proficiency.rating_target": "평가 응답과 기준 답안 중 하나만 골라 채점해 주세요.",
     "proficiency.bad_score": "항목별 점수는 0~4점으로 입력해 주세요.",
     "proficiency.bad_period": "성장 기간은 7일, 30일, 90일 중에서 골라 주세요.",

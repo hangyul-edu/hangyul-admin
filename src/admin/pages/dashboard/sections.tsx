@@ -39,12 +39,15 @@ const ALERT_ROUTES: Record<string, { to: string; scope: string }> = {
   // rows the alert counts — 결제·청구서 shows none of them.
   webhook_dlq: { to: "/operations?tab=webhooks", scope: "commerce:read" },
   outbox_stuck: { to: "/operations?tab=outbox", scope: "commerce:read" },
+  // Critical: events the relay gave up on; the same tab lists them first.
+  outbox_exhausted: { to: "/operations?tab=outbox", scope: "commerce:read" },
   scoring_exhausted: { to: "/operations?tab=scoring", scope: "learners:read" },
   // Opened on the status the alert counts (failed payments: every one, newest
   // first, not only the last 24 hours).
   payments_failed_24h: { to: "/payments?tab=payments&status=failed", scope: "commerce:read" },
-  // The page opens on its 결제 tab; unpaid invoices live on the other one.
-  invoices_unpaid: { to: "/payments?tab=invoices&status=unpaid", scope: "commerce:read" },
+  // Open invoices of suspended subscriptions (grace ran out): the rows are
+  // the suspended subscriptions themselves, each with its renewal still owed.
+  invoices_overdue: { to: "/subscriptions?status=suspended", scope: "commerce:read" },
   generated_pending_review: { to: "/ai-content", scope: "content:read" },
 };
 
@@ -90,7 +93,7 @@ export function HeadlineStats({ data, can }: { data: MetricsOverview; can: Can }
         sub={`체험 ${data.subscriptions.trialing} · 해지 예약 ${data.subscriptions.canceling}`}
       />
       <Stat
-        to={can("commerce:read") ? "/payments" : undefined}
+        to={can("commerce:read") ? "/payments?status=failed" : undefined}
         label="결제 실패 (24시간)"
         value={data.revenue.failed_payments_24h.toLocaleString()}
         sub="최근 24시간 동안 실패한 결제"

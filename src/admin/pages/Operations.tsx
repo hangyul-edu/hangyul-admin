@@ -14,12 +14,13 @@ import type { Column } from "../components/kit";
 
 /**
  * 운영 대기열: the background queues the dashboard alerts on, each tab holding
- * exactly the rows its alert counts. The alerts used to open 결제·청구서,
- * which shows none of them.
+ * exactly the rows its alerts count. The alerts used to open 결제·청구서,
+ * which shows none of them. Two tabs act: an exhausted speaking task and an
+ * outbox event the relay gave up on are put back in their queues (ops:write).
  */
 const TABS = [
   { key: "webhooks", label: "결제 웹훅 (DLQ)", scope: "commerce:read" },
-  { key: "outbox", label: "아웃박스 전송 지연", scope: "commerce:read" },
+  { key: "outbox", label: "아웃박스 전송 실패", scope: "commerce:read" },
   { key: "scoring", label: "말하기 채점", scope: "learners:read" },
 ] as const;
 
@@ -74,29 +75,110 @@ function WebhooksTab() {
   );
 }
 
-const OUTBOX_COLUMNS: Column<AdminStuckOutboxEvent>[] = [
-  { key: "created_at", header: "생성", render: (r) => <Timestamp at={r.created_at} />, width: 120 },
-  { key: "type", header: "이벤트", render: (r) => <div><div>{r.event_type}</div><div className="hgadm-cell-sub">{r.aggregate_type} · {r.aggregate_id}</div></div> },
-  { key: "attempts", header: "전송 시도", render: (r) => `${r.attempts}회`, numeric: true, width: 80 },
-  { key: "error", header: "마지막 오류", render: (r) => <ErrorText text={r.last_error} /> },
-];
+/** What an outbox event sets off, so an admin knows what is not going out. */
+const OUTBOX_EFFECT: Record<string, string> = {
+  "payment.succeeded": "결제 영수증 메일",
+  "payment.failed": "결제 실패 안내(메일·푸시)",
+  "payment.refunded": "환불 안내",
+};
 
 function OutboxTab() {
+  const { can } = useAdminAuth();
+  const toast = useToast();
+  const qc = useQueryClient();
+  const [confirming, setConfirming] = useState<AdminStuckOutboxEvent | null>(null);
   const query = useQuery({ queryKey: ["admin", "operations", "outbox"], queryFn: adminApi.stuckOutbox });
+  const retry = useMutation({
+    mutationFn: (eventId: string) => adminApi.retryOutbox(eventId),
+    onSuccess: (result) =>
+      toast.success(`다시 전송하도록 넣었습니다. 전송 작업(${result.retry_within_seconds}초 간격)에서 바로 처리됩니다.`),
+    onError: (error) =>
+      toast.error(
+        error instanceof ApiError && error.code === "operations.outbox_event_delivered"
+          ? "그 사이에 이미 전송된 이벤트입니다. 목록을 새로 고칩니다."
+          : errorMessage(error),
+      ),
+    onSettled: () => {
+      setConfirming(null);
+      void qc.invalidateQueries({ queryKey: ["admin", "operations", "outbox"] });
+      void qc.invalidateQueries({ queryKey: ["admin", "metrics", "overview"] });
+    },
+  });
+
   if (query.isPending) return <LoadingState />;
   if (query.isError) return <ErrorState message={errorMessage(query.error)} onRetry={() => void query.refetch()} />;
+  const { items, total, exhausted, max_attempts } = query.data;
+
+  const columns: Column<AdminStuckOutboxEvent>[] = [
+    {
+      key: "state",
+      header: "상태",
+      render: (r) => (r.exhausted ? <Badge tone="danger">재시도 소진</Badge> : <Badge tone="warning">자동 재시도 중</Badge>),
+      width: 110,
+    },
+    {
+      key: "type",
+      header: "이벤트",
+      render: (r) => (
+        <div>
+          <div>{r.event_type}</div>
+          <div className="hgadm-cell-sub">
+            {OUTBOX_EFFECT[r.event_type] ? `${OUTBOX_EFFECT[r.event_type]} · ` : ""}
+            {r.aggregate_type} {r.aggregate_id}
+          </div>
+        </div>
+      ),
+    },
+    { key: "created_at", header: "생성", render: (r) => <Timestamp at={r.created_at} />, width: 120 },
+    { key: "attempts", header: "전송 시도", render: (r) => `${r.attempts}/${max_attempts}`, numeric: true, width: 80 },
+    { key: "error", header: "마지막 오류", render: (r) => <ErrorText text={r.last_error} /> },
+  ];
+  if (can("ops:write")) {
+    columns.push({
+      key: "action",
+      header: "",
+      width: 110,
+      render: (r) => (
+        <Button size="sm" variant={r.exhausted ? "primary" : "secondary"} onClick={() => setConfirming(r)}>
+          다시 전송
+        </Button>
+      ),
+    });
+  }
+
   return (
     <>
+      {exhausted > 0 && (
+        <div className="hgadm-card hgadm-alert-row hgadm-alert-row--danger hgadm-mb-8" role="alert">
+          <Badge tone="danger">{exhausted.toLocaleString()}건</Badge>
+          <span className="hgadm-text-md">
+            자동 재시도를 모두 실패해 전송이 멈춘 이벤트가 있습니다. 이 이벤트가 보내야 할 영수증·결제 안내는 ‘다시
+            전송’을 누르기 전까지 나가지 않습니다.
+          </span>
+        </div>
+      )}
       <p className="hgadm-cell-sub">
-        생성된 지 10분이 지나도록 전송되지 않은 아웃박스 이벤트입니다(오래된 순). 전송 작업은 계속 다시 시도하므로,
-        같은 오류가 반복되면 오류 내용을 개발팀에 전달하세요.
+        결제 이벤트를 메일·푸시로 바꾸는 전송 작업이 처리하지 못한 이벤트입니다. 실패한 이벤트는 5초마다 최대{" "}
+        {max_attempts}번까지 자동으로 다시 시도하며(‘자동 재시도 중’은 생성 후 10분이 지나도록 전송되지 않은 것),
+        모두 실패한 이벤트(재시도 소진)는 자동 재시도에서 빠져 여기에 남습니다. ‘마지막 오류’에서 원인을 확인하고
+        해결한 뒤 ‘다시 전송’을 누르세요. 같은 이벤트를 다시 전송해도 이미 나간 메일·푸시가 중복 발송되지는
+        않습니다.
       </p>
-      <QueueTotal shown={query.data.items.length} total={query.data.total} unit="건이 전송 대기 중입니다" />
+      <QueueTotal shown={items.length} total={total} unit={`건 미전송 · 재시도 소진 ${exhausted.toLocaleString()}건`} />
       <DataTable
-        columns={OUTBOX_COLUMNS}
-        rows={query.data.items}
+        columns={columns}
+        rows={items}
         rowKey={(r) => r.event_id}
-        empty={<EmptyState title="전송이 지연된 이벤트가 없습니다" />}
+        empty={<EmptyState title="전송되지 않은 이벤트가 없습니다" />}
+      />
+      <ConfirmDialog
+        open={confirming !== null}
+        title="이 이벤트를 다시 전송할까요?"
+        message={`${confirming?.event_type ?? "이 이벤트"}(${confirming?.aggregate_type ?? ""} ${confirming?.aggregate_id ?? ""})의 전송 시도 횟수를 0으로 되돌려 다음 전송 작업에서 바로 다시 보냅니다. 이미 나간 메일·푸시는 다시 보내지 않습니다.`}
+        confirmLabel="다시 전송"
+        loading={retry.isPending}
+        onConfirm={() => confirming && retry.mutate(confirming.event_id)}
+        onCancel={() => setConfirming(null)}
       />
     </>
   );
