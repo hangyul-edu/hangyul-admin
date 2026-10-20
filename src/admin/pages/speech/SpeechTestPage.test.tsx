@@ -203,7 +203,11 @@ describe("파이프라인 상태", () => {
     expect(screen.getByText("연결 가능")).toBeInTheDocument();
     expect(screen.getByText("11 ms")).toBeInTheDocument();
     expect(screen.getByText("온라인")).toBeInTheDocument();
-    expect(screen.getByText("host-123")).toBeInTheDocument();
+    expect(screen.getByText("host")).toBeInTheDocument();
+    expect(screen.getByText("모델 로드 완료")).toBeInTheDocument();
+    // Internal identifiers stay off the page.
+    expect(screen.queryByText("host-123")).not.toBeInTheDocument();
+    expect(screen.queryByText("auto")).not.toBeInTheDocument();
     expect(screen.getByText("4,046 ms")).toBeInTheDocument();
     expect(screen.queryByText(/모의 인식기: 실제 음성을 인식하지 않습니다/)).not.toBeInTheDocument();
   });
@@ -235,8 +239,14 @@ describe("실시간 마이크 테스트", () => {
     await waitFor(() => expect(lk.connect).toHaveBeenCalledWith("ws://localhost:7880", "jwt-token"));
     await waitFor(() => expect(lk.setMicrophoneEnabled).toHaveBeenCalledWith(true));
     expect(await screen.findByText("듣는 중")).toBeInTheDocument();
-    expect(screen.getByText("spch_abc")).toBeInTheDocument();
-    expect(screen.getByText("speech-spch_abc")).toBeInTheDocument();
+    // The session is summarised by what matters (recogniser, agent, expiry); its ids are not shown.
+    const info = screen.getByRole("group", { name: "세션 정보" });
+    expect(within(info).getByText("로컬 Whisper")).toBeInTheDocument();
+    expect(within(info).getByText("large-v3-turbo")).toBeInTheDocument();
+    expect(within(info).getByText("온라인")).toBeInTheDocument();
+    expect(screen.queryByText("spch_abc")).not.toBeInTheDocument();
+    expect(screen.queryByText("speech-spch_abc")).not.toBeInTheDocument();
+    expect(screen.queryByText("hangyul.speech")).not.toBeInTheDocument();
     expect(lk.handlers.dataReceived).toBeTypeOf("function");
 
     agentMessage({ type: "vad", state: "speaking" });
@@ -266,14 +276,13 @@ describe("실시간 마이크 테스트", () => {
     const row = (await screen.findByText("안녕하세요.")).closest("tr")!;
     expect(within(row).getByText("4,256 ms")).toBeInTheDocument();
     expect(within(row).getByText("83%")).toBeInTheDocument();
-    expect(within(row).getByText("trn_1")).toBeInTheDocument();
+    expect(within(row).queryByText("trn_1")).not.toBeInTheDocument();
     expect(within(row).getByText("저장됨")).toBeInTheDocument();
     expect(within(row).getByText("인식됨")).toBeInTheDocument();
     expect(await within(row).findByText("정답")).toBeInTheDocument();
     expect(api.grade).toHaveBeenCalledWith({ transcript: "안녕하세요.", expected: "안녕하세요", accepted: [], mode: "reading" });
     // The browser-measured end-to-end latency is a number of milliseconds, not a dash.
-    const cells = within(row).getAllByRole("cell").map((c) => c.textContent ?? "");
-    expect(cells.filter((c) => /\d+ ms$/.test(c)).length).toBeGreaterThanOrEqual(2);
+    expect(within(row).getByText(/^종단 [\d,]+ ms$/)).toBeInTheDocument();
     expect(screen.getByText("듣는 중")).toBeInTheDocument();
 
     // A message on another topic is not the agent's.
@@ -294,6 +303,7 @@ describe("실시간 마이크 테스트", () => {
     await screen.findAllByText("로컬 Whisper");
     await user.click(screen.getByRole("button", { name: "시작" }));
     await screen.findByText("듣는 중");
+    expect(screen.queryByText(/^오류 \(\d+\)$/)).not.toBeInTheDocument();
 
     agentMessage({
       type: "transcript",
@@ -312,8 +322,10 @@ describe("실시간 마이크 테스트", () => {
       speech_ms: 300,
     });
     expect(screen.getByText("저장 실패")).toBeInTheDocument();
-    expect(screen.getByText(/에이전트가 인식 결과를 API에 저장하지 못했습니다/)).toBeInTheDocument();
-    expect(screen.getByText(/인식 실패 \(utterance utt-9\): model crashed/)).toBeInTheDocument();
+    expect(screen.getByText("오류 (2)")).toBeInTheDocument();
+    expect(screen.getByText(/인식 결과를 API에 저장하지 못했습니다/)).toBeInTheDocument();
+    expect(screen.getByText("인식 실패: model crashed")).toBeInTheDocument();
+    expect(screen.queryByText(/utt-9/)).not.toBeInTheDocument();
     expect(api.grade).not.toHaveBeenCalled();
   });
 
@@ -374,5 +386,8 @@ describe("채점 미리보기", () => {
     expect(screen.getByText("62%")).toBeInTheDocument();
     expect(screen.getByText("반갑습니다")).toBeInTheDocument();
     expect(screen.getByText("오답 처리")).toBeInTheDocument();
+    // The result shows the mode it was graded in as a label, not the raw code.
+    expect(screen.getByText("읽기 (reading)", { selector: "span" })).toBeInTheDocument();
+    expect(screen.queryByText("missed_words")).not.toBeInTheDocument();
   });
 });

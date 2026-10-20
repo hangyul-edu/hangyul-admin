@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { AlertTriangle } from "lucide-react";
-import { Badge, Button, Card, Dl, Field, Input, Textarea } from "../../components/kit";
+import { Badge, Button, Card, Field, Input, Textarea } from "../../components/kit";
 import { Notice } from "../../components/insights";
 import { speechApi } from "../../speechApi";
 import type { GradeMode, GradeRequest } from "../../speechApi";
 import { errorMessage } from "../../../lib/http";
+import { Facts } from "./Facts";
 import { verdictText } from "./labels";
 
 const MODES: { value: GradeMode; label: string; hint: string }[] = [
@@ -90,19 +91,21 @@ export function GradePreview() {
               <div className="hgadm-row hgadm-row--wrap">
                 <Badge tone={verdict.tone} dot>{verdict.label}</Badge>
                 <Badge tone={result.correct ? "success" : "neutral"}>{result.correct ? "정답 처리" : "오답 처리"}</Badge>
-                <span className="hgadm-muted hgadm-text-xs">
-                  <span className="hgadm-cell-mono">{result.verdict}</span> · {result.mode}
-                </span>
+                <span className="hgadm-muted hgadm-text-xs">{MODES.find((m) => m.value === result.mode)?.label ?? result.mode}</span>
               </div>
               <p className="hgadm-m-0">{result.explanation}</p>
-              <Dl
+              <Facts
                 items={[
                   ["유사도", result.similarity === null ? "—" : `${Math.round(result.similarity * 100)}%`],
-                  ["발음 점수", result.pronunciation_score === null ? "—" : `${Math.round(result.pronunciation_score)} / 100`],
-                  ["정규화한 인식 문장", <Tokens key="t" tokens={result.normalized_transcript} />],
-                  ["정규화한 기대 답안", <Tokens key="e" tokens={result.normalized_expected} />],
+                  result.pronunciation_score !== null && ["발음 점수", `${Math.round(result.pronunciation_score)} / 100`],
                 ]}
               />
+              <div className="hgadm-speech__compare">
+                <span className="hgadm-speech__compare-label">인식</span>
+                <Tokens tokens={result.normalized_transcript} />
+                <span className="hgadm-speech__compare-label">기대</span>
+                <Tokens tokens={result.normalized_expected} />
+              </div>
             </div>
           ) : (
             <p className="hgadm-muted hgadm-text-sm hgadm-m-0">두 문장을 입력하고 '채점'을 누르면 결과가 여기에 나타납니다.</p>

@@ -1,7 +1,8 @@
 import { AlertTriangle, Mic, MicOff, RefreshCw } from "lucide-react";
-import { Badge, Button, Card, DataTable, Dl, Field, Input, Select, Timestamp } from "../../components/kit";
+import { Badge, Button, Card, DataTable, Field, Input, Select, Timestamp } from "../../components/kit";
 import type { Column } from "../../components/kit";
 import { Notice } from "../../components/insights";
+import { Facts } from "./Facts";
 import { PHASE_TEXT, useRealtimeTest } from "./useRealtimeTest";
 import type { TranscriptRow } from "./useRealtimeTest";
 import { formatConfidence, formatMs, providerLabel, reasonText, transcriptStatus, verdictText } from "./labels";
@@ -12,10 +13,10 @@ function GradeCell({ grade }: { grade: TranscriptRow["grade"] }) {
   if (grade.state === "failed") return <Badge tone="danger">채점 실패</Badge>;
   const v = verdictText(grade.verdict);
   return (
-    <span className="hgadm-row hgadm-row--wrap">
+    <div className="hgadm-cell-text hgadm-cell-text--narrow">
       <Badge tone={v.tone} dot>{v.label}</Badge>
-      {grade.explanation && <span className="hgadm-muted hgadm-text-xs">{grade.explanation}</span>}
-    </span>
+      {grade.explanation && <div className="hgadm-cell-sub">{grade.explanation}</div>}
+    </div>
   );
 }
 
@@ -36,13 +37,22 @@ const COLUMNS: Column<TranscriptRow>[] = [
     header: "상태",
     render: (r) => {
       const s = transcriptStatus(r.status);
-      return <Badge tone={s.tone} dot>{s.label}</Badge>;
+      return (
+        <span className="hgadm-row hgadm-row--wrap hgadm-row--tight">
+          <Badge tone={s.tone} dot>{s.label}</Badge>
+          {r.delivered && r.transcriptId ? (
+            <span className="hgadm-muted hgadm-text-xs">저장됨</span>
+          ) : (
+            <Badge tone="danger" dot>저장 실패</Badge>
+          )}
+        </span>
+      );
     },
   },
   { key: "grade", header: "채점", render: (r) => <GradeCell grade={r.grade} /> },
   {
     key: "provider",
-    header: "인식기 · 모델",
+    header: "인식기",
     render: (r) => (
       <span>
         {providerLabel(r.provider)}
@@ -51,22 +61,16 @@ const COLUMNS: Column<TranscriptRow>[] = [
     ),
   },
   { key: "confidence", header: "신뢰도", numeric: true, render: (r) => formatConfidence(r.confidence) },
-  { key: "latency", header: "STT 시간", numeric: true, render: (r) => formatMs(r.latencyMs) },
-  { key: "e2e", header: "종단 지연", numeric: true, render: (r) => formatMs(r.endToEndMs) },
   {
-    key: "id",
-    header: "transcript_id",
-    render: (r) => (r.transcriptId ? <span className="hgadm-cell-mono">{r.transcriptId}</span> : <span className="hgadm-muted">—</span>),
-  },
-  {
-    key: "delivered",
-    header: "저장",
-    render: (r) =>
-      r.delivered && r.transcriptId ? (
-        <Badge tone="success" dot>저장됨</Badge>
-      ) : (
-        <Badge tone="danger" dot>저장 실패</Badge>
-      ),
+    key: "latency",
+    header: "인식 시간",
+    numeric: true,
+    render: (r) => (
+      <span>
+        <span className="hgadm-tabular">{formatMs(r.latencyMs)}</span>
+        {r.endToEndMs !== null && <div className="hgadm-cell-sub hgadm-tabular">종단 {formatMs(r.endToEndMs)}</div>}
+      </span>
+    ),
   },
 ];
 
@@ -75,6 +79,8 @@ export function RealtimeTest({ canRun }: { canRun: boolean }) {
   const busy = t.phase === "opening" || t.phase === "connecting";
   const active = t.connected || busy;
   const phaseTone = t.phase === "error" ? "danger" : t.phase === "idle" ? "neutral" : "success";
+  const session = t.session;
+  const reason = session ? reasonText(session.provider.reason) : null;
 
   return (
     <section className="hgadm-speech__section" aria-labelledby="speech-realtime-title">
@@ -86,16 +92,14 @@ export function RealtimeTest({ canRun }: { canRun: boolean }) {
       </div>
 
       {t.realtimeUnavailable && (
-        <div className="hgadm-mb-12">
-          <Notice tone="warn" icon={AlertTriangle} title="실시간 음성 서버를 쓸 수 없습니다">
-            LiveKit이 설정되지 않았거나 응답하지 않습니다. 아래 녹음 업로드 테스트로 인식기만 따로 확인할 수 있습니다.
-          </Notice>
-        </div>
+        <Notice tone="warn" icon={AlertTriangle} title="실시간 음성 서버를 쓸 수 없습니다">
+          LiveKit이 설정되지 않았거나 응답하지 않습니다. 아래 녹음 업로드 테스트로 인식기만 따로 확인할 수 있습니다.
+        </Notice>
       )}
 
-      <div className="hgadm-speech__grid">
-        <Card title="마이크">
-          <div className="hgadm-stack">
+      <Card title="마이크">
+        <div className="hgadm-stack">
+          <div className="hgadm-speech__controls">
             <Field label="입력 장치" hint="목록이 비어 있으면 '시작'을 눌러 마이크 권한을 허용한 뒤 새로 고침하세요.">
               <div className="hgadm-row">
                 <Select
@@ -124,7 +128,10 @@ export function RealtimeTest({ canRun }: { canRun: boolean }) {
                 aria-label="기대 답안"
               />
             </Field>
-            <div className="hgadm-row hgadm-row--wrap">
+          </div>
+
+          <div className={`hgadm-speech__live ${t.vad.speaking ? "is-speaking" : ""}`}>
+            <div className="hgadm-speech__live-row">
               {active ? (
                 <Button variant="danger" onClick={() => void t.stop()} disabled={busy}>
                   <MicOff size={15} aria-hidden /> 중지
@@ -140,59 +147,58 @@ export function RealtimeTest({ canRun }: { canRun: boolean }) {
                   초기화
                 </Button>
               )}
+              <div className="hgadm-speech__vad">
+                <span className="hgadm-speech__vad-label">음성 감지</span>
+                <meter
+                  className="hgadm-speech__meter"
+                  min={0}
+                  max={1}
+                  low={0.3}
+                  high={0.6}
+                  optimum={1}
+                  value={t.vad.level}
+                  aria-label="음성 확률"
+                />
+                <span className="hgadm-speech__vad-value hgadm-tabular">
+                  {Math.round(t.vad.level * 100)}% {t.vad.speaking ? "· 말하는 중" : ""}
+                </span>
+              </div>
             </div>
-            {!canRun && (
+            {!canRun ? (
               <p className="hgadm-muted hgadm-text-sm hgadm-m-0">
                 이 브라우저는 마이크 캡처를 지원하지 않습니다. HTTPS 또는 localhost에서 여세요.
               </p>
+            ) : session ? (
+              <>
+                <Facts
+                  label="세션 정보"
+                  items={[
+                    [
+                      "인식기",
+                      <>
+                        <Badge tone={session.provider.provider === "mock" ? "danger" : "success"} dot>
+                          {providerLabel(session.provider.provider)}
+                        </Badge>
+                        {session.provider.model && <span className="hgadm-cell-mono">{session.provider.model}</span>}
+                        {session.provider.is_fallback && <Badge tone="warning">대체 인식기</Badge>}
+                      </>,
+                    ],
+                    ["에이전트", <Badge key="a" tone={session.agent_online ? "success" : "danger"} dot>{session.agent_online ? "온라인" : "오프라인"}</Badge>],
+                    ["세션 만료", <Timestamp key="x" at={session.expires_at} />],
+                  ]}
+                />
+                {reason?.warn && (
+                  <p className="hgadm-speech__warn-text hgadm-text-xs hgadm-m-0">
+                    <AlertTriangle size={14} strokeWidth={2} aria-hidden /> {reason.text}
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="hgadm-muted hgadm-text-sm hgadm-m-0">'시작'을 누르면 세션을 열고 LiveKit 방에 연결합니다.</p>
             )}
-            <div className={`hgadm-speech__vad ${t.vad.speaking ? "is-speaking" : ""}`}>
-              <span className="hgadm-speech__vad-label">음성 감지</span>
-              <meter
-                className="hgadm-speech__meter"
-                min={0}
-                max={1}
-                low={0.3}
-                high={0.6}
-                optimum={1}
-                value={t.vad.level}
-                aria-label="음성 확률"
-              />
-              <span className="hgadm-speech__vad-value hgadm-tabular">
-                {Math.round(t.vad.level * 100)}% {t.vad.speaking ? "· 말하는 중" : ""}
-              </span>
-            </div>
           </div>
-        </Card>
-
-        <Card title="세션">
-          {t.session ? (
-            <Dl
-              items={[
-                ["세션 ID", <span key="s" className="hgadm-cell-mono">{t.session.session_id}</span>],
-                ["방", <span key="r" className="hgadm-cell-mono">{t.session.room}</span>],
-                ["참가자", <span key="i" className="hgadm-cell-mono">{t.session.identity}</span>],
-                [
-                  "인식기",
-                  <span key="p" className="hgadm-row hgadm-row--wrap">
-                    <Badge tone={t.session.provider.provider === "mock" ? "danger" : "success"} dot>
-                      {providerLabel(t.session.provider.provider)}
-                    </Badge>
-                    {t.session.provider.model && <span className="hgadm-cell-mono">{t.session.provider.model}</span>}
-                    {t.session.provider.is_fallback && <Badge tone="warning">대체 인식기</Badge>}
-                  </span>,
-                ],
-                ["선택 이유", reasonText(t.session.provider.reason).text],
-                ["에이전트", <Badge key="a" tone={t.session.agent_online ? "success" : "danger"} dot>{t.session.agent_online ? "온라인" : "오프라인"}</Badge>],
-                ["데이터 토픽", <span key="t" className="hgadm-cell-mono">{t.session.data_topic}</span>],
-                ["만료", <Timestamp key="x" at={t.session.expires_at} />],
-              ]}
-            />
-          ) : (
-            <p className="hgadm-muted hgadm-text-sm hgadm-m-0">'시작'을 누르면 세션을 열고 LiveKit 방에 연결합니다.</p>
-          )}
-        </Card>
-      </div>
+        </div>
+      </Card>
 
       <Card title={`인식 결과 (${t.rows.length})`} flush>
         <DataTable
@@ -203,19 +209,15 @@ export function RealtimeTest({ canRun }: { canRun: boolean }) {
         />
       </Card>
 
-      <Card
-        title={`오류 (${t.errors.length})`}
-        aside={
-          t.errors.length > 0 ? (
+      {t.errors.length > 0 && (
+        <Card
+          title={`오류 (${t.errors.length})`}
+          aside={
             <Button size="sm" variant="ghost" onClick={t.clearErrors}>
               지우기
             </Button>
-          ) : undefined
-        }
-      >
-        {t.errors.length === 0 ? (
-          <p className="hgadm-muted hgadm-text-sm hgadm-m-0">기록된 오류가 없습니다.</p>
-        ) : (
+          }
+        >
           <ul className="hgadm-speech__errors">
             {t.errors.map((e, i) => (
               <li key={`${e.at}-${i}`}>
@@ -224,8 +226,8 @@ export function RealtimeTest({ canRun }: { canRun: boolean }) {
               </li>
             ))}
           </ul>
-        )}
-      </Card>
+        </Card>
+      )}
     </section>
   );
 }

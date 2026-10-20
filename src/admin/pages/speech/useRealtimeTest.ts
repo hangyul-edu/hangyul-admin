@@ -226,10 +226,10 @@ export function useRealtimeTest() {
           };
           addRow(row);
           if (!msg.delivered || msg.transcript_id === null) {
-            logError(`에이전트가 인식 결과를 API에 저장하지 못했습니다 (utterance ${msg.utterance_id}).`);
+            logError(msg.text ? `인식 결과를 API에 저장하지 못했습니다: "${msg.text}"` : "인식 결과를 API에 저장하지 못했습니다.");
           }
           if (msg.status === "failed") {
-            logError(`인식 실패 (utterance ${msg.utterance_id}): ${msg.error ?? "원인 불명"}`);
+            logError(`인식 실패: ${msg.error ?? "원인 불명"}`);
           }
           setPhase((p) => (p === "transcribing" && pendingTranscriptions.current === 0 ? "listening" : p));
           break;

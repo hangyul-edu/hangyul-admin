@@ -2,11 +2,12 @@
 // POST /admin/speech/transcribe, which runs the recogniser without LiveKit.
 import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, Mic, Square, Upload } from "lucide-react";
-import { Badge, Button, Card, Dl } from "../../components/kit";
+import { Badge, Button, Card } from "../../components/kit";
 import { Notice } from "../../components/insights";
 import { speechApi } from "../../speechApi";
 import type { TranscribeResult } from "../../speechApi";
 import { errorMessage } from "../../../lib/http";
+import { Facts } from "./Facts";
 import { formatConfidence, formatMs, formatSeconds, providerLabel } from "./labels";
 
 export const MAX_RECORD_MS = 15_000;
@@ -203,6 +204,12 @@ export function UploadTest({ canWrite }: { canWrite: boolean }) {
 
 function UploadResult({ result, bytes }: { result: TranscribeResult; bytes: number }) {
   const va = result.voice_activity;
+  const speech =
+    va === null
+      ? "—"
+      : !va.has_speech
+        ? "음성 없음"
+        : `${formatSeconds(va.speech_ms)} / ${formatSeconds(va.total_ms)} (${Math.round(va.speech_ratio * 100)}%)`;
   return (
     <div className="hgadm-speech__result">
       {result.no_speech ? (
@@ -212,40 +219,21 @@ function UploadResult({ result, bytes }: { result: TranscribeResult; bytes: numb
       ) : (
         <blockquote className="hgadm-speech__quote">{result.text || <span className="hgadm-muted">(빈 결과)</span>}</blockquote>
       )}
-      <Dl
+      <Facts
+        label="인식 결과 정보"
         items={[
           [
-            "인식기 · 모델",
-            <span key="p" className="hgadm-row hgadm-row--wrap">
+            "인식기",
+            <>
               <Badge tone={result.provider === "mock" ? "danger" : "success"} dot>{providerLabel(result.provider)}</Badge>
               {result.model && <span className="hgadm-cell-mono">{result.model}</span>}
-            </span>,
+            </>,
           ],
           ["신뢰도", formatConfidence(result.confidence)],
-          ["언어", result.language ?? "—"],
+          result.language !== null && ["언어", result.language],
           ["인식 시간", formatMs(result.latency_ms)],
-          ["오디오 길이", formatSeconds(result.audio_duration_ms)],
-          ["컨테이너", result.source_container ? <span className="hgadm-cell-mono">{result.source_container}</span> : "—"],
-          ["업로드 크기", `${(bytes / 1024).toFixed(1)} KB`],
-          [
-            "음성 구간",
-            va ? (
-              <span>
-                {va.has_speech ? `${formatSeconds(va.speech_ms)} / ${formatSeconds(va.total_ms)} (${Math.round(va.speech_ratio * 100)}%)` : "없음"}
-                {va.segments.length > 0 && (
-                  <span className="hgadm-speech__segments">
-                    {va.segments.map((s, i) => (
-                      <span key={i} className="hgadm-cell-mono">
-                        {(s.start_ms / 1000).toFixed(2)}–{(s.end_ms / 1000).toFixed(2)}s
-                      </span>
-                    ))}
-                  </span>
-                )}
-              </span>
-            ) : (
-              "—"
-            ),
-          ],
+          ["녹음 길이", `${formatSeconds(result.audio_duration_ms)} · ${(bytes / 1024).toFixed(0)} KB`],
+          ["음성 구간", va && va.segments.length > 1 ? `${speech} · ${va.segments.length}개 구간` : speech],
         ]}
       />
     </div>

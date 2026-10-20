@@ -5171,12 +5171,6 @@ img.hgadm-cover-preview {
   font-weight: 700;
   color: var(--ink);
 }
-.hgadm-speech__subhead {
-  margin: 4px 0 0;
-  font-size: 13.5px;
-  font-weight: 700;
-  color: var(--ink-2);
-}
 .hgadm-speech__grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -5187,30 +5181,221 @@ img.hgadm-cover-preview {
     grid-template-columns: 1fr;
   }
 }
-.hgadm-speech__stats {
-  margin-bottom: 0;
-}
 .hgadm-speech__warn-text {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   color: #b45309;
 }
-/* The VAD read-out: the agent's speech probability, 4× a second. */
-.hgadm-speech__vad {
+/* A row of label–value pairs that wraps: the facts about one thing, read
+   left to right instead of down a two-column list. */
+.hgadm-speech__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin: 0;
+  font-size: 13px;
+}
+.hgadm-speech__fact {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.hgadm-speech__fact dt {
+  color: var(--ink-3);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.hgadm-speech__fact dd {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+/* Pipeline summary: one tile per component, its state in the corner. */
+.hgadm-speech__summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+@media (max-width: 1360px) {
+  .hgadm-speech__summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 720px) {
+  .hgadm-speech__summary {
+    grid-template-columns: 1fr;
+  }
+}
+.hgadm-speech__tile {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  box-shadow: var(--hgadm-shadow-card);
+}
+.hgadm-speech__tile--success {
+  box-shadow: inset 3px 0 0 var(--hgadm-success), var(--hgadm-shadow-card);
+}
+.hgadm-speech__tile--warning {
+  box-shadow: inset 3px 0 0 #f59e0b, var(--hgadm-shadow-card);
+}
+.hgadm-speech__tile--danger {
+  box-shadow: inset 3px 0 0 var(--hgadm-danger), var(--hgadm-shadow-card);
+}
+.hgadm-speech__tile-head {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.hgadm-speech__tile-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink-3);
+}
+.hgadm-speech__tile-main {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.hgadm-speech__tile-main .hgadm-cell-mono {
+  font-weight: 500;
+  font-size: 12.5px;
+}
+.hgadm-speech__tile-mono {
+  font-size: 13px !important;
+  font-weight: 600;
+}
+.hgadm-speech__tile-note {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+.hgadm-speech__workers {
+  list-style: none;
+  margin: 0;
+  padding: 8px 0 0;
+  border-top: 1px dashed var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+.hgadm-speech__workers li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+}
+.hgadm-speech__workers .hgadm-timestamp {
+  display: inline-flex;
+  gap: 4px;
+}
+/* The last hour in one strip of figures. */
+.hgadm-speech__metrics {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+.hgadm-speech__metric {
+  min-width: 0;
+  padding: 12px 16px;
+  border-right: 1px solid var(--border);
+}
+.hgadm-speech__metric:last-child {
+  border-right: 0;
+}
+@media (max-width: 1024px) {
+  .hgadm-speech__metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .hgadm-speech__metric:nth-child(3) {
+    border-right: 0;
+  }
+  .hgadm-speech__metric:nth-child(-n + 3) {
+    border-bottom: 1px solid var(--border);
+  }
+}
+.hgadm-speech__metric-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+.hgadm-speech__metric-value {
+  margin-top: 2px;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.hgadm-speech__metric-value--danger {
+  color: var(--hgadm-danger);
+}
+.hgadm-speech__metric-value .hgadm-timestamp {
+  font-size: 14px;
+  font-weight: 700;
+}
+.hgadm-speech__metrics-foot {
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+}
+/* The microphone test's inputs side by side, then one live strip: the
+   start/stop control, the phase, the VAD read-out and the session's facts. */
+.hgadm-speech__controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 14px;
+}
+@media (max-width: 860px) {
+  .hgadm-speech__controls {
+    grid-template-columns: 1fr;
+  }
+}
+.hgadm-speech__live {
+  display: flex;
+  flex-direction: column;
   gap: 10px;
-  padding: 10px 12px;
+  padding: 12px 14px;
   border: 1px solid var(--border);
   border-radius: var(--hgadm-radius);
   background: var(--surface-2);
-  font-size: 13px;
   transition: border-color 0.16s ease, background 0.16s ease;
 }
-.hgadm-speech__vad.is-speaking {
+.hgadm-speech__live.is-speaking {
   border-color: var(--hgadm-success);
   background: var(--hgadm-success-soft);
+}
+.hgadm-speech__live-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+/* The VAD read-out: the agent's speech probability, 4× a second. */
+.hgadm-speech__vad {
+  flex: 1 1 240px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
 }
 .hgadm-speech__vad-label {
   font-weight: 600;
@@ -5264,14 +5449,6 @@ img.hgadm-cover-preview {
   line-height: 1.6;
   color: var(--ink);
 }
-.hgadm-speech__segments {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 4px;
-  font-size: 12px;
-  color: var(--ink-3);
-}
 .hgadm-speech__errors {
   list-style: none;
   margin: 0;
@@ -5320,6 +5497,19 @@ img.hgadm-cover-preview {
 .hgadm-speech__seg-item:focus-visible {
   outline: none;
   box-shadow: var(--focus-ring);
+}
+/* 정규화한 인식 문장 / 기대 답안, one above the other for comparison. */
+.hgadm-speech__compare {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 8px 12px;
+  font-size: 13px;
+}
+.hgadm-speech__compare-label {
+  color: var(--ink-3);
+  font-weight: 600;
+  padding-top: 1px;
 }
 .hgadm-speech__tokens {
   display: inline-flex;
