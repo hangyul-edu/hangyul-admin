@@ -11,6 +11,12 @@ import { ApiError, errorMessage } from "../../../lib/http";
 
 export type Phase = "idle" | "opening" | "connecting" | "listening" | "speaking" | "transcribing" | "error";
 
+/**
+ * After 중지, how long to wait for the agent to close the utterance in flight
+ * and deliver its transcript before leaving the room.
+ */
+export const STOP_WAIT_MS = 8_000;
+
 export const PHASE_TEXT: Record<Phase, string> = {
   idle: "대기",
   opening: "세션 여는 중",
@@ -52,6 +58,11 @@ export function isRealtimeUnavailable(error: unknown): boolean {
   return error instanceof ApiError && error.code === "speech.realtime_unavailable";
 }
 
+/** `stop`: the take is over — the agent closes the utterance in flight now instead of waiting for silence. */
+function stopMessage(): Uint8Array<ArrayBuffer> {
+  return new Uint8Array(new TextEncoder().encode(JSON.stringify({ type: "stop" })));
+}
+
 function parseMessage(payload: Uint8Array): AgentMessage | null {
   try {
     const parsed = JSON.parse(new TextDecoder().decode(payload));
@@ -74,6 +85,9 @@ export function useRealtimeTest() {
 
   const roomRef = useRef<Room | null>(null);
   const sessionIdRef = useRef<string | null>(null);
+  const dataTopicRef = useRef<string | null>(null);
+  /** A 중지 in progress: resolved once the agent confirmed the stop and nothing is being transcribed. */
+  const stopWait = useRef<{ stopped: boolean; resolve: () => void } | null>(null);
   const expectedRef = useRef("");
   const silenceTimes = useRef<number[]>([]);
   const utteranceStarted = useRef<Map<string, number>>(new Map());
@@ -173,6 +187,14 @@ export function useRealtimeTest() {
     [gradeRow],
   );
 
+  const settleStop = useCallback(() => {
+    const wait = stopWait.current;
+    if (wait && wait.stopped && pendingTranscriptions.current === 0) {
+      stopWait.current = null;
+      wait.resolve();
+    }
+  }, []);
+
   const onMessage = useCallback(
     (payload: Uint8Array, topic: string | undefined, dataTopic: string) => {
       if (topic !== dataTopic) return;
@@ -180,6 +202,14 @@ export function useRealtimeTest() {
       if (!msg || !mounted.current) return;
       const now = performance.now();
       switch (msg.type) {
+        case "stopped":
+          // Everything heard before 중지 has been announced; an utterance it
+          // cut short is already being transcribed (`transcribing` came first).
+          if (stopWait.current) {
+            stopWait.current.stopped = true;
+            settleStop();
+          }
+          break;
         case "vad_level":
           setVad({ level: Math.max(0, Math.min(1, msg.probability)), speaking: msg.speaking });
           break;
@@ -232,11 +262,12 @@ export function useRealtimeTest() {
             logError(`인식 실패: ${msg.error ?? "원인 불명"}`);
           }
           setPhase((p) => (p === "transcribing" && pendingTranscriptions.current === 0 ? "listening" : p));
+          settleStop();
           break;
         }
       }
     },
-    [addRow, logError],
+    [addRow, logError, settleStop],
   );
 
   const start = useCallback(async () => {
@@ -267,6 +298,7 @@ export function useRealtimeTest() {
     }
     setSession(opened);
     sessionIdRef.current = opened.session_id;
+    dataTopicRef.current = opened.data_topic;
     if (!opened.agent_online) logError("STT 에이전트가 오프라인입니다. 마이크는 연결되지만 인식 결과가 오지 않을 수 있습니다.");
     setPhase("connecting");
 
@@ -302,14 +334,30 @@ export function useRealtimeTest() {
   const stop = useCallback(async () => {
     const room = roomRef.current;
     const sessionId = sessionIdRef.current;
+    const dataTopic = dataTopicRef.current;
     roomRef.current = null;
     sessionIdRef.current = null;
+    dataTopicRef.current = null;
     if (room) {
+      // 중지 is final: tell the agent so it closes the utterance in flight
+      // now (no 1.1 s pause), mute, and leave the room only once that
+      // utterance's transcript is in — bounded, so a silent agent never
+      // leaves the page hanging.
+      const settled = new Promise<void>((resolve) => {
+        stopWait.current = { stopped: false, resolve };
+      });
+      try {
+        await room.localParticipant.publishData(stopMessage(), { reliable: true, topic: dataTopic ?? undefined });
+      } catch {
+        // The room is gone; the bound below ends the wait.
+      }
       try {
         await room.localParticipant.setMicrophoneEnabled(false);
       } catch {
         // The track may already be gone; disconnecting below releases it anyway.
       }
+      await Promise.race([settled, new Promise<void>((resolve) => setTimeout(resolve, STOP_WAIT_MS))]);
+      stopWait.current = null;
       await room.disconnect().catch(() => undefined);
     }
     if (sessionId) {

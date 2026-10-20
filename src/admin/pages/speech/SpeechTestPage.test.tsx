@@ -38,12 +38,13 @@ const lk = vi.hoisted(() => ({
   disconnect: vi.fn(),
   switchActiveDevice: vi.fn(),
   setMicrophoneEnabled: vi.fn(),
+  publishData: vi.fn(),
   getLocalDevices: vi.fn(),
 }));
 
 vi.mock("livekit-client", () => {
   class Room {
-    localParticipant = { setMicrophoneEnabled: lk.setMicrophoneEnabled };
+    localParticipant = { setMicrophoneEnabled: lk.setMicrophoneEnabled, publishData: lk.publishData };
     connect = lk.connect;
     disconnect = lk.disconnect;
     switchActiveDevice = lk.switchActiveDevice;
@@ -290,8 +291,15 @@ describe("실시간 마이크 테스트", () => {
     expect(screen.queryByText("무시")).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "중지" }));
+    // The agent is told the take is over before the microphone is muted, and
+    // the room is left only once it confirms nothing is still being transcribed.
+    await waitFor(() => expect(lk.publishData).toHaveBeenCalledTimes(1));
+    expect(JSON.parse(new TextDecoder().decode(lk.publishData.mock.calls[0][0] as Uint8Array))).toEqual({ type: "stop" });
+    expect(lk.publishData.mock.calls[0][1]).toEqual({ reliable: true, topic: "hangyul.speech" });
     await waitFor(() => expect(lk.setMicrophoneEnabled).toHaveBeenCalledWith(false));
-    expect(lk.disconnect).toHaveBeenCalled();
+    expect(lk.disconnect).not.toHaveBeenCalled();
+    agentMessage({ type: "stopped", in_flight: 0 });
+    await waitFor(() => expect(lk.disconnect).toHaveBeenCalled());
     await waitFor(() => expect(api.endSession).toHaveBeenCalledWith("spch_abc"));
     expect(await screen.findByText("대기")).toBeInTheDocument();
   });

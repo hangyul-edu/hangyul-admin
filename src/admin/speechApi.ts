@@ -183,6 +183,8 @@ export interface GradeResult {
 export type AgentMessage =
   | { type: "vad"; state: "speaking" }
   | { type: "vad"; state: "silence"; speech_ms: number }
+  /** Answers the app's `stop` once everything heard before it has been reported. */
+  | { type: "stopped"; in_flight: number }
   | { type: "vad_level"; probability: number; speaking: boolean }
   | { type: "transcribing"; utterance_id: string; audio_duration_ms: number }
   | {
