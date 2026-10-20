@@ -22,7 +22,10 @@ vi.mock("../auth", () => ({
 
 vi.mock("../api", async () => {
   const actual = await vi.importActual<typeof import("../api")>("../api");
-  return { ...actual, adminApi: { ...actual.adminApi, deadWebhooks: vi.fn(), stuckOutbox: vi.fn() } };
+  return {
+    ...actual,
+    adminApi: { ...actual.adminApi, deadWebhooks: vi.fn(), stuckOutbox: vi.fn(), retryOutbox: vi.fn() },
+  };
 });
 
 vi.mock("../proficiencyApi", async () => {
@@ -98,8 +101,20 @@ beforeEach(() => {
     ],
   });
   vi.mocked(adminApi.stuckOutbox).mockResolvedValue({
-    total: 1,
+    total: 2,
+    exhausted: 1,
+    max_attempts: 10,
     items: [
+      {
+        event_id: "obx_dead",
+        event_type: "payment.failed",
+        aggregate_type: "subscription",
+        aggregate_id: "sub_9",
+        created_at: "2026-10-15T03:00:00Z",
+        attempts: 10,
+        last_error: "KeyError: 'user_id'",
+        exhausted: true,
+      },
       {
         event_id: "obx_1",
         event_type: "payment.succeeded",
@@ -108,8 +123,15 @@ beforeEach(() => {
         created_at: "2026-10-15T01:00:00Z",
         attempts: 3,
         last_error: "ConnectionError",
+        exhausted: false,
       },
     ],
+  });
+  vi.mocked(adminApi.retryOutbox).mockResolvedValue({
+    event_id: "obx_dead",
+    event_type: "payment.failed",
+    attempts: 0,
+    retry_within_seconds: 5,
   });
   vi.mocked(proficiencyAdminApi.scoringQueue).mockResolvedValue(QUEUE);
   vi.mocked(proficiencyAdminApi.retryScoring).mockResolvedValue({
@@ -128,11 +150,37 @@ describe("operations queues", () => {
     expect(screen.getByText(/1건이 DLQ에 있습니다/)).toBeInTheDocument();
   });
 
-  it("lists the stuck outbox events the alert counts", async () => {
+  it("flags the outbox events the relay gave up on, and retries one after confirming", async () => {
+    const user = userEvent.setup();
     renderPage("/operations?tab=outbox");
 
-    expect(await screen.findByText("payment.succeeded")).toBeInTheDocument();
-    expect(screen.getByText("ConnectionError")).toBeInTheDocument();
+    const deadRow = (await screen.findByText("payment.failed")).closest("tr")!;
+    expect(within(deadRow).getByText("재시도 소진")).toBeInTheDocument();
+    expect(within(deadRow).getByText("10/10")).toBeInTheDocument();
+    expect(within(deadRow).getByText("KeyError: 'user_id'")).toBeInTheDocument();
+    // What is not going out, so the row is actionable without reading code.
+    expect(within(deadRow).getByText(/결제 실패 안내/)).toBeInTheDocument();
+    // The banner cannot be missed, and carries the alert's count.
+    expect(screen.getByRole("alert")).toHaveTextContent("1건");
+    expect(screen.getByText(/재시도 소진 1건/)).toBeInTheDocument();
+    const stuckRow = screen.getByText("payment.succeeded").closest("tr")!;
+    expect(within(stuckRow).getByText("자동 재시도 중")).toBeInTheDocument();
+    expect(within(stuckRow).getByText("ConnectionError")).toBeInTheDocument();
+
+    await user.click(within(deadRow).getByRole("button", { name: "다시 전송" }));
+    expect(adminApi.retryOutbox).not.toHaveBeenCalled();
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "다시 전송" }));
+
+    await waitFor(() => expect(adminApi.retryOutbox).toHaveBeenCalledWith("obx_dead"));
+    await waitFor(() => expect(adminApi.stuckOutbox).toHaveBeenCalledTimes(2));
+  });
+
+  it("offers no outbox retry to an admin who cannot act on operations", async () => {
+    scopes = ["users:read", "commerce:read", "learners:read", "ops:read"];
+    renderPage("/operations?tab=outbox");
+
+    expect(await screen.findByText("payment.failed")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "다시 전송" })).not.toBeInTheDocument();
   });
 
   it("marks exhausted scoring tasks and retries one after confirming", async () => {

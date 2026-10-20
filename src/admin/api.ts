@@ -161,7 +161,12 @@ export interface AdminDeadWebhook {
   processing_error: string | null;
 }
 
-/** An outbox event still undelivered ten minutes after it was written. */
+/**
+ * An undelivered outbox event the dashboard warns about: one the relay gave
+ * up on after `max_attempts` failed publishes (`exhausted` — nothing retries
+ * it until an admin does), or one still undelivered ten minutes after it was
+ * written while the relay keeps retrying it.
+ */
 export interface AdminStuckOutboxEvent {
   event_id: string;
   event_type: string;
@@ -170,12 +175,27 @@ export interface AdminStuckOutboxEvent {
   created_at: string;
   attempts: number;
   last_error: string | null;
+  exhausted: boolean;
 }
 
 /** At most 100 rows; `total` is the full count — the dashboard alert's number. */
 interface OperationsQueuePage<T> {
   items: T[];
   total: number;
+}
+
+/** Exhausted events first; `exhausted` is the `outbox_exhausted` alert's count. */
+export interface AdminOutboxPage extends OperationsQueuePage<AdminStuckOutboxEvent> {
+  exhausted: number;
+  max_attempts: number;
+}
+
+/** `POST /admin/operations/outbox/{event_id}/retry` — attempts reset, the next 5 s drain publishes it. */
+export interface AdminOutboxRetryResult {
+  event_id: string;
+  event_type: string;
+  attempts: number;
+  retry_within_seconds: number;
 }
 
 // ---- Users -----------------------------------------------------------------
@@ -1246,7 +1266,10 @@ export const adminApi = {
   metricsTimeseries: (metric: string, days: number) =>
     http.get<TimeseriesResponse>("/admin/metrics/timeseries", { metric, days }),
   deadWebhooks: () => http.get<OperationsQueuePage<AdminDeadWebhook>>("/admin/operations/webhooks"),
-  stuckOutbox: () => http.get<OperationsQueuePage<AdminStuckOutboxEvent>>("/admin/operations/outbox"),
+  stuckOutbox: () => http.get<AdminOutboxPage>("/admin/operations/outbox"),
+  /** `ops:write`. 409 `operations.outbox_event_delivered` once it has been delivered. */
+  retryOutbox: (eventId: string) =>
+    http.post<AdminOutboxRetryResult>(`/admin/operations/outbox/${encodeURIComponent(eventId)}/retry`),
   metricsMonthlyRevenue: (months: number) =>
     http.get<MonthlyRevenueResponse>("/admin/metrics/monthly-revenue", { months }),
 

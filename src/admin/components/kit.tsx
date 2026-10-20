@@ -92,12 +92,14 @@ export function Badge({
  * Korean label for a backend status value.
  *
  * Tables never print the raw enum ("grace_period", "trial_ending") to an
- * admin. Every label here is written from the state's
- * documented meaning, and states that differ stay distinct: `open`(청구서 발행,
- * 아직 결제 전) is not `unpaid`(납부 기한이 지난 미납). A subscription has no
- * cancelled status: cancelling sets the `cancel_at_period_end` flag(기간 말
- * 해지 예약), which the tables show separately — `canceling` is that flag as a
- * filter value.
+ * admin. Every label here is written from the state's documented meaning,
+ * and states that differ stay distinct: an invoice is `open`(발행됨, 아직 결제
+ * 전 — 재시도·유예·이용 중지 내내 같은 청구서) until it is `paid`, or `void`(더
+ * 이상 결제될 일이 없음) when the subscription expired owing it or a coupon
+ * period replaced it; there is no separate "overdue" status, that is the
+ * subscription's status. A subscription has no cancelled status: cancelling
+ * sets the `cancel_at_period_end` flag(기간 말 해지 예약), which the tables
+ * show separately — `canceling` is that flag as a filter value.
  *
  * An unknown value falls through to itself, so a status added on the server
  * shows up verbatim rather than disappearing.
@@ -120,7 +122,6 @@ const STATUS_LABELS: Record<string, string> = {
   refunded: "환불됨",
   paid: "결제 완료",
   open: "결제 전",
-  unpaid: "미납",
   void: "무효",
   // 영상 업로드
   pending: "대기 중",
@@ -174,7 +175,6 @@ export function statusTone(status: string | null | undefined): BadgeTone {
     case "suspended":
     case "revoked":
     case "rejected":
-    case "unpaid":
     case "payment_failed":
     case "expired":
       return "danger";

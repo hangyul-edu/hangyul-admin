@@ -80,6 +80,7 @@ function BatchesTab() {
   const { can } = useAdminAuth();
   const canWrite = can("commerce:write");
   const [page, setPage] = useState(1);
+  const [nameQuery, setNameQuery] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState("");
   const [durationDays, setDurationDays] = useState("30");
@@ -90,15 +91,33 @@ function BatchesTab() {
   const pageSize = 25;
 
   const query = useQuery({
-    queryKey: ["admin", "coupon-batches", page],
+    queryKey: ["admin", "coupon-batches", { nameQuery, page }],
     queryFn: () =>
-      adminApi.listCouponBatches({ limit: pageSize, offset: (page - 1) * pageSize }),
+      adminApi.listCouponBatches({
+        name_contains: nameQuery || undefined,
+        limit: pageSize,
+        offset: (page - 1) * pageSize,
+      }),
   });
+
+  // The server's limits (`GenerateBatchRequest`): a non-blank name up to 120
+  // characters, 1..10000 codes, 1..3650 days.
+  const trimmedName = name.trim();
+  const quantityN = Number(quantity);
+  const durationN = Number(durationDays);
+  const canGenerate =
+    trimmedName.length > 0 &&
+    Number.isInteger(quantityN) &&
+    quantityN >= 1 &&
+    quantityN <= 10000 &&
+    Number.isInteger(durationN) &&
+    durationN >= 1 &&
+    durationN <= 3650;
 
   const generate = useMutation({
     mutationFn: () =>
       adminApi.generateCouponBatch({
-        name,
+        name: trimmedName,
         duration_days: Number(durationDays),
         quantity: Number(quantity),
         valid_until: fromAdminInputValue(validUntil),
@@ -169,9 +188,15 @@ function BatchesTab() {
   return (
     <div className="hgadm-card">
       <div className="hgadm-toolbar">
-        <span className="hgadm-muted hgadm-text-sm">
-          발행 묶음 목록
-        </span>
+        <SearchBox
+          value={nameQuery}
+          placeholder="묶음 이름 검색"
+          maxLength={120}
+          onSearch={(next) => {
+            setNameQuery(next);
+            setPage(1);
+          }}
+        />
         <span className="hgadm-toolbar__spacer" />
         {canWrite && (
           <Button variant="primary" onClick={() => setCreateOpen(true)}>
@@ -212,7 +237,7 @@ function BatchesTab() {
             <Button
               variant="primary"
               loading={generate.isPending}
-              disabled={!name || Number(quantity) < 1 || Number(durationDays) < 1}
+              disabled={!canGenerate}
               onClick={() => generate.mutate()}
             >
               생성
@@ -221,29 +246,31 @@ function BatchesTab() {
         }
       >
         <Field label="캠페인 이름" required hint="예: 대학 제휴 2026-2학기">
-          <Input value={name} onChange={(e) => setName(e.target.value)} maxLength={120} />
+          <Input value={name} aria-label="캠페인 이름" onChange={(e) => setName(e.target.value)} maxLength={120} />
         </Field>
         <div className="hgadm-form-grid">
-          <Field label="이용 기간 (일)" required>
+          <Field label="이용 기간 (일)" required hint="코드 하나가 주는 프리미엄 기간, 1~3,650일">
             <Input
               type="number"
               min={1}
               max={3650}
+              aria-label="이용 기간 (일)"
               value={durationDays}
               onChange={(e) => setDurationDays(e.target.value)}
             />
           </Field>
-          <Field label="수량" required hint="최대 10,000">
+          <Field label="수량" required hint="1~10,000개">
             <Input
               type="number"
               min={1}
               max={10000}
+              aria-label="수량"
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
             />
           </Field>
         </div>
-        <Field label="사용 기한" hint="KST 기준. 비우면 무기한">
+        <Field label="사용 기한" hint="KST 기준. 이 시각이 지나면 아직 쓰지 않은 코드는 만료돼요. 비우면 무기한">
           <Input
             type="datetime-local"
             value={validUntil}
@@ -401,7 +428,8 @@ function CouponSearchTab() {
       <div className="hgadm-toolbar">
         <SearchBox
           value={code}
-          placeholder="코드 앞자리 검색 (예: ABCD)"
+          placeholder="코드 앞자리 검색 (예: ABCD-12)"
+          maxLength={14}
           onSearch={(next) => {
             setCode(next);
             setPage(1);

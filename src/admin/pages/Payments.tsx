@@ -5,7 +5,7 @@ import { adminApi } from "../api";
 import type { AdminInvoiceRow, AdminPaymentRow, AdminRetryResult } from "../api";
 import { ApiError, errorMessage } from "../../lib/http";
 import { randomUuid } from "../../lib/uuid";
-import { PAYMENT_FAILURE_LABEL, codeLabel } from "../lib/codeLabels";
+import { PAYMENT_FAILURE_LABEL, PAYMENT_PROVIDER_LABEL, codeLabel } from "../lib/codeLabels";
 import { useToast } from "../../hooks/toast";
 import { useAdminAuth } from "../auth";
 import {
@@ -90,6 +90,11 @@ function RefundDialog({
   // One id for this refund dialog: a retry after an unknown outcome (502)
   // re-sends it, so Toss answers the first request instead of refunding twice.
   const [requestId] = useState(() => randomUuid());
+  // The server's idempotency key is that id plus the amount, so once the
+  // provider's answer was lost (502) the amount and reason are frozen: a retry
+  // with another amount would be a second refund, not the first one re-asked.
+  // A different amount is a new refund — close the dialog and start again.
+  const [locked, setLocked] = useState(false);
 
   const amountCents = parseRefundAmount(amount, payment.currency);
   const amountError =
@@ -120,6 +125,7 @@ function RefundDialog({
     onError: (error) => {
       setConfirming(false);
       setFailure(refundErrorMessage(error));
+      if (error instanceof ApiError && error.code === "payment_method.provider_unavailable") setLocked(true);
     },
   });
 
@@ -142,7 +148,7 @@ function RefundDialog({
                 setConfirming(true);
               }}
             >
-              환불하기
+              {locked ? "같은 금액으로 다시 시도" : "환불하기"}
             </Button>
           </>
         }
@@ -150,7 +156,7 @@ function RefundDialog({
         <Dl
           items={[
             ["회원", payment.user_email ?? "(탈퇴한 사용자)"],
-            ["결제사", payment.provider],
+            ["결제사", codeLabel(PAYMENT_PROVIDER_LABEL, payment.provider)],
             ["결제 금액", formatMoney(payment.amount_cents, payment.currency)],
             ["환불된 금액", formatMoney(payment.refunded_amount_cents, payment.currency)],
             ["환불 가능 금액", formatMoney(remaining, payment.currency)],
@@ -159,11 +165,16 @@ function RefundDialog({
         <Field
           label={`환불 금액 (${payment.currency.toUpperCase()})`}
           required
-          hint="일부만 환불하려면 금액을 줄이세요."
+          hint={
+            locked
+              ? "결제사의 답을 받지 못한 요청과 같은 금액으로만 다시 보낼 수 있어요. 다른 금액으로 환불하려면 창을 닫고 새로 시작하세요."
+              : "일부만 환불하려면 금액을 줄이세요."
+          }
           error={amountError}
         >
           <Input
             inputMode={isZeroDecimal(payment.currency) ? "numeric" : "decimal"}
+            readOnly={locked}
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             aria-label="환불 금액"
@@ -174,6 +185,7 @@ function RefundDialog({
             value={reason}
             maxLength={200}
             rows={3}
+            readOnly={locked}
             onChange={(e) => setReason(e.target.value)}
             aria-label="환불 사유"
           />
@@ -189,7 +201,9 @@ function RefundDialog({
         title="환불할까요?"
         message={`${payment.user_email ?? "탈퇴한 사용자"}님의 결제에서 ${
           amountCents !== null ? formatMoney(amountCents, payment.currency) : ""
-        }을 환불합니다. 결제사에 바로 취소가 요청되며 되돌릴 수 없습니다.`}
+        }을 환불합니다. 결제사에 바로 취소가 요청되며 되돌릴 수 없습니다.${
+          locked ? " 앞서 보낸 요청과 같은 요청으로 보내므로 결제사가 이미 처리했다면 중복 환불되지 않습니다." : ""
+        }`}
         danger
         confirmLabel="환불"
         loading={refund.isPending}
@@ -370,8 +384,8 @@ export function PaymentsPage() {
         <div>
           <h1>결제·청구서</h1>
           <div className="hgadm-page-head__desc">
-            결제 시도와 청구서 전체 내역입니다. 결제 수단 정보는 항상 마스킹된
-            형태로만 저장·표시됩니다.
+            결제 시도와 청구서 전체 내역입니다. 카드 번호 등 결제 수단 정보는 이 시스템에 저장되지 않아 어디에도
+            표시되지 않습니다. 환불과 결제 재시도는 여기서 처리합니다.
           </div>
         </div>
       </div>
@@ -395,7 +409,9 @@ export function PaymentsPage() {
 }
 
 const PAYMENT_STATUSES = ["succeeded", "failed", "refunded"] as const;
-const INVOICE_STATUSES = ["open", "paid", "unpaid", "refunded", "void"] as const;
+/** `payment_methods.domain.entities.ProviderId`, as the list's `provider` filter takes it. */
+const PAYMENT_PROVIDERS = ["toss_card", "toss_intl_card", "toss_pay", "naver_pay"] as const;
+const INVOICE_STATUSES = ["open", "paid", "refunded", "void"] as const;
 
 /** `value` when it is one of the list's statuses, else "" (all). */
 function knownStatus(value: string | null, allowed: readonly string[]): string {
@@ -410,16 +426,18 @@ function PaymentsTab() {
   // A dashboard alert links here with the status it counts.
   const [params] = useSearchParams();
   const [status, setStatus] = useState(() => knownStatus(params.get("status"), PAYMENT_STATUSES));
+  const [provider, setProvider] = useState(() => knownStatus(params.get("provider"), PAYMENT_PROVIDERS));
   const [page, setPage] = useState(1);
   const [refunding, setRefunding] = useState<AdminPaymentRow | null>(null);
   const pageSize = 25;
 
   const query = useQuery({
-    queryKey: ["admin", "payments", { q, status, page }],
+    queryKey: ["admin", "payments", { q, status, provider, page }],
     queryFn: () =>
       adminApi.listPayments({
         q: q || undefined,
         status: status || undefined,
+        provider: provider || undefined,
         page,
         page_size: pageSize,
       }),
@@ -448,14 +466,19 @@ function PaymentsTab() {
         </div>
       ),
     },
-    { key: "provider", header: "결제사", render: (p) => p.provider },
+    { key: "provider", header: "결제사", render: (p) => codeLabel(PAYMENT_PROVIDER_LABEL, p.provider) },
     {
       key: "status",
       header: "상태",
       render: (p) => (
         <div>
           <Badge tone={statusTone(p.status)}>{statusLabel(p.status)}</Badge>
-          {p.failure_class && <div className="hgadm-cell-sub">{codeLabel(PAYMENT_FAILURE_LABEL, p.failure_class)}</div>}
+          {p.failure_class && (
+            // The provider's own words stay in the tooltip: they are for a developer, not the operator.
+            <div className="hgadm-cell-sub" title={p.failure_reason ?? undefined}>
+              {codeLabel(PAYMENT_FAILURE_LABEL, p.failure_class)}
+            </div>
+          )}
         </div>
       ),
     },
@@ -489,6 +512,7 @@ function PaymentsTab() {
         <SearchBox
           value={q}
           placeholder="이메일·결제 ID·사용자 ID 검색"
+          maxLength={254}
           onSearch={(next) => {
             setQ(next);
             setPage(1);
@@ -505,6 +529,21 @@ function PaymentsTab() {
           {PAYMENT_STATUSES.map((s) => (
             <option key={s} value={s}>
               {statusLabel(s)}
+            </option>
+          ))}
+        </Select>
+        <Select
+          value={provider}
+          aria-label="결제사"
+          onChange={(e) => {
+            setProvider(e.target.value);
+            setPage(1);
+          }}
+        >
+          <option value="">결제사: 전체</option>
+          {PAYMENT_PROVIDERS.map((p) => (
+            <option key={p} value={p}>
+              {codeLabel(PAYMENT_PROVIDER_LABEL, p)}
             </option>
           ))}
         </Select>
@@ -579,6 +618,9 @@ function InvoicesTab() {
               {inv.coupon_code ? ` (${inv.coupon_code})` : ""}
             </div>
           )}
+          {inv.refunded_cents > 0 && (
+            <div className="hgadm-cell-sub">환불 {formatMoney(inv.refunded_cents, inv.currency)}</div>
+          )}
         </div>
       ),
     },
@@ -595,7 +637,7 @@ function InvoicesTab() {
       key: "actions",
       header: "",
       render: (inv) =>
-        inv.status === "open" || inv.status === "unpaid" ? (
+        inv.status === "open" ? (
           <Button
             size="sm"
             variant="secondary"
@@ -617,7 +659,8 @@ function InvoicesTab() {
       <div className="hgadm-toolbar">
         <SearchBox
           value={q}
-          placeholder="이메일·청구서 ID 검색"
+          placeholder="이메일·청구서 ID·사용자 ID 검색"
+          maxLength={254}
           onSearch={(next) => {
             setQ(next);
             setPage(1);

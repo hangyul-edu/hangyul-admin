@@ -438,7 +438,8 @@ describe("DashboardPage navigation", () => {
     expect(await screen.findByText("전체 사용자")).toBeInTheDocument();
     expect(tile("전체 사용자")).toHaveAttribute("href", "/users");
     expect(tile("활성 구독")).toHaveAttribute("href", "/subscriptions");
-    expect(tile("결제 실패 (24시간)")).toHaveAttribute("href", "/payments");
+    // The failures it counts, not the whole list.
+    expect(tile("결제 실패 (24시간)")).toHaveAttribute("href", "/payments?status=failed");
     expect(tile("이번 달 매출 · 원화 (KRW)")).toHaveAttribute("href", "/payments");
     expect(tile("이번 달 매출 · 미국 달러 (USD)")).toHaveAttribute("href", "/payments");
     expect(tile("AI 검수 대기")).toHaveAttribute("href", "/ai-content");

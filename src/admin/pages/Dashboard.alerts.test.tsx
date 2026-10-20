@@ -42,7 +42,7 @@ vi.mock("../api", async () => {
 });
 
 const ALERTS = [
-  { code: "invoices_unpaid", severity: "warning", count: 12, message: "미납 청구서 12건" },
+  { code: "invoices_overdue", severity: "warning", count: 12, message: "미납 청구서 12건" },
   { code: "lecture_videos_failed", severity: "critical", count: 2, message: "영상 인코딩 실패 2건" },
 ];
 
@@ -174,15 +174,15 @@ describe("dashboard alerts", () => {
     }
   });
 
-  it("opens the invoices tab for the unpaid-invoice alert", async () => {
+  it("opens the suspended subscriptions for the overdue-invoice alert", async () => {
     scopes = ["users:read", "content:read", "commerce:read"];
     renderPage();
 
-    // /payments alone lands on the 결제 tab, not on the invoices it is about;
-    // the status narrows the list to the rows the alert counts.
+    // The alert counts open invoices of suspended subscriptions — one each —
+    // so the subscriptions list narrowed to `suspended` is exactly those rows.
     expect((await screen.findByText("미납 청구서 12건")).closest("a")).toHaveAttribute(
       "href",
-      "/payments?tab=invoices&status=unpaid",
+      "/subscriptions?status=suspended",
     );
   });
 
@@ -193,6 +193,7 @@ describe("dashboard alerts", () => {
       alerts: [
         { code: "webhook_dlq", severity: "critical", count: 1, message: "웹훅 DLQ 1건" },
         { code: "outbox_stuck", severity: "warning", count: 2, message: "아웃박스 지연 2건" },
+        { code: "outbox_exhausted", severity: "critical", count: 1, message: "아웃박스 전송 멈춤 1건" },
         { code: "scoring_exhausted", severity: "warning", count: 3, message: "채점 멈춤 3건" },
       ],
     });
@@ -202,6 +203,10 @@ describe("dashboard alerts", () => {
     expect(await href("웹훅 DLQ 1건")).toBe("/operations?tab=webhooks");
     expect(await href("아웃박스 지연 2건")).toBe("/operations?tab=outbox");
     expect(await href("채점 멈춤 3건")).toBe("/operations?tab=scoring");
+    // An event the relay gave up on is critical, and opens the same outbox tab.
+    const exhausted = (await screen.findByText("아웃박스 전송 멈춤 1건")).closest("a")!;
+    expect(exhausted).toHaveAttribute("href", "/operations?tab=outbox");
+    expect(exhausted.className).toContain("hgadm-alert-row--danger");
   });
 
   it("hides the scoring alert from an admin who cannot read learners", async () => {

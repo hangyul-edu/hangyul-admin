@@ -51,6 +51,7 @@ import { AiOpsPage } from "./pages/learning/AiOps";
 import { DataHealthPage } from "./pages/learning/DataHealth";
 import { CatalogImportPage } from "./pages/CatalogImport";
 import { SystemSettingsPage } from "./pages/SystemSettings";
+import { SpeechTestPage } from "./pages/speech/SpeechTestPage";
 import { homeFallback } from "./lib/homeFallback";
 
 function RequireAdmin({ children }: { children: ReactNode }) {
@@ -154,6 +155,7 @@ const router = createBrowserRouter(
         <Route path="/catalog-import" element={<Navigate to="/content-updates" replace />} />
         </Route>
         <Route path="/settings" element={<RequireScope scope="settings:read"><SystemSettingsPage /></RequireScope>} />
+        <Route path="/speech-test" element={<RequireScope scope="settings:read"><SpeechTestPage /></RequireScope>} />
         <Route path="/audit-logs" element={<RequireScope scope="audit:read"><AuditLogsPage /></RequireScope>} />
         <Route path="/admins" element={<RequireScope scope="admins:manage"><AdminsPage /></RequireScope>} />
         <Route path="*" element={<EmptyState icon={<Compass size={28} strokeWidth={1.75} />} title="페이지를 찾을 수 없습니다" />} />

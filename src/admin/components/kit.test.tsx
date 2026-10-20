@@ -170,9 +170,9 @@ describe("statusLabel", () => {
   });
 
   it("keeps states that mean different things distinct", () => {
-    // `open` is an issued invoice not yet paid; `unpaid` is one past due.
-    // Collapsing them would hide which invoices actually need chasing.
-    expect(statusLabel("open")).not.toBe(statusLabel("unpaid"));
+    // `open` is an issued invoice not yet paid; `void` is one nobody will
+    // collect. Collapsing them would hide which invoices actually need chasing.
+    expect(statusLabel("open")).not.toBe(statusLabel("void"));
     // A payment succeeding is not the same as the invoice being settled.
     expect(statusLabel("succeeded")).not.toBe(statusLabel("paid"));
     // Every label is distinct, so no two states read the same on screen.
